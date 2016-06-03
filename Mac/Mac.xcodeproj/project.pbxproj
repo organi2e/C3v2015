@@ -1,0 +1,942 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		878C7A771D01AEEC002CDFD1 /* C3.h in Headers */ = {isa = PBXBuildFile; fileRef = 878C7A761D01AEEC002CDFD1 /* C3.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		878C7A7E1D01AEEC002CDFD1 /* C3.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 878C7A731D01AEEC002CDFD1 /* C3.framework */; };
+		878C7A831D01AEEC002CDFD1 /* C3Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878C7A821D01AEEC002CDFD1 /* C3Tests.swift */; };
+		878C7A921D01AF05002CDFD1 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878C7A911D01AF05002CDFD1 /* AppDelegate.swift */; };
+		878C7A941D01AF05002CDFD1 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878C7A931D01AF05002CDFD1 /* ViewController.swift */; };
+		878C7A961D01AF05002CDFD1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 878C7A951D01AF05002CDFD1 /* Assets.xcassets */; };
+		878C7A991D01AF05002CDFD1 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 878C7A971D01AF05002CDFD1 /* Main.storyboard */; };
+		878C7AAA1D01AF13002CDFD1 /* MNIST.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 878C7AA31D01AF13002CDFD1 /* MNIST.framework */; };
+		878C7AAB1D01AF13002CDFD1 /* MNIST.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 878C7AA31D01AF13002CDFD1 /* MNIST.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		878C7AC71D01AF92002CDFD1 /* MNIST.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878C7AC61D01AF92002CDFD1 /* MNIST.swift */; };
+		878C7AC91D01AFA0002CDFD1 /* t10k-images.idx3-ubyte in Resources */ = {isa = PBXBuildFile; fileRef = 878C7AC81D01AFA0002CDFD1 /* t10k-images.idx3-ubyte */; };
+		878C7ACB1D01AFA2002CDFD1 /* t10k-labels.idx1-ubyte in Resources */ = {isa = PBXBuildFile; fileRef = 878C7ACA1D01AFA2002CDFD1 /* t10k-labels.idx1-ubyte */; };
+		878C7ACD1D01AFA4002CDFD1 /* train-images.idx3-ubyte in Resources */ = {isa = PBXBuildFile; fileRef = 878C7ACC1D01AFA4002CDFD1 /* train-images.idx3-ubyte */; };
+		878C7ACF1D01AFA8002CDFD1 /* train-labels.idx1-ubyte in Resources */ = {isa = PBXBuildFile; fileRef = 878C7ACE1D01AFA8002CDFD1 /* train-labels.idx1-ubyte */; };
+		878C7ADE1D01B021002CDFD1 /* Context.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878C7ADD1D01B021002CDFD1 /* Context.swift */; };
+		878C7AE01D01B024002CDFD1 /* Dict.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878C7ADF1D01B024002CDFD1 /* Dict.swift */; };
+		878C7AE21D01B028002CDFD1 /* Edge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878C7AE11D01B028002CDFD1 /* Edge.swift */; };
+		878C7AE41D01B02B002CDFD1 /* linalg.metal in Sources */ = {isa = PBXBuildFile; fileRef = 878C7AE31D01B02B002CDFD1 /* linalg.metal */; };
+		878C7AE51D01B044002CDFD1 /* MNIST.h in Headers */ = {isa = PBXBuildFile; fileRef = 878C7AA51D01AF13002CDFD1 /* MNIST.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		878C7AE61D01B05E002CDFD1 /* C3.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 878C7A731D01AEEC002CDFD1 /* C3.framework */; };
+		878C7AE71D01B05E002CDFD1 /* C3.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 878C7A731D01AEEC002CDFD1 /* C3.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		878C7AEB1D01B07A002CDFD1 /* Cell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878C7AEA1D01B07A002CDFD1 /* Cell.swift */; };
+		878C7AF01D01B48F002CDFD1 /* C3.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 878C7AEF1D01B48F002CDFD1 /* C3.xcdatamodeld */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		878C7A7F1D01AEEC002CDFD1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 878C7A581D01AE4D002CDFD1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 878C7A721D01AEEC002CDFD1;
+			remoteInfo = C3;
+		};
+		878C7AA81D01AF13002CDFD1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 878C7A581D01AE4D002CDFD1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 878C7AA21D01AF13002CDFD1;
+			remoteInfo = MNIST;
+		};
+		878C7AE81D01B05E002CDFD1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 878C7A581D01AE4D002CDFD1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 878C7A721D01AEEC002CDFD1;
+			remoteInfo = C3;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		878C7AAF1D01AF13002CDFD1 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				878C7AE71D01B05E002CDFD1 /* C3.framework in Embed Frameworks */,
+				878C7AAB1D01AF13002CDFD1 /* MNIST.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		878C7A731D01AEEC002CDFD1 /* C3.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = C3.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		878C7A761D01AEEC002CDFD1 /* C3.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = C3.h; sourceTree = "<group>"; };
+		878C7A781D01AEEC002CDFD1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		878C7A7D1D01AEEC002CDFD1 /* C3Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = C3Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		878C7A821D01AEEC002CDFD1 /* C3Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = C3Tests.swift; sourceTree = "<group>"; };
+		878C7A841D01AEEC002CDFD1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		878C7A8F1D01AF05002CDFD1 /* sandbox.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = sandbox.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		878C7A911D01AF05002CDFD1 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		878C7A931D01AF05002CDFD1 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		878C7A951D01AF05002CDFD1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		878C7A981D01AF05002CDFD1 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		878C7A9A1D01AF05002CDFD1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		878C7AA31D01AF13002CDFD1 /* MNIST.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MNIST.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		878C7AA51D01AF13002CDFD1 /* MNIST.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MNIST.h; sourceTree = "<group>"; };
+		878C7AA71D01AF13002CDFD1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		878C7AC61D01AF92002CDFD1 /* MNIST.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MNIST.swift; path = ../../MNIST/MNIST.swift; sourceTree = "<group>"; };
+		878C7AC81D01AFA0002CDFD1 /* t10k-images.idx3-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "t10k-images.idx3-ubyte"; path = "../../MNIST/t10k-images.idx3-ubyte"; sourceTree = "<group>"; };
+		878C7ACA1D01AFA2002CDFD1 /* t10k-labels.idx1-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "t10k-labels.idx1-ubyte"; path = "../../MNIST/t10k-labels.idx1-ubyte"; sourceTree = "<group>"; };
+		878C7ACC1D01AFA4002CDFD1 /* train-images.idx3-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "train-images.idx3-ubyte"; path = "../../MNIST/train-images.idx3-ubyte"; sourceTree = "<group>"; };
+		878C7ACE1D01AFA8002CDFD1 /* train-labels.idx1-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "train-labels.idx1-ubyte"; path = "../../MNIST/train-labels.idx1-ubyte"; sourceTree = "<group>"; };
+		878C7ADD1D01B021002CDFD1 /* Context.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Context.swift; path = ../../C3/Context.swift; sourceTree = "<group>"; };
+		878C7ADF1D01B024002CDFD1 /* Dict.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Dict.swift; path = ../../C3/Dict.swift; sourceTree = "<group>"; };
+		878C7AE11D01B028002CDFD1 /* Edge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Edge.swift; path = ../../C3/Edge.swift; sourceTree = "<group>"; };
+		878C7AE31D01B02B002CDFD1 /* linalg.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = linalg.metal; path = ../../C3/linalg.metal; sourceTree = "<group>"; };
+		878C7AEA1D01B07A002CDFD1 /* Cell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Cell.swift; path = ../../C3/Cell.swift; sourceTree = "<group>"; };
+		878C7AEE1D01B48F002CDFD1 /* C3.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = C3.xcdatamodel; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		878C7A6F1D01AEEC002CDFD1 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		878C7A7A1D01AEEC002CDFD1 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				878C7A7E1D01AEEC002CDFD1 /* C3.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		878C7A8C1D01AF05002CDFD1 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				878C7AE61D01B05E002CDFD1 /* C3.framework in Frameworks */,
+				878C7AAA1D01AF13002CDFD1 /* MNIST.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		878C7A9F1D01AF13002CDFD1 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		878C7A571D01AE4D002CDFD1 = {
+			isa = PBXGroup;
+			children = (
+				878C7A751D01AEEC002CDFD1 /* C3 */,
+				878C7A811D01AEEC002CDFD1 /* C3Tests */,
+				878C7A901D01AF05002CDFD1 /* sandbox */,
+				878C7AA41D01AF13002CDFD1 /* MNIST */,
+				878C7A741D01AEEC002CDFD1 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		878C7A741D01AEEC002CDFD1 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				878C7A731D01AEEC002CDFD1 /* C3.framework */,
+				878C7A7D1D01AEEC002CDFD1 /* C3Tests.xctest */,
+				878C7A8F1D01AF05002CDFD1 /* sandbox.app */,
+				878C7AA31D01AF13002CDFD1 /* MNIST.framework */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		878C7A751D01AEEC002CDFD1 /* C3 */ = {
+			isa = PBXGroup;
+			children = (
+				878C7A781D01AEEC002CDFD1 /* Info.plist */,
+				878C7AEF1D01B48F002CDFD1 /* C3.xcdatamodeld */,
+				878C7A761D01AEEC002CDFD1 /* C3.h */,
+				878C7ADD1D01B021002CDFD1 /* Context.swift */,
+				878C7AEA1D01B07A002CDFD1 /* Cell.swift */,
+				878C7ADF1D01B024002CDFD1 /* Dict.swift */,
+				878C7AE11D01B028002CDFD1 /* Edge.swift */,
+				878C7AE31D01B02B002CDFD1 /* linalg.metal */,
+			);
+			path = C3;
+			sourceTree = "<group>";
+		};
+		878C7A811D01AEEC002CDFD1 /* C3Tests */ = {
+			isa = PBXGroup;
+			children = (
+				878C7A821D01AEEC002CDFD1 /* C3Tests.swift */,
+				878C7A841D01AEEC002CDFD1 /* Info.plist */,
+			);
+			path = C3Tests;
+			sourceTree = "<group>";
+		};
+		878C7A901D01AF05002CDFD1 /* sandbox */ = {
+			isa = PBXGroup;
+			children = (
+				878C7A911D01AF05002CDFD1 /* AppDelegate.swift */,
+				878C7A931D01AF05002CDFD1 /* ViewController.swift */,
+				878C7A951D01AF05002CDFD1 /* Assets.xcassets */,
+				878C7A971D01AF05002CDFD1 /* Main.storyboard */,
+				878C7A9A1D01AF05002CDFD1 /* Info.plist */,
+			);
+			path = sandbox;
+			sourceTree = "<group>";
+		};
+		878C7AA41D01AF13002CDFD1 /* MNIST */ = {
+			isa = PBXGroup;
+			children = (
+				878C7ACE1D01AFA8002CDFD1 /* train-labels.idx1-ubyte */,
+				878C7ACC1D01AFA4002CDFD1 /* train-images.idx3-ubyte */,
+				878C7ACA1D01AFA2002CDFD1 /* t10k-labels.idx1-ubyte */,
+				878C7AC81D01AFA0002CDFD1 /* t10k-images.idx3-ubyte */,
+				878C7AC61D01AF92002CDFD1 /* MNIST.swift */,
+				878C7AA51D01AF13002CDFD1 /* MNIST.h */,
+				878C7AA71D01AF13002CDFD1 /* Info.plist */,
+			);
+			path = MNIST;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		878C7A701D01AEEC002CDFD1 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				878C7A771D01AEEC002CDFD1 /* C3.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		878C7AA01D01AF13002CDFD1 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				878C7AE51D01B044002CDFD1 /* MNIST.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		878C7A721D01AEEC002CDFD1 /* C3 */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 878C7A851D01AEEC002CDFD1 /* Build configuration list for PBXNativeTarget "C3" */;
+			buildPhases = (
+				878C7A6E1D01AEEC002CDFD1 /* Sources */,
+				878C7A6F1D01AEEC002CDFD1 /* Frameworks */,
+				878C7A701D01AEEC002CDFD1 /* Headers */,
+				878C7A711D01AEEC002CDFD1 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = C3;
+			productName = C3;
+			productReference = 878C7A731D01AEEC002CDFD1 /* C3.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		878C7A7C1D01AEEC002CDFD1 /* C3Tests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 878C7A881D01AEEC002CDFD1 /* Build configuration list for PBXNativeTarget "C3Tests" */;
+			buildPhases = (
+				878C7A791D01AEEC002CDFD1 /* Sources */,
+				878C7A7A1D01AEEC002CDFD1 /* Frameworks */,
+				878C7A7B1D01AEEC002CDFD1 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				878C7A801D01AEEC002CDFD1 /* PBXTargetDependency */,
+			);
+			name = C3Tests;
+			productName = C3Tests;
+			productReference = 878C7A7D1D01AEEC002CDFD1 /* C3Tests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		878C7A8E1D01AF05002CDFD1 /* sandbox */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 878C7A9B1D01AF05002CDFD1 /* Build configuration list for PBXNativeTarget "sandbox" */;
+			buildPhases = (
+				878C7A8B1D01AF05002CDFD1 /* Sources */,
+				878C7A8C1D01AF05002CDFD1 /* Frameworks */,
+				878C7A8D1D01AF05002CDFD1 /* Resources */,
+				878C7AAF1D01AF13002CDFD1 /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				878C7AA91D01AF13002CDFD1 /* PBXTargetDependency */,
+				878C7AE91D01B05E002CDFD1 /* PBXTargetDependency */,
+			);
+			name = sandbox;
+			productName = sandbox;
+			productReference = 878C7A8F1D01AF05002CDFD1 /* sandbox.app */;
+			productType = "com.apple.product-type.application";
+		};
+		878C7AA21D01AF13002CDFD1 /* MNIST */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 878C7AAC1D01AF13002CDFD1 /* Build configuration list for PBXNativeTarget "MNIST" */;
+			buildPhases = (
+				878C7A9E1D01AF13002CDFD1 /* Sources */,
+				878C7A9F1D01AF13002CDFD1 /* Frameworks */,
+				878C7AA01D01AF13002CDFD1 /* Headers */,
+				878C7AA11D01AF13002CDFD1 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MNIST;
+			productName = MNIST;
+			productReference = 878C7AA31D01AF13002CDFD1 /* MNIST.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		878C7A581D01AE4D002CDFD1 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 0730;
+				LastUpgradeCheck = 0730;
+				TargetAttributes = {
+					878C7A721D01AEEC002CDFD1 = {
+						CreatedOnToolsVersion = 7.3.1;
+					};
+					878C7A7C1D01AEEC002CDFD1 = {
+						CreatedOnToolsVersion = 7.3.1;
+					};
+					878C7A8E1D01AF05002CDFD1 = {
+						CreatedOnToolsVersion = 7.3.1;
+					};
+					878C7AA21D01AF13002CDFD1 = {
+						CreatedOnToolsVersion = 7.3.1;
+					};
+				};
+			};
+			buildConfigurationList = 878C7A5B1D01AE4D002CDFD1 /* Build configuration list for PBXProject "Mac" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 878C7A571D01AE4D002CDFD1;
+			productRefGroup = 878C7A741D01AEEC002CDFD1 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				878C7A721D01AEEC002CDFD1 /* C3 */,
+				878C7A7C1D01AEEC002CDFD1 /* C3Tests */,
+				878C7A8E1D01AF05002CDFD1 /* sandbox */,
+				878C7AA21D01AF13002CDFD1 /* MNIST */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		878C7A711D01AEEC002CDFD1 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		878C7A7B1D01AEEC002CDFD1 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		878C7A8D1D01AF05002CDFD1 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				878C7A961D01AF05002CDFD1 /* Assets.xcassets in Resources */,
+				878C7A991D01AF05002CDFD1 /* Main.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		878C7AA11D01AF13002CDFD1 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				878C7AC91D01AFA0002CDFD1 /* t10k-images.idx3-ubyte in Resources */,
+				878C7ACB1D01AFA2002CDFD1 /* t10k-labels.idx1-ubyte in Resources */,
+				878C7ACD1D01AFA4002CDFD1 /* train-images.idx3-ubyte in Resources */,
+				878C7ACF1D01AFA8002CDFD1 /* train-labels.idx1-ubyte in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		878C7A6E1D01AEEC002CDFD1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				878C7ADE1D01B021002CDFD1 /* Context.swift in Sources */,
+				878C7AE01D01B024002CDFD1 /* Dict.swift in Sources */,
+				878C7AE21D01B028002CDFD1 /* Edge.swift in Sources */,
+				878C7AEB1D01B07A002CDFD1 /* Cell.swift in Sources */,
+				878C7AF01D01B48F002CDFD1 /* C3.xcdatamodeld in Sources */,
+				878C7AE41D01B02B002CDFD1 /* linalg.metal in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		878C7A791D01AEEC002CDFD1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				878C7A831D01AEEC002CDFD1 /* C3Tests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		878C7A8B1D01AF05002CDFD1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				878C7A941D01AF05002CDFD1 /* ViewController.swift in Sources */,
+				878C7A921D01AF05002CDFD1 /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		878C7A9E1D01AF13002CDFD1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				878C7AC71D01AF92002CDFD1 /* MNIST.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		878C7A801D01AEEC002CDFD1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 878C7A721D01AEEC002CDFD1 /* C3 */;
+			targetProxy = 878C7A7F1D01AEEC002CDFD1 /* PBXContainerItemProxy */;
+		};
+		878C7AA91D01AF13002CDFD1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 878C7AA21D01AF13002CDFD1 /* MNIST */;
+			targetProxy = 878C7AA81D01AF13002CDFD1 /* PBXContainerItemProxy */;
+		};
+		878C7AE91D01B05E002CDFD1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 878C7A721D01AEEC002CDFD1 /* C3 */;
+			targetProxy = 878C7AE81D01B05E002CDFD1 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		878C7A971D01AF05002CDFD1 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				878C7A981D01AF05002CDFD1 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		878C7A5C1D01AE4D002CDFD1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+			};
+			name = Debug;
+		};
+		878C7A5D1D01AE4D002CDFD1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+			};
+			name = Release;
+		};
+		878C7A861D01AEEC002CDFD1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				FRAMEWORK_VERSION = A;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_FILE = C3/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.organi2e.kn.kotan.C3;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Debug;
+		};
+		878C7A871D01AEEC002CDFD1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				FRAMEWORK_VERSION = A;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_FILE = C3/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = com.organi2e.kn.kotan.C3;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Release;
+		};
+		878C7A891D01AEEC002CDFD1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_FILE = C3Tests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.organi2e.kn.kotan.C3Tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		878C7A8A1D01AEEC002CDFD1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_FILE = C3Tests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = com.organi2e.kn.kotan.C3Tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		878C7A9C1D01AF05002CDFD1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				EMBEDDED_CONTENT_CONTAINS_SWIFT = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_FILE = sandbox/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.organi2e.kn.kotan.sandbox;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		878C7A9D1D01AF05002CDFD1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				EMBEDDED_CONTENT_CONTAINS_SWIFT = YES;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_FILE = sandbox/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = com.organi2e.kn.kotan.sandbox;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		878C7AAD1D01AF13002CDFD1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				FRAMEWORK_VERSION = A;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_FILE = MNIST/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.organi2e.kn.kotan.MNIST;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Debug;
+		};
+		878C7AAE1D01AF13002CDFD1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				FRAMEWORK_VERSION = A;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_FILE = MNIST/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = com.organi2e.kn.kotan.MNIST;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		878C7A5B1D01AE4D002CDFD1 /* Build configuration list for PBXProject "Mac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				878C7A5C1D01AE4D002CDFD1 /* Debug */,
+				878C7A5D1D01AE4D002CDFD1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		878C7A851D01AEEC002CDFD1 /* Build configuration list for PBXNativeTarget "C3" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				878C7A861D01AEEC002CDFD1 /* Debug */,
+				878C7A871D01AEEC002CDFD1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+		878C7A881D01AEEC002CDFD1 /* Build configuration list for PBXNativeTarget "C3Tests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				878C7A891D01AEEC002CDFD1 /* Debug */,
+				878C7A8A1D01AEEC002CDFD1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+		878C7A9B1D01AF05002CDFD1 /* Build configuration list for PBXNativeTarget "sandbox" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				878C7A9C1D01AF05002CDFD1 /* Debug */,
+				878C7A9D1D01AF05002CDFD1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+		878C7AAC1D01AF13002CDFD1 /* Build configuration list for PBXNativeTarget "MNIST" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				878C7AAD1D01AF13002CDFD1 /* Debug */,
+				878C7AAE1D01AF13002CDFD1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCVersionGroup section */
+		878C7AEF1D01B48F002CDFD1 /* C3.xcdatamodeld */ = {
+			isa = XCVersionGroup;
+			children = (
+				878C7AEE1D01B48F002CDFD1 /* C3.xcdatamodel */,
+			);
+			currentVersion = 878C7AEE1D01B48F002CDFD1 /* C3.xcdatamodel */;
+			name = C3.xcdatamodeld;
+			path = ../../C3/C3.xcdatamodeld;
+			sourceTree = "<group>";
+		};
+/* End XCVersionGroup section */
+	};
+	rootObject = 878C7A581D01AE4D002CDFD1 /* Project object */;
+}
