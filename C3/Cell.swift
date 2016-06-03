@@ -30,17 +30,25 @@ extension Cell {
 		}
 	}
 }
+extension Cell {
+	private func allocate() {
+	
+	}
+}
 extension Context {
 	public func newCell ( let width width: Int, let label: String = "", let recur: Bool = false, let input: [Cell] = [] ) -> Cell? {
 		let cell: Cell? = new()
 		if let cell: Cell = cell {
 			cell.width = width
 			cell.label = label
+			cell.recur = recur
+			cell.bias = NSData(bytes: [Float](count: width, repeatedValue: 0.0), length: sizeof(Float)*width)
 			cell.context = self
 			input.forEach {
 				let input: Cell = $0
 				if let edge: Edge = new() {
 					edge.input = input
+					edge.gain = NSData(bytes: [Float](count: cell.width*input.width, repeatedValue: 0.0), length: sizeof(Float)*cell.width*input.width)
 					cell.input.insert(edge)
 				}
 			}

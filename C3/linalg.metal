@@ -17,3 +17,11 @@ kernel void add(device float4 * y [[ buffer(0) ]],
 				) {
 	y [ id ] = a [ id ] + b [ id ];
 }
+kernel void sub(device float4 * y [[ buffer(0) ]],
+				const device float4 * a [[ buffer(1) ]],
+				const device float4 * b [[ buffer(2) ]],
+				uint id [[ thread_position_in_grid ]]
+				) {
+	y [ id ] = a [ id ] - b [ id ];
+}
+

@@ -15,16 +15,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 	func applicationDidFinishLaunching(aNotification: NSNotification) {
 		do {
 			let url: NSURL = try NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true)
-			let context: Context = try Context(storage: url)
+			let ct: ctx = try ctx(storage: url.URLByAppendingPathComponent("sandbox.sqlite"))
+			
+			let context: Context = try Context(storage: url.URLByAppendingPathComponent("sandbox.sqlite"))
 			if
 				context.searchCell(label: "O").isEmpty,
 			let
 				I: Cell = context.newCell(width: 16, label: "I"),
 				H: Cell = context.newCell(width: 16, label: "H", input: [I]),
 				_: Cell = context.newCell(width: 16, label: "O", input: [H]) {
-				
+				print("created")
+				try context.save()
 			}
-			try context.save()
 			if let O: Cell = context.searchCell(label: "O").first {
 				O.chain()
 			}
