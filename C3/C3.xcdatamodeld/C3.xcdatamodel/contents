@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model userDefinedModelVersionIdentifier="" type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="10174" systemVersion="15E65" minimumToolsVersion="Xcode 7.0">
+    <entity name="Cell" representedClassName="C3.Cell" syncable="YES">
+        <attribute name="bias" attributeType="Binary" allowsExternalBinaryDataStorage="YES" syncable="YES"/>
+        <attribute name="label" attributeType="String" syncable="YES"/>
+        <attribute name="recur" attributeType="Boolean" syncable="YES"/>
+        <attribute name="width" attributeType="Integer 64" defaultValueString="0" syncable="YES"/>
+        <relationship name="input" toMany="YES" deletionRule="Nullify" destinationEntity="Edge" inverseName="output" inverseEntity="Edge" syncable="YES"/>
+        <relationship name="output" toMany="YES" deletionRule="Nullify" destinationEntity="Edge" inverseName="input" inverseEntity="Edge" syncable="YES"/>
+    </entity>
+    <entity name="Dict" representedClassName="C3.Dict" syncable="YES">
+        <attribute name="key" attributeType="Transformable" syncable="YES"/>
+        <attribute name="value" optional="YES" attributeType="Transformable" syncable="YES"/>
+    </entity>
+    <entity name="Edge" representedClassName="C3.Edge" syncable="YES">
+        <attribute name="gain" attributeType="Binary" allowsExternalBinaryDataStorage="YES" syncable="YES"/>
+        <relationship name="input" maxCount="1" deletionRule="Nullify" destinationEntity="Cell" inverseName="output" inverseEntity="Cell" syncable="YES"/>
+        <relationship name="output" maxCount="1" deletionRule="Nullify" destinationEntity="Cell" inverseName="input" inverseEntity="Cell" syncable="YES"/>
+    </entity>
+    <elements>
+        <element name="Cell" positionX="-54" positionY="-9" width="128" height="135"/>
+        <element name="Dict" positionX="-36" positionY="9" width="128" height="75"/>
+        <element name="Edge" positionX="-18" positionY="27" width="128" height="90"/>
+    </elements>
+</model>

@@ -6,11 +6,105 @@
 	objectVersion = 46;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		878C7AB91D01AF25002CDFD1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 878C7A5E1D01AE4D002CDFD1 /* Mac.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 878C7A731D01AEEC002CDFD1;
+			remoteInfo = C3;
+		};
+		878C7ABB1D01AF25002CDFD1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 878C7A5E1D01AE4D002CDFD1 /* Mac.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 878C7A7D1D01AEEC002CDFD1;
+			remoteInfo = C3Tests;
+		};
+		878C7ABD1D01AF25002CDFD1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 878C7A5E1D01AE4D002CDFD1 /* Mac.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 878C7A8F1D01AF05002CDFD1;
+			remoteInfo = sandbox;
+		};
+		878C7ABF1D01AF25002CDFD1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 878C7A5E1D01AE4D002CDFD1 /* Mac.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 878C7AA31D01AF13002CDFD1;
+			remoteInfo = MNIST;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		878C7A5E1D01AE4D002CDFD1 /* Mac.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Mac.xcodeproj; path = Mac/Mac.xcodeproj; sourceTree = "<group>"; };
+		878C7A681D01AE5E002CDFD1 /* iOS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = iOS.xcodeproj; path = iOS/iOS.xcodeproj; sourceTree = "<group>"; };
+		878C7AC11D01AF60002CDFD1 /* MNIST.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MNIST.swift; path = MNIST/MNIST.swift; sourceTree = "<group>"; };
+		878C7AC21D01AF60002CDFD1 /* t10k-images.idx3-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "t10k-images.idx3-ubyte"; path = "MNIST/t10k-images.idx3-ubyte"; sourceTree = "<group>"; };
+		878C7AC31D01AF60002CDFD1 /* t10k-labels.idx1-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "t10k-labels.idx1-ubyte"; path = "MNIST/t10k-labels.idx1-ubyte"; sourceTree = "<group>"; };
+		878C7AC41D01AF60002CDFD1 /* train-images.idx3-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "train-images.idx3-ubyte"; path = "MNIST/train-images.idx3-ubyte"; sourceTree = "<group>"; };
+		878C7AC51D01AF60002CDFD1 /* train-labels.idx1-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "train-labels.idx1-ubyte"; path = "MNIST/train-labels.idx1-ubyte"; sourceTree = "<group>"; };
+		878C7AD21D01B008002CDFD1 /* Cell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Cell.swift; path = C3/Cell.swift; sourceTree = "<group>"; };
+		878C7AD31D01B008002CDFD1 /* Context.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Context.swift; path = C3/Context.swift; sourceTree = "<group>"; };
+		878C7AD41D01B008002CDFD1 /* Dict.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Dict.swift; path = C3/Dict.swift; sourceTree = "<group>"; };
+		878C7AD51D01B008002CDFD1 /* Edge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Edge.swift; path = C3/Edge.swift; sourceTree = "<group>"; };
+		878C7AD61D01B008002CDFD1 /* linalg.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = linalg.metal; path = C3/linalg.metal; sourceTree = "<group>"; };
+		878C7AED1D01B3EC002CDFD1 /* C3.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = C3.xcdatamodel; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
 /* Begin PBXGroup section */
 		878C7A501D01AE2E002CDFD1 = {
 			isa = PBXGroup;
 			children = (
+				878C7A5E1D01AE4D002CDFD1 /* Mac.xcodeproj */,
+				878C7A681D01AE5E002CDFD1 /* iOS.xcodeproj */,
+				878C7A6B1D01AE66002CDFD1 /* C3 */,
+				878C7A6C1D01AE7D002CDFD1 /* MNIST */,
 			);
+			sourceTree = "<group>";
+		};
+		878C7A5F1D01AE4D002CDFD1 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				878C7ABA1D01AF25002CDFD1 /* C3.framework */,
+				878C7ABC1D01AF25002CDFD1 /* C3Tests.xctest */,
+				878C7ABE1D01AF25002CDFD1 /* sandbox.app */,
+				878C7AC01D01AF25002CDFD1 /* MNIST.framework */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		878C7A691D01AE5E002CDFD1 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		878C7A6B1D01AE66002CDFD1 /* C3 */ = {
+			isa = PBXGroup;
+			children = (
+				878C7AD21D01B008002CDFD1 /* Cell.swift */,
+				878C7AD31D01B008002CDFD1 /* Context.swift */,
+				878C7AD41D01B008002CDFD1 /* Dict.swift */,
+				878C7AD51D01B008002CDFD1 /* Edge.swift */,
+				878C7AD61D01B008002CDFD1 /* linalg.metal */,
+				878C7AEC1D01B3EC002CDFD1 /* C3.xcdatamodeld */,
+			);
+			name = C3;
+			sourceTree = "<group>";
+		};
+		878C7A6C1D01AE7D002CDFD1 /* MNIST */ = {
+			isa = PBXGroup;
+			children = (
+				878C7AC11D01AF60002CDFD1 /* MNIST.swift */,
+				878C7AC21D01AF60002CDFD1 /* t10k-images.idx3-ubyte */,
+				878C7AC31D01AF60002CDFD1 /* t10k-labels.idx1-ubyte */,
+				878C7AC41D01AF60002CDFD1 /* train-images.idx3-ubyte */,
+				878C7AC51D01AF60002CDFD1 /* train-labels.idx1-ubyte */,
+			);
+			name = MNIST;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -30,11 +124,52 @@
 			);
 			mainGroup = 878C7A501D01AE2E002CDFD1;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 878C7A691D01AE5E002CDFD1 /* Products */;
+					ProjectRef = 878C7A681D01AE5E002CDFD1 /* iOS.xcodeproj */;
+				},
+				{
+					ProductGroup = 878C7A5F1D01AE4D002CDFD1 /* Products */;
+					ProjectRef = 878C7A5E1D01AE4D002CDFD1 /* Mac.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		878C7ABA1D01AF25002CDFD1 /* C3.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = C3.framework;
+			remoteRef = 878C7AB91D01AF25002CDFD1 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		878C7ABC1D01AF25002CDFD1 /* C3Tests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = C3Tests.xctest;
+			remoteRef = 878C7ABB1D01AF25002CDFD1 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		878C7ABE1D01AF25002CDFD1 /* sandbox.app */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.application;
+			path = sandbox.app;
+			remoteRef = 878C7ABD1D01AF25002CDFD1 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		878C7AC01D01AF25002CDFD1 /* MNIST.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = MNIST.framework;
+			remoteRef = 878C7ABF1D01AF25002CDFD1 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
 
 /* Begin XCBuildConfiguration section */
 		878C7A551D01AE2F002CDFD1 /* Debug */ = {
@@ -62,6 +197,20 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCVersionGroup section */
+		878C7AEC1D01B3EC002CDFD1 /* C3.xcdatamodeld */ = {
+			isa = XCVersionGroup;
+			children = (
+				878C7AED1D01B3EC002CDFD1 /* C3.xcdatamodel */,
+			);
+			currentVersion = 878C7AED1D01B3EC002CDFD1 /* C3.xcdatamodel */;
+			name = C3.xcdatamodeld;
+			path = C3/C3.xcdatamodeld;
+			sourceTree = "<group>";
+			versionGroupType = wrapper.xcdatamodel;
+		};
+/* End XCVersionGroup section */
 	};
 	rootObject = 878C7A511D01AE2F002CDFD1 /* Project object */;
 }
