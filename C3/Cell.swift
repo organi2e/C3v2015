@@ -15,7 +15,6 @@ public class Cell: NSManagedObject {
 	@NSManaged var bias: NSData
 	@NSManaged var input: Set<Edge>
 	@NSManaged var output: Set<Edge>
-	var context: Context!
 }
 extension Cell {
 	public func chain () {
@@ -43,7 +42,10 @@ extension Context {
 			cell.label = label
 			cell.recur = recur
 			cell.bias = NSData(bytes: [Float](count: width, repeatedValue: 0.0), length: sizeof(Float)*width)
-			cell.context = self
+			if let context: Context = cell.managedObjectContext as? Context {
+				print("ok")
+			}
+			
 			input.forEach {
 				let input: Cell = $0
 				if let edge: Edge = new() {
