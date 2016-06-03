@@ -29,7 +29,7 @@
 		878C7AE61D01B05E002CDFD1 /* C3.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 878C7A731D01AEEC002CDFD1 /* C3.framework */; };
 		878C7AE71D01B05E002CDFD1 /* C3.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 878C7A731D01AEEC002CDFD1 /* C3.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		878C7AEB1D01B07A002CDFD1 /* Cell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878C7AEA1D01B07A002CDFD1 /* Cell.swift */; };
-		878C7AF01D01B48F002CDFD1 /* C3.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 878C7AEF1D01B48F002CDFD1 /* C3.xcdatamodeld */; };
+		878C7AF81D01B645002CDFD1 /* Model.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 878C7AF71D01B645002CDFD1 /* Model.xcdatamodeld */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -97,7 +97,7 @@
 		878C7AE11D01B028002CDFD1 /* Edge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Edge.swift; path = ../../C3/Edge.swift; sourceTree = "<group>"; };
 		878C7AE31D01B02B002CDFD1 /* linalg.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = linalg.metal; path = ../../C3/linalg.metal; sourceTree = "<group>"; };
 		878C7AEA1D01B07A002CDFD1 /* Cell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Cell.swift; path = ../../C3/Cell.swift; sourceTree = "<group>"; };
-		878C7AEE1D01B48F002CDFD1 /* C3.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = C3.xcdatamodel; sourceTree = "<group>"; };
+		878C7AF61D01B645002CDFD1 /* Model.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Model.xcdatamodel; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -138,6 +138,7 @@
 		878C7A571D01AE4D002CDFD1 = {
 			isa = PBXGroup;
 			children = (
+				878C7AF71D01B645002CDFD1 /* Model.xcdatamodeld */,
 				878C7A751D01AEEC002CDFD1 /* C3 */,
 				878C7A811D01AEEC002CDFD1 /* C3Tests */,
 				878C7A901D01AF05002CDFD1 /* sandbox */,
@@ -161,7 +162,6 @@
 			isa = PBXGroup;
 			children = (
 				878C7A781D01AEEC002CDFD1 /* Info.plist */,
-				878C7AEF1D01B48F002CDFD1 /* C3.xcdatamodeld */,
 				878C7A761D01AEEC002CDFD1 /* C3.h */,
 				878C7ADD1D01B021002CDFD1 /* Context.swift */,
 				878C7AEA1D01B07A002CDFD1 /* Cell.swift */,
@@ -393,8 +393,8 @@
 				878C7AE01D01B024002CDFD1 /* Dict.swift in Sources */,
 				878C7AE21D01B028002CDFD1 /* Edge.swift in Sources */,
 				878C7AEB1D01B07A002CDFD1 /* Cell.swift in Sources */,
-				878C7AF01D01B48F002CDFD1 /* C3.xcdatamodeld in Sources */,
 				878C7AE41D01B02B002CDFD1 /* linalg.metal in Sources */,
+				878C7AF81D01B645002CDFD1 /* Model.xcdatamodeld in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -926,14 +926,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCVersionGroup section */
-		878C7AEF1D01B48F002CDFD1 /* C3.xcdatamodeld */ = {
+		878C7AF71D01B645002CDFD1 /* Model.xcdatamodeld */ = {
 			isa = XCVersionGroup;
 			children = (
-				878C7AEE1D01B48F002CDFD1 /* C3.xcdatamodel */,
+				878C7AF61D01B645002CDFD1 /* Model.xcdatamodel */,
 			);
-			currentVersion = 878C7AEE1D01B48F002CDFD1 /* C3.xcdatamodel */;
-			name = C3.xcdatamodeld;
-			path = ../../C3/C3.xcdatamodeld;
+			currentVersion = 878C7AF61D01B645002CDFD1 /* Model.xcdatamodel */;
+			name = Model.xcdatamodeld;
+			path = ../C3/Model.xcdatamodeld;
 			sourceTree = "<group>";
 		};
 /* End XCVersionGroup section */

@@ -50,7 +50,7 @@
 		878C7AD41D01B008002CDFD1 /* Dict.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Dict.swift; path = C3/Dict.swift; sourceTree = "<group>"; };
 		878C7AD51D01B008002CDFD1 /* Edge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Edge.swift; path = C3/Edge.swift; sourceTree = "<group>"; };
 		878C7AD61D01B008002CDFD1 /* linalg.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = linalg.metal; path = C3/linalg.metal; sourceTree = "<group>"; };
-		878C7AED1D01B3EC002CDFD1 /* C3.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = C3.xcdatamodel; sourceTree = "<group>"; };
+		878C7AF51D01B627002CDFD1 /* Model.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Model.xcdatamodel; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -90,7 +90,7 @@
 				878C7AD41D01B008002CDFD1 /* Dict.swift */,
 				878C7AD51D01B008002CDFD1 /* Edge.swift */,
 				878C7AD61D01B008002CDFD1 /* linalg.metal */,
-				878C7AEC1D01B3EC002CDFD1 /* C3.xcdatamodeld */,
+				878C7AF41D01B627002CDFD1 /* Model.xcdatamodeld */,
 			);
 			name = C3;
 			sourceTree = "<group>";
@@ -199,14 +199,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCVersionGroup section */
-		878C7AEC1D01B3EC002CDFD1 /* C3.xcdatamodeld */ = {
+		878C7AF41D01B627002CDFD1 /* Model.xcdatamodeld */ = {
 			isa = XCVersionGroup;
 			children = (
-				878C7AED1D01B3EC002CDFD1 /* C3.xcdatamodel */,
+				878C7AF51D01B627002CDFD1 /* Model.xcdatamodel */,
 			);
-			currentVersion = 878C7AED1D01B3EC002CDFD1 /* C3.xcdatamodel */;
-			name = C3.xcdatamodeld;
-			path = C3/C3.xcdatamodeld;
+			currentVersion = 878C7AF51D01B627002CDFD1 /* Model.xcdatamodel */;
+			name = Model.xcdatamodeld;
+			path = C3/Model.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;
 		};
