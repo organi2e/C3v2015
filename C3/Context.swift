@@ -39,8 +39,9 @@ public class Context: NSManagedObjectContext {
 			throw NSError(domain: "C3.framework", code: 500, userInfo: ["Reason": "Model was broken"])
 		}
 		super.init(concurrencyType: .PrivateQueueConcurrencyType)
-		persistentStoreCoordinator = NSPersistentStoreCoordinator(managedObjectModel: model)
-		try persistentStoreCoordinator?.addPersistentStoreWithType(storage == nil ? NSInMemoryStoreType : NSSQLiteStoreType, configuration: nil, URL: storage, options: nil)
+		let storecoordinator: NSPersistentStoreCoordinator = NSPersistentStoreCoordinator(managedObjectModel: model)
+		try storecoordinator.addPersistentStoreWithType(storage == nil ? NSInMemoryStoreType : NSSQLiteStoreType, configuration: nil, URL: storage, options: nil)
+		persistentStoreCoordinator = storecoordinator
 	}
 	required public init?(coder aDecoder: NSCoder) {
 		(device, library) = {
@@ -55,6 +56,7 @@ public class Context: NSManagedObjectContext {
 		queue = device.newCommandQueue()
 		storage = nil
 		super.init(coder: aDecoder)
+		
 		let bundle: NSBundle = NSBundle(forClass: Context.self)
 		guard let url: NSURL = bundle.URLForResource("C3", withExtension: "momd") else {
 			fatalError("Model not found")
@@ -62,13 +64,22 @@ public class Context: NSManagedObjectContext {
 		guard let model: NSManagedObjectModel = NSManagedObjectModel(contentsOfURL: url) else {
 			fatalError("Model was broken")
 		}
-		persistentStoreCoordinator = NSPersistentStoreCoordinator(managedObjectModel: model)
+		let storecoordinator: NSPersistentStoreCoordinator = NSPersistentStoreCoordinator(managedObjectModel: model)
 		do {
-			try persistentStoreCoordinator?.addPersistentStoreWithType(storage == nil ? NSInMemoryStoreType : NSSQLiteStoreType, configuration: nil, URL: storage, options: nil)
+			let storetype: String = storage?.pathExtension == "sqlite" ? NSSQLiteStoreType : storage?.pathExtension == "bin" ? NSBinaryStoreType : NSInMemoryStoreType
+			try storecoordinator.addPersistentStoreWithType(storetype, configuration: nil, URL: storage, options: nil)
+			persistentStoreCoordinator = storecoordinator
 		} catch let e as NSError {
 			fatalError(String(e))
 		}
 	}
+	internal func shared ( let data: NSData ) -> (NSData, MTLBuffer) {
+		let mtlbuffer: MTLBuffer = device.newBufferWithBytes(data.bytes, length: data.length, options: .CPUCacheModeDefaultCache)
+		let nsdata: NSData = NSData(bytesNoCopy: mtlbuffer.contents(), length: mtlbuffer.length, freeWhenDone: false)
+		return(nsdata, mtlbuffer)
+	}
+}
+extension Context {
 	public func store ( ) throws {
 		var error: NSError?
 		performBlockAndWait {
@@ -120,9 +131,18 @@ public class Context: NSManagedObjectContext {
 			self.deleteObject(object)
 		}
 	}
-	internal func shared ( let data: NSData ) -> (NSData, MTLBuffer) {
-		let mtlbuffer: MTLBuffer = device.newBufferWithBytes(data.bytes, length: data.length, options: .CPUCacheModeDefaultCache)
-		let nsdata: NSData = NSData(bytesNoCopy: mtlbuffer.contents(), length: mtlbuffer.length, freeWhenDone: false)
-		return(nsdata, mtlbuffer)
+}
+extension Context {
+	internal static let dispatch: (serial: dispatch_queue_t, parallel: dispatch_queue_t) = (
+		serial: dispatch_queue_create("com.organi2e.kn.kotan.C3.dispatch.serial", DISPATCH_QUEUE_SERIAL),
+		parallel: dispatch_queue_create("com.organi2e.kn.kotan.C3.dispatch.serial", DISPATCH_QUEUE_CONCURRENT)
+	)
+}
+internal extension NSManagedObject {
+	var context: Context {
+		guard let context: Context = managedObjectContext as? Context else {
+			fatalError("Invalid operation")
+		}
+		return context
 	}
 }

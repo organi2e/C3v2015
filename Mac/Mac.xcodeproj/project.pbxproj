@@ -29,7 +29,6 @@
 		878C7AE61D01B05E002CDFD1 /* C3.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 878C7A731D01AEEC002CDFD1 /* C3.framework */; };
 		878C7AE71D01B05E002CDFD1 /* C3.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 878C7A731D01AEEC002CDFD1 /* C3.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		878C7AEB1D01B07A002CDFD1 /* Cell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878C7AEA1D01B07A002CDFD1 /* Cell.swift */; };
-		878C7B021D01C0B0002CDFD1 /* ManagedObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878C7B011D01C0B0002CDFD1 /* ManagedObject.swift */; };
 		878C7B061D01C0C5002CDFD1 /* C3.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 878C7B031D01C0BA002CDFD1 /* C3.xcdatamodeld */; };
 /* End PBXBuildFile section */
 
@@ -98,7 +97,6 @@
 		878C7AE11D01B028002CDFD1 /* Edge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Edge.swift; path = ../../C3/Edge.swift; sourceTree = "<group>"; };
 		878C7AE31D01B02B002CDFD1 /* linalg.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = linalg.metal; path = ../../C3/linalg.metal; sourceTree = "<group>"; };
 		878C7AEA1D01B07A002CDFD1 /* Cell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Cell.swift; path = ../../C3/Cell.swift; sourceTree = "<group>"; };
-		878C7B011D01C0B0002CDFD1 /* ManagedObject.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = ManagedObject.swift; path = ../../C3/ManagedObject.swift; sourceTree = "<group>"; };
 		878C7B041D01C0BA002CDFD1 /* C3.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = C3.xcdatamodel; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -163,7 +161,6 @@
 			isa = PBXGroup;
 			children = (
 				878C7B031D01C0BA002CDFD1 /* C3.xcdatamodeld */,
-				878C7B011D01C0B0002CDFD1 /* ManagedObject.swift */,
 				878C7A781D01AEEC002CDFD1 /* Info.plist */,
 				878C7A761D01AEEC002CDFD1 /* C3.h */,
 				878C7ADD1D01B021002CDFD1 /* Context.swift */,
@@ -393,7 +390,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				878C7B061D01C0C5002CDFD1 /* C3.xcdatamodeld in Sources */,
-				878C7B021D01C0B0002CDFD1 /* ManagedObject.swift in Sources */,
 				878C7ADE1D01B021002CDFD1 /* Context.swift in Sources */,
 				878C7AE01D01B024002CDFD1 /* Dict.swift in Sources */,
 				878C7AE21D01B028002CDFD1 /* Edge.swift in Sources */,

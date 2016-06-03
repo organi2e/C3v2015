@@ -42,9 +42,6 @@ extension Context {
 			cell.label = label
 			cell.recur = recur
 			cell.bias = NSData(bytes: [Float](count: width, repeatedValue: 0.0), length: sizeof(Float)*width)
-			if let context: Context = cell.managedObjectContext as? Context {
-				print("ok")
-			}
 			
 			input.forEach {
 				let input: Cell = $0
