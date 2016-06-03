@@ -15,8 +15,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 	func applicationDidFinishLaunching(aNotification: NSNotification) {
 		do {
 			let url: NSURL = try NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true)
-			let ct: ctx = try ctx(storage: url.URLByAppendingPathComponent("sandbox.sqlite"))
-			
 			let context: Context = try Context(storage: url.URLByAppendingPathComponent("sandbox.sqlite"))
 			if
 				context.searchCell(label: "O").isEmpty,
