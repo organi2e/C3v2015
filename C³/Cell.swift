@@ -21,31 +21,28 @@ public class Cell: NSManagedObject {
 	@NSManaged private var output: Set<Edge>
 	
 	private class MTLRef {
-		
-		var bias: Context.Buffer?
-		
-		var stage: MTLBuffer?
-		var noise: MTLBuffer?
-		var value: MTLBuffer?
-		var lucky: MTLBuffer?
-		var state: MTLBuffer?
-		var error: MTLBuffer?
-		var delta: MTLBuffer?
+		var bias: Buffer = Buffer()
+		var stage: Buffer = Buffer()
+		var noise: Buffer = Buffer()
+		var value: Buffer = Buffer()
+		var lucky: Buffer = Buffer()
+		var state: Buffer = Buffer()
+		var error: Buffer = Buffer()
+		var delta: Buffer = Buffer()
 	}
-	private let mtl: MTLRef = MTLRef()
+	private let buf: MTLRef = MTLRef()
 }
 extension Cell: Network {
 	public func clear ( ) {
-		if let context: Context = managedObjectContext as? Context {
-			let cmd: MTLCommandBuffer = context.newMTLCommandBuffer()
+		if let context: Context = managedObjectContext as? Context, cmd: MTLCommandBuffer = context.newMTLCommandBuffer() {
 			let blit: MTLBlitCommandEncoder = cmd.blitCommandEncoder()
-			for buffer in [ mtl.stage, mtl.value, mtl.error ] {
-				if let buffer: MTLBuffer = buffer {
+			for buffer in [ buf.stage, buf.value, buf.error ] {
+				if let buffer: MTLBuffer = buffer.mtl {
 					blit.fillBuffer(buffer, range: NSRange(location: 0, length: buffer.length), value: 0)
 				}
 			}
 			blit.endEncoding()
-			if let buffer: MTLBuffer = mtl.noise {
+			if let buffer: MTLBuffer = buf.noise.mtl {
 				cmd.addCompletedHandler {(_)in
 					context.entropy(buffer)
 				}
@@ -63,13 +60,12 @@ extension Cell: Network {
 		}
 	}
 	public func correct ( let destination: [Bool], let eps: Float ) {
-		if let context: Context = managedObjectContext as? Context, state: MTLBuffer = mtl.state, delta: MTLBuffer = mtl.delta {
-			let cmd: MTLCommandBuffer = context.newMTLCommandBuffer()
+		if let context: Context = managedObjectContext as? Context, cmd: MTLCommandBuffer = context.newMTLCommandBuffer() {
 			cmd.addCompletedHandler {(_)in
 				vDSP_vsub(
 					UnsafePointer<Float>(destination.map{Float($0)}), 1,
-					UnsafePointer<Float>(state.contents()), 1,
-					UnsafeMutablePointer<Float>(delta.contents()), 1,
+					self.buf.state.scalar.baseAddress, 1,
+					self.buf.error.scalar.baseAddress, 1,
 					UInt(self.width)
 				)
 			}
@@ -87,36 +83,36 @@ extension Cell: Network {
 }
 extension Cell {
 	public func setState ( let newValue buffer: [Bool] ) {
-		if let context: Context = managedObjectContext as? Context, target: MTLBuffer = mtl.state {
-			let cmd: MTLCommandBuffer = context.newMTLCommandBuffer()
+		if let context: Context = managedObjectContext as? Context, cmd: MTLCommandBuffer = context.newMTLCommandBuffer() {
 			cmd.addCompletedHandler {(_)in
-				NSData(bytesNoCopy: UnsafeMutablePointer(buffer.map{Float($0)}), length: sizeof(Float)*buffer.count, freeWhenDone: false).getBytes(target.contents(), length: target.length)
+				NSData(bytesNoCopy: UnsafeMutablePointer(buffer.map{Float($0)}), length: sizeof(Float)*buffer.count, freeWhenDone: false).getBytes(UnsafeMutablePointer<Void>(self.buf.state.raw.bytes), length: self.buf.state.raw.length)
 			}
 			cmd.commit()
+		} else {
+			NSData(bytesNoCopy: UnsafeMutablePointer(buffer.map{Float($0)}), length: sizeof(Float)*buffer.count, freeWhenDone: false).getBytes(UnsafeMutablePointer<Void>(buf.state.raw.bytes), length: buf.state.raw.length)
 		}
 	}
 	public func getState ( let callback fun: ([Bool]->Void) ) {
-		if let context: Context = managedObjectContext as? Context, source: MTLBuffer = mtl.state {
-			let cmd: MTLCommandBuffer = context.newMTLCommandBuffer()
+		if let context: Context = managedObjectContext as? Context, cmd: MTLCommandBuffer = context.newMTLCommandBuffer() {
 			cmd.addCompletedHandler {(_)in
-				fun(UnsafeMutableBufferPointer<Float>(start: UnsafeMutablePointer<Float>(source.contents()), count: source.length/sizeof(Float)).map{Bool($0)})
+				fun(self.buf.state.scalar.map{Bool($0)})
 			}
 			cmd.commit()
+		} else {
+			fun(buf.state.scalar.map{Bool($0)})
 		}
 	}
 	public var state: [Bool] {
 		get {
 			var result: [Float] = [Float](count: width, repeatedValue: 0.0)
-			if let
-				context: Context = managedObjectContext as? Context,
-				buffer: MTLBuffer = mtl.state
-			{
-				let cmd: MTLCommandBuffer = context.newMTLCommandBuffer()
+			if let context: Context = managedObjectContext as? Context, cmd: MTLCommandBuffer = context.newMTLCommandBuffer() {
 				cmd.addCompletedHandler {(_)in
-					NSData(bytesNoCopy: buffer.contents(), length: buffer.length, freeWhenDone: false).getBytes(&result, length: sizeof(Float)*result.count)
+					self.buf.state.raw.getBytes(&result, length: sizeof(Float)*result.count)
 				}
 				cmd.commit()
 				cmd.waitUntilCompleted()
+			} else {
+				buf.state.raw.getBytes(&result, length: sizeof(Float)*result.count)
 			}
 			return result.map{Bool($0)}
 		}
@@ -125,39 +121,39 @@ extension Cell {
 		}
 	}
 	public func setValue ( let newValue buffer: [Float] ) {
-		if let context: Context = managedObjectContext as? Context, target: MTLBuffer = mtl.value {
-			let cmd: MTLCommandBuffer = context.newMTLCommandBuffer()
+		if let cmd: MTLCommandBuffer = (managedObjectContext as? Context)?.newMTLCommandBuffer() {
 			cmd.addCompletedHandler {(_)in
-				NSData(bytesNoCopy: UnsafeMutablePointer(buffer), length: sizeof(Float)*buffer.count, freeWhenDone: false).getBytes(target.contents(), length: target.length)
+				NSData(bytesNoCopy: UnsafeMutablePointer(buffer), length: sizeof(Float)*buffer.count, freeWhenDone: false).getBytes(UnsafeMutablePointer<Void>(self.buf.value.raw.bytes), length: self.buf.value.raw.length)
 			}
 			cmd.commit()
+		} else {
+			NSData(bytesNoCopy: UnsafeMutablePointer(buffer), length: sizeof(Float)*buffer.count, freeWhenDone: false).getBytes(UnsafeMutablePointer<Void>(buf.value.raw.bytes), length: buf.value.raw.length)
 		}
 	}
-	public func getValue ( let callback fun: ([Float]->Void) ) {
-		if let context: Context = managedObjectContext as? Context, source: MTLBuffer = mtl.value {
-			let cmd: MTLCommandBuffer = context.newMTLCommandBuffer()
+	public func getValue ( let callback fun: ([Float] -> Void) ) {
+		if let cmd: MTLCommandBuffer = (managedObjectContext as? Context)?.newMTLCommandBuffer() {
 			cmd.addCompletedHandler {(_)in
-				fun(Array<Float>(UnsafeMutableBufferPointer<Float>(start: UnsafeMutablePointer<Float>(source.contents()), count: source.length/sizeof(Float))))
+				fun(Array<Float>(self.buf.value.scalar))
 			}
 			cmd.commit()
+		} else {
+			fun(Array<Float>(buf.value.scalar))
 		}
 	}
 }
 extension Cell: CoreDataSharedMetal {
 	func setup () {
 		if let context: Context = managedObjectContext as? Context {
-			mtl.bias = context.newBuffer(data: bias)
+			buf.bias = context.newBuffer(data: bias)
+			buf.stage = context.newBuffer(length: sizeof(UInt8))
+			buf.noise = context.newBuffer(length: sizeof(UInt8)*width)
+			buf.value = context.newBuffer(length: sizeof(Float)*width)
+			buf.lucky = context.newBuffer(length: sizeof(Float)*width)
+			buf.state = context.newBuffer(length: sizeof(Float)*width)
+			buf.error = context.newBuffer(length: sizeof(Float)*width)
+			buf.delta = context.newBuffer(length: sizeof(Float)*width)
 			
-			bias = mtl.bias!.raw
-			
-			
-			mtl.stage = context.newMTLBuffer(length: sizeof(UInt8))
-			mtl.noise = context.newMTLBuffer(length: sizeof(UInt8)*width)
-			mtl.value = context.newMTLBuffer(length: sizeof(Float)*width)
-			mtl.lucky = context.newMTLBuffer(length: sizeof(Float)*width)
-			mtl.state = context.newMTLBuffer(length: sizeof(Float)*width)
-			mtl.error = context.newMTLBuffer(length: sizeof(Float)*width)
-			mtl.delta = context.newMTLBuffer(length: sizeof(Float)*width)
+			bias = buf.bias.raw
 		}
 	}
 	public override func awakeFromInsert() {

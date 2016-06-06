@@ -160,31 +160,14 @@ extension Context {
 	}
 }
 internal extension Context {
-	internal struct Buffer {
-		let mtl: MTLBuffer?
-		let len: Int
-		let raw: NSData
-		var vec: UnsafeMutablePointer<float4>
-		var mat: UnsafeMutablePointer<float4x4>
-	}
 	internal func newBuffer ( let length length: Int ) -> Buffer {
-		let mtl: MTLBuffer = device.newBufferWithLength(length, options: .CPUCacheModeDefaultCache)
 		return Buffer(
-			mtl: mtl,
-			len: mtl.length,
-			raw: NSData(bytesNoCopy: mtl.contents(), length: mtl.length, freeWhenDone: false),
-			vec: UnsafeMutablePointer<float4>(mtl.contents()),
-			mat: UnsafeMutablePointer<float4x4>(mtl.contents())
+			mtl: device.newBufferWithLength(sizeof(Float)*length, options: .CPUCacheModeDefaultCache)
 		)
 	}
 	internal func newBuffer ( let data data: NSData ) -> Buffer {
-		let mtl: MTLBuffer = device.newBufferWithBytes(data.bytes, length: data.length, options: .CPUCacheModeDefaultCache)
 		return Buffer(
-			mtl: mtl,
-			len: mtl.length,
-			raw: NSData(bytesNoCopy: mtl.contents(), length: mtl.length, freeWhenDone: false),
-			vec: UnsafeMutablePointer<float4>(mtl.contents()),
-			mat: UnsafeMutablePointer<float4x4>(mtl.contents())
+			mtl: device.newBufferWithBytes(data.bytes, length: data.length, options: .CPUCacheModeDefaultCache)
 		)
 	}
 }
@@ -192,9 +175,12 @@ internal extension Context {
 	func entropy ( let buffer: MTLBuffer ) {
 		rng.readDataOfLength(buffer.length).getBytes(buffer.contents(), length: buffer.length)
 	}
+	func random ( let buffer: Buffer ) {
+		rng.readDataOfLength(buffer.raw.length).getBytes(UnsafeMutablePointer(buffer.raw.bytes), length: buffer.raw.length)
+	}
 }
 internal extension Context {
-	func newMTLCommandBuffer() -> MTLCommandBuffer {
+	func newMTLCommandBuffer() -> MTLCommandBuffer? {
 		return queue.commandBuffer()
 	}
 }
