@@ -6,6 +6,7 @@
 //
 //
 
+import Accelerate
 import CoreData
 import Metal
 
@@ -17,11 +18,6 @@ class Edge: NSManagedObject {
 		var gain: MTLBuffer?
 	}
 	let mtl: MTLRef = MTLRef()
-}
-extension Edge {
-	override func awakeFromFetch() {
-		
-	}
 }
 extension Edge: Network {
 	func clear ( ) {
@@ -41,5 +37,21 @@ extension Edge: CoreDataSharedMetal {
 			gain = NSData(bytesNoCopy: mtlgain.contents(), length: mtlgain.length, freeWhenDone: false)
 			mtl.gain = mtlgain
 		}
+	}
+	override func awakeFromInsert() {
+		super.awakeFromInsert()
+	}
+	override func awakeFromFetch() {
+		super.awakeFromFetch()
+		setup()
+	}
+	override func awakeFromSnapshotEvents(flags: NSSnapshotEventType) {
+		super.awakeFromSnapshotEvents(flags)
+		setup()
+	}
+	override func awakeAfterUsingCoder(aDecoder: NSCoder) -> AnyObject? {
+		let result: AnyObject? = super.awakeAfterUsingCoder(aDecoder)
+		setup()
+		return result
 	}
 }
