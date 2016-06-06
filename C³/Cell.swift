@@ -32,22 +32,24 @@ public class Cell: NSManagedObject {
 }
 extension Cell: Network {
 	public func clear ( ) {
-		let cmd: MTLCommandBuffer = context.newMTLCommandBuffer()
-		let blit: MTLBlitCommandEncoder = cmd.blitCommandEncoder()
-		for buffer in [mtl.value, mtl.delta ] {
-			if let buffer: MTLBuffer = buffer {
-				blit.fillBuffer(buffer, range: NSRange(location: 0, length: buffer.length), value: 0)
+		if let context: Context = managedObjectContext as? Context {
+			let cmd: MTLCommandBuffer = context.newMTLCommandBuffer()
+			let blit: MTLBlitCommandEncoder = cmd.blitCommandEncoder()
+			for buffer in [mtl.value, mtl.delta ] {
+				if let buffer: MTLBuffer = buffer {
+					blit.fillBuffer(buffer, range: NSRange(location: 0, length: buffer.length), value: 0)
+				}
 			}
-		}
-		blit.endEncoding()
-		cmd.addCompletedHandler {(_)in
-			if let buffer: MTLBuffer = self.mtl.noise {
-				self.context.entropy(buffer)
+			blit.endEncoding()
+			cmd.addCompletedHandler {(_)in
+				if let buffer: MTLBuffer = self.mtl.noise {
+					context.entropy(buffer)
+				}
 			}
-		}
-		cmd.commit()
-		input.forEach {
-			$0.clear()
+			cmd.commit()
+			input.forEach {
+				$0.clear()
+			}
 		}
 	}
 	public func chain ( let callback: ( Cell -> Void ) ) {
@@ -70,15 +72,17 @@ extension Cell: Network {
 }
 extension Cell: CoreDataSharedMetal {
 	func setup () {
-		let mtlbias: MTLBuffer = context.allocate(data: bias)
-		bias = NSData(bytesNoCopy: mtlbias.contents(), length: mtlbias.length, freeWhenDone: false)
-		mtl.bias = mtlbias
-		mtl.stage = context.allocate(length: sizeof(UInt8))
-		mtl.noise = context.allocate(length: sizeof(UInt8)*width)
-		mtl.value = context.allocate(length: sizeof(Float)*width)
-		mtl.lucky = context.allocate(length: sizeof(Float)*width)
-		mtl.state = context.allocate(length: sizeof(Float)*width)
-		mtl.delta = context.allocate(length: sizeof(Float)*width)
+		if let context: Context = managedObjectContext as? Context {
+			let mtlbias: MTLBuffer = context.allocate(data: bias)
+			bias = NSData(bytesNoCopy: mtlbias.contents(), length: mtlbias.length, freeWhenDone: false)
+			mtl.bias = mtlbias
+			mtl.stage = context.allocate(length: sizeof(UInt8))
+			mtl.noise = context.allocate(length: sizeof(UInt8)*width)
+			mtl.value = context.allocate(length: sizeof(Float)*width)
+			mtl.lucky = context.allocate(length: sizeof(Float)*width)
+			mtl.state = context.allocate(length: sizeof(Float)*width)
+			mtl.delta = context.allocate(length: sizeof(Float)*width)
+		}
 	}
 }
 extension Context {
