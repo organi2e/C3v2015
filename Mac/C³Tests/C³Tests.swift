@@ -5,12 +5,11 @@
 //  Created by Kota Nakano on 6/6/16.
 //
 //
-
+import simd
 import XCTest
-//@testable
-import C3
+@testable import C3
 
-class C_Tests: XCTestCase {
+class C3Tests: XCTestCase {
     
     override func setUp() {
         super.setUp()
@@ -35,7 +34,31 @@ class C_Tests: XCTestCase {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
         super.tearDown()
     }
-    
+	
+	func testMatrixMult() {
+		do {
+			let context: Context = try Context()
+			let a: Buffer = context.newBuffer(length: 16)
+			let b: Buffer = context.newBuffer(length: 16)
+			let c: Buffer = context.newBuffer(length: 16)
+			
+			b.vector[2] = float4(1.0, 2.0, 3.0, 4.0)
+			a.scalar[0] = 1.0
+			a.vector[1].y = 2.0
+			a.matrix[0][2][2] = 3.0
+			a.matrix[0][3][3] = 4.0
+			
+			c.matrix[0] = a.matrix[0] * b.matrix[0]
+			
+			XCTAssert(UnsafePointer<Void>(a.raw.bytes) == UnsafePointer<Void>(a.mtl!.contents()))
+			
+			print(Array(c.scalar))
+			
+		} catch let e {
+			print(e)
+		}
+	}
+	
     func testExample() {
         // This is an example of a functional test case.
         // Use XCTAssert and related functions to verify your tests produce the correct results.

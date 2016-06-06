@@ -14,10 +14,10 @@ class Edge: NSManagedObject {
 	@NSManaged var gain: NSData
 	@NSManaged var input: Cell
 	@NSManaged var output: Cell
-	class MTLRef {
-		var gain: MTLBuffer?
+	class Buffers {
+		var gain: Buffer = Buffer()
 	}
-	let mtl: MTLRef = MTLRef()
+	let buf: Buffers = Buffers()
 }
 extension Edge: Network {
 	func clear ( ) {
@@ -33,9 +33,7 @@ extension Edge: Network {
 extension Edge: CoreDataSharedMetal {
 	func setup() {
 		if let context: Context = managedObjectContext as? Context {
-			let mtlgain: MTLBuffer = context.newMTLBuffer(data: gain)
-			gain = NSData(bytesNoCopy: mtlgain.contents(), length: mtlgain.length, freeWhenDone: false)
-			mtl.gain = mtlgain
+			buf.gain = Buffer(mtl: context.newMTLBuffer(data: gain))
 		}
 	}
 	override func awakeFromInsert() {
