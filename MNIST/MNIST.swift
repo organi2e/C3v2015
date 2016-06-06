@@ -10,8 +10,8 @@ public class Image {
 	public let rows: Int
 	public let columns: Int
 	public let label: UInt8
-	public let pixel: [UInt8]
-	private init(let pixel: [UInt8], let label: UInt8, let rows: Int, let columns: Int) {
+	public let pixel: [Float]
+	private init(let pixel: [Float], let label: UInt8, let rows: Int, let columns: Int) {
 		self.label = label
 		self.pixel = pixel
 		self.rows = rows
@@ -41,7 +41,7 @@ public class Image {
 				if length == labelsbody.count {
 					let pixels: [[UInt8]] = pixelsbody.chunk(rows*columns)
 					let labels: [UInt8] = labelsbody
-					result = zip(pixels, labels).map{Image(pixel: $0, label: $1, rows: rows, columns: columns)}
+					result = zip(pixels, labels).map{Image(pixel: $0.map{Float($0)}, label: $1, rows: rows, columns: columns)}
 				}
 			}
 		}
