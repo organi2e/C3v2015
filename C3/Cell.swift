@@ -15,6 +15,10 @@ public class Cell: NSManagedObject {
 	@NSManaged var bias: NSData
 	@NSManaged var input: Set<Edge>
 	@NSManaged var output: Set<Edge>
+	struct MetalRef: {
+		let value: MTLBuffer
+	}
+	var mtl: MetalRef?
 }
 extension Cell {
 	public func chain () {
@@ -29,9 +33,10 @@ extension Cell {
 		}
 	}
 }
-extension Cell {
-	private func allocate() {
-	
+extension Cell: CoreDataSharedMetal {
+	func reallocate () {
+		(bias, mtl.bias) = context.allocates(bias)
+		mtl.value = context.allocate(sizeof(Float)*width)
 	}
 }
 extension Context {

@@ -11,62 +11,74 @@ import simd
 
 public class Context: NSManagedObjectContext {
 	
-	let storage: NSURL?
+	private let dispatch: (queue: dispatch_queue_t, semaphore: dispatch_semaphore_t) = (
+		queue: dispatch_queue_create(Config.dispatch.serial, DISPATCH_QUEUE_SERIAL),
+		semaphore: dispatch_semaphore_create(1)
+	)
 	
-	let device: MTLDevice
-	let library: MTLLibrary
-	let queue: MTLCommandQueue
+	private let storage: NSURL?
+	private let device: MTLDevice
+	private let library: MTLLibrary
+	private let queue: MTLCommandQueue
+	
 	
 	public init( let storage: NSURL? ) throws {
 		(device, library) = try {
 			guard let device: MTLDevice = MTLCreateSystemDefaultDevice() else {
-				throw NSError(domain: "", code: 404, userInfo: nil)
+				throw MetalError.DeviceNotFound
 			}
-			guard let path: String = NSBundle(forClass: Context.self).pathForResource("default", ofType: "metallib"), library: MTLLibrary = try device.newLibraryWithFile(path) else {
-				throw NSError(domain: "Metal: Library", code: 0, userInfo: nil)
+			guard let path: String = NSBundle(forClass: Context.self).pathForResource(Context.metal.name, ofType: Context.metal.ext), library: MTLLibrary = try device.newLibraryWithFile(path) else {
+				throw MetalError.LibraryNotAvailable
 			}
 			return(device, library)
 		}()
-		
 		self.queue = device.newCommandQueue()
 		self.storage = storage
+		guard 0 < Context.rng else { throw SystemError.RNGNotFound }
 		
 		let bundle: NSBundle = NSBundle(forClass: Context.self)
-		guard let url: NSURL = bundle.URLForResource("C3", withExtension: "momd") else {
-			throw NSError(domain: "C3.framework", code: 404, userInfo: ["Reason": "Model not found"])
+		guard let url: NSURL = bundle.URLForResource(Context.coredata.name, withExtension: Context.coredata.ext) else {
+			throw CoreDataError.ModelNotFound
 		}
 		guard let model: NSManagedObjectModel = NSManagedObjectModel(contentsOfURL: url) else {
-			throw NSError(domain: "C3.framework", code: 500, userInfo: ["Reason": "Model was broken"])
+			throw CoreDataError.ModelNotAvailable
 		}
+		
 		super.init(concurrencyType: .PrivateQueueConcurrencyType)
 		let storecoordinator: NSPersistentStoreCoordinator = NSPersistentStoreCoordinator(managedObjectModel: model)
 		try storecoordinator.addPersistentStoreWithType(storage == nil ? NSInMemoryStoreType : NSSQLiteStoreType, configuration: nil, URL: storage, options: nil)
 		persistentStoreCoordinator = storecoordinator
 	}
+	public override func encodeWithCoder(aCoder: NSCoder) {
+		super.encodeWithCoder(aCoder)
+		aCoder.encodeObject(storage, forKey: Context.storageKey)
+	}
 	required public init?(coder aDecoder: NSCoder) {
 		(device, library) = {
 			guard let device: MTLDevice = MTLCreateSystemDefaultDevice() else {
-				fatalError("This platform does not support Metal API")
+				fatalError(MetalError.DeviceNotFound.rawValue)
 			}
-			guard let path: String = NSBundle(forClass: Context.self).pathForResource("default", ofType: "metallib"), library: MTLLibrary = try!device.newLibraryWithFile(path) else {
-				fatalError("Metal API Library might be broken")
+			guard let path: String = NSBundle(forClass: Context.self).pathForResource(Context.metal.name, ofType: Context.metal.ext), library: MTLLibrary = try!device.newLibraryWithFile(path) else {
+				fatalError(MetalError.LibraryNotAvailable.rawValue)
 			}
 			return(device, library)
 		}()
 		queue = device.newCommandQueue()
-		storage = nil
+		storage = aDecoder.decodeObjectForKey(Context.storageKey)as?NSURL
 		super.init(coder: aDecoder)
 		
+		guard 0 < Context.rng else { fatalError(SystemError.RNGNotFound.rawValue) }
+		
 		let bundle: NSBundle = NSBundle(forClass: Context.self)
-		guard let url: NSURL = bundle.URLForResource("C3", withExtension: "momd") else {
-			fatalError("Model not found")
+		guard let url: NSURL = bundle.URLForResource(Context.coredata.name, withExtension: Context.coredata.ext) else {
+			fatalError(CoreDataError.ModelNotFound.rawValue)
 		}
 		guard let model: NSManagedObjectModel = NSManagedObjectModel(contentsOfURL: url) else {
-			fatalError("Model was broken")
+			fatalError(CoreDataError.ModelNotAvailable.rawValue)
 		}
 		let storecoordinator: NSPersistentStoreCoordinator = NSPersistentStoreCoordinator(managedObjectModel: model)
 		do {
-			let storetype: String = storage?.pathExtension == "sqlite" ? NSSQLiteStoreType : storage?.pathExtension == "bin" ? NSBinaryStoreType : NSInMemoryStoreType
+			let storetype: String = storage == nil ? NSInMemoryStoreType : storage?.pathExtension == "sqlite" ? NSSQLiteStoreType : NSBinaryStoreType
 			try storecoordinator.addPersistentStoreWithType(storetype, configuration: nil, URL: storage, options: nil)
 			persistentStoreCoordinator = storecoordinator
 		} catch let e as NSError {
@@ -78,6 +90,16 @@ public class Context: NSManagedObjectContext {
 		let nsdata: NSData = NSData(bytesNoCopy: mtlbuffer.contents(), length: mtlbuffer.length, freeWhenDone: false)
 		return(nsdata, mtlbuffer)
 	}
+}
+extension Context {
+	private static let rng: Int32 = open(Config.rng, O_RDONLY)
+	private static let storageKey: String = "storage"
+	private static let coredata: (name: String, ext: String) = (name: "C3", ext: "momd")
+	private static let metal: (name: String, ext: String) = (name: "default", ext: "metallib")
+	private static let dispatch: (queue: dispatch_queue_t, semaphore: dispatch_semaphore_t) = (
+		queue: dispatch_queue_create(Config.dispatch.parallel, DISPATCH_QUEUE_CONCURRENT),
+		semaphore: dispatch_semaphore_create(1)
+	)
 }
 extension Context {
 	public func store ( ) throws {
@@ -131,18 +153,22 @@ extension Context {
 			self.deleteObject(object)
 		}
 	}
-}
-extension Context {
-	internal static let dispatch: (serial: dispatch_queue_t, parallel: dispatch_queue_t) = (
-		serial: dispatch_queue_create("com.organi2e.kn.kotan.C3.dispatch.serial", DISPATCH_QUEUE_SERIAL),
-		parallel: dispatch_queue_create("com.organi2e.kn.kotan.C3.dispatch.serial", DISPATCH_QUEUE_CONCURRENT)
-	)
+	internal func allocate ( let length: Int ) -> MTLBuffer {
+		return device.newBufferWithLength(length, options: .CPUCacheModeDefaultCache)
+	}
+	internal func allocates ( let data: NSData ) -> ( NSData, MTLBuffer ) {
+		let mtlbuf: MTLBuffer = device.newBufferWithBytes(data.bytes, length: data.length, options: .CPUCacheModeDefaultCache)
+		return(NSData(bytesNoCopy: mtlbuf.contents(), length: mtlbuf.length, freeWhenDone: false), mtlbuf)
+	}
 }
 internal extension NSManagedObject {
 	var context: Context {
 		guard let context: Context = managedObjectContext as? Context else {
-			fatalError("Invalid operation")
+			fatalError(SystemError.InvalidOperation.rawValue)
 		}
 		return context
 	}
+}
+internal protocol CoreDataSharedMetal {
+	func reallocate ()
 }
