@@ -146,10 +146,10 @@ extension Context {
 			self.deleteObject(object)
 		}
 	}
-	internal func allocate ( let length length: Int ) -> MTLBuffer {
+	internal func newMTLBuffer ( let length length: Int ) -> MTLBuffer {
 		return device.newBufferWithLength(length, options: .CPUCacheModeDefaultCache)
 	}
-	internal func allocate ( let data data: NSData ) -> MTLBuffer {
+	internal func newMTLBuffer ( let data data: NSData ) -> MTLBuffer {
 		return device.newBufferWithBytes(data.bytes, length: data.length, options: .CPUCacheModeDefaultCache)
 	}
 	public func join ( ) {
