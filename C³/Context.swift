@@ -152,6 +152,11 @@ extension Context {
 	internal func allocate ( let data data: NSData ) -> MTLBuffer {
 		return device.newBufferWithBytes(data.bytes, length: data.length, options: .CPUCacheModeDefaultCache)
 	}
+	public func join ( ) {
+		let cmd: MTLCommandBuffer = queue.commandBuffer()
+		cmd.commit()
+		cmd.waitUntilCompleted()
+	}
 }
 internal extension Context {
 	func entropy ( let buffer: MTLBuffer ) {

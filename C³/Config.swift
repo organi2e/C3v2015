@@ -15,7 +15,6 @@ internal struct Config {
 		serial: "\(Config.identifier).dispatch.queue.serial",
 		parallel: "\(Config.identifier).dispatch.queue.parallel"
 	)
-	static let rngpath: String = "/dev/urandom"
 	static let rngurl: NSURL = NSURL(fileURLWithPath: "/dev/urandom")
 }
 internal protocol CoreDataSharedMetal {

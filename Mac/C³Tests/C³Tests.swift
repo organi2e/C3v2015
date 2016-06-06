@@ -1,15 +1,15 @@
 //
-//  C3Tests.swift
-//  C3Tests
+//  C_Tests.swift
+//  C³Tests
 //
-//  Created by Kota Nakano on 6/3/16.
+//  Created by Kota Nakano on 6/6/16.
 //
 //
 
 import XCTest
-@testable import C3
+@testable import C_
 
-class C3Tests: XCTestCase {
+class C_Tests: XCTestCase {
     
     override func setUp() {
         super.setUp()
