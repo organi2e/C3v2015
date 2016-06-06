@@ -8,13 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		878985E11D050F1C002C2A8D /* C³.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 878985D81D050F1C002C2A8D /* C³.xcdatamodeld */; };
-		878985E21D050F1C002C2A8D /* Cell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878985DA1D050F1C002C2A8D /* Cell.swift */; };
-		878985E31D050F1C002C2A8D /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878985DB1D050F1C002C2A8D /* Config.swift */; };
-		878985E41D050F1C002C2A8D /* Context.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878985DC1D050F1C002C2A8D /* Context.swift */; };
-		878985E51D050F1C002C2A8D /* Dict.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878985DD1D050F1C002C2A8D /* Dict.swift */; };
-		878985E61D050F1C002C2A8D /* Edge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878985DE1D050F1C002C2A8D /* Edge.swift */; };
-		878985E71D050F1C002C2A8D /* Error.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878985DF1D050F1C002C2A8D /* Error.swift */; };
-		878985E81D050F1C002C2A8D /* linalg.metal in Sources */ = {isa = PBXBuildFile; fileRef = 878985E01D050F1C002C2A8D /* linalg.metal */; };
 		878985ED1D050F33002C2A8D /* C³.h in Headers */ = {isa = PBXBuildFile; fileRef = 878985EB1D050F33002C2A8D /* C³.h */; };
 		878985F31D0510A1002C2A8D /* C³Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878985EF1D05108D002C2A8D /* C³Tests.swift */; };
 		878C7A7E1D01AEEC002CDFD1 /* C3.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 878C7A731D01AEEC002CDFD1 /* C3.framework */; };
@@ -75,13 +68,6 @@
 
 /* Begin PBXFileReference section */
 		878985D91D050F1C002C2A8D /* C3.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = C3.xcdatamodel; sourceTree = "<group>"; };
-		878985DA1D050F1C002C2A8D /* Cell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Cell.swift; path = "../../C³/Cell.swift"; sourceTree = "<group>"; };
-		878985DB1D050F1C002C2A8D /* Config.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Config.swift; path = "../../C³/Config.swift"; sourceTree = "<group>"; };
-		878985DC1D050F1C002C2A8D /* Context.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Context.swift; path = "../../C³/Context.swift"; sourceTree = "<group>"; };
-		878985DD1D050F1C002C2A8D /* Dict.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Dict.swift; path = "../../C³/Dict.swift"; sourceTree = "<group>"; };
-		878985DE1D050F1C002C2A8D /* Edge.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Edge.swift; path = "../../C³/Edge.swift"; sourceTree = "<group>"; };
-		878985DF1D050F1C002C2A8D /* Error.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Error.swift; path = "../../C³/Error.swift"; sourceTree = "<group>"; };
-		878985E01D050F1C002C2A8D /* linalg.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = linalg.metal; path = "../../C³/linalg.metal"; sourceTree = "<group>"; };
 		878985EB1D050F33002C2A8D /* C³.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "C³.h"; path = "C³/C³.h"; sourceTree = SOURCE_ROOT; };
 		878985EC1D050F33002C2A8D /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = "C³/Info.plist"; sourceTree = SOURCE_ROOT; };
 		878985EF1D05108D002C2A8D /* C³Tests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "C³Tests.swift"; path = "C³Tests/C³Tests.swift"; sourceTree = SOURCE_ROOT; };
@@ -165,13 +151,6 @@
 			isa = PBXGroup;
 			children = (
 				878985D81D050F1C002C2A8D /* C³.xcdatamodeld */,
-				878985DB1D050F1C002C2A8D /* Config.swift */,
-				878985DC1D050F1C002C2A8D /* Context.swift */,
-				878985DA1D050F1C002C2A8D /* Cell.swift */,
-				878985DD1D050F1C002C2A8D /* Dict.swift */,
-				878985DE1D050F1C002C2A8D /* Edge.swift */,
-				878985DF1D050F1C002C2A8D /* Error.swift */,
-				878985E01D050F1C002C2A8D /* linalg.metal */,
 				878985EB1D050F33002C2A8D /* C³.h */,
 				878985EC1D050F33002C2A8D /* Info.plist */,
 			);
@@ -398,13 +377,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				878985E11D050F1C002C2A8D /* C³.xcdatamodeld in Sources */,
-				878985E41D050F1C002C2A8D /* Context.swift in Sources */,
-				878985E61D050F1C002C2A8D /* Edge.swift in Sources */,
-				878985E51D050F1C002C2A8D /* Dict.swift in Sources */,
-				878985E81D050F1C002C2A8D /* linalg.metal in Sources */,
-				878985E21D050F1C002C2A8D /* Cell.swift in Sources */,
-				878985E71D050F1C002C2A8D /* Error.swift in Sources */,
-				878985E31D050F1C002C2A8D /* Config.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
