@@ -17,7 +17,6 @@
 		878985E81D050F1C002C2A8D /* linalg.metal in Sources */ = {isa = PBXBuildFile; fileRef = 878985E01D050F1C002C2A8D /* linalg.metal */; };
 		878985ED1D050F33002C2A8D /* C³.h in Headers */ = {isa = PBXBuildFile; fileRef = 878985EB1D050F33002C2A8D /* C³.h */; };
 		878985F31D0510A1002C2A8D /* C³Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878985EF1D05108D002C2A8D /* C³Tests.swift */; };
-		878985F41D0510A9002C2A8D /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 878985F01D05108D002C2A8D /* Info.plist */; };
 		878C7A7E1D01AEEC002CDFD1 /* C3.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 878C7A731D01AEEC002CDFD1 /* C3.framework */; };
 		878C7A921D01AF05002CDFD1 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878C7A911D01AF05002CDFD1 /* AppDelegate.swift */; };
 		878C7A941D01AF05002CDFD1 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878C7A931D01AF05002CDFD1 /* ViewController.swift */; };
@@ -368,7 +367,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				878985F41D0510A9002C2A8D /* Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
