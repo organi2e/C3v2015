@@ -39,7 +39,7 @@ internal class Computer {
 		}
 	}
 	
-	internal func gemv ( let y: Buffer, let beta: Float, let a: Buffer, let x: Buffer, let alpha: Float, let n: Int, let m: Int, let trans: Bool ) {
+	internal func gemv ( let y y: Buffer, let beta: Float, let a: Buffer, let x: Buffer, let alpha: Float, let n: Int, let m: Int, let trans: Bool ) {
 		if let mtl = mtl, pipeline: MTLComputePipelineState = mtl.pipeline["gemv"] {
 			let command: MTLCommandBuffer = mtl.queue.commandBuffer()
 			let encoder: MTLComputeCommandEncoder = command.computeCommandEncoder()
@@ -56,13 +56,7 @@ internal class Computer {
 			command.commit()
 		} else {
 			async {
-				(0..<y.vector.count).forEach {
-					let m: [float4x4] = $0.stride(to: n/4, by: m/4).map{a.matrix[$0]}
-					let v: [float4] = Array<float4>(x.vector)
-					let a: float4 = zip(m, v).map{$0*$1}.reduce(float4(0)){$0.0+$0.1}
-					let b: float4 = y.vector [ $0 ]
-					y.vector [ $0 ] = alpha * a + beta * b
-				}
+				Computer.gemv(y: y, beta: beta, a: a, x: x, alpha: alpha, n: n, m: m, trans: trans)
 			}
 		}
 	}
@@ -96,7 +90,13 @@ internal class Computer {
 	}
 }
 extension Computer {
-	static func gemv() {
-	
+	internal static func gemv ( let y y: Buffer, let beta: Float, let a: Buffer, let x: Buffer, let alpha: Float, let n: Int, let m: Int, let trans: Bool ) {
+		( 0 ..< y.vector.count ).forEach {
+			let m: [float4x4] = $0.stride(to: n/4, by: m/4).map{ a.matrix[ $0 ] }
+			let v: [float4] = Array<float4>( x.vector )
+			let a: float4 = zip ( m, v ).map{ $0 * $1 }.reduce ( float4(0) ) { $0.0 + $0.1 }
+			let b: float4 = y.vector [ $0 ]
+			y.vector [ $0 ] = alpha * a + beta * b
+		}
 	}
 }
