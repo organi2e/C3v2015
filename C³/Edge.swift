@@ -36,10 +36,10 @@ extension Edge: Network {
 }
 extension Edge: CoreDataSharedMetal {
 	func setup() {
-		print("via")
-		let mtlgain: MTLBuffer = context.allocate(data: gain)
-		print("dst")
-		gain = NSData(bytesNoCopy: mtlgain.contents(), length: mtlgain.length, freeWhenDone: false)
-		mtl.gain = mtlgain
+		if let context: Context = managedObjectContext as? Context {
+			let mtlgain: MTLBuffer = context.allocate(data: gain)
+			gain = NSData(bytesNoCopy: mtlgain.contents(), length: mtlgain.length, freeWhenDone: false)
+			mtl.gain = mtlgain
+		}
 	}
 }

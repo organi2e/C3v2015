@@ -33,7 +33,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 				}
 				O.correct( [true], eps: 0.1 )
 			}
-			context.join()
 			print("Done")
 		} catch let e {
 			print(String(e))

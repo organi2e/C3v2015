@@ -168,11 +168,3 @@ internal extension Context {
 		return queue.commandBuffer()
 	}
 }
-internal extension NSManagedObject {
-	var context: Context {
-		guard let context: Context = managedObjectContext as? Context else {
-			fatalError(SystemError.InvalidOperation.rawValue)
-		}
-		return context
-	}
-}
