@@ -5,6 +5,7 @@
 //  Created by Kota Nakano on 6/1/16.
 //
 //
+import Accelerate
 import CoreData
 import Metal
 import simd
@@ -17,7 +18,7 @@ public class Context: NSManagedObjectContext {
 	)
 	
 	private let storage: NSURL?
-	
+
 	private let rng: NSFileHandle
 	private let device: MTLDevice
 	private let library: MTLLibrary
@@ -156,6 +157,35 @@ extension Context {
 		let cmd: MTLCommandBuffer = queue.commandBuffer()
 		cmd.commit()
 		cmd.waitUntilCompleted()
+	}
+}
+internal extension Context {
+	internal struct Buffer {
+		let mtl: MTLBuffer?
+		let len: Int
+		let raw: NSData
+		var vec: UnsafeMutablePointer<float4>
+		var mat: UnsafeMutablePointer<float4x4>
+	}
+	internal func newBuffer ( let length length: Int ) -> Buffer {
+		let mtl: MTLBuffer = device.newBufferWithLength(length, options: .CPUCacheModeDefaultCache)
+		return Buffer(
+			mtl: mtl,
+			len: mtl.length,
+			raw: NSData(bytesNoCopy: mtl.contents(), length: mtl.length, freeWhenDone: false),
+			vec: UnsafeMutablePointer<float4>(mtl.contents()),
+			mat: UnsafeMutablePointer<float4x4>(mtl.contents())
+		)
+	}
+	internal func newBuffer ( let data data: NSData ) -> Buffer {
+		let mtl: MTLBuffer = device.newBufferWithBytes(data.bytes, length: data.length, options: .CPUCacheModeDefaultCache)
+		return Buffer(
+			mtl: mtl,
+			len: mtl.length,
+			raw: NSData(bytesNoCopy: mtl.contents(), length: mtl.length, freeWhenDone: false),
+			vec: UnsafeMutablePointer<float4>(mtl.contents()),
+			mat: UnsafeMutablePointer<float4x4>(mtl.contents())
+		)
 	}
 }
 internal extension Context {

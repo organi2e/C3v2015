@@ -6,8 +6,8 @@
 //
 //
 
-import CoreData
 import Accelerate
+import CoreData
 import Metal
 
 public class Cell: NSManagedObject {
@@ -21,7 +21,9 @@ public class Cell: NSManagedObject {
 	@NSManaged private var output: Set<Edge>
 	
 	private class MTLRef {
-		var bias: MTLBuffer?
+		
+		var bias: Context.Buffer?
+		
 		var stage: MTLBuffer?
 		var noise: MTLBuffer?
 		var value: MTLBuffer?
@@ -102,7 +104,6 @@ extension Cell {
 			cmd.commit()
 		}
 	}
-	
 	public var state: [Bool] {
 		get {
 			var result: [Float] = [Float](count: width, repeatedValue: 0.0)
@@ -141,14 +142,15 @@ extension Cell {
 			cmd.commit()
 		}
 	}
-
 }
 extension Cell: CoreDataSharedMetal {
 	func setup () {
 		if let context: Context = managedObjectContext as? Context {
-			let mtlbias: MTLBuffer = context.newMTLBuffer(data: bias)
-			bias = NSData(bytesNoCopy: mtlbias.contents(), length: mtlbias.length, freeWhenDone: false)
-			mtl.bias = mtlbias
+			mtl.bias = context.newBuffer(data: bias)
+			
+			bias = mtl.bias!.raw
+			
+			
 			mtl.stage = context.newMTLBuffer(length: sizeof(UInt8))
 			mtl.noise = context.newMTLBuffer(length: sizeof(UInt8)*width)
 			mtl.value = context.newMTLBuffer(length: sizeof(Float)*width)
@@ -158,15 +160,32 @@ extension Cell: CoreDataSharedMetal {
 			mtl.delta = context.newMTLBuffer(length: sizeof(Float)*width)
 		}
 	}
+	public override func awakeFromInsert() {
+		super.awakeFromInsert()
+		attribute = [:]
+	}
+	public override func awakeFromFetch() {
+		super.awakeFromFetch()
+		setup()
+	}
+	public override func awakeFromSnapshotEvents(flags: NSSnapshotEventType) {
+		super.awakeFromSnapshotEvents(flags)
+		setup()
+	}
+	public override func awakeAfterUsingCoder(aDecoder: NSCoder) -> AnyObject? {
+		let result: AnyObject? = super.awakeAfterUsingCoder(aDecoder)
+		setup()
+		return result
+	}
 }
 extension Context {
-	public func newCell ( let width width: Int, let label: String = "", let recur: Bool = false, let input: [Cell] = [] ) -> Cell? {
+	public func newCell ( let width size: Int, let label: String = "", let recur: Bool = false, let input: [Cell] = [] ) -> Cell? {
 		let cell: Cell? = new()
+		let width: Int = max( size + 0x0f - ( ( size + 0x0f ) % 0x10 ), 0x10 )
 		if let cell: Cell = cell {
-			cell.width = width + 3 - ( ( width + 3 ) % 4 )
+			cell.width = width
 			cell.label = label
 			cell.recur = recur
-			cell.attribute = [:]
 			cell.bias = NSData(bytes: [Float](count: width, repeatedValue: 0.0), length: sizeof(Float)*width)
 			cell.setup()
 			

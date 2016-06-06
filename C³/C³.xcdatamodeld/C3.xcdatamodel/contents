@@ -5,7 +5,7 @@
         <attribute name="bias" attributeType="Binary" syncable="YES"/>
         <attribute name="label" attributeType="String" indexed="YES" syncable="YES"/>
         <attribute name="recur" attributeType="Boolean" syncable="YES"/>
-        <attribute name="width" attributeType="Integer 64" defaultValueString="0" syncable="YES"/>
+        <attribute name="width" attributeType="Integer 64" syncable="YES"/>
         <relationship name="input" toMany="YES" deletionRule="Nullify" destinationEntity="Edge" inverseName="output" inverseEntity="Edge" syncable="YES"/>
         <relationship name="outpu" toMany="YES" deletionRule="Nullify" destinationEntity="Edge" inverseName="input" inverseEntity="Edge" syncable="YES"/>
     </entity>
@@ -19,8 +19,8 @@
         <relationship name="output" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Cell" inverseName="input" inverseEntity="Cell" syncable="YES"/>
     </entity>
     <elements>
+        <element name="Cell" positionX="36" positionY="117" width="128" height="30"/>
         <element name="Dict" positionX="18" positionY="81" width="128" height="75"/>
         <element name="Edge" positionX="54" positionY="108" width="128" height="90"/>
-        <element name="Cell" positionX="36" positionY="117" width="128" height="150"/>
     </elements>
 </model>
