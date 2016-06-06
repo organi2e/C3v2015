@@ -11,6 +11,8 @@ internal struct Config {
 	static let bundle: NSBundle = NSBundle(forClass: Context.self)
 	static let identifier: String = Config.bundle.bundleIdentifier!
 	static let framework: String = Config.bundle.infoDictionary!["CFBundleName"]as!String
+	static let coredata: (name: String, ext: String) = (name: "C³", ext: "momd")
+	static let metal: (name: String, ext: String) = (name: "default", ext: "metallib")
 	static let dispatch: (serial: String, parallel: String) = (
 		serial: "\(Config.identifier).dispatch.queue.serial",
 		parallel: "\(Config.identifier).dispatch.queue.parallel"
@@ -24,4 +26,8 @@ protocol Network {
 	func clear ( )
 	func chain ( let callback: ( Cell -> Void ) )
 	func train ( let eps: Float )
+}
+public enum Platform: String {
+	case GPU = "GPU"
+	case CPU = "CPU"
 }

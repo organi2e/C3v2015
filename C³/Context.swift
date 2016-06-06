@@ -12,42 +12,23 @@ import simd
 
 public class Context: NSManagedObjectContext {
 	
-	public enum Platform: String {
-		case GPU = "GPU"
-		case CPU = "CPU"
-	}
-	
 	private let dispatch: (queue: dispatch_queue_t, semaphore: dispatch_semaphore_t) = (
 		queue: dispatch_queue_create(Config.dispatch.serial, DISPATCH_QUEUE_SERIAL),
 		semaphore: dispatch_semaphore_create(1)
 	)
 	
-	public let platform: Platform
 	public let storage: NSURL?
 	
 	private let rng: NSFileHandle
+	private let computer: Computer
 	
-	private let device: MTLDevice
-	private let library: MTLLibrary
-	private let queue: MTLCommandQueue
-	
-	public init( let storage nsurl: NSURL? = nil, let required: Platform = .GPU ) throws {
+	public init( let storage nsurl: NSURL? = nil, let requiredPlatform required: Platform = .GPU ) throws {
 		rng = try NSFileHandle(forReadingFromURL: Config.rngurl)
-		(device, library) = try {
-			guard let device: MTLDevice = MTLCreateSystemDefaultDevice() else {
-				throw MetalError.DeviceNotFound
-			}
-			guard let path: String = NSBundle(forClass: Context.self).pathForResource(Context.metal.name, ofType: Context.metal.ext), library: MTLLibrary = try device.newLibraryWithFile(path) else {
-				throw MetalError.LibraryNotAvailable
-			}
-			return(device, library)
-		}()
-		queue = device.newCommandQueue()
+		computer = try Computer(platform: required)
 		storage = nsurl
-		platform = required
 		super.init(concurrencyType: .PrivateQueueConcurrencyType)
 		
-		guard let url: NSURL = Config.bundle.URLForResource(Context.coredata.name, withExtension: Context.coredata.ext) else {
+		guard let url: NSURL = Config.bundle.URLForResource(Config.coredata.name, withExtension: Config.coredata.ext) else {
 			throw CoreDataError.ModelNotFound
 		}
 		guard let model: NSManagedObjectModel = NSManagedObjectModel(contentsOfURL: url) else {
@@ -63,28 +44,18 @@ public class Context: NSManagedObjectContext {
 		aCoder.encodeObject(storage, forKey: Context.storageKey)
 	}
 	required public init?(coder aDecoder: NSCoder) {
-		(device, library, rng) = {
-			guard let device: MTLDevice = MTLCreateSystemDefaultDevice() else {
-				fatalError(MetalError.DeviceNotFound.rawValue)
-			}
-			guard let path: String = NSBundle(forClass: Context.self).pathForResource(Context.metal.name, ofType: Context.metal.ext), library: MTLLibrary = try!device.newLibraryWithFile(path) else {
-				fatalError(MetalError.LibraryNotAvailable.rawValue)
-			}
-			guard let rng: NSFileHandle = try? NSFileHandle(forReadingFromURL: Config.rngurl) else {
-				fatalError(SystemError.RNGNotFound.rawValue)
-			}
-			return(device, library, rng)
-		}()
-		queue = device.newCommandQueue()
-		storage = aDecoder.decodeObjectForKey(Context.storageKey)as?NSURL
-		guard let platform: Platform = aDecoder.decodeObjectForKey(Context.platformKey)as?Platform else {
-			fatalError("restored")
+		guard let myrng: NSFileHandle = try? NSFileHandle(forReadingFromURL: Config.rngurl) else {
+			fatalError(SystemError.RNGNotFound.rawValue)
 		}
-		self.platform = platform
+		rng = myrng
+		storage = aDecoder.decodeObjectForKey(Context.storageKey)as?NSURL
+		guard let required: Platform = aDecoder.decodeObjectForKey(Context.platformKey)as?Platform, mycomputer: Computer = try?Computer(platform: required) else {
+			fatalError(SystemError.FailObjectDecode.rawValue)
+		}
+		computer = mycomputer
 		
 		super.init(coder: aDecoder)
-
-		guard let url: NSURL = Config.bundle.URLForResource(Context.coredata.name, withExtension: Context.coredata.ext) else {
+		guard let url: NSURL = Config.bundle.URLForResource(Config.coredata.name, withExtension: Config.coredata.ext) else {
 			fatalError(CoreDataError.ModelNotFound.rawValue)
 		}
 		guard let model: NSManagedObjectModel = NSManagedObjectModel(contentsOfURL: url) else {
@@ -103,8 +74,6 @@ public class Context: NSManagedObjectContext {
 extension Context {
 	private static let storageKey: String = "storage"
 	private static let platformKey: String = "platform"
-	private static let coredata: (name: String, ext: String) = (name: "C³", ext: "momd")
-	private static let metal: (name: String, ext: String) = (name: "default", ext: "metallib")
 	private static let dispatch: (queue: dispatch_queue_t, semaphore: dispatch_semaphore_t) = (
 		queue: dispatch_queue_create(Config.dispatch.parallel, DISPATCH_QUEUE_CONCURRENT),
 		semaphore: dispatch_semaphore_create(1)
@@ -159,40 +128,33 @@ extension Context {
 			self.deleteObject(object)
 		}
 	}
-	internal func newMTLBuffer ( let length length: Int ) -> MTLBuffer {
-		return device.newBufferWithLength(length, options: .CPUCacheModeDefaultCache)
-	}
-	internal func newMTLBuffer ( let data data: NSData ) -> MTLBuffer {
-		return device.newBufferWithBytes(data.bytes, length: data.length, options: .CPUCacheModeDefaultCache)
-	}
 	public func join ( ) {
-		let cmd: MTLCommandBuffer = queue.commandBuffer()
-		cmd.commit()
-		cmd.waitUntilCompleted()
+		if let cmd: MTLCommandBuffer = newMTLCommandBuffer() {
+			cmd.commit()
+			cmd.waitUntilCompleted()
+		}
 	}
 }
 internal extension Context {
 	internal func newBuffer ( let length length: Int ) -> Buffer {
-		return Buffer(
-			mtl: device.newBufferWithLength(sizeof(Float)*length, options: .CPUCacheModeDefaultCache)
-		)
+		return newBuffer(data: NSData(bytes: [UInt8](count: length, repeatedValue: 0), length: length))
 	}
 	internal func newBuffer ( let data data: NSData ) -> Buffer {
-		return Buffer(
-			mtl: device.newBufferWithBytes(data.bytes, length: data.length, options: .CPUCacheModeDefaultCache)
-		)
+		return computer.newBuffer(data: data)
 	}
 }
 internal extension Context {
-	func entropy ( let buffer: MTLBuffer ) {
-		rng.readDataOfLength(buffer.length).getBytes(buffer.contents(), length: buffer.length)
-	}
-	func random ( let buffer: Buffer ) {
+	func entropy ( let buffer: Buffer ) {
 		rng.readDataOfLength(buffer.raw.length).getBytes(UnsafeMutablePointer(buffer.raw.bytes), length: buffer.raw.length)
 	}
 }
 internal extension Context {
 	func newMTLCommandBuffer() -> MTLCommandBuffer? {
-		return queue.commandBuffer()
+		return computer.newCommandBuffer()
+	}
+}
+internal extension Context {
+	func mul ( let y: Buffer, let a: Buffer, let x: Buffer, let c: Buffer ) {
+		
 	}
 }

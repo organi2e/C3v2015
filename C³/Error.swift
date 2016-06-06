@@ -17,5 +17,6 @@ enum CoreDataError: String, ErrorType {
 }
 enum SystemError: String, ErrorType {
 	case RNGNotFound = "RNG device is not opened"
+	case FailObjectDecode = "Object is not correctly decoded"
 	case InvalidOperation = "Invalid operation"
 }
