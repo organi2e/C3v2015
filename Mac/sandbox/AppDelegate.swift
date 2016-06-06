@@ -26,10 +26,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 				try context.save()
 			}
 			if let O: Cell = context.searchCell(label: "O").first {
-				O.chain()
+				print("fetched")
+				O.clear()
+				O.chain { ( let cell: Cell ) in
+					print("\(cell.label) is \(cell.terminus)")
+				}
+				O.correct( [true], eps: 0.1 )
 			}
-		} catch let e as NSError {
-			print(e)
+			print("Done")
+		} catch let e {
+			print(String(e))
 		}
 		
 		// Insert code here to initialize your application
