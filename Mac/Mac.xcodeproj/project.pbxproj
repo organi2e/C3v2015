@@ -25,6 +25,13 @@
 		878C7AE51D01B044002CDFD1 /* MNIST.h in Headers */ = {isa = PBXBuildFile; fileRef = 878C7AA51D01AF13002CDFD1 /* MNIST.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		878C7AE61D01B05E002CDFD1 /* C3.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 878C7A731D01AEEC002CDFD1 /* C3.framework */; };
 		878C7AE71D01B05E002CDFD1 /* C3.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 878C7A731D01AEEC002CDFD1 /* C3.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		87EF8A211D0541730031F54D /* Cell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87EF8A1A1D0541730031F54D /* Cell.swift */; };
+		87EF8A221D0541730031F54D /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87EF8A1B1D0541730031F54D /* Config.swift */; };
+		87EF8A231D0541730031F54D /* Context.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87EF8A1C1D0541730031F54D /* Context.swift */; };
+		87EF8A241D0541730031F54D /* Dict.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87EF8A1D1D0541730031F54D /* Dict.swift */; };
+		87EF8A251D0541730031F54D /* Edge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87EF8A1E1D0541730031F54D /* Edge.swift */; };
+		87EF8A261D0541730031F54D /* Error.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87EF8A1F1D0541730031F54D /* Error.swift */; };
+		87EF8A271D0541730031F54D /* linalg.metal in Sources */ = {isa = PBXBuildFile; fileRef = 87EF8A201D0541730031F54D /* linalg.metal */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -88,6 +95,13 @@
 		878C7ACA1D01AFA2002CDFD1 /* t10k-labels.idx1-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "t10k-labels.idx1-ubyte"; path = "../../MNIST/t10k-labels.idx1-ubyte"; sourceTree = "<group>"; };
 		878C7ACC1D01AFA4002CDFD1 /* train-images.idx3-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "train-images.idx3-ubyte"; path = "../../MNIST/train-images.idx3-ubyte"; sourceTree = "<group>"; };
 		878C7ACE1D01AFA8002CDFD1 /* train-labels.idx1-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "train-labels.idx1-ubyte"; path = "../../MNIST/train-labels.idx1-ubyte"; sourceTree = "<group>"; };
+		87EF8A1A1D0541730031F54D /* Cell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Cell.swift; path = "../../C³/Cell.swift"; sourceTree = "<group>"; };
+		87EF8A1B1D0541730031F54D /* Config.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Config.swift; path = "../../C³/Config.swift"; sourceTree = "<group>"; };
+		87EF8A1C1D0541730031F54D /* Context.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Context.swift; path = "../../C³/Context.swift"; sourceTree = "<group>"; };
+		87EF8A1D1D0541730031F54D /* Dict.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Dict.swift; path = "../../C³/Dict.swift"; sourceTree = "<group>"; };
+		87EF8A1E1D0541730031F54D /* Edge.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Edge.swift; path = "../../C³/Edge.swift"; sourceTree = "<group>"; };
+		87EF8A1F1D0541730031F54D /* Error.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Error.swift; path = "../../C³/Error.swift"; sourceTree = "<group>"; };
+		87EF8A201D0541730031F54D /* linalg.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = linalg.metal; path = "../../C³/linalg.metal"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -150,6 +164,13 @@
 		878C7A751D01AEEC002CDFD1 /* C³ */ = {
 			isa = PBXGroup;
 			children = (
+				87EF8A1A1D0541730031F54D /* Cell.swift */,
+				87EF8A1B1D0541730031F54D /* Config.swift */,
+				87EF8A1C1D0541730031F54D /* Context.swift */,
+				87EF8A1D1D0541730031F54D /* Dict.swift */,
+				87EF8A1E1D0541730031F54D /* Edge.swift */,
+				87EF8A1F1D0541730031F54D /* Error.swift */,
+				87EF8A201D0541730031F54D /* linalg.metal */,
 				878985D81D050F1C002C2A8D /* C³.xcdatamodeld */,
 				878985EB1D050F33002C2A8D /* C³.h */,
 				878985EC1D050F33002C2A8D /* Info.plist */,
@@ -377,6 +398,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				878985E11D050F1C002C2A8D /* C³.xcdatamodeld in Sources */,
+				87EF8A231D0541730031F54D /* Context.swift in Sources */,
+				87EF8A251D0541730031F54D /* Edge.swift in Sources */,
+				87EF8A241D0541730031F54D /* Dict.swift in Sources */,
+				87EF8A271D0541730031F54D /* linalg.metal in Sources */,
+				87EF8A211D0541730031F54D /* Cell.swift in Sources */,
+				87EF8A261D0541730031F54D /* Error.swift in Sources */,
+				87EF8A221D0541730031F54D /* Config.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
