@@ -39,6 +39,7 @@
 
 /* Begin PBXFileReference section */
 		877216DC1D057ED300E824F9 /* Buffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Buffer.swift; path = "C³/Buffer.swift"; sourceTree = "<group>"; };
+		877216FB1D059E1200E824F9 /* Computer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Computer.swift; path = "C³/Computer.swift"; sourceTree = "<group>"; };
 		878985B71D050D42002C2A8D /* C3.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = C3.xcdatamodel; sourceTree = "<group>"; };
 		878985B81D050D42002C2A8D /* Cell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Cell.swift; path = "C³/Cell.swift"; sourceTree = "<group>"; };
 		878985B91D050D42002C2A8D /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Config.swift; path = "C³/Config.swift"; sourceTree = "<group>"; };
@@ -90,15 +91,16 @@
 			isa = PBXGroup;
 			children = (
 				878985B61D050D42002C2A8D /* C³.xcdatamodeld */,
+				877216DC1D057ED300E824F9 /* Buffer.swift */,
 				878985B81D050D42002C2A8D /* Cell.swift */,
 				878985B91D050D42002C2A8D /* Config.swift */,
 				878985BA1D050D42002C2A8D /* Context.swift */,
+				877216FB1D059E1200E824F9 /* Computer.swift */,
 				878985BB1D050D42002C2A8D /* Dict.swift */,
 				878985BC1D050D42002C2A8D /* Edge.swift */,
 				878985BD1D050D42002C2A8D /* Error.swift */,
 				878985BE1D050D42002C2A8D /* linalg.metal */,
 				879AB5D01D054FF100E4587F /* common.metal */,
-				877216DC1D057ED300E824F9 /* Buffer.swift */,
 			);
 			name = "C³";
 			sourceTree = "<group>";

@@ -33,7 +33,9 @@ extension Edge: Network {
 extension Edge: CoreDataSharedMetal {
 	func setup() {
 		if let context: Context = managedObjectContext as? Context {
-			buf.gain = Buffer(mtl: context.newMTLBuffer(data: gain))
+			buf.gain = context.newBuffer(data: gain)
+		} else {
+			buf.gain = Buffer(raw: gain)
 		}
 	}
 	override func awakeFromInsert() {

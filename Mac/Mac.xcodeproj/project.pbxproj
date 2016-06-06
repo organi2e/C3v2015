@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		877216F91D05807D00E824F9 /* Buffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 877216F71D057EF100E824F9 /* Buffer.swift */; };
 		877216FA1D05807D00E824F9 /* common.metal in Sources */ = {isa = PBXBuildFile; fileRef = 879AB5D11D054FFD00E4587F /* common.metal */; };
+		877216FE1D059E7E00E824F9 /* Computer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 877216FC1D059E1B00E824F9 /* Computer.swift */; };
 		878C7A921D01AF05002CDFD1 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878C7A911D01AF05002CDFD1 /* AppDelegate.swift */; };
 		878C7A941D01AF05002CDFD1 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878C7A931D01AF05002CDFD1 /* ViewController.swift */; };
 		878C7A961D01AF05002CDFD1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 878C7A951D01AF05002CDFD1 /* Assets.xcassets */; };
@@ -83,6 +84,7 @@
 
 /* Begin PBXFileReference section */
 		877216F71D057EF100E824F9 /* Buffer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Buffer.swift; path = "../../C³/Buffer.swift"; sourceTree = "<group>"; };
+		877216FC1D059E1B00E824F9 /* Computer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Computer.swift; path = "../../C³/Computer.swift"; sourceTree = "<group>"; };
 		878C7A8F1D01AF05002CDFD1 /* sandbox.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = sandbox.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		878C7A911D01AF05002CDFD1 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		878C7A931D01AF05002CDFD1 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -206,6 +208,7 @@
 				87B1FD1E1D05466D00981CF4 /* Cell.swift */,
 				87B1FD1F1D05466D00981CF4 /* Config.swift */,
 				87B1FD201D05466D00981CF4 /* Context.swift */,
+				877216FC1D059E1B00E824F9 /* Computer.swift */,
 				87B1FD211D05466D00981CF4 /* Dict.swift */,
 				87B1FD221D05466D00981CF4 /* Edge.swift */,
 				87B1FD231D05466D00981CF4 /* Error.swift */,
@@ -425,6 +428,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				877216FE1D059E7E00E824F9 /* Computer.swift in Sources */,
 				877216F91D05807D00E824F9 /* Buffer.swift in Sources */,
 				877216FA1D05807D00E824F9 /* common.metal in Sources */,
 				87B1FD3B1D0546C700981CF4 /* C³.xcdatamodeld in Sources */,

@@ -42,10 +42,8 @@ extension Cell: Network {
 				}
 			}
 			blit.endEncoding()
-			if let buffer: MTLBuffer = buf.noise.mtl {
-				cmd.addCompletedHandler {(_)in
-					context.entropy(buffer)
-				}
+			cmd.addCompletedHandler {(_)in
+				context.entropy(self.buf.noise)
 			}
 			cmd.commit()
 			input.forEach {
