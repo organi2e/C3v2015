@@ -12,19 +12,26 @@ import simd
 
 public class Context: NSManagedObjectContext {
 	
+	public enum Platform: String {
+		case GPU = "GPU"
+		case CPU = "CPU"
+	}
+	
 	private let dispatch: (queue: dispatch_queue_t, semaphore: dispatch_semaphore_t) = (
 		queue: dispatch_queue_create(Config.dispatch.serial, DISPATCH_QUEUE_SERIAL),
 		semaphore: dispatch_semaphore_create(1)
 	)
 	
-	private let storage: NSURL?
-
+	public let platform: Platform
+	public let storage: NSURL?
+	
 	private let rng: NSFileHandle
+	
 	private let device: MTLDevice
 	private let library: MTLLibrary
 	private let queue: MTLCommandQueue
 	
-	public init( let storage nsurl: NSURL? = nil ) throws {
+	public init( let storage nsurl: NSURL? = nil, let required: Platform = .GPU ) throws {
 		rng = try NSFileHandle(forReadingFromURL: Config.rngurl)
 		(device, library) = try {
 			guard let device: MTLDevice = MTLCreateSystemDefaultDevice() else {
@@ -37,7 +44,7 @@ public class Context: NSManagedObjectContext {
 		}()
 		queue = device.newCommandQueue()
 		storage = nsurl
-		
+		platform = required
 		super.init(concurrencyType: .PrivateQueueConcurrencyType)
 		
 		guard let url: NSURL = Config.bundle.URLForResource(Context.coredata.name, withExtension: Context.coredata.ext) else {
@@ -70,6 +77,10 @@ public class Context: NSManagedObjectContext {
 		}()
 		queue = device.newCommandQueue()
 		storage = aDecoder.decodeObjectForKey(Context.storageKey)as?NSURL
+		guard let platform: Platform = aDecoder.decodeObjectForKey(Context.platformKey)as?Platform else {
+			fatalError("restored")
+		}
+		self.platform = platform
 		
 		super.init(coder: aDecoder)
 
@@ -91,6 +102,7 @@ public class Context: NSManagedObjectContext {
 }
 extension Context {
 	private static let storageKey: String = "storage"
+	private static let platformKey: String = "platform"
 	private static let coredata: (name: String, ext: String) = (name: "C³", ext: "momd")
 	private static let metal: (name: String, ext: String) = (name: "default", ext: "metallib")
 	private static let dispatch: (queue: dispatch_queue_t, semaphore: dispatch_semaphore_t) = (
