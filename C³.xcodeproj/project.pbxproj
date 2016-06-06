@@ -38,6 +38,14 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		878985B71D050D42002C2A8D /* C3.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = C3.xcdatamodel; sourceTree = "<group>"; };
+		878985B81D050D42002C2A8D /* Cell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Cell.swift; path = "C³/Cell.swift"; sourceTree = "<group>"; };
+		878985B91D050D42002C2A8D /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Config.swift; path = "C³/Config.swift"; sourceTree = "<group>"; };
+		878985BA1D050D42002C2A8D /* Context.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Context.swift; path = "C³/Context.swift"; sourceTree = "<group>"; };
+		878985BB1D050D42002C2A8D /* Dict.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Dict.swift; path = "C³/Dict.swift"; sourceTree = "<group>"; };
+		878985BC1D050D42002C2A8D /* Edge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Edge.swift; path = "C³/Edge.swift"; sourceTree = "<group>"; };
+		878985BD1D050D42002C2A8D /* Error.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Error.swift; path = "C³/Error.swift"; sourceTree = "<group>"; };
+		878985BE1D050D42002C2A8D /* linalg.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = linalg.metal; path = "C³/linalg.metal"; sourceTree = "<group>"; };
 		878C7A5E1D01AE4D002CDFD1 /* Mac.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Mac.xcodeproj; path = Mac/Mac.xcodeproj; sourceTree = "<group>"; };
 		878C7A681D01AE5E002CDFD1 /* iOS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = iOS.xcodeproj; path = iOS/iOS.xcodeproj; sourceTree = "<group>"; };
 		878C7AC11D01AF60002CDFD1 /* MNIST.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MNIST.swift; path = MNIST/MNIST.swift; sourceTree = "<group>"; };
@@ -45,14 +53,6 @@
 		878C7AC31D01AF60002CDFD1 /* t10k-labels.idx1-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "t10k-labels.idx1-ubyte"; path = "MNIST/t10k-labels.idx1-ubyte"; sourceTree = "<group>"; };
 		878C7AC41D01AF60002CDFD1 /* train-images.idx3-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "train-images.idx3-ubyte"; path = "MNIST/train-images.idx3-ubyte"; sourceTree = "<group>"; };
 		878C7AC51D01AF60002CDFD1 /* train-labels.idx1-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "train-labels.idx1-ubyte"; path = "MNIST/train-labels.idx1-ubyte"; sourceTree = "<group>"; };
-		878C7AD21D01B008002CDFD1 /* Cell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Cell.swift; path = C3/Cell.swift; sourceTree = "<group>"; };
-		878C7AD31D01B008002CDFD1 /* Context.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Context.swift; path = C3/Context.swift; sourceTree = "<group>"; };
-		878C7AD41D01B008002CDFD1 /* Dict.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Dict.swift; path = C3/Dict.swift; sourceTree = "<group>"; };
-		878C7AD51D01B008002CDFD1 /* Edge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Edge.swift; path = C3/Edge.swift; sourceTree = "<group>"; };
-		878C7AD61D01B008002CDFD1 /* linalg.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = linalg.metal; path = C3/linalg.metal; sourceTree = "<group>"; };
-		878C7AF51D01B627002CDFD1 /* Model.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Model.xcdatamodel; sourceTree = "<group>"; };
-		878C7B071D01D88D002CDFD1 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Config.swift; path = C3/Config.swift; sourceTree = "<group>"; };
-		878C7B0A1D01DCDD002CDFD1 /* Error.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Error.swift; path = C3/Error.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -61,7 +61,7 @@
 			children = (
 				878C7A5E1D01AE4D002CDFD1 /* Mac.xcodeproj */,
 				878C7A681D01AE5E002CDFD1 /* iOS.xcodeproj */,
-				878C7A6B1D01AE66002CDFD1 /* C3 */,
+				878C7A6B1D01AE66002CDFD1 /* C³ */,
 				878C7A6C1D01AE7D002CDFD1 /* MNIST */,
 			);
 			sourceTree = "<group>";
@@ -84,19 +84,19 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		878C7A6B1D01AE66002CDFD1 /* C3 */ = {
+		878C7A6B1D01AE66002CDFD1 /* C³ */ = {
 			isa = PBXGroup;
 			children = (
-				878C7AD21D01B008002CDFD1 /* Cell.swift */,
-				878C7AD31D01B008002CDFD1 /* Context.swift */,
-				878C7AD41D01B008002CDFD1 /* Dict.swift */,
-				878C7AD51D01B008002CDFD1 /* Edge.swift */,
-				878C7AD61D01B008002CDFD1 /* linalg.metal */,
-				878C7AF41D01B627002CDFD1 /* Model.xcdatamodeld */,
-				878C7B071D01D88D002CDFD1 /* Config.swift */,
-				878C7B0A1D01DCDD002CDFD1 /* Error.swift */,
+				878985B61D050D42002C2A8D /* C³.xcdatamodeld */,
+				878985B81D050D42002C2A8D /* Cell.swift */,
+				878985B91D050D42002C2A8D /* Config.swift */,
+				878985BA1D050D42002C2A8D /* Context.swift */,
+				878985BB1D050D42002C2A8D /* Dict.swift */,
+				878985BC1D050D42002C2A8D /* Edge.swift */,
+				878985BD1D050D42002C2A8D /* Error.swift */,
+				878985BE1D050D42002C2A8D /* linalg.metal */,
 			);
-			name = C3;
+			name = "C³";
 			sourceTree = "<group>";
 		};
 		878C7A6C1D01AE7D002CDFD1 /* MNIST */ = {
@@ -119,7 +119,7 @@
 			attributes = {
 				LastUpgradeCheck = 0730;
 			};
-			buildConfigurationList = 878C7A541D01AE2F002CDFD1 /* Build configuration list for PBXProject "C3" */;
+			buildConfigurationList = 878C7A541D01AE2F002CDFD1 /* Build configuration list for PBXProject "C³" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
@@ -191,7 +191,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		878C7A541D01AE2F002CDFD1 /* Build configuration list for PBXProject "C3" */ = {
+		878C7A541D01AE2F002CDFD1 /* Build configuration list for PBXProject "C³" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				878C7A551D01AE2F002CDFD1 /* Debug */,
@@ -203,14 +203,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCVersionGroup section */
-		878C7AF41D01B627002CDFD1 /* Model.xcdatamodeld */ = {
+		878985B61D050D42002C2A8D /* C³.xcdatamodeld */ = {
 			isa = XCVersionGroup;
 			children = (
-				878C7AF51D01B627002CDFD1 /* Model.xcdatamodel */,
+				878985B71D050D42002C2A8D /* C3.xcdatamodel */,
 			);
-			currentVersion = 878C7AF51D01B627002CDFD1 /* Model.xcdatamodel */;
-			name = Model.xcdatamodeld;
-			path = C3/Model.xcdatamodeld;
+			currentVersion = 878985B71D050D42002C2A8D /* C3.xcdatamodel */;
+			name = "C³.xcdatamodeld";
+			path = "C³/C³.xcdatamodeld";
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;
 		};
