@@ -13,12 +13,15 @@ internal class Edge: NSManagedObject {
 	@NSManaged var gain: NSData
 	@NSManaged var input: Cell
 	@NSManaged var output: Cell
+	
 }
 internal extension Edge {
-	internal func allocate() {
-	
-	}
 	override func awakeFromFetch() {
+		
+	}
+}
+extension Edge: CoreDataSharedMetal {
+	internal func reallocate() {
 		
 	}
 }
