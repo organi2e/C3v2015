@@ -23,7 +23,7 @@ public class Context: NSManagedObjectContext {
 	private let library: MTLLibrary
 	private let queue: MTLCommandQueue
 	
-	public init( let storage nsurl: NSURL? ) throws {
+	public init( let storage nsurl: NSURL? = nil ) throws {
 		rng = try NSFileHandle(forReadingFromURL: Config.rngurl)
 		(device, library) = try {
 			guard let device: MTLDevice = MTLCreateSystemDefaultDevice() else {

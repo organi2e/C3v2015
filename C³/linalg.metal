@@ -9,7 +9,6 @@
 #include <metal_stdlib>
 using namespace metal;
 
-
 kernel void add(device float4 * y [[ buffer(0) ]],
 				const device float4 * a [[ buffer(1) ]],
 				const device float4 * b [[ buffer(2) ]],
