@@ -34,20 +34,9 @@ public class Cell: NSManagedObject {
 }
 extension Cell: Network {
 	public func clear ( ) {
-		if let context: Context = managedObjectContext as? Context, cmd: MTLCommandBuffer = context.newMTLCommandBuffer() {
-			let blit: MTLBlitCommandEncoder = cmd.blitCommandEncoder()
-			for buffer in [ buf.stage, buf.value, buf.error ] {
-				if let buffer: MTLBuffer = buffer.mtl {
-					blit.fillBuffer(buffer, range: NSRange(location: 0, length: buffer.length), value: 0)
-				}
-			}
-			blit.endEncoding()
-			cmd.addCompletedHandler {(_)in
-				context.entropy(self.buf.noise)
-			}
-			cmd.commit()
-			input.forEach {
-				$0.clear()
+		if let context: Context = managedObjectContext as? Context {
+			context.async {
+				
 			}
 		}
 	}
@@ -58,16 +47,10 @@ extension Cell: Network {
 		}
 	}
 	public func correct ( let destination: [Bool], let eps: Float ) {
-		if let context: Context = managedObjectContext as? Context, cmd: MTLCommandBuffer = context.newMTLCommandBuffer() {
-			cmd.addCompletedHandler {(_)in
-				vDSP_vsub(
-					UnsafePointer<Float>(destination.map{Float($0)}), 1,
-					self.buf.state.scalar.baseAddress, 1,
-					self.buf.error.scalar.baseAddress, 1,
-					UInt(self.width)
-				)
+		if let context: Context = managedObjectContext as? Context {
+			context.async {
+				
 			}
-			cmd.commit()
 		}
 	}
 	func train ( let eps: Float ) {
@@ -80,6 +63,7 @@ extension Cell: Network {
 	}
 }
 extension Cell {
+	/*
 	public func setState ( let newValue buffer: [Bool] ) {
 		if let context: Context = managedObjectContext as? Context, cmd: MTLCommandBuffer = context.newMTLCommandBuffer() {
 			cmd.addCompletedHandler {(_)in
@@ -129,6 +113,7 @@ extension Cell {
 		}
 	}
 	public func getValue ( let callback fun: ([Float] -> Void) ) {
+		
 		if let cmd: MTLCommandBuffer = (managedObjectContext as? Context)?.newMTLCommandBuffer() {
 			cmd.addCompletedHandler {(_)in
 				fun(Array<Float>(self.buf.value.scalar))
@@ -138,6 +123,7 @@ extension Cell {
 			fun(Array<Float>(buf.value.scalar))
 		}
 	}
+*/
 }
 extension Cell: CoreDataSharedMetal {
 	func setup () {

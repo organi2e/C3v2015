@@ -129,10 +129,7 @@ extension Context {
 		}
 	}
 	public func join ( ) {
-		if let cmd: MTLCommandBuffer = newMTLCommandBuffer() {
-			cmd.commit()
-			cmd.waitUntilCompleted()
-		}
+		
 	}
 }
 internal extension Context {
@@ -142,19 +139,15 @@ internal extension Context {
 	internal func newBuffer ( let data data: NSData ) -> Buffer {
 		return computer.newBuffer(data: data)
 	}
+	internal func sync (let task task: (()->())) {
+		computer.sync ( task: task )
+	}
+	internal func async (let task task: (()->())) {
+		computer.async ( task: task )
+	}
 }
 internal extension Context {
 	func entropy ( let buffer: Buffer ) {
 		rng.readDataOfLength(buffer.raw.length).getBytes(UnsafeMutablePointer(buffer.raw.bytes), length: buffer.raw.length)
-	}
-}
-internal extension Context {
-	func newMTLCommandBuffer() -> MTLCommandBuffer? {
-		return computer.newCommandBuffer()
-	}
-}
-internal extension Context {
-	func mul ( let y: Buffer, let a: Buffer, let x: Buffer, let c: Buffer ) {
-		
 	}
 }
