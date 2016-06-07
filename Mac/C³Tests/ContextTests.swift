@@ -6,10 +6,9 @@
 //
 //
 import Foundation
-import simd
 import XCTest
 @testable import C3
-class C3Tests: XCTestCase {
+class ContextTests: XCTestCase {
     
     override func setUp() {
         super.setUp()
@@ -34,42 +33,6 @@ class C3Tests: XCTestCase {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
         super.tearDown()
     }
-	
-	func testComputer() {
-		do {
-			let cpucomputer: Computer = try Computer()
-			let gpucomputer: Computer = try Computer(device: MTLCreateSystemDefaultDevice())
-			
-			XCTAssert(gpucomputer.poweredbygpu)
-			
-			[cpucomputer].forEach {
-				let m: Int = 4
-				let n: Int = 8
-				let x: Buffer = $0.newBuffer(length: sizeof(Float)*n)
-				let y: Buffer = $0.newBuffer(length: sizeof(Float)*m)
-				let a: Buffer = $0.newBuffer(length: sizeof(Float)*m*n)
-
-				(0..<n).forEach {
-					x.scalar[$0] = Float(arc4random_uniform(UInt32(256)))
-				}
-				(0..<n*m).forEach {
-					a.scalar[$0] = Float(arc4random_uniform(UInt32(256)))
-				}
-				let z: float4 = a.matrix[0] * x.vector[0] + a.matrix[1] * x.vector[1]
-				$0.gemv(y: y, beta: 0, a: a, x: x, alpha: 1, n: n, m: m, trans: false)
-				$0.join()
-				
-				print("GPU: \($0.poweredbygpu), \(z) vs \(y.vector[0])")
-				XCTAssert( z == y.vector[0] )
-
-				//let w: float4 = a.matrix[0] * x.vector[0] + a.matrix[1] * x.vector[1]
-				
-			}
-		} catch let e {
-			print(e)
-			XCTFail()
-		}
-	}
 	
     func testExample() {
         // This is an example of a functional test case.
@@ -100,10 +63,3 @@ class C3Tests: XCTestCase {
     */
 }
 
-func == (let a: float4, let b: float4) -> Bool {
-	return
-		a.x == b.x &&
-		a.y == b.y &&
-		a.z == b.z &&
-		a.w == b.w
-}
