@@ -24,18 +24,23 @@ public class Context: NSManagedObjectContext {
 	private let computer: Computer
 	
 	public init( let storage nsurl: NSURL? = nil, let platformHint hint: Platform = .GPU ) throws {
-		let device: MTLDevice? = hint == .GPU ? MTLCreateSystemDefaultDevice() : nil
+		if hint == .GPU, let device: MTLDevice = MTLCreateSystemDefaultDevice() {
+			computer = try mtlComputer(device: device)
+			platform = .GPU
+		}
+		else {
+			computer = cpuComputer()
+			platform = .CPU
+		}
 		rng = try NSFileHandle(forReadingFromURL: Config.rngurl)
-		platform = device == nil ? .CPU : .GPU
-		computer = try Computer(device: device)
 		storage = nsurl
 		super.init(concurrencyType: .PrivateQueueConcurrencyType)
 		
 		guard let url: NSURL = Config.bundle.URLForResource(Config.coredata.name, withExtension: Config.coredata.ext) else {
-			throw CoreDataError.ModelNotFound
+			throw Error.CoreData.ModelNotFound
 		}
 		guard let model: NSManagedObjectModel = NSManagedObjectModel(contentsOfURL: url) else {
-			throw CoreDataError.ModelNotAvailable
+			throw Error.CoreData.ModelNotAvailable
 		}
 		let storecoordinator: NSPersistentStoreCoordinator = NSPersistentStoreCoordinator(managedObjectModel: model)
 		let storetype: String = storage == nil ? NSInMemoryStoreType : storage?.pathExtension == "sqlite" ? NSSQLiteStoreType : NSBinaryStoreType
@@ -48,26 +53,28 @@ public class Context: NSManagedObjectContext {
 	}
 	required public init?(coder aDecoder: NSCoder) {
 		guard let myrng: NSFileHandle = try? NSFileHandle(forReadingFromURL: Config.rngurl) else {
-			fatalError(SystemError.RNGNotFound.rawValue)
+			fatalError(Error.System.RNGNotFound.rawValue)
 		}
 		rng = myrng
 
 		guard let hint: Platform = aDecoder.decodeObjectForKey(Context.platformKey)as?Platform else {
-			fatalError(SystemError.FailObjectDecode.rawValue)
+			fatalError(Error.System.FailObjectDecode.rawValue)
 		}
-		let device: MTLDevice? = hint == .GPU ? MTLCreateSystemDefaultDevice() : nil
-		platform = device == nil ? .CPU : .GPU
-		guard let mycomputer: Computer = try?Computer(device: device) else {
-			fatalError(MetalError.LibraryNotAvailable.rawValue)
+		if hint == .GPU, let device: MTLDevice = MTLCreateSystemDefaultDevice() {
+			computer = (try?mtlComputer(device: device)) ?? cpuComputer()
+			platform = .GPU
 		}
-		computer = mycomputer
+		else {
+			computer = cpuComputer()
+			platform = .CPU
+		}
 		storage = aDecoder.decodeObjectForKey(Context.storageKey)as?NSURL
 		super.init(coder: aDecoder)
 		guard let url: NSURL = Config.bundle.URLForResource(Config.coredata.name, withExtension: Config.coredata.ext) else {
-			fatalError(CoreDataError.ModelNotFound.rawValue)
+			fatalError(Error.CoreData.ModelNotFound.rawValue)
 		}
 		guard let model: NSManagedObjectModel = NSManagedObjectModel(contentsOfURL: url) else {
-			fatalError(CoreDataError.ModelNotAvailable.rawValue)
+			fatalError(Error.CoreData.ModelNotAvailable.rawValue)
 		}
 		let storecoordinator: NSPersistentStoreCoordinator = NSPersistentStoreCoordinator(managedObjectModel: model)
 		do {
@@ -148,10 +155,10 @@ internal extension Context {
 		return computer.newBuffer(data: data)
 	}
 	internal func sync (let task task: (()->())) {
-		computer.sync ( task: task )
+		computer.sync ( task )
 	}
 	internal func async (let task task: (()->())) {
-		computer.async ( task: task )
+		computer.async ( task )
 	}
 }
 internal extension Context {

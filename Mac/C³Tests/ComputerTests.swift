@@ -14,35 +14,39 @@ import XCTest
 class ComputerTests: XCTestCase {
 	func testGEMV() {
 		do {
-			let cpucomputer: Computer = try Computer()
-			let gpucomputer: Computer = try Computer(device: MTLCreateSystemDefaultDevice())
+			let cpucomputer: Computer = cpuComputer()
+			guard let device: MTLDevice = MTLCreateSystemDefaultDevice() else {
+				XCTFail()
+				return
+			}
+			let gpucomputer: Computer = try mtlComputer(device: device)
 			
-			XCTAssert(gpucomputer.poweredbygpu)
+			let m: Int = 4 * Int(arc4random_uniform(UInt32(16))) + 4
+			let n: Int = 4 * Int(arc4random_uniform(UInt32(16))) + 4
+			let X: [Float] = (0..<n).map{(_)in Float(arc4random_uniform(UInt32(256)))/256.0}
+			let A: [Float] = (0..<n*m).map{(_)in Float(arc4random_uniform(UInt32(256)))/256.0}
 			
-			[cpucomputer, gpucomputer].forEach {
-				let m: Int = 4
-				let n: Int = 4 * Int(arc4random_uniform(UInt32(16))) + 4
+			let result: [[Float]] = [cpucomputer, gpucomputer].map {
 				let x: Buffer = $0.newBuffer(length: sizeof(Float)*n)
 				let y: Buffer = $0.newBuffer(length: sizeof(Float)*m)
 				let a: Buffer = $0.newBuffer(length: sizeof(Float)*m*n)
 				
 				(0..<n).forEach {
-					x.scalar[$0] = Float(arc4random_uniform(UInt32(256)))
+					x.scalar[$0] = X[$0]
 				}
 				(0..<n*m).forEach {
-					a.scalar[$0] = Float(arc4random_uniform(UInt32(256)))
+					a.scalar[$0] = A[$0]
 				}
 				
-				let z: float4 = zip(a.matrix, x.vector).map{$0*$1}.reduce(float4(0)){$0.0+$0.1}
-				$0.gemv(y: y, beta: 0, a: a, x: x, alpha: 1, n: n, m: m, trans: false)
+				$0.gemv(y: y, beta: 0, a: a, x: x, alpha: 1, n: n, m: m, trans: true)
 				$0.join()
 				
-				print("GPU: \($0.poweredbygpu), \(z) vs \(y.vector[0])")
-				XCTAssert( z == y.vector[0] )
-				
+				return Array<Float>(y.scalar)
 				//let w: float4 = a.matrix[0] * x.vector[0] + a.matrix[1] * x.vector[1]
 				
 			}
+			print("\(result[0]) vs \(result[1])")
+			XCTAssert(result[0]==result[1])
 		} catch let e {
 			print(e)
 			XCTFail()
