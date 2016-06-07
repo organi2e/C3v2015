@@ -28,14 +28,14 @@ kernel void mul(device float4 * y [[ buffer(0) ]],
 				const device float4 * b [[ buffer(2) ]],
 				uint id [[ thread_position_in_grid ]]
 				) {
-	y [ id ] = a [ id ] - b [ id ];
+	y [ id ] = a [ id ] * b [ id ];
 }
 kernel void div(device float4 * y [[ buffer(0) ]],
 				const device float4 * a [[ buffer(1) ]],
 				const device float4 * b [[ buffer(2) ]],
 				uint id [[ thread_position_in_grid ]]
 				) {
-	y [ id ] = a [ id ] - b [ id ];
+	y [ id ] = a [ id ] / b [ id ];
 }
 //Y = alphaAX + betaY
 kernel void gemv(device float4 * y [[ buffer(0) ]],
