@@ -18,13 +18,16 @@ public class Context: NSManagedObjectContext {
 	)
 	
 	public let storage: NSURL?
+	public let platform: Platform
 	
 	private let rng: NSFileHandle
 	private let computer: Computer
 	
-	public init( let storage nsurl: NSURL? = nil, let requiredPlatform required: Platform = .GPU ) throws {
+	public init( let storage nsurl: NSURL? = nil, let platformHint hint: Platform = .GPU ) throws {
+		let device: MTLDevice? = hint == .GPU ? MTLCreateSystemDefaultDevice() : nil
 		rng = try NSFileHandle(forReadingFromURL: Config.rngurl)
-		computer = try Computer(platform: required)
+		platform = device == nil ? .CPU : .GPU
+		computer = try Computer(device: device)
 		storage = nsurl
 		super.init(concurrencyType: .PrivateQueueConcurrencyType)
 		
@@ -48,12 +51,17 @@ public class Context: NSManagedObjectContext {
 			fatalError(SystemError.RNGNotFound.rawValue)
 		}
 		rng = myrng
-		storage = aDecoder.decodeObjectForKey(Context.storageKey)as?NSURL
-		guard let required: Platform = aDecoder.decodeObjectForKey(Context.platformKey)as?Platform, mycomputer: Computer = try?Computer(platform: required) else {
+
+		guard let hint: Platform = aDecoder.decodeObjectForKey(Context.platformKey)as?Platform else {
 			fatalError(SystemError.FailObjectDecode.rawValue)
 		}
+		let device: MTLDevice? = hint == .GPU ? MTLCreateSystemDefaultDevice() : nil
+		platform = device == nil ? .CPU : .GPU
+		guard let mycomputer: Computer = try?Computer(device: device) else {
+			fatalError(MetalError.LibraryNotAvailable.rawValue)
+		}
 		computer = mycomputer
-		
+		storage = aDecoder.decodeObjectForKey(Context.storageKey)as?NSURL
 		super.init(coder: aDecoder)
 		guard let url: NSURL = Config.bundle.URLForResource(Config.coredata.name, withExtension: Config.coredata.ext) else {
 			fatalError(CoreDataError.ModelNotFound.rawValue)

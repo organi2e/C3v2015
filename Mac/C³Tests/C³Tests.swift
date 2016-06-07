@@ -5,10 +5,10 @@
 //  Created by Kota Nakano on 6/6/16.
 //
 //
+import Foundation
 import simd
 import XCTest
 @testable import C3
-
 class C3Tests: XCTestCase {
     
     override func setUp() {
@@ -35,27 +35,39 @@ class C3Tests: XCTestCase {
         super.tearDown()
     }
 	
-	func testMatrixMult() {
+	func testComputer() {
 		do {
-			let context: Context = try Context()
-			let a: Buffer = context.newBuffer(length: 16)
-			let b: Buffer = context.newBuffer(length: 16)
-			let c: Buffer = context.newBuffer(length: 16)
+			let cpucomputer: Computer = try Computer()
+			let gpucomputer: Computer = try Computer(device: MTLCreateSystemDefaultDevice())
 			
-			b.vector[2] = float4(1.0, 2.0, 3.0, 4.0)
-			a.scalar[0] = 1.0
-			a.vector[1].y = 2.0
-			a.matrix[0][2][2] = 3.0
-			a.matrix[0][3][3] = 4.0
+			XCTAssert(gpucomputer.poweredbygpu)
 			
-			c.matrix[0] = a.matrix[0] * b.matrix[0]
-			
-			XCTAssert(UnsafePointer<Void>(a.raw.bytes) == UnsafePointer<Void>(a.mtl!.contents()))
-			
-			print(Array(c.scalar))
-			
+			[cpucomputer].forEach {
+				let m: Int = 4
+				let n: Int = 8
+				let x: Buffer = $0.newBuffer(length: sizeof(Float)*n)
+				let y: Buffer = $0.newBuffer(length: sizeof(Float)*m)
+				let a: Buffer = $0.newBuffer(length: sizeof(Float)*m*n)
+
+				(0..<n).forEach {
+					x.scalar[$0] = Float(arc4random_uniform(UInt32(256)))
+				}
+				(0..<n*m).forEach {
+					a.scalar[$0] = Float(arc4random_uniform(UInt32(256)))
+				}
+				let z: float4 = a.matrix[0] * x.vector[0] + a.matrix[1] * x.vector[1]
+				$0.gemv(y: y, beta: 0, a: a, x: x, alpha: 1, n: n, m: m, trans: false)
+				$0.join()
+				
+				print("GPU: \($0.poweredbygpu), \(z) vs \(y.vector[0])")
+				XCTAssert( z == y.vector[0] )
+
+				//let w: float4 = a.matrix[0] * x.vector[0] + a.matrix[1] * x.vector[1]
+				
+			}
 		} catch let e {
 			print(e)
+			XCTFail()
 		}
 	}
 	
@@ -86,4 +98,12 @@ class C3Tests: XCTestCase {
         }
     }
     */
+}
+
+func == (let a: float4, let b: float4) -> Bool {
+	return
+		a.x == b.x &&
+		a.y == b.y &&
+		a.z == b.z &&
+		a.w == b.w
 }

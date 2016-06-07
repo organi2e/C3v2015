@@ -9,16 +9,21 @@ import Accelerate
 import Metal
 import simd
 
-internal class Computer {
+public class Computer {
 	
+	let dispatch: (queue: dispatch_queue_t, group: dispatch_group_t, semaphore: dispatch_semaphore_t) = (
+		queue: dispatch_queue_create("\(Config.identifier).\(NSStringFromClass(Computer.self))", DISPATCH_QUEUE_SERIAL),
+		group: dispatch_group_create(),
+		semaphore: dispatch_semaphore_create(1)
+	)
 	let mtl: (
 		device: MTLDevice,
 		queue: MTLCommandQueue,
 		pipeline: [String: MTLComputePipelineState]
 	)?
 	
-	init ( let platform required: Platform ) throws {
-		if required == .GPU, let device: MTLDevice = MTLCreateSystemDefaultDevice() {
+	public init ( let device: MTLDevice? = nil ) throws {
+		if let device: MTLDevice = device {
 			var pipeline: [String: MTLComputePipelineState] = [:]
 			guard let path: String = Config.bundle.pathForResource(Config.metal.name, ofType: Config.metal.ext) else {
 				throw MetalError.LibraryNotAvailable
@@ -38,9 +43,8 @@ internal class Computer {
 			mtl = nil
 		}
 	}
-	
 	internal func gemv ( let y y: Buffer, let beta: Float, let a: Buffer, let x: Buffer, let alpha: Float, let n: Int, let m: Int, let trans: Bool ) {
-		if let mtl = mtl, pipeline: MTLComputePipelineState = mtl.pipeline["gemv"] {
+		if let mtl = mtl, pipeline: MTLComputePipelineState = mtl.pipeline["gemv"] where [x, y, a].map({$0.mtl?.device === mtl.device}).contains(false) {
 			let command: MTLCommandBuffer = mtl.queue.commandBuffer()
 			let encoder: MTLComputeCommandEncoder = command.computeCommandEncoder()
 			encoder.setComputePipelineState(pipeline)
@@ -54,6 +58,7 @@ internal class Computer {
 			encoder.dispatchThreadgroups(MTLSize(width: m/4, height: 0, depth: 0), threadsPerThreadgroup: MTLSize(width: n/4, height: 0, depth: 0))
 			encoder.endEncoding()
 			command.commit()
+			fatalError("1")
 		} else {
 			async {
 				Computer.gemv(y: y, beta: beta, a: a, x: x, alpha: alpha, n: n, m: m, trans: trans)
@@ -75,7 +80,7 @@ internal class Computer {
 			command.commit()
 			command.waitUntilCompleted()
 		} else {
-			task()
+			dispatch_sync(dispatch.queue, task)
 		}
 	}
 	internal func async ( let task task: (Void->Void) ) {
@@ -85,8 +90,22 @@ internal class Computer {
 			}
 			command.commit()
 		} else {
-			task()
+			dispatch_group_enter(dispatch.group)
+			dispatch_async(dispatch.queue) {
+				dispatch_group_leave(self.dispatch.group)
+			}
 		}
+	}
+	internal func join () {
+		if let command: MTLCommandBuffer = mtl?.queue.commandBuffer() {
+			command.commit()
+			command.waitUntilCompleted()
+		} else {
+			dispatch_group_wait(dispatch.group, DISPATCH_TIME_FOREVER)
+		}
+	}
+	public var poweredbygpu: Bool {
+		return mtl != nil
 	}
 }
 extension Computer {
