@@ -96,9 +96,9 @@ class ComputerTests: XCTestCase {
 	}
 	func testCPUSPD() {
 		let computer: Computer = cpuComputer()
-		let N: Int = 4096
-		let M: Int = 4096
-		let K: Int = 4
+		let N: Int = 1024
+		let M: Int = 1024
+		let K: Int = 64
 		let x: Buffer = computer.newBuffer(length: sizeof(Float)*N)
 		let y: Buffer = computer.newBuffer(length: sizeof(Float)*M)
 		let a: Buffer = computer.newBuffer(length: sizeof(Float)*M*N)
@@ -120,9 +120,9 @@ class ComputerTests: XCTestCase {
 			guard let device: MTLDevice = MTLCreateSystemDefaultDevice() else {
 				throw NSError(domain: "Here", code: 0, userInfo: nil)
 			}
-			let N: Int = 4096
-			let M: Int = 4096
-			let K: Int = 4
+			let N: Int = 1024
+			let M: Int = 1024
+			let K: Int = 64
 			let computer: Computer = try mtlComputer(device: device)
 			let x: Buffer = computer.newBuffer(length: sizeof(Float)*N)
 			let y: Buffer = computer.newBuffer(length: sizeof(Float)*M)
