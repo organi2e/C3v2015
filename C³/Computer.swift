@@ -10,12 +10,13 @@ import Metal
 import simd
 
 protocol Computer {
-	func gemv ( let y y: Buffer, let beta: Float, let a: Buffer, let x: Buffer, let alpha: Float, let n: Int, let m: Int, let trans: Bool );
 	func sync ( let task: (Void->Void))
 	func async ( let task: (Void->Void))
 	func enter ( )
 	func leave ( )
 	func join ( )
+	func gemv ( let y y: Buffer, let beta: Float, let a: Buffer, let x: Buffer, let alpha: Float, let n: Int, let m: Int, let trans: Bool );
+	func sigmoid ( let y y: Buffer, let x: Buffer, let c: Buffer, let n: Int )
 	func newBuffer( let data data: NSData ) -> Buffer
 	func newBuffer( let length length: Int ) -> Buffer
 }
@@ -35,6 +36,11 @@ public class cpuComputer: Computer {
 			let b: float4 = y.vector [ $0 ]
 			
 			y.vector [ $0 ] = alpha * a + beta * b
+		}
+	}
+	func sigmoid ( let y y: Buffer, let x: Buffer, let c: Buffer, let n: Int ) {
+		(0..<n/4).forEach {
+			y.vector [ $0 ] = 0.5 * vtanhf ( y.vector [ $0 ] + c.vector [ $0 ] ) + float4 ( 0.5 )
 		}
 	}
 	func sync ( let task: (Void->Void) ) {
@@ -89,7 +95,7 @@ public class mtlComputer: cpuComputer {
 		}
 		self.gemv = gemv
 		self.device = device
-		self.queue = self.device.newCommandQueue()
+		self.queue = device.newCommandQueue()
 	}
 	override func gemv ( let y y: Buffer, let beta: Float, let a: Buffer, let x: Buffer, let alpha: Float, let n: Int, let m: Int, let trans: Bool ) {
 		if let x: mtlBuffer = x as? mtlBuffer where x.mtl.device === device,
@@ -113,6 +119,13 @@ public class mtlComputer: cpuComputer {
 			async {
 				super.gemv(y: y, beta: beta, a: a, x: x, alpha: alpha, n: n, m: m, trans: trans)
 			}
+		}
+	}
+	override func sigmoid( let y y: Buffer, let x: Buffer, let c: Buffer, let n: Int) {
+		if	let x: mtlBuffer = x as? mtlBuffer where x.mtl.device === device,
+			let y: mtlBuffer = y as? mtlBuffer where y.mtl.device === device,
+			let c: mtlBuffer = c as? mtlBuffer where a.mtl.device === device {
+			
 		}
 	}
 	override func sync ( let task: (Void->Void) ) {
