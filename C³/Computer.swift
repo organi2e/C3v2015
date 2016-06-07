@@ -9,6 +9,33 @@ import Accelerate
 import Metal
 import simd
 
+protocol Comp {
+	func gemv ( let y y: Buffer, let beta: Float, let a: Buffer, let x: Buffer, let alpha: Float, let n: Int, let m: Int, let trans: Bool );
+	func sync ()
+	func async ()
+	func join()
+}
+public class CPUComputer: Comp {
+	func gemv ( let y y: Buffer, let beta: Float, let a: Buffer, let x: Buffer, let alpha: Float, let n: Int, let m: Int, let trans: Bool ) {
+		( 0 ..< y.vector.count ).forEach {
+			let m: [float4x4] = $0.stride(to: n/4, by: m/4).map{ a.matrix[ $0 ] }
+			let v: [float4] = Array<float4>( x.vector )
+			let a: float4 = zip ( m, v ).map{ $0 * $1 }.reduce ( float4(0) ) { $0.0 + $0.1 }
+			let b: float4 = y.vector [ $0 ]
+			y.vector [ $0 ] = alpha * a + beta * b
+		}
+	}
+	func sync () {
+	
+	}
+	func async () {
+	
+	}
+	func join () {
+	
+	}
+}
+
 public class Computer {
 	
 	let dispatch: (queue: dispatch_queue_t, group: dispatch_group_t, semaphore: dispatch_semaphore_t) = (
