@@ -38,6 +38,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		876A4B5B1D06A36200D32E1B /* math.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = math.metal; path = "C³/math.metal"; sourceTree = "<group>"; };
 		877216DC1D057ED300E824F9 /* Buffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Buffer.swift; path = "C³/Buffer.swift"; sourceTree = "<group>"; };
 		877216FB1D059E1200E824F9 /* Computer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Computer.swift; path = "C³/Computer.swift"; sourceTree = "<group>"; };
 		878985B71D050D42002C2A8D /* C3.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = C3.xcdatamodel; sourceTree = "<group>"; };
@@ -47,7 +48,7 @@
 		878985BB1D050D42002C2A8D /* Dict.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Dict.swift; path = "C³/Dict.swift"; sourceTree = "<group>"; };
 		878985BC1D050D42002C2A8D /* Edge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Edge.swift; path = "C³/Edge.swift"; sourceTree = "<group>"; };
 		878985BD1D050D42002C2A8D /* Error.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Error.swift; path = "C³/Error.swift"; sourceTree = "<group>"; };
-		878985BE1D050D42002C2A8D /* linalg.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = linalg.metal; path = "C³/linalg.metal"; sourceTree = "<group>"; };
+		878985BE1D050D42002C2A8D /* blas.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = blas.metal; path = "C³/blas.metal"; sourceTree = "<group>"; };
 		878C7A5E1D01AE4D002CDFD1 /* Mac.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Mac.xcodeproj; path = Mac/Mac.xcodeproj; sourceTree = "<group>"; };
 		878C7A681D01AE5E002CDFD1 /* iOS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = iOS.xcodeproj; path = iOS/iOS.xcodeproj; sourceTree = "<group>"; };
 		878C7AC11D01AF60002CDFD1 /* MNIST.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MNIST.swift; path = MNIST/MNIST.swift; sourceTree = "<group>"; };
@@ -99,8 +100,9 @@
 				878985BB1D050D42002C2A8D /* Dict.swift */,
 				878985BC1D050D42002C2A8D /* Edge.swift */,
 				878985BD1D050D42002C2A8D /* Error.swift */,
-				878985BE1D050D42002C2A8D /* linalg.metal */,
+				878985BE1D050D42002C2A8D /* blas.metal */,
 				879AB5D01D054FF100E4587F /* common.metal */,
+				876A4B5B1D06A36200D32E1B /* math.metal */,
 			);
 			name = "C³";
 			sourceTree = "<group>";
