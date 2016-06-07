@@ -22,14 +22,34 @@ protocol Computer {
 }
 public class cpuComputer: Computer {
 	
+	static let dispatch: (queue: dispatch_queue_t, group: dispatch_group_t, semaphore: dispatch_semaphore_t) = (
+		queue: dispatch_queue_create("\(Config.identifier).\(NSStringFromClass(cpuComputer.self)).parallel", DISPATCH_QUEUE_CONCURRENT),
+		group: dispatch_group_create(),
+		semaphore: dispatch_semaphore_create(1)
+	)
+	
 	let dispatch: (queue: dispatch_queue_t, group: dispatch_group_t, semaphore: dispatch_semaphore_t) = (
-		queue: dispatch_queue_create("\(Config.identifier).\(NSStringFromClass(cpuComputer.self))", DISPATCH_QUEUE_SERIAL),
+		queue: dispatch_queue_create("\(Config.identifier).\(NSStringFromClass(cpuComputer.self)).serial", DISPATCH_QUEUE_SERIAL),
 		group: dispatch_group_create(),
 		semaphore: dispatch_semaphore_create(1)
 	)
 	
 	func gemv ( let y y: Buffer, let beta: Float, let a: Buffer, let x: Buffer, let alpha: Float, let n: Int, let m: Int, let trans: Bool ) {
-		( 0 ..< m/4 ).forEach {
+		dispatch_apply(m/4, cpuComputer.dispatch.queue) { ( let r: Int ) in
+			var accum: float4 = float4(0)
+			(0..<n/4).forEach { ( let c: Int ) in
+				accum += ( trans ? a.matrix [ r * n/4 + c ].transpose : a.matrix [ c * m/4 + r ] ) * x.vector[ c ]
+			}
+			y.vector [ r ] = alpha * accum + beta * y.vector [ r ]
+		}
+		/*
+		(0..<m/4).forEach {/*(r:Int)in
+			var accum: float4 = float4(0)
+			(0..<n/4).forEach {(c:Int)in
+				accum += ( trans ? a.matrix[r*n/4+c].transpose : a.matrix[c*m/4+r] ) * x.vector[c]
+			}
+			y.vector[r] = alpha * accum + beta * y.vector[r]
+			*/
 			let M: [float4x4] = trans ? ( $0 * n/4 ) .stride (to: ( $0 + 1 ) * n/4, by: 1).map{ a.matrix[ $0 ].transpose } : $0.stride (to: $0 + m/4 * n/4, by: m/4).map{ a.matrix [ $0 ] }
 			let V: [float4] = Array<float4> ( x.vector )
 			let a: float4 = zip ( M, V ) .map { $0 * $1 } .reduce ( float4(0) ) { $0.0 + $0.1 }
@@ -37,6 +57,7 @@ public class cpuComputer: Computer {
 			
 			y.vector [ $0 ] = alpha * a + beta * b
 		}
+		*/
 	}
 	func sigmoid ( let y y: Buffer, let x: Buffer, let c: Buffer, let sigma: Float, let n: Int ) {
 		(0..<n/4).forEach {
