@@ -44,7 +44,8 @@ public class Computer {
 		}
 	}
 	internal func gemv ( let y y: Buffer, let beta: Float, let a: Buffer, let x: Buffer, let alpha: Float, let n: Int, let m: Int, let trans: Bool ) {
-		if let mtl = mtl, pipeline: MTLComputePipelineState = mtl.pipeline["gemv"] where [x, y, a].map({$0.mtl?.device === mtl.device}).contains(false) {
+		if let mtl = mtl,
+			pipeline: MTLComputePipelineState = mtl.pipeline["gemv"] where ![x, y, a].map({$0.mtl?.device === mtl.device}).contains(false) {
 			let command: MTLCommandBuffer = mtl.queue.commandBuffer()
 			let encoder: MTLComputeCommandEncoder = command.computeCommandEncoder()
 			encoder.setComputePipelineState(pipeline)
@@ -55,10 +56,9 @@ public class Computer {
 			encoder.setBytes([alpha], length: sizeof(Float), atIndex: 4)
 			encoder.setBytes([boolean_t(UInt(trans))], length: sizeof(boolean_t), atIndex: 5)
 			encoder.setThreadgroupMemoryLength(sizeof(Float)*n, atIndex: 0)
-			encoder.dispatchThreadgroups(MTLSize(width: m/4, height: 0, depth: 0), threadsPerThreadgroup: MTLSize(width: n/4, height: 0, depth: 0))
+			encoder.dispatchThreadgroups(MTLSize(width: m/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: n/4, height: 1, depth: 1))
 			encoder.endEncoding()
 			command.commit()
-			fatalError("1")
 		} else {
 			async {
 				Computer.gemv(y: y, beta: beta, a: a, x: x, alpha: alpha, n: n, m: m, trans: trans)
@@ -90,10 +90,7 @@ public class Computer {
 			}
 			command.commit()
 		} else {
-			dispatch_group_enter(dispatch.group)
-			dispatch_async(dispatch.queue) {
-				dispatch_group_leave(self.dispatch.group)
-			}
+			dispatch_group_async(dispatch.group, dispatch.queue, task)
 		}
 	}
 	internal func join () {
