@@ -37,8 +37,14 @@ public class cpuComputer: Computer {
 	func gemv ( let y y: Buffer, let beta: Float, let a: Buffer, let x: Buffer, let alpha: Float, let n: Int, let m: Int, let trans: Bool ) {
 		dispatch_apply(m/4, cpuComputer.dispatch.queue) { ( let r: Int ) in
 			var accum: float4 = float4(0)
-			(0..<n/4).forEach { ( let c: Int ) in
-				accum += ( trans ? a.matrix [ r * n/4 + c ].transpose : a.matrix [ c * m/4 + r ] ) * x.vector[ c ]
+			if trans {
+				(0..<n/4).forEach { ( let c: Int ) in
+					accum += a.matrix [ r * n/4 + c ].transpose * x.vector[ c ]
+				}
+			} else {
+				(0..<n/4).forEach { ( let c: Int ) in
+					accum += a.matrix [ c * m/4 + r ] * x.vector[ c ]
+				}
 			}
 			y.vector [ r ] = alpha * accum + beta * y.vector [ r ]
 		}
