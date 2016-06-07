@@ -42,8 +42,6 @@ class ComputerTests: XCTestCase {
 				$0.join()
 				
 				return Array<Float>(y.scalar)
-				//let w: float4 = a.matrix[0] * x.vector[0] + a.matrix[1] * x.vector[1]
-				
 			}
 			print("\(result[0]) vs \(result[1])")
 			XCTAssert(result[0]==result[1])
