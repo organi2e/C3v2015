@@ -16,7 +16,6 @@ enum STAGE {
 	ERROR = 1 << 4,
 	DELTA = 1 << 5,
 };
-constant float sigma = 2.0;
 kernel void state(device uint & stage [[buffer(0)]],
 				  device float4 * state [[buffer(1)]],
 				  const device float4 * lucky [[buffer(2)]],
@@ -27,15 +26,13 @@ kernel void state(device uint & stage [[buffer(0)]],
 		state [ id ] = step( unpack_unorm4x8_to_float( noise[ id ] ), lucky[ id ]);
 	}
 }
-kernel void lucky(device uint & stage [[buffer(0)]],
-				  device float4 * lucky [[buffer(1)]],
-				  const device float4 * value [[buffer(2)]],
-				  const device float4 * basis [[buffer(3)]],
-				  const uint id [[ thread_position_in_grid]]) {
-	if (stage|~LUCKY) {
-		stage |= LUCKY;
-		lucky [ id ] = 0.5 + 0.5 * tanh( sigma * ( value[ id ] + basis[ id ] ) );
-	}
+kernel void lucky(device float4 * lucky [[ buffer(0) ]],
+				  const device float4 * value [[ buffer(1) ]],
+				  const device float4 * basis [[ buffer(2) ]],
+				  constant float & sigma [[ buffer(3) ]],
+				  const uint id [[ thread_position_in_grid ]] ) {
+	lucky [ id ] = 0.5 + 0.5 * tanh ( sigma * ( value[ id ] + basis[ id ] ) );
+	
 }
 kernel void error(device float4 * error [[ buffer(0) ]],
 				  const device float4 * state [[ buffer(1) ]],
@@ -48,6 +45,7 @@ kernel void delta(device float4 * delta [[ buffer(0) ]],
 				  const device float4 * error [[ buffer(1) ]],
 				  const device float4 * lucky [[ buffer(2) ]],
 				  const device uint * noise [[buffer(3)]],
+				  constant float & sigma [[ buffer(4) ]],
 				  uint id [[ thread_position_in_grid ]],
 				  uint width [[ threads_per_grid ]]) {
 	const float4 n = unpack_unorm4x8_to_float( noise[ id ] );

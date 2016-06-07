@@ -1,4 +1,4 @@
-//
+ //
 //  AppDelegate.swift
 //  sandbox
 //
@@ -14,6 +14,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 	
 	func applicationDidFinishLaunching(aNotification: NSNotification) {
 		do {
+			/*
 			let url: NSURL = try NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true)
 			let context: Context = try Context(storage: url.URLByAppendingPathComponent("sandbox.sqlite"))
 			if
@@ -33,6 +34,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 				}
 				O.correct( [true], eps: 0.1 )
 			}
+*/
 			print("Done")
 		} catch let e {
 			print(String(e))

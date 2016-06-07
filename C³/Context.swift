@@ -18,7 +18,6 @@ public class Context: NSManagedObjectContext {
 	)
 	
 	public let storage: NSURL?
-	public let platform: Platform
 	
 	private let rng: NSFileHandle
 	private let computer: Computer
@@ -26,11 +25,9 @@ public class Context: NSManagedObjectContext {
 	public init( let storage nsurl: NSURL? = nil, let platformHint hint: Platform = .GPU ) throws {
 		if hint == .GPU, let device: MTLDevice = MTLCreateSystemDefaultDevice() {
 			computer = try mtlComputer(device: device)
-			platform = .GPU
 		}
 		else {
 			computer = cpuComputer()
-			platform = .CPU
 		}
 		rng = try NSFileHandle(forReadingFromURL: Config.rngurl)
 		storage = nsurl
@@ -57,16 +54,11 @@ public class Context: NSManagedObjectContext {
 		}
 		rng = myrng
 
-		guard let hint: Platform = aDecoder.decodeObjectForKey(Context.platformKey)as?Platform else {
-			fatalError(Error.System.FailObjectDecode.rawValue)
-		}
-		if hint == .GPU, let device: MTLDevice = MTLCreateSystemDefaultDevice() {
+		if let device: MTLDevice = MTLCreateSystemDefaultDevice() {
 			computer = (try?mtlComputer(device: device)) ?? cpuComputer()
-			platform = .GPU
 		}
 		else {
 			computer = cpuComputer()
-			platform = .CPU
 		}
 		storage = aDecoder.decodeObjectForKey(Context.storageKey)as?NSURL
 		super.init(coder: aDecoder)
@@ -88,7 +80,6 @@ public class Context: NSManagedObjectContext {
 }
 extension Context {
 	private static let storageKey: String = "storage"
-	private static let platformKey: String = "platform"
 	private static let dispatch: (queue: dispatch_queue_t, semaphore: dispatch_semaphore_t) = (
 		queue: dispatch_queue_create(Config.dispatch.parallel, DISPATCH_QUEUE_CONCURRENT),
 		semaphore: dispatch_semaphore_create(1)

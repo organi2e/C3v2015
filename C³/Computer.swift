@@ -16,7 +16,7 @@ protocol Computer {
 	func leave ( )
 	func join ( )
 	func gemv ( let y y: Buffer, let beta: Float, let a: Buffer, let x: Buffer, let alpha: Float, let n: Int, let m: Int, let trans: Bool );
-	func sigmoid ( let y y: Buffer, let x: Buffer, let c: Buffer, let n: Int )
+	func sigmoid ( let y y: Buffer, let x: Buffer, let c: Buffer, let sigma: Float, let n: Int )
 	func newBuffer( let data data: NSData ) -> Buffer
 	func newBuffer( let length length: Int ) -> Buffer
 }
@@ -29,18 +29,18 @@ public class cpuComputer: Computer {
 	)
 	
 	func gemv ( let y y: Buffer, let beta: Float, let a: Buffer, let x: Buffer, let alpha: Float, let n: Int, let m: Int, let trans: Bool ) {
-		( 0 ..< m / 4 ).forEach {
-			let M: [float4x4] = trans ? (($0)*n/4).stride(to: (($0+1)*n/4), by: 1).map{ a.matrix[ $0 ].transpose } : $0.stride(to: ($0+1)*n/4, by: m/4).map{ a.matrix[ $0 ] }
-			let V: [float4] = Array<float4>( x.vector )
-			let a: float4 = zip ( M, V ).map{ $0 * $1 }.reduce ( float4(0) ) { $0.0 + $0.1 }
+		( 0 ..< m/4 ).forEach {
+			let M: [float4x4] = trans ? ( $0 * n/4 ) .stride (to: ( $0 + 1 ) * n/4, by: 1).map{ a.matrix[ $0 ].transpose } : $0.stride (to: $0 + m/4 * n/4, by: m/4).map{ a.matrix [ $0 ] }
+			let V: [float4] = Array<float4> ( x.vector )
+			let a: float4 = zip ( M, V ) .map { $0 * $1 } .reduce ( float4(0) ) { $0.0 + $0.1 }
 			let b: float4 = y.vector [ $0 ]
 			
 			y.vector [ $0 ] = alpha * a + beta * b
 		}
 	}
-	func sigmoid ( let y y: Buffer, let x: Buffer, let c: Buffer, let n: Int ) {
+	func sigmoid ( let y y: Buffer, let x: Buffer, let c: Buffer, let sigma: Float, let n: Int ) {
 		(0..<n/4).forEach {
-			y.vector [ $0 ] = 0.5 * vtanhf ( y.vector [ $0 ] + c.vector [ $0 ] ) + float4 ( 0.5 )
+			y.vector [ $0 ] = 0.5 * vtanhf ( sigma * ( x.vector [ $0 ] + c.vector [ $0 ] ) ) + float4 ( 0.5 )
 		}
 	}
 	func sync ( let task: (Void->Void) ) {
@@ -77,6 +77,7 @@ public class mtlComputer: cpuComputer {
 	let device: MTLDevice
 	let queue: MTLCommandQueue
 	let gemv: MTLComputePipelineState
+	let sigmoid: MTLComputePipelineState
 	
 	public init ( let device: MTLDevice ) throws {
 		
@@ -93,15 +94,18 @@ public class mtlComputer: cpuComputer {
 		guard let gemv: MTLComputePipelineState = pipelines["gemv"] else {
 			throw Error.PipelineNotAvailable(function: "gemv")
 		}
+		guard let sigmoid: MTLComputePipelineState = pipelines["lucky"] else {
+			throw Error.PipelineNotAvailable(function: "lucky")
+		}
 		self.gemv = gemv
+		self.sigmoid = sigmoid
 		self.device = device
 		self.queue = device.newCommandQueue()
 	}
 	override func gemv ( let y y: Buffer, let beta: Float, let a: Buffer, let x: Buffer, let alpha: Float, let n: Int, let m: Int, let trans: Bool ) {
-		if let x: mtlBuffer = x as? mtlBuffer where x.mtl.device === device,
+		if	let x: mtlBuffer = x as? mtlBuffer where x.mtl.device === device,
 			let y: mtlBuffer = y as? mtlBuffer where y.mtl.device === device,
-			let a: mtlBuffer = a as? mtlBuffer where a.mtl.device === device
-		{
+			let a: mtlBuffer = a as? mtlBuffer where a.mtl.device === device {
 			let command: MTLCommandBuffer = queue.commandBuffer()
 			let encoder: MTLComputeCommandEncoder = command.computeCommandEncoder()
 			encoder.setComputePipelineState(gemv)
@@ -117,15 +121,29 @@ public class mtlComputer: cpuComputer {
 			command.commit()
 		} else {
 			async {
-				super.gemv(y: y, beta: beta, a: a, x: x, alpha: alpha, n: n, m: m, trans: trans)
+			//	super.gemv(y: y, beta: beta, a: a, x: x, alpha: alpha, n: n, m: m, trans: trans)
 			}
 		}
-	}
-	override func sigmoid( let y y: Buffer, let x: Buffer, let c: Buffer, let n: Int) {
+	}	
+	override func sigmoid( let y y: Buffer, let x: Buffer, let c: Buffer, let sigma: Float, let n: Int) {
 		if	let x: mtlBuffer = x as? mtlBuffer where x.mtl.device === device,
 			let y: mtlBuffer = y as? mtlBuffer where y.mtl.device === device,
-			let c: mtlBuffer = c as? mtlBuffer where a.mtl.device === device {
-			
+			let c: mtlBuffer = c as? mtlBuffer where c.mtl.device === device {
+			let command: MTLCommandBuffer = queue.commandBuffer()
+			let encoder: MTLComputeCommandEncoder = command.computeCommandEncoder()
+			encoder.setComputePipelineState(sigmoid)
+			encoder.setBuffer(y.mtl, offset: 0, atIndex: 0)
+			encoder.setBuffer(x.mtl, offset: 0, atIndex: 1)
+			encoder.setBuffer(c.mtl, offset: 0, atIndex: 2)
+			encoder.setBytes([sigma], length: sizeof(Float), atIndex: 3)
+			encoder.dispatchThreadgroups(MTLSize(width: n/16, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 4, height: 1, depth: 1))
+			encoder.endEncoding()
+			command.commit()
+		} else {
+			async {
+			//	super.sigmoid(y: y, x: x, c: c, n: n)
+			}
+			fatalError("error")
 		}
 	}
 	override func sync ( let task: (Void->Void) ) {
@@ -147,5 +165,13 @@ public class mtlComputer: cpuComputer {
 		let command: MTLCommandBuffer = queue.commandBuffer()
 		command.commit()
 		command.waitUntilCompleted()
+	}
+	override func newBuffer( let data data: NSData ) -> Buffer {
+		let mtl: MTLBuffer = device.newBufferWithBytes(data.bytes, length: data.length, options: .CPUCacheModeDefaultCache)
+		return mtlBuffer(buffer: mtl)
+	}
+	override func newBuffer( let length length: Int ) -> Buffer {
+		let mtl: MTLBuffer = device.newBufferWithLength(length, options: .CPUCacheModeDefaultCache)
+		return mtlBuffer(buffer: mtl)
 	}
 }
