@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Accelerate
 import simd
 import XCTest
 @testable import C3
@@ -105,7 +106,6 @@ class ComputerTests: XCTestCase {
 			a.scalar[$0] = Float(arc4random_uniform(UInt32(65536)))
 		}
 		(0..<N).forEach {
-			
 			x.scalar[$0] = Float(arc4random_uniform(UInt32(65536)))
 		}
 		measureBlock {
