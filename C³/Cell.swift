@@ -21,6 +21,7 @@ public class Cell: NSManagedObject {
 	@NSManaged private var output: Set<Edge>
 	
 	private class MTLRef {
+		/*
 		var bias: Buffer = Buffer()
 		var stage: Buffer = Buffer()
 		var noise: Buffer = Buffer()
@@ -29,6 +30,7 @@ public class Cell: NSManagedObject {
 		var state: Buffer = Buffer()
 		var error: Buffer = Buffer()
 		var delta: Buffer = Buffer()
+*/
 	}
 	private let buf: MTLRef = MTLRef()
 }
@@ -128,6 +130,7 @@ extension Cell {
 extension Cell: CoreDataSharedMetal {
 	func setup () {
 		if let context: Context = managedObjectContext as? Context {
+			/*
 			buf.bias = context.newBuffer(data: bias)
 			buf.stage = context.newBuffer(length: sizeof(UInt8))
 			buf.noise = context.newBuffer(length: sizeof(UInt8)*width)
@@ -138,6 +141,7 @@ extension Cell: CoreDataSharedMetal {
 			buf.delta = context.newBuffer(length: sizeof(Float)*width)
 			
 			bias = buf.bias.raw
+*/
 		}
 	}
 	public override func awakeFromInsert() {

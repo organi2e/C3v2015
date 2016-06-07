@@ -15,7 +15,7 @@ class Edge: NSManagedObject {
 	@NSManaged var input: Cell
 	@NSManaged var output: Cell
 	class Buffers {
-		var gain: Buffer = Buffer()
+		var gain: Buffer?
 	}
 	let buf: Buffers = Buffers()
 }
@@ -32,11 +32,6 @@ extension Edge: Network {
 }
 extension Edge: CoreDataSharedMetal {
 	func setup() {
-		if let context: Context = managedObjectContext as? Context {
-			buf.gain = context.newBuffer(data: gain)
-		} else {
-			buf.gain = Buffer(raw: gain)
-		}
 	}
 	override func awakeFromInsert() {
 		super.awakeFromInsert()
