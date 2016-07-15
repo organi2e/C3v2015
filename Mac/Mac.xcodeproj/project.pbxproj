@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		8719AE4A1D38B58800F8DCA4 /* macro.metal in Sources */ = {isa = PBXBuildFile; fileRef = 8719AE491D38B58800F8DCA4 /* macro.metal */; };
+		8719AE4D1D38BBE500F8DCA4 /* MiscTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8719AE4B1D38BB9800F8DCA4 /* MiscTests.swift */; };
 		876A4B561D066EDC00D32E1B /* ComputerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 876A4B551D066EDC00D32E1B /* ComputerTests.swift */; };
 		876A4B5E1D06A3A100D32E1B /* math.metal in Sources */ = {isa = PBXBuildFile; fileRef = 876A4B5C1D06A36C00D32E1B /* math.metal */; };
 		877216F91D05807D00E824F9 /* Buffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 877216F71D057EF100E824F9 /* Buffer.swift */; };
@@ -85,6 +87,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		8719AE491D38B58800F8DCA4 /* macro.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = macro.metal; path = "../../C³/macro.metal"; sourceTree = "<group>"; };
+		8719AE4B1D38BB9800F8DCA4 /* MiscTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MiscTests.swift; sourceTree = "<group>"; };
 		876A4B551D066EDC00D32E1B /* ComputerTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ComputerTests.swift; sourceTree = "<group>"; };
 		876A4B5C1D06A36C00D32E1B /* math.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = math.metal; path = "../../C³/math.metal"; sourceTree = "<group>"; };
 		877216F71D057EF100E824F9 /* Buffer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Buffer.swift; path = "../../C³/Buffer.swift"; sourceTree = "<group>"; };
@@ -219,6 +223,7 @@
 				876A4B5C1D06A36C00D32E1B /* math.metal */,
 				87B1FD241D05466D00981CF4 /* blas.metal */,
 				879AB5D11D054FFD00E4587F /* common.metal */,
+				8719AE491D38B58800F8DCA4 /* macro.metal */,
 				87B1FD051D05461100981CF4 /* Info.plist */,
 			);
 			path = "C³";
@@ -230,6 +235,7 @@
 				87B1FD2E1D05468600981CF4 /* Info.plist */,
 				87B1FD2D1D05468600981CF4 /* ContextTests.swift */,
 				876A4B551D066EDC00D32E1B /* ComputerTests.swift */,
+				8719AE4B1D38BB9800F8DCA4 /* MiscTests.swift */,
 			);
 			path = "C³Tests";
 			sourceTree = "<group>";
@@ -298,8 +304,8 @@
 			buildConfigurationList = 87B1FD181D05461200981CF4 /* Build configuration list for PBXNativeTarget "C3" */;
 			buildPhases = (
 				87B1FCFC1D05461100981CF4 /* Sources */,
-				87B1FCFD1D05461100981CF4 /* Frameworks */,
 				87B1FCFE1D05461100981CF4 /* Headers */,
+				87B1FCFD1D05461100981CF4 /* Frameworks */,
 				87B1FCFF1D05461100981CF4 /* Resources */,
 			);
 			buildRules = (
@@ -350,7 +356,6 @@
 					};
 					87B1FD091D05461100981CF4 = {
 						CreatedOnToolsVersion = 7.3.1;
-						TestTargetID = 878C7A8E1D01AF05002CDFD1;
 					};
 				};
 			};
@@ -445,6 +450,7 @@
 				87B1FD341D0546B500981CF4 /* Dict.swift in Sources */,
 				87B1FD351D0546B500981CF4 /* Edge.swift in Sources */,
 				87B1FD361D0546B500981CF4 /* Error.swift in Sources */,
+				8719AE4A1D38B58800F8DCA4 /* macro.metal in Sources */,
 				87B1FD371D0546B500981CF4 /* blas.metal in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -455,6 +461,7 @@
 			files = (
 				876A4B561D066EDC00D32E1B /* ComputerTests.swift in Sources */,
 				87B1FD3C1D0546FC00981CF4 /* ContextTests.swift in Sources */,
+				8719AE4D1D38BBE500F8DCA4 /* MiscTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -874,7 +881,6 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/sandbox.app/Contents/MacOS/sandbox";
 			};
 			name = Debug;
 		};
@@ -917,7 +923,6 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.organi2e.kn.kotan.C-Tests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/sandbox.app/Contents/MacOS/sandbox";
 			};
 			name = Release;
 		};

@@ -15,6 +15,7 @@ import XCTest
 class ComputerTests: XCTestCase {
 	let eps: Float = 0.00000001
 	let sigma: Float = 2.0
+	/*
 	func testSigmoid() {
 		do {
 			let cpucomputer: Computer = cpuComputer()
@@ -143,4 +144,5 @@ class ComputerTests: XCTestCase {
 			XCTFail()
 		}
 	}
+*/
 }

@@ -38,4 +38,7 @@ class mtlBuffer: cpuBuffer {
 		mtl = buffer
 		super.init(buffer: NSData(bytesNoCopy: mtl.contents(), length: mtl.length, freeWhenDone: false))
 	}
+	deinit {
+		mtl.setPurgeableState(.Empty)
+	}
 }
