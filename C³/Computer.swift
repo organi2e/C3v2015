@@ -15,8 +15,10 @@ protocol Computer {
 	func enter ( )
 	func leave ( )
 	func join ( )
-	func gemv ( let y y: Buffer, let beta: Float, let a: Buffer, let x: Buffer, let alpha: Float, let n: Int, let m: Int, let trans: Bool );
-	func normal ( let y y: Buffer, let u: Buffer, let s: Buffer, let n: Int);
+	func pdf ( let y y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer, let n: Int )
+	func cdf ( let y y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer, let n: Int )
+	func gemv ( let y y: Buffer, let beta: Float, let a: Buffer, let x: Buffer, let alpha: Float, let n: Int, let m: Int, let trans: Bool )
+	func normal ( let y y: Buffer, let u: Buffer, let s: Buffer, let n: Int)
 	func test ();
 	func sigmoid ( let y y: Buffer, let x: Buffer, let c: Buffer, let sigma: Float, let n: Int )
 	func newBuffer( let data data: NSData ) -> Buffer
@@ -77,6 +79,23 @@ public class cpuComputer: Computer {
 
 			vDSP_vmul(y.scalar.baseAddress, 1, s.scalar.baseAddress, 1, y.scalar.baseAddress, 1, vDSP_Length(n))
 			vDSP_vadd(y.scalar.baseAddress, 1, u.scalar.baseAddress, 1, y.scalar.baseAddress, 1, vDSP_Length(n))
+		}
+	}
+	func pdf ( let y y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer, let n: Int ) {
+		async {
+			vDSP_vsub(u.scalar.baseAddress, 1, x.scalar.baseAddress, 1, y.scalar.baseAddress, 1, vDSP_Length(n))			//y <- x - u
+			vDSP_vdiv(s.scalar.baseAddress, 1, y.scalar.baseAddress, 1, y.scalar.baseAddress, 1, vDSP_Length(n))			//y <- y/s = (x-u)/s
+			vDSP_vsq(y.scalar.baseAddress, 1, y.scalar.baseAddress, 1, vDSP_Length(n))										//y <- y^2 = ((x-u)^2)/(s^2)
+			vDSP_vsdiv(y.scalar.baseAddress, 1, [Float(-2.0)], y.scalar.baseAddress, 1, vDSP_Length(n))						//y <- y/2 = -((x-u)^2)/(2*(s^2))
+			vvexpf(y.scalar.baseAddress, y.scalar.baseAddress, [Int32(n)])													//y <- exp(y) = exp(-((x-u)^2)/(2*(s^2)))
+			vDSP_vdiv(s.scalar.baseAddress, 1, y.scalar.baseAddress, 1, y.scalar.baseAddress, 1, vDSP_Length(n))			//y <- y/s = (1/s)*exp(-((x-u)^2)/(2*(s^2)))
+			vDSP_vsmul(y.scalar.baseAddress, 1, [Float(0.5*M_2_SQRTPI*M_SQRT1_2)], y.scalar.baseAddress, 1, vDSP_Length(n))	//y <- y/sqrt(2*pi) = (1/s/sqrt(2*pi))*exp(-((x-u)^2)/(2*(s^2)))
+		}
+	}
+	func cdf ( let y y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer, let n: Int ) {
+		async {
+			let p: [Float] = [Float](count: n, repeatedValue: 0.0)
+			
 		}
 	}
 	func sigmoid ( let y y: Buffer, let x: Buffer, let c: Buffer, let sigma: Float, let n: Int ) {
@@ -202,6 +221,12 @@ public class mtlComputer: cpuComputer {
 			super.normal(y: y, u: u, s: s, n: n)
 		}
 	}
+	override func pdf ( let y y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer, let n: Int ) {
+		super.pdf(y: y, x: x, u: u, s: s, n: n)
+	}
+	override func cdf ( let y y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer, let n: Int ) {
+		super.cdf(y: y, x: x, u: u, s: s, n: n)
+	}
 	override func sigmoid( let y y: Buffer, let x: Buffer, let c: Buffer, let sigma: Float, let n: Int) {
 		if	let x: mtlBuffer = x as? mtlBuffer where x.mtl.device === device,
 			let y: mtlBuffer = y as? mtlBuffer where y.mtl.device === device,
@@ -252,7 +277,7 @@ public class mtlComputer: cpuComputer {
 		return mtlBuffer(buffer: mtl)
 	}
 	override func test() {
-		let n = 1 << 18
+		let n = 1 << 22
 		let y = newBuffer(length: sizeof(Float)*n)
 		let u = newBuffer(length: sizeof(Float)*n)
 		let s = newBuffer(length: sizeof(Float)*n)
@@ -262,16 +287,8 @@ public class mtlComputer: cpuComputer {
 		}
 		normal(y: y, u: u, s: s, n: n)
 		join()
-		var mu = Float(0.0)
-		var sigma = Float(0.0)
-		for k in 0..<n {
-			mu = mu + y.scalar[k]
-		}
-		mu = mu / Float(n)
-		for k in 0..<n {
-			sigma = sigma + (y.scalar[k]-mu)*(y.scalar[k]-mu)
-		}
-		sigma = sigma / Float(n)
+		let mu = y.scalar.reduce(0.0){$0+$1} / Float(n)
+		let sigma = y.scalar.map{($0-mu)*($0-mu)}.reduce(0){$0+$1} / Float(n)
 		print("mu", mu, "sigma", sqrt(sigma))
 	}
 }

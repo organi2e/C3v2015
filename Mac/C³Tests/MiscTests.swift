@@ -13,6 +13,7 @@ import XCTest
 @testable import C3
 
 class MiscTests: XCTestCase {
+	/*
 	func testEval() {
 		measureBlock {()->()in
 		do {
@@ -27,4 +28,5 @@ class MiscTests: XCTestCase {
 		}
 		}
 	}
+*/
 }
