@@ -7,6 +7,7 @@
 //
 import CoreData
 import Metal
+import Accelerate
 import simd
 
 protocol Buffer {

@@ -15,10 +15,36 @@ protocol Computer {
 	func enter ( )
 	func leave ( )
 	func join ( )
-	func pdf ( let y y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer, let n: Int )
-	func cdf ( let y y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer, let n: Int )
+	
+	func add ( let y: Buffer, let _: Buffer, let _: Buffer )
+	func sub ( let y: Buffer, let _: Buffer, let _: Buffer )
+	func mul ( let y: Buffer, let _: Buffer, let _: Buffer )
+	func div ( let y: Buffer, let _: Buffer, let _: Buffer )
+	
+	func add ( let y: Buffer, let _: Buffer, let _: Float )
+	func sub ( let y: Buffer, let _: Buffer, let _: Float )
+	func mul ( let y: Buffer, let _: Buffer, let _: Float )
+	func div ( let y: Buffer, let _: Buffer, let _: Float )
+	
+	func abs ( let y: Buffer, let _: Buffer )
+	func neg ( let y: Buffer, let _: Buffer )
+	func sq ( let y: Buffer, let _: Buffer )
+	func sqrt ( let y: Buffer, let _: Buffer )
+	
+	func exp ( let y: Buffer, let _: Buffer )
+	func log ( let y: Buffer, let _: Buffer )
+
+	func fill( let y: Buffer, let _: Float)
+	func clamp( let y: Buffer, let _: Buffer, let _: Float, let _: Float)
+	
+	func sum ( let x: Buffer ) -> Float
+	func dot ( let a: Buffer, let _: Buffer ) -> Float
 	func gemv ( let y y: Buffer, let beta: Float, let a: Buffer, let x: Buffer, let alpha: Float, let n: Int, let m: Int, let trans: Bool )
-	func normal ( let y y: Buffer, let u: Buffer, let s: Buffer, let n: Int)
+	
+	func normal ( let y: Buffer, let u: Buffer, let s: Buffer )
+	func pdf ( let y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer )
+	func cdf ( let y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer )
+	
 	func test ();
 	func sigmoid ( let y y: Buffer, let x: Buffer, let c: Buffer, let sigma: Float, let n: Int )
 	func newBuffer( let data data: NSData ) -> Buffer
@@ -38,64 +64,169 @@ public class cpuComputer: Computer {
 		semaphore: dispatch_semaphore_create(1)
 	)
 	
+	func add ( let y: Buffer, let _ a: Buffer, let _ b: Buffer ) {
+		assert(y.scalar.count==a.scalar.count)
+		assert(y.scalar.count==b.scalar.count)
+		vDSP_vadd(a.scalar.baseAddress, 1, b.scalar.baseAddress, 1, y.scalar.baseAddress, 1, vDSP_Length(y.scalar.count))
+	}
+	func sub ( let y: Buffer, let _ a: Buffer, let _ b: Buffer ) {
+		assert(y.scalar.count==a.scalar.count)
+		assert(y.scalar.count==b.scalar.count)
+		vDSP_vadd(b.scalar.baseAddress, 1, a.scalar.baseAddress, 1, y.scalar.baseAddress, 1, vDSP_Length(y.scalar.count))
+	}
+	func mul ( let y: Buffer, let _ a: Buffer, let _ b: Buffer ) {
+		assert(y.scalar.count==a.scalar.count)
+		assert(y.scalar.count==b.scalar.count)
+		vDSP_vadd(a.scalar.baseAddress, 1, b.scalar.baseAddress, 1, y.scalar.baseAddress, 1, vDSP_Length(y.scalar.count))
+	}
+	func div ( let y: Buffer, let _ a: Buffer, let _ b: Buffer ) {
+		assert(y.scalar.count==a.scalar.count)
+		assert(y.scalar.count==b.scalar.count)
+		vDSP_vdiv(b.scalar.baseAddress, 1, a.scalar.baseAddress, 1, y.scalar.baseAddress, 1, vDSP_Length(y.scalar.count))
+	}
+	func add ( let y: Buffer, let _ a: Buffer, let _ b: Float ) {
+		assert(y.scalar.count==a.scalar.count)
+		vDSP_vsadd(a.scalar.baseAddress, 1, [ b], y.scalar.baseAddress, 1, vDSP_Length(y.scalar.count))
+	}
+	func sub ( let y: Buffer, let _ a: Buffer, let _ b: Float ) {
+		assert(y.scalar.count==a.scalar.count)
+		vDSP_vsadd(a.scalar.baseAddress, 1, [-b], y.scalar.baseAddress, 1, vDSP_Length(y.scalar.count))
+	}
+	func mul ( let y: Buffer, let _ a: Buffer, let _ b: Float ) {
+		assert(y.scalar.count==a.scalar.count)
+		vDSP_vsmul(a.scalar.baseAddress, 1, [ b], y.scalar.baseAddress, 1, vDSP_Length(y.scalar.count))
+	}
+	func div ( let y: Buffer, let _ a: Buffer, let _ b: Float ) {
+		assert(y.scalar.count==a.scalar.count)
+		vDSP_vsdiv(a.scalar.baseAddress, 1, [ b], y.scalar.baseAddress, 1, vDSP_Length(y.scalar.count))
+	}
+	
+	func abs ( let y: Buffer, let _ x: Buffer ) {
+		assert(y.scalar.count==x.scalar.count)
+		vDSP_vabs(x.scalar.baseAddress, 1, y.scalar.baseAddress, 1, vDSP_Length(y.scalar.count))
+	}
+	func neg ( let y: Buffer, let _ x: Buffer ) {
+		assert(y.scalar.count==x.scalar.count)
+		vDSP_vneg(x.scalar.baseAddress, 1, y.scalar.baseAddress, 1, vDSP_Length(y.scalar.count))
+	}
+	func sq ( let y: Buffer, let _ x: Buffer ) {
+		assert(y.scalar.count==x.scalar.count)
+		vDSP_vsq(x.scalar.baseAddress, 1, y.scalar.baseAddress, 1, vDSP_Length(y.scalar.count))
+	}
+	func sqrt ( let y: Buffer, let _ x: Buffer ) {
+		assert(y.scalar.count==x.scalar.count)
+		vvsqrtf(y.scalar.baseAddress, x.scalar.baseAddress, [Int32(x.scalar.count)])
+	}
+	
+	func exp ( let y: Buffer, let _ x: Buffer ) {
+		assert(y.scalar.count==x.scalar.count)
+		vvexpf(y.scalar.baseAddress, x.scalar.baseAddress, [Int32(y.scalar.count)])
+	}
+	func log ( let y: Buffer, let _ x: Buffer ) {
+		assert(y.scalar.count==x.scalar.count)
+		vvlogf(y.scalar.baseAddress, x.scalar.baseAddress, [Int32(y.scalar.count)])
+	}
+	
+	func fill( let y: Buffer, let _ a: Float) {
+		vDSP_vfill([a], y.scalar.baseAddress, 1, vDSP_Length(y.scalar.count))
+	}
+	
+	func clamp( let y: Buffer, let _ x: Buffer, let _ a: Float, let _ b: Float) {
+		assert(y.scalar.count==x.scalar.count)
+		vDSP_vclip(x.scalar.baseAddress, 1, [a], [b], y.scalar.baseAddress, 1, vDSP_Length(x.scalar.count))
+	}
+	
+	func sum ( let x: Buffer ) -> Float {
+		var result: Float = 0
+		vDSP_sve(x.scalar.baseAddress, 1, &result, vDSP_Length(x.scalar.count))
+		return result
+	}
+	func dot ( let a: Buffer, let _ b: Buffer ) -> Float {
+		var result: Float = 0
+		assert(a.scalar.count==b.scalar.count)
+		vDSP_dotpr(a.scalar.baseAddress, 1, b.scalar.baseAddress, 1, &result, vDSP_Length(a.scalar.count))
+		return result
+	}
+	
 	func gemv ( let y y: Buffer, let beta: Float, let a: Buffer, let x: Buffer, let alpha: Float, let n: Int, let m: Int, let trans: Bool ) {
-		async {
-			dispatch_apply(m/4, cpuComputer.dispatch.queue) { ( let r: Int ) in
-				var accum: float4 = float4(0)
-				if trans {
-					(0..<n/4).forEach { ( let c: Int ) in
-						accum += a.matrix [ r * n/4 + c ].transpose * x.vector[ c ]
-					}
-				} else {
-					(0..<n/4).forEach { ( let c: Int ) in
-						accum += a.matrix [ c * m/4 + r ] * x.vector[ c ]
-					}
+		dispatch_apply(m/4, cpuComputer.dispatch.queue) { ( let r: Int ) in
+			var accum: float4 = float4(0)
+			if trans {
+				(0..<n/4).forEach { ( let c: Int ) in
+					accum += a.matrix [ r * n/4 + c ].transpose * x.vector[ c ]
 				}
-				y.vector [ r ] = alpha * accum + beta * y.vector [ r ]
+			} else {
+				(0..<n/4).forEach { ( let c: Int ) in
+					accum += a.matrix [ c * m/4 + r ] * x.vector[ c ]
+				}
+			}
+			y.vector [ r ] = alpha * accum + beta * y.vector [ r ]
+		}
+	}
+	func normal ( let y: Buffer, let u: Buffer, let s: Buffer ) {
+		let n: Int = y.scalar.count
+		let W: [UInt16] = [UInt16](count: y.scalar.count, repeatedValue: 0)
+		let N: [Float] = [Float](count: y.scalar.count, repeatedValue: 0)
+
+		assert(y.scalar.count==u.scalar.count)
+		assert(y.scalar.count==s.scalar.count)
+		
+		arc4random_buf(UnsafeMutablePointer<Void>(W), sizeof(UInt16)*W.count)
+		vDSP_vfltu16(W, 1, UnsafeMutablePointer<Float>(N), 1, vDSP_Length(n))
+		
+		vDSP_vsadd(UnsafeMutablePointer<Float>(N).advancedBy(0/2), 1, [Float(1.0)], UnsafeMutablePointer<Float>(N), 1, vDSP_Length(n/2))
+		vDSP_vsmul(UnsafeMutablePointer<Float>(N).advancedBy(n/2), 1, [Float(2.0)], UnsafeMutablePointer<Float>(N).advancedBy(n/2), 1, vDSP_Length(n/2))
+		vDSP_vsmul(UnsafeMutablePointer<Float>(N).advancedBy(0/2), 1, [Float(1/65536.0)], UnsafeMutablePointer<Float>(N).advancedBy(0/2), 1, vDSP_Length(n))
+
+		vvlogf(UnsafeMutablePointer<Float>(N), UnsafePointer<Float>(N), [Int32(n/2)])
+		vDSP_vsmul(N, 1, [Float(-2.0)], UnsafeMutablePointer<Float>(N), 1, vDSP_Length(n/2))
+		vvsqrtf(UnsafeMutablePointer<Float>(N), UnsafePointer<Float>(N), [Int32(n/2)])
+		
+		vvcospif(y.scalar.baseAddress.advancedBy(0/2), UnsafePointer<Float>(N).advancedBy(n/2), [Int32(n/2)])
+		vDSP_vmul(y.scalar.baseAddress.advancedBy(0/2), 1, UnsafePointer<Float>(N), 1, y.scalar.baseAddress.advancedBy(0/2), 1, vDSP_Length(n/2))
+	
+		vvsinpif(y.scalar.baseAddress.advancedBy(n/2), UnsafePointer<Float>(N).advancedBy(n/2), [Int32(n/2)])
+		vDSP_vmul(y.scalar.baseAddress.advancedBy(n/2), 1, UnsafePointer<Float>(N), 1, y.scalar.baseAddress.advancedBy(n/2), 1, vDSP_Length(n/2))
+		
+		vDSP_vmul(y.scalar.baseAddress, 1, s.scalar.baseAddress, 1, y.scalar.baseAddress, 1, vDSP_Length(n))
+		vDSP_vadd(y.scalar.baseAddress, 1, u.scalar.baseAddress, 1, y.scalar.baseAddress, 1, vDSP_Length(n))
+
+	}
+	func pdf ( let y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer ) {
+		vDSP_vsub(u.scalar.baseAddress, 1, x.scalar.baseAddress, 1, y.scalar.baseAddress, 1, vDSP_Length(y.scalar.count))			//y <- x - u
+		vDSP_vdiv(s.scalar.baseAddress, 1, y.scalar.baseAddress, 1, y.scalar.baseAddress, 1, vDSP_Length(y.scalar.count))			//y <- y/s = (x-u)/s
+		vDSP_vsq(y.scalar.baseAddress, 1, y.scalar.baseAddress, 1, vDSP_Length(y.scalar.count))										//y <- y^2 = ((x-u)^2)/(s^2)
+		vDSP_vsdiv(y.scalar.baseAddress, 1, [Float(-2.0)], y.scalar.baseAddress, 1, vDSP_Length(y.scalar.count))						//y <- y/2 = -((x-u)^2)/(2*(s^2))
+		vvexpf(y.scalar.baseAddress, y.scalar.baseAddress, [Int32(y.scalar.count)])													//y <- exp(y) = exp(-((x-u)^2)/(2*(s^2)))
+		vDSP_vdiv(s.scalar.baseAddress, 1, y.scalar.baseAddress, 1, y.scalar.baseAddress, 1, vDSP_Length(y.scalar.count))			//y <- y/s = (1/s)*exp(-((x-u)^2)/(2*(s^2)))
+		vDSP_vsmul(y.scalar.baseAddress, 1, [Float(0.5*M_2_SQRTPI*M_SQRT1_2)], y.scalar.baseAddress, 1, vDSP_Length(y.scalar.count))	//y <- y/sqrt(2*pi) = (1/s/sqrt(2*pi))*exp(-((x-u)^2)/(2*(s^2)))
+	}
+	func cdf ( let y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer ) {
+		assert(y.scalar.count==x.scalar.count)
+		assert(y.scalar.count==u.scalar.count)
+		assert(y.scalar.count==s.scalar.count)
+		vDSP_vsub(x.scalar.baseAddress, 1, u.scalar.baseAddress, 1, y.scalar.baseAddress, 1, vDSP_Length(y.scalar.count))
+		vDSP_vsmul(y.scalar.baseAddress, 1, [Float(M_SQRT1_2)], y.scalar.baseAddress, 1, vDSP_Length(y.scalar.count))
+		dispatch_apply(4, cpuComputer.dispatch.queue) {(let index: Int)in
+			let width: Int = y.scalar.count / 4
+			(0..<width).forEach {
+				let offset = width * index + $0
+				y.scalar[offset] = 0.5 * erfcf(y.scalar[offset])
 			}
 		}
 	}
-	func normal ( let y y: Buffer, let u: Buffer, let s: Buffer, let n: Int) {
-		async {
-			let W: [UInt16] = [UInt16](count: n, repeatedValue: 0)
-			let N: [Float] = [Float](count: n, repeatedValue: 0)
-
-			arc4random_buf(UnsafeMutablePointer<Void>(W), sizeof(UInt16)*W.count)
-			vDSP_vfltu16(W, 1, UnsafeMutablePointer<Float>(N), 1, vDSP_Length(n))
-		
-			vDSP_vsadd(UnsafeMutablePointer<Float>(N).advancedBy(0/2), 1, [Float(1.0)], UnsafeMutablePointer<Float>(N), 1, vDSP_Length(n/2))
-			vDSP_vsmul(UnsafeMutablePointer<Float>(N).advancedBy(n/2), 1, [Float(2.0)], UnsafeMutablePointer<Float>(N).advancedBy(n/2), 1, vDSP_Length(n/2))
-			vDSP_vsmul(UnsafeMutablePointer<Float>(N).advancedBy(0/2), 1, [Float(1/65536.0)], UnsafeMutablePointer<Float>(N).advancedBy(0/2), 1, vDSP_Length(n))
-
-			vvlogf(UnsafeMutablePointer<Float>(N), UnsafePointer<Float>(N), [Int32(n/2)])
-			vDSP_vsmul(N, 1, [Float(-2.0)], UnsafeMutablePointer<Float>(N), 1, vDSP_Length(n/2))
-			vvsqrtf(UnsafeMutablePointer<Float>(N), UnsafePointer<Float>(N), [Int32(n/2)])
-		
-			vvcospif(y.scalar.baseAddress.advancedBy(0/2), UnsafePointer<Float>(N).advancedBy(n/2), [Int32(n/2)])
-			vDSP_vmul(y.scalar.baseAddress.advancedBy(0/2), 1, UnsafePointer<Float>(N), 1, y.scalar.baseAddress.advancedBy(0/2), 1, vDSP_Length(n/2))
-		
-			vvsinpif(y.scalar.baseAddress.advancedBy(n/2), UnsafePointer<Float>(N).advancedBy(n/2), [Int32(n/2)])
-			vDSP_vmul(y.scalar.baseAddress.advancedBy(n/2), 1, UnsafePointer<Float>(N), 1, y.scalar.baseAddress.advancedBy(n/2), 1, vDSP_Length(n/2))
-
-			vDSP_vmul(y.scalar.baseAddress, 1, s.scalar.baseAddress, 1, y.scalar.baseAddress, 1, vDSP_Length(n))
-			vDSP_vadd(y.scalar.baseAddress, 1, u.scalar.baseAddress, 1, y.scalar.baseAddress, 1, vDSP_Length(n))
-		}
-	}
-	func pdf ( let y y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer, let n: Int ) {
-		async {
-			vDSP_vsub(u.scalar.baseAddress, 1, x.scalar.baseAddress, 1, y.scalar.baseAddress, 1, vDSP_Length(n))			//y <- x - u
-			vDSP_vdiv(s.scalar.baseAddress, 1, y.scalar.baseAddress, 1, y.scalar.baseAddress, 1, vDSP_Length(n))			//y <- y/s = (x-u)/s
-			vDSP_vsq(y.scalar.baseAddress, 1, y.scalar.baseAddress, 1, vDSP_Length(n))										//y <- y^2 = ((x-u)^2)/(s^2)
-			vDSP_vsdiv(y.scalar.baseAddress, 1, [Float(-2.0)], y.scalar.baseAddress, 1, vDSP_Length(n))						//y <- y/2 = -((x-u)^2)/(2*(s^2))
-			vvexpf(y.scalar.baseAddress, y.scalar.baseAddress, [Int32(n)])													//y <- exp(y) = exp(-((x-u)^2)/(2*(s^2)))
-			vDSP_vdiv(s.scalar.baseAddress, 1, y.scalar.baseAddress, 1, y.scalar.baseAddress, 1, vDSP_Length(n))			//y <- y/s = (1/s)*exp(-((x-u)^2)/(2*(s^2)))
-			vDSP_vsmul(y.scalar.baseAddress, 1, [Float(0.5*M_2_SQRTPI*M_SQRT1_2)], y.scalar.baseAddress, 1, vDSP_Length(n))	//y <- y/sqrt(2*pi) = (1/s/sqrt(2*pi))*exp(-((x-u)^2)/(2*(s^2)))
-		}
-	}
-	func cdf ( let y y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer, let n: Int ) {
-		async {
-			let p: [Float] = [Float](count: n, repeatedValue: 0.0)
-			
+	func tdf ( let y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer ) {
+		assert(y.scalar.count==x.scalar.count)
+		assert(y.scalar.count==u.scalar.count)
+		assert(y.scalar.count==s.scalar.count)
+		vDSP_vsub(u.scalar.baseAddress, 1, x.scalar.baseAddress, 1, y.scalar.baseAddress, 1, vDSP_Length(y.scalar.count))
+		vDSP_vsmul(y.scalar.baseAddress, 1, [Float(M_SQRT1_2)], y.scalar.baseAddress, 1, vDSP_Length(y.scalar.count))
+		dispatch_apply(4, cpuComputer.dispatch.queue) {(let index: Int)in
+			let width: Int = y.scalar.count / 4
+			(0..<width).forEach {
+				let offset = width * index + $0
+				y.scalar[offset] = 0.5 * erfcf(y.scalar[offset])
+			}
 		}
 	}
 	func sigmoid ( let y y: Buffer, let x: Buffer, let c: Buffer, let sigma: Float, let n: Int ) {
@@ -137,12 +268,16 @@ public class mtlComputer: cpuComputer {
 		case PipelineNotAvailable(function: String)
 	}
 
+	struct Pipeline {
+		let gemv: MTLComputePipelineState
+		let normal: MTLComputePipelineState
+		let pdf: MTLComputePipelineState
+	};
+	let pipeline: Pipeline
 	let device: MTLDevice
 	let queue: MTLCommandQueue
-	let gemv: MTLComputePipelineState
 	let sigmoid: MTLComputePipelineState
 	let eval: MTLComputePipelineState
-	let normal: MTLComputePipelineState
 	
 	public init ( let device: MTLDevice ) throws {
 		
@@ -168,10 +303,12 @@ public class mtlComputer: cpuComputer {
 		guard let eval: MTLComputePipelineState = pipelines["eval"] else {
 			throw Error.PipelineNotAvailable(function: "eval")
 		}
-		self.gemv = gemv
+		guard let pdf: MTLComputePipelineState = pipelines["pdf"] else {
+			throw Error.PipelineNotAvailable(function: "pdf")
+		}
+		pipeline = Pipeline(gemv: gemv, normal: normal, pdf: pdf)
 		self.sigmoid = sigmoid
 		self.eval = eval
-		self.normal = normal
 		self.device = device
 		self.queue = device.newCommandQueue()
 	}
@@ -181,7 +318,7 @@ public class mtlComputer: cpuComputer {
 			let a: mtlBuffer = a as? mtlBuffer where a.mtl.device === device {
 			let command: MTLCommandBuffer = queue.commandBuffer()
 			let encoder: MTLComputeCommandEncoder = command.computeCommandEncoder()
-			encoder.setComputePipelineState(gemv)
+			encoder.setComputePipelineState(pipeline.gemv)
 			encoder.setBuffer(y.mtl, offset: 0, atIndex: 0)
 			encoder.setBytes([beta], length: sizeof(Float), atIndex: 1)
 			encoder.setBuffer(a.mtl, offset: 0, atIndex: 2)
@@ -193,39 +330,78 @@ public class mtlComputer: cpuComputer {
 			encoder.endEncoding()
 			command.commit()
 		} else {
-			super.gemv(y: y, beta: beta, a: a, x: x, alpha: alpha, n: n, m: m, trans: trans)
+			async {
+				super.gemv(y: y, beta: beta, a: a, x: x, alpha: alpha, n: n, m: m, trans: trans)
+			}
 		}
 	}
-	override func normal ( let y y: Buffer, let u: Buffer, let s: Buffer, let n: Int) {
+	override func normal ( let y: Buffer, let u: Buffer, let s: Buffer ) {
+		assert(y.scalar.count==u.scalar.count)
+		assert(y.scalar.count==s.scalar.count)
 		if	let y: mtlBuffer = y as? mtlBuffer where y.mtl.device === device,
 			let u: mtlBuffer = u as? mtlBuffer where u.mtl.device === device,
 			let s: mtlBuffer = s as? mtlBuffer where s.mtl.device === device,
-			let w: mtlBuffer = newBuffer(length: sizeof(UInt16)*n) as? mtlBuffer {
+			let w: mtlBuffer = newBuffer(length: sizeof(UInt16)*y.scalar.count) as? mtlBuffer {
 			
 			arc4random_buf(UnsafeMutablePointer(w.raw.bytes), w.raw.length)
 			
 			let command: MTLCommandBuffer = queue.commandBuffer()
 			let encoder: MTLComputeCommandEncoder = command.computeCommandEncoder()
-			encoder.setComputePipelineState(normal)
+			encoder.setComputePipelineState(pipeline.normal)
 			encoder.setBuffer(y.mtl, offset: 0, atIndex: 0)
 			encoder.setBuffer(u.mtl, offset: 0, atIndex: 1)
 			encoder.setBuffer(s.mtl, offset: 0, atIndex: 2)
 			encoder.setBuffer(w.mtl, offset: 0, atIndex: 3)
-			encoder.dispatchThreadgroups(MTLSize(width: n/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
+			encoder.dispatchThreadgroups(MTLSize(width: y.scalar.count/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 			encoder.endEncoding()
 			command.addCompletedHandler {(_)in
 				w.mtl.setPurgeableState(.Empty)
 			}
 			command.commit()
 		} else {
-			super.normal(y: y, u: u, s: s, n: n)
+			async {
+				super.normal(y, u: u, s: s)
+			}
 		}
 	}
-	override func pdf ( let y y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer, let n: Int ) {
-		super.pdf(y: y, x: x, u: u, s: s, n: n)
+	override func pdf ( let y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer ) {
+		assert(y.scalar.count==x.scalar.count)
+		assert(y.scalar.count==y.scalar.count)
+		assert(y.scalar.count==s.scalar.count)
+		if	let y: mtlBuffer = y as? mtlBuffer where y.mtl.device === device,
+			let x: mtlBuffer = x as? mtlBuffer where x.mtl.device === device,
+			let u: mtlBuffer = u as? mtlBuffer where u.mtl.device === device,
+			let s: mtlBuffer = s as? mtlBuffer where s.mtl.device === device {
+			
+			let command: MTLCommandBuffer = queue.commandBuffer()
+			let encoder: MTLComputeCommandEncoder = command.computeCommandEncoder()
+			encoder.setComputePipelineState(pipeline.normal)
+			encoder.setBuffer(y.mtl, offset: 0, atIndex: 0)
+			encoder.setBuffer(x.mtl, offset: 0, atIndex: 1)
+			encoder.setBuffer(u.mtl, offset: 0, atIndex: 2)
+			encoder.setBuffer(s.mtl, offset: 0, atIndex: 3)
+			encoder.dispatchThreadgroups(MTLSize(width: y.scalar.count/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
+			encoder.endEncoding()
+			command.commit()
+		} else {
+			async {
+				super.pdf(y, x: x, u: u, s: s)
+			}
+		}
 	}
-	override func cdf ( let y y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer, let n: Int ) {
-		super.cdf(y: y, x: x, u: u, s: s, n: n)
+	override func cdf ( let y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer ) {
+		assert(y.scalar.count==x.scalar.count)
+		assert(y.scalar.count==y.scalar.count)
+		assert(y.scalar.count==s.scalar.count)
+		if	let y: mtlBuffer = y as? mtlBuffer where y.mtl.device === device,
+			let x: mtlBuffer = x as? mtlBuffer where x.mtl.device === device,
+			let u: mtlBuffer = u as? mtlBuffer where u.mtl.device === device,
+			let s: mtlBuffer = s as? mtlBuffer where s.mtl.device === device {
+		} else {
+			async {
+				super.cdf(y, x: x, u: u, s: s)
+			}
+		}
 	}
 	override func sigmoid( let y y: Buffer, let x: Buffer, let c: Buffer, let sigma: Float, let n: Int) {
 		if	let x: mtlBuffer = x as? mtlBuffer where x.mtl.device === device,
@@ -285,10 +461,10 @@ public class mtlComputer: cpuComputer {
 			u.scalar[k] = 100
 			s.scalar[k] = 500
 		}
-		normal(y: y, u: u, s: s, n: n)
+		normal(y, u: u, s: s)
 		join()
-		let mu = y.scalar.reduce(0.0){$0+$1} / Float(n)
-		let sigma = y.scalar.map{($0-mu)*($0-mu)}.reduce(0){$0+$1} / Float(n)
-		print("mu", mu, "sigma", sqrt(sigma))
+		let mu: Float = y.scalar.reduce(0.0){$0+$1} / Float(n)
+		let sigma: Float = y.scalar.map{($0-mu)*($0-mu)}.reduce(0){$0+$1} / Float(n)
+		print("mu", mu, "sigma", sqrtf(sigma))
 	}
 }

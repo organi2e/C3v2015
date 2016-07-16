@@ -42,7 +42,6 @@ class ComputerTests: XCTestCase {
 				let u_: Float = u.scalar[$0]
 				let s_: Float = s.scalar[$0]
 				let p_: Float = (1/sqrt(2*Float(M_PI))/s_) * expf(-(x_-u_)*(x_-u_)/s_/s_/2.0)
-				//let p_: Float = (1/sqrt(2*Float(M_PI))/s_) * expf(-(x_-u_)*(x_-u_)/s_/s_/2.0)
 				D.append(p_)
 			}
 			print("D", D)

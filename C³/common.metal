@@ -8,6 +8,9 @@
 
 #include <metal_stdlib>
 using namespace metal;
+constant float M_PI = 8.0 * atan(1.0);
+constant float M_1_SQRT2PI = 1/sqrt(2.0*M_PI);
+constant float M_1_2P16 = 1/65536.0;
 kernel void normal(device float4 * random [[buffer(0)]],
 				   const device float4 * mu [[buffer(1)]],
 				   const device float4 * sigma [[buffer(2)]],
@@ -19,7 +22,7 @@ kernel void normal(device float4 * random [[buffer(0)]],
 	
 	float2 const s = sinpi(2.0*radian);
 	float2 const c = cospi(2.0*radian);
-	float2 const l = sqrt(-2.0*log(saturate(radius+1.0/65536.0)));
+	float2 const l = sqrt(-2.0*log(saturate(radius+M_1_2P16)));
 	
 	random[id].x = c.x*l.x;
 	random[id].y = s.x*l.x;
@@ -32,6 +35,15 @@ kernel void normal(device float4 * random [[buffer(0)]],
 	random[id].zw *= l.y;
 	
 	random[id] = random[id] * sigma[id] + mu[id];
+}
+kernel void pdf(device float4 * p [[buffer(0)]],
+				const device float4 * x [[buffer(1)]],
+				const device float4 * u [[buffer(2)]],
+				const device float4 * s [[buffer(3)]],
+				const uint id [[thread_position_in_grid]]
+				) {
+	const float4 lambda = (x[id]-u[id])/s[id];
+	p[id] = M_1_SQRT2PI / s[id] * exp( - lambda * lambda / 2.0 );
 }
 enum STAGE {
 	CLEAR = 1 << 0,
