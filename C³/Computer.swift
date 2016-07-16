@@ -306,7 +306,9 @@ public class mtlComputer: cpuComputer {
 		guard let pdf: MTLComputePipelineState = pipelines["pdf"] else {
 			throw Error.PipelineNotAvailable(function: "pdf")
 		}
-		pipeline = Pipeline(gemv: gemv, normal: normal, pdf: pdf)
+		pipeline = Pipeline(gemv: gemv,
+		                    normal: normal,
+		                    pdf: pdf)
 		self.sigmoid = sigmoid
 		self.eval = eval
 		self.device = device

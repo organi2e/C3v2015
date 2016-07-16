@@ -17,8 +17,8 @@ kernel void normal(device float4 * random [[buffer(0)]],
 				   const device uint * noise [[buffer(3)]],
 				   const uint id [[thread_position_in_grid]]
 				   ){
-	float2 const radius = unpack_unorm2x16_to_float(noise[2*id+0]);
-	float2 const radian = unpack_unorm2x16_to_float(noise[2*id+1]);
+	float2 const radius = (float2)unpack_unorm2x16_to_half(noise[2*id+0]);
+	float2 const radian = (float2)unpack_unorm2x16_to_half(noise[2*id+1]);
 	
 	float2 const s = sinpi(2.0*radian);
 	float2 const c = cospi(2.0*radian);

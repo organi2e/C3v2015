@@ -28,13 +28,13 @@ class ComputerTests: XCTestCase {
 				U.scalar[$0] = 0
 				S.scalar[$0] = logf(Float(N))
 			}
-			computer.normal(y: x, u: U, s: S, n: N)
-			computer.normal(y: s, u: U, s: S, n: N)
-			computer.normal(y: u, u: U, s: S, n: N)
+			computer.normal(y: x, u: U, s: S)
+			computer.normal(y: s, u: U, s: S)
+			computer.normal(y: u, u: U, s: S)
 			(0..<N).forEach {
 				s.scalar[$0] = abs(s.scalar[$0])
 			}
-			computer.pdf(y: y, x: x, u: u, s: s, n: N)
+			computer.pdf(y: y, x: x, u: u, s: s)
 			computer.join()
 			var D: [Float] = []
 			(0..<N).forEach {
