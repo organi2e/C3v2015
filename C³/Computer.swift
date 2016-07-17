@@ -211,9 +211,10 @@ public class cpuComputer: Computer {
 			let width: Int = y.scalar.count / 4
 			(0..<width).forEach {
 				let offset = width * index + $0
-				y.scalar[offset] = 0.5 * erfcf(y.scalar[offset])
+				y.scalar[offset] = erfcf(y.scalar[offset])
 			}
 		}
+		vDSP_vsdiv(y.scalar.baseAddress, 1, [Float(2.0)], y.scalar.baseAddress, 1, vDSP_Length(y.scalar.count))
 	}
 	func tdf ( let y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer ) {
 		assert(y.scalar.count==x.scalar.count)
@@ -225,9 +226,10 @@ public class cpuComputer: Computer {
 			let width: Int = y.scalar.count / 4
 			(0..<width).forEach {
 				let offset = width * index + $0
-				y.scalar[offset] = 0.5 * erfcf(y.scalar[offset])
+				y.scalar[offset] = erfcf(y.scalar[offset])
 			}
 		}
+		vDSP_vsdiv(y.scalar.baseAddress, 1, [Float(2.0)], y.scalar.baseAddress, 1, vDSP_Length(y.scalar.count))
 	}
 	func sigmoid ( let y y: Buffer, let x: Buffer, let c: Buffer, let sigma: Float, let n: Int ) {
 		(0..<n/4).forEach {
