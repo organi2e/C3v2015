@@ -8,21 +8,16 @@
 
 #include <metal_stdlib>
 using namespace metal;
-constant float M_PI = 8.0 * atan(1.0);
-constant float M_1_SQRT2PI = 1/sqrt(2.0*M_PI);
-constant float M_1_2P16 = 1/65536.0;
 kernel void normal(device float4 * random [[buffer(0)]],
-				   const device float4 * mu [[buffer(1)]],
-				   const device float4 * sigma [[buffer(2)]],
-				   const device uint * noise [[buffer(3)]],
-				   const uint id [[thread_position_in_grid]]
+				   device const float4 * const mu [[buffer(1)]],
+				   device const float4 * const sigma [[buffer(2)]],
+				   device const uint * const noise [[buffer(3)]],
+				   uint const id [[thread_position_in_grid]]
 				   ){
-	float2 const radius = (float2)unpack_unorm2x16_to_half(noise[2*id+0]);
-	float2 const radian = (float2)unpack_unorm2x16_to_half(noise[2*id+1]);
-	
-	float2 const s = sinpi(2.0*radian);
-	float2 const c = cospi(2.0*radian);
-	float2 const l = sqrt(-2.0*log(saturate(radius+M_1_2P16)));
+	float4 const n = unpack_unorm4x8_to_float(noise[id]);
+	float2 const c = cospi(2.0*n.xy);
+	float2 const s = sinpi(2.0*n.xy);
+	float2 const l = sqrt(-2.0*log(saturate(n.zw+1.0/65536.0)));
 	
 	random[id].x = c.x*l.x;
 	random[id].y = s.x*l.x;
@@ -36,13 +31,15 @@ kernel void normal(device float4 * random [[buffer(0)]],
 	
 	random[id] = random[id] * sigma[id] + mu[id];
 }
-kernel void pdf(device float4 * p [[buffer(0)]],
-				const device float4 * x [[buffer(1)]],
-				const device float4 * u [[buffer(2)]],
-				const device float4 * s [[buffer(3)]],
-				const uint id [[thread_position_in_grid]]
+kernel void pdf(device float4 * const p [[ buffer(0) ]],
+				device const float4 * const x [[ buffer(1) ]],
+				device const float4 * const u [[ buffer(2) ]],
+				device const float4 * const s [[ buffer(3) ]],
+				constant float const & M_1_SQRT2PI [[ buffer(4) ]],
+				uint const id [[thread_position_in_grid]]
 				) {
-	const float4 lambda = (x[id]-u[id])/s[id];
+	//float const M_1_SQRT2PI = sqrt(0.125/atan(1.0));
+	float4 const lambda = ( x[id] - u[id] ) / s[id];
 	p[id] = M_1_SQRT2PI / s[id] * exp( - lambda * lambda / 2.0 );
 }
 enum STAGE {

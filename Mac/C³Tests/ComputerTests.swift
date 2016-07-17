@@ -13,7 +13,50 @@ import XCTest
 @testable import C3
 
 class ComputerTests: XCTestCase {
-	let eps: Float = 1e-9
+	let eps: Float = 1e-3
+	func testPDFwithGPU() {
+		do {
+			guard let device: MTLDevice = MTLCreateSystemDefaultDevice() else {
+				XCTFail()
+				return
+			}
+			let computer: Computer = try mtlComputer(device: device)
+			let N: Int = 16
+			let y: Buffer = computer.newBuffer(length: sizeof(Float)*N)
+			let x: Buffer = computer.newBuffer(length: sizeof(Float)*N)
+			let u: Buffer = computer.newBuffer(length: sizeof(Float)*N)
+			let s: Buffer = computer.newBuffer(length: sizeof(Float)*N)
+			let U: Buffer = computer.newBuffer(length: sizeof(Float)*N)
+			let S: Buffer = computer.newBuffer(length: sizeof(Float)*N)
+			(0..<N).forEach {
+				U.scalar[$0] = 0
+				S.scalar[$0] = logf(Float(N))
+			}
+			computer.normal(x, u: U, s: S)
+			computer.normal(s, u: U, s: S)
+			computer.normal(u, u: U, s: S)
+			(0..<N).forEach {
+				s.scalar[$0] = abs(s.scalar[$0])
+			}
+			computer.pdf(y, x: x, u: u, s: s)
+			computer.join()
+			var D: [Float] = []
+			(0..<N).forEach {
+				let x_: Float = x.scalar[$0]
+				let u_: Float = u.scalar[$0]
+				let s_: Float = s.scalar[$0] + 0.001
+				let p_: Float = (1/sqrt(2*Float(M_PI))/s_) * expf(-(x_-u_)*(x_-u_)/s_/s_/2.0)
+				D.append(p_)
+			}
+			print("D", D)
+			print("R", Array<Float>(y.scalar))
+			let E: [Float] = zip(y.scalar, D).map{($0-$1)*($0-$1)}
+			let RMSE: Float = sqrt(E.reduce(0.0){$0+$1}/Float(N))
+			XCTAssert ( RMSE < 0.001 )
+		} catch {
+			XCTFail()
+		}
+	}
 	func testPDFwithCPU() {
 		do {
 			let computer: Computer = cpuComputer()
@@ -28,27 +71,27 @@ class ComputerTests: XCTestCase {
 				U.scalar[$0] = 0
 				S.scalar[$0] = logf(Float(N))
 			}
-			computer.normal(y: x, u: U, s: S)
-			computer.normal(y: s, u: U, s: S)
-			computer.normal(y: u, u: U, s: S)
+			computer.normal(x, u: U, s: S)
+			computer.normal(s, u: U, s: S)
+			computer.normal(u, u: U, s: S)
 			(0..<N).forEach {
 				s.scalar[$0] = abs(s.scalar[$0])
 			}
-			computer.pdf(y: y, x: x, u: u, s: s)
+			computer.pdf(y, x: x, u: u, s: s)
 			computer.join()
 			var D: [Float] = []
 			(0..<N).forEach {
 				let x_: Float = x.scalar[$0]
 				let u_: Float = u.scalar[$0]
-				let s_: Float = s.scalar[$0]
+				let s_: Float = s.scalar[$0] + 0.001
 				let p_: Float = (1/sqrt(2*Float(M_PI))/s_) * expf(-(x_-u_)*(x_-u_)/s_/s_/2.0)
 				D.append(p_)
 			}
 			print("D", D)
 			print("R", Array<Float>(y.scalar))
 			let E: [Float] = zip(y.scalar, D).map{($0-$1)*($0-$1)}
-			let RMSE: Float = E.reduce(0.0){$0+$1}
-			XCTAssert ( RMSE < eps )
+			let RMSE: Float = sqrt(E.reduce(0.0){$0+$1}/Float(N))
+			XCTAssert ( RMSE < 1.0e-3 )
 		}
 	}
 	/*
