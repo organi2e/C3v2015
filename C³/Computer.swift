@@ -174,9 +174,9 @@ public class cpuComputer: Computer {
 		arc4random_buf(UnsafeMutablePointer<Void>(W), sizeof(UInt16)*W.count)
 		vDSP_vfltu16(W, 1, UnsafeMutablePointer<Float>(N), 1, vDSP_Length(n))
 		
-		vDSP_vsadd(UnsafeMutablePointer<Float>(N).advancedBy(0/2), 1, [Float(1.0)], UnsafeMutablePointer<Float>(N), 1, vDSP_Length(n/2))
-		vDSP_vsmul(UnsafeMutablePointer<Float>(N).advancedBy(n/2), 1, [Float(2.0)], UnsafeMutablePointer<Float>(N).advancedBy(n/2), 1, vDSP_Length(n/2))
-		vDSP_vsmul(UnsafeMutablePointer<Float>(N).advancedBy(0/2), 1, [Float(1/65536.0)], UnsafeMutablePointer<Float>(N).advancedBy(0/2), 1, vDSP_Length(n))
+		vDSP_vsadd(UnsafePointer<Float>(N).advancedBy(0/2), 1, [Float(1.0)], UnsafeMutablePointer<Float>(N), 1, vDSP_Length(n/2))
+		vDSP_vsmul(UnsafePointer<Float>(N).advancedBy(n/2), 1, [Float(2.0)], UnsafeMutablePointer<Float>(N).advancedBy(n/2), 1, vDSP_Length(n/2))
+		vDSP_vsdiv(UnsafePointer<Float>(N).advancedBy(0/2), 1, [Float(65536.0)], UnsafeMutablePointer<Float>(N).advancedBy(0/2), 1, vDSP_Length(n))
 
 		vvlogf(UnsafeMutablePointer<Float>(N), UnsafePointer<Float>(N), [Int32(n/2)])
 		vDSP_vsmul(N, 1, [Float(-2.0)], UnsafeMutablePointer<Float>(N), 1, vDSP_Length(n/2))
@@ -338,17 +338,19 @@ public class mtlComputer: cpuComputer {
 		}
 	}
 	override func normal ( let y: Buffer, let u: Buffer, let s: Buffer ) {
+		
 		assert(y.scalar.count==u.scalar.count)
 		assert(y.scalar.count==s.scalar.count)
+		
 		if	let y: mtlBuffer = y as? mtlBuffer where y.mtl.device === device,
 			let u: mtlBuffer = u as? mtlBuffer where u.mtl.device === device,
 			let s: mtlBuffer = s as? mtlBuffer where s.mtl.device === device,
-			let w: mtlBuffer = newBuffer(length: sizeof(UInt16)*y.scalar.count) as? mtlBuffer {
+			let w: mtlBuffer = newBuffer(length: sizeof(UInt8)*y.scalar.count) as? mtlBuffer {
+			let command: MTLCommandBuffer = queue.commandBuffer()
+			let encoder: MTLComputeCommandEncoder = command.computeCommandEncoder()
 			
 			arc4random_buf(UnsafeMutablePointer(w.raw.bytes), w.raw.length)
 			
-			let command: MTLCommandBuffer = queue.commandBuffer()
-			let encoder: MTLComputeCommandEncoder = command.computeCommandEncoder()
 			encoder.setComputePipelineState(pipeline.normal)
 			encoder.setBuffer(y.mtl, offset: 0, atIndex: 0)
 			encoder.setBuffer(u.mtl, offset: 0, atIndex: 1)
@@ -367,9 +369,11 @@ public class mtlComputer: cpuComputer {
 		}
 	}
 	override func pdf ( let y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer ) {
+		
 		assert(y.scalar.count==x.scalar.count)
 		assert(y.scalar.count==y.scalar.count)
 		assert(y.scalar.count==s.scalar.count)
+		
 		if	let y: mtlBuffer = y as? mtlBuffer where y.mtl.device === device,
 			let x: mtlBuffer = x as? mtlBuffer where x.mtl.device === device,
 			let u: mtlBuffer = u as? mtlBuffer where u.mtl.device === device,
@@ -377,11 +381,12 @@ public class mtlComputer: cpuComputer {
 			
 			let command: MTLCommandBuffer = queue.commandBuffer()
 			let encoder: MTLComputeCommandEncoder = command.computeCommandEncoder()
-			encoder.setComputePipelineState(pipeline.normal)
+			encoder.setComputePipelineState(pipeline.pdf)
 			encoder.setBuffer(y.mtl, offset: 0, atIndex: 0)
 			encoder.setBuffer(x.mtl, offset: 0, atIndex: 1)
 			encoder.setBuffer(u.mtl, offset: 0, atIndex: 2)
 			encoder.setBuffer(s.mtl, offset: 0, atIndex: 3)
+			encoder.setBytes([Float(0.5*M_2_SQRTPI*M_SQRT1_2)], length: sizeof(Float), atIndex: 4)
 			encoder.dispatchThreadgroups(MTLSize(width: y.scalar.count/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 			encoder.endEncoding()
 			command.commit()
@@ -392,9 +397,11 @@ public class mtlComputer: cpuComputer {
 		}
 	}
 	override func cdf ( let y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer ) {
+		
 		assert(y.scalar.count==x.scalar.count)
 		assert(y.scalar.count==y.scalar.count)
 		assert(y.scalar.count==s.scalar.count)
+		
 		if	let y: mtlBuffer = y as? mtlBuffer where y.mtl.device === device,
 			let x: mtlBuffer = x as? mtlBuffer where x.mtl.device === device,
 			let u: mtlBuffer = u as? mtlBuffer where u.mtl.device === device,
@@ -463,7 +470,7 @@ public class mtlComputer: cpuComputer {
 			u.scalar[k] = 100
 			s.scalar[k] = 500
 		}
-		normal(y, u: u, s: s)
+		super.normal(y, u: u, s: s)
 		join()
 		let mu: Float = y.scalar.reduce(0.0){$0+$1} / Float(n)
 		let sigma: Float = y.scalar.map{($0-mu)*($0-mu)}.reduce(0){$0+$1} / Float(n)
