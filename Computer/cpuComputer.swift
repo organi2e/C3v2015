@@ -60,34 +60,59 @@ public class cpuComputer: Computer {
 		vDSP_vsdiv(a.scalar.baseAddress, 1, [ b], y.scalar.baseAddress, 1, vDSP_Length(y.scalar.count))
 	}
 	
-	func abs ( let y: Buffer, let _ x: Buffer ) {
+	func abs ( let y: Buffer, let _ x: Buffer, let sync flag: Bool = false ) {
 		assert(y.scalar.count==x.scalar.count)
-		vDSP_vabs(x.scalar.baseAddress, 1, y.scalar.baseAddress, 1, vDSP_Length(y.scalar.count))
+		( flag ? sync : async ) {
+			vDSP_vabs(x.scalar.baseAddress, 1, y.scalar.baseAddress, 1, vDSP_Length(y.scalar.count))
+		}
 	}
-	func neg ( let y: Buffer, let _ x: Buffer ) {
+	func neg ( let y: Buffer, let _ x: Buffer, let sync flag: Bool = false ) {
 		assert(y.scalar.count==x.scalar.count)
-		vDSP_vneg(x.scalar.baseAddress, 1, y.scalar.baseAddress, 1, vDSP_Length(y.scalar.count))
+		( flag ? sync : async ) {
+			vDSP_vneg(x.scalar.baseAddress, 1, y.scalar.baseAddress, 1, vDSP_Length(y.scalar.count))
+		}
 	}
-	func sq ( let y: Buffer, let _ x: Buffer ) {
+	func sq ( let y: Buffer, let _ x: Buffer, let sync flag: Bool = false ) {
 		assert(y.scalar.count==x.scalar.count)
-		vDSP_vsq(x.scalar.baseAddress, 1, y.scalar.baseAddress, 1, vDSP_Length(y.scalar.count))
+		( flag ? sync : async ) {
+			vDSP_vsq(x.scalar.baseAddress, 1, y.scalar.baseAddress, 1, vDSP_Length(y.scalar.count))
+		}
 	}
-	func sqrt ( let y: Buffer, let _ x: Buffer ) {
+	func sqrt ( let y: Buffer, let _ x: Buffer, let sync flag: Bool = false ) {
 		assert(y.scalar.count==x.scalar.count)
-		vvsqrtf(y.scalar.baseAddress, x.scalar.baseAddress, [Int32(x.scalar.count)])
+		( flag ? sync : async ) {
+			vvsqrtf(y.scalar.baseAddress, x.scalar.baseAddress, [Int32(x.scalar.count)])
+		}
 	}
 	
-	func exp ( let y: Buffer, let _ x: Buffer ) {
+	func exp ( let y: Buffer, let _ x: Buffer, let sync flag: Bool = false ) {
 		assert(y.scalar.count==x.scalar.count)
-		vvexpf(y.scalar.baseAddress, x.scalar.baseAddress, [Int32(y.scalar.count)])
+		( flag ? sync : async ) {
+			vvexpf(y.scalar.baseAddress, x.scalar.baseAddress, [Int32(y.scalar.count)])
+		}
 	}
-	func log ( let y: Buffer, let _ x: Buffer ) {
+	func log ( let y: Buffer, let _ x: Buffer, let sync flag: Bool = false ) {
 		assert(y.scalar.count==x.scalar.count)
-		vvlogf(y.scalar.baseAddress, x.scalar.baseAddress, [Int32(y.scalar.count)])
+		( flag ? sync : async ) {
+			vvlogf(y.scalar.baseAddress, x.scalar.baseAddress, [Int32(y.scalar.count)])
+		}
 	}
-	
-	func fill( let y: Buffer, let _ a: Float) {
-		vDSP_vfill([a], y.scalar.baseAddress, 1, vDSP_Length(y.scalar.count))
+	func fill ( let to y: Buffer, let from x: [Float], let sync flag: Bool = false ) {
+		assert(y.scalar.count==x.count)
+		( flag ? sync : async ) {
+			NSData(bytesNoCopy: UnsafeMutablePointer<Void>(x), length: sizeof(Float)*x.count, freeWhenDone: false).getBytes(UnsafeMutablePointer<Void>(y.raw.bytes), range: NSRange(location: 0, length: y.raw.length))
+		}
+	}
+	func copy ( let to y: Buffer, let from x: Buffer, let sync flag: Bool = false ) {
+		assert(y.scalar.count==x.scalar.count)
+		( flag ? sync : async ) {
+			x.raw.getBytes(UnsafeMutablePointer<Void>(y.raw.bytes), range: NSRange(location: 0, length: y.raw.length))
+		}
+	}
+	func clear( let y: Buffer, let sync flag: Bool = false ) {
+		( flag ? sync : async ) {
+			vDSP_vclr(y.scalar.baseAddress, 1, vDSP_Length(y.scalar.count))
+		}
 	}
 	
 	func clamp( let y: Buffer, let _ x: Buffer, let _ a: Float, let _ b: Float) {
@@ -182,9 +207,11 @@ public class cpuComputer: Computer {
 		( flag ? sync : async ) {
 			let X: UnsafeMutablePointer<Float> = x.scalar.baseAddress
 			let U: UnsafeMutablePointer<Float> = u.scalar.baseAddress
+			let S: UnsafeMutablePointer<Float> = s.scalar.baseAddress
 			let Y: UnsafeMutablePointer<Float> = y.scalar.baseAddress
 			let L: vDSP_Length = vDSP_Length(y.scalar.count)
 			vDSP_vsub(X, 1, U, 1, Y, 1, L)
+			vDSP_vdiv(S, 1, Y, 1, Y, 1, L)
 			vDSP_vsmul(Y, 1, [Float(M_SQRT1_2)], Y, 1, L)
 			dispatch_apply(4, cpuComputer.dispatch.queue) {(let index: Int)in
 				let width: Int = y.scalar.count / 4
@@ -250,8 +277,8 @@ public class cpuComputer: Computer {
 	func newBuffer( let length length: Int ) -> Buffer {
 		return newBuffer(data: NSData(bytes: [UInt8](count: length, repeatedValue: 0), length: length))
 	}
-	func test() {
-		
+	func newBuffer( let buffer buffer: [Float] ) -> Buffer {
+		return newBuffer(data: NSData(bytes: UnsafePointer<Void>(buffer), length: sizeof(Float)*buffer.count))
 	}
 }
 class cpuBuffer: Buffer {

@@ -40,7 +40,7 @@ kernel void pdf(device float4 * const p [[ buffer(0) ]],
 				uint const id [[thread_position_in_grid]]
 				) {
 	float4 const lambda = ( x[id] - u[id] ) / s[id];
-	p[id] = M_1_SQRT2PI / s[id] * exp( - lambda * lambda / 2.0 );
+	p[id] = M_1_SQRT2PI / s[id] * exp( - 0.5 * lambda * lambda );
 }
 kernel void cdf(device float4 * const p [[ buffer(0) ]],
 				device const float4 * const x [[ buffer(1) ]],
@@ -49,8 +49,8 @@ kernel void cdf(device float4 * const p [[ buffer(0) ]],
 				constant float const & M_1_SQRT2 [[ buffer(4) ]],
 				uint const id [[thread_position_in_grid]]
 				) {
-	float4 const lambda = ( x[id] - u[id] ) / s[id] / M_1_SQRT2;
-	p[id] = 0.5 + 0.5 * erf(lambda);
+	float4 const lambda = ( x[id] - u[id] ) * M_1_SQRT2 / s[id];
+	p[id] = 0.5 + 0.5 * erf( lambda );
 }
 
 kernel void sigmoid(device float4 * const p [[ buffer(0) ]],

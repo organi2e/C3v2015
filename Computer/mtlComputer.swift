@@ -23,6 +23,9 @@ public class mtlComputer: cpuComputer {
 		let sub: MTLComputePipelineState
 		let mul: MTLComputePipelineState
 		let div: MTLComputePipelineState
+		let sq: MTLComputePipelineState
+		let sqrt: MTLComputePipelineState
+		let exp: MTLComputePipelineState
 		let pdf: MTLComputePipelineState
 		let cdf: MTLComputePipelineState
 		let gemv: MTLComputePipelineState
@@ -50,6 +53,9 @@ public class mtlComputer: cpuComputer {
 		                           sub: try pipeline("sub"),
 		                           mul: try pipeline("mul"),
 		                           div: try pipeline("div"),
+		                           sq: try pipeline("sq"),
+		                           sqrt: try pipeline("sqrt"),
+		                           exp: try pipeline("exp"),
 		                           pdf: try pipeline("pdf"),
 		                           cdf: try pipeline("cdf"),
 		                           gemv: try pipeline("gemv"),
@@ -58,6 +64,56 @@ public class mtlComputer: cpuComputer {
 		)
 		self.device = device
 		self.queue = device.newCommandQueue()
+	}
+	override func fill( let to y: Buffer, let from x: [Float], let sync flag: Bool = false ) {
+		assert(y.scalar.count==x.count)
+		if	let y: mtlBuffer = y as? mtlBuffer where y.mtl.device === device {
+			let command: MTLCommandBuffer = queue.commandBuffer()
+			let encoder: MTLBlitCommandEncoder = command.blitCommandEncoder()
+			let cache: MTLBuffer = device.newBufferWithBytes(UnsafePointer<Void>(x), length: y.mtl.length, options: .CPUCacheModeDefaultCache)
+			encoder.copyFromBuffer(cache, sourceOffset: 0, toBuffer: y.mtl, destinationOffset: 0, size: y.mtl.length)
+			encoder.endEncoding()
+			command.addCompletedHandler {(_)in
+				cache.setPurgeableState(.Empty)
+			}
+			command.commit()
+			if flag { command.waitUntilCompleted() }
+		} else {
+			( flag ? sync : async ) {
+				super.fill(to: y, from: x)
+			}
+		}
+	}
+	override func copy( let to y: Buffer, let from x: Buffer, let sync flag: Bool = false ) {
+		assert(y.scalar.count==y.scalar.count)
+		if	let y: mtlBuffer = y as? mtlBuffer where y.mtl.device === device,
+			let x: mtlBuffer = x as? mtlBuffer where x.mtl.device === device
+		{
+			let command: MTLCommandBuffer = queue.commandBuffer()
+			let encoder: MTLBlitCommandEncoder = command.blitCommandEncoder()
+			encoder.copyFromBuffer(x.mtl, sourceOffset: 0, toBuffer: y.mtl, destinationOffset: 0, size: y.mtl.length)
+			encoder.endEncoding()
+			command.commit()
+			if flag { command.waitUntilCompleted() }
+		} else {
+			( flag ? sync : async ) {
+				super.copy(to: y, from: x)
+			}
+		}
+	}
+	override func clear ( let y: Buffer, let sync flag: Bool = false ) {
+		if	let y: mtlBuffer = y as? mtlBuffer where y.mtl.device === device {
+			let command: MTLCommandBuffer = queue.commandBuffer()
+			let encoder: MTLBlitCommandEncoder = command.blitCommandEncoder()
+			encoder.fillBuffer(y.mtl, range: NSRange(location: 0, length: y.mtl.length), value: 0)
+			encoder.endEncoding()
+			command.commit()
+			if flag { command.waitUntilCompleted() }
+		} else {
+			( flag ? sync : async ) {
+				super.clear(y, sync: true)
+			}
+		}
 	}
 	override func gemv ( let y y: Buffer, let beta: Float, let a: Buffer, let x: Buffer, let alpha: Float, let n: Int, let m: Int, let trans: Bool ) {
 		if	let x: mtlBuffer = x as? mtlBuffer where x.mtl.device === device,
@@ -114,10 +170,76 @@ public class mtlComputer: cpuComputer {
 			}
 		}
 	}
+	override func sq( let y: Buffer, let _ x: Buffer, let sync flag: Bool = false ) {
+		
+		assert(y.scalar.count==x.scalar.count)
+		
+		if	let y: mtlBuffer = y as? mtlBuffer where y.mtl.device === device,
+			let x: mtlBuffer = x as? mtlBuffer where x.mtl.device === device
+		{
+			let command: MTLCommandBuffer = queue.commandBuffer()
+			let encoder: MTLComputeCommandEncoder = command.computeCommandEncoder()
+			encoder.setComputePipelineState(pipelines.sq)
+			encoder.setBuffer(y.mtl, offset: 0, atIndex: 0)
+			encoder.setBuffer(x.mtl, offset: 0, atIndex: 1)
+			encoder.dispatchThreadgroups(MTLSize(width: y.scalar.count/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
+			encoder.endEncoding()
+			command.commit()
+			if flag { command.waitUntilCompleted() }
+		} else {
+			( flag ? sync : async ) {
+				super.sq(y, x, sync: true)
+			}
+		}
+	}
+	override func sqrt( let y: Buffer, let _ x: Buffer, let sync flag: Bool = false ) {
+		
+		assert(y.scalar.count==x.scalar.count)
+		
+		if	let y: mtlBuffer = y as? mtlBuffer where y.mtl.device === device,
+			let x: mtlBuffer = x as? mtlBuffer where x.mtl.device === device
+		{
+			let command: MTLCommandBuffer = queue.commandBuffer()
+			let encoder: MTLComputeCommandEncoder = command.computeCommandEncoder()
+			encoder.setComputePipelineState(pipelines.sqrt)
+			encoder.setBuffer(y.mtl, offset: 0, atIndex: 0)
+			encoder.setBuffer(x.mtl, offset: 0, atIndex: 1)
+			encoder.dispatchThreadgroups(MTLSize(width: y.scalar.count/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
+			encoder.endEncoding()
+			command.commit()
+			if flag { command.waitUntilCompleted() }
+		} else {
+			( flag ? sync : async ) {
+				super.sqrt(y, x, sync: true)
+			}
+		}
+	}
+	override func exp( let y: Buffer, let _ x: Buffer, let sync flag: Bool = false ) {
+		
+		assert(y.scalar.count==x.scalar.count)
+		
+		if	let y: mtlBuffer = y as? mtlBuffer where y.mtl.device === device,
+			let x: mtlBuffer = x as? mtlBuffer where x.mtl.device === device
+		{
+			let command: MTLCommandBuffer = queue.commandBuffer()
+			let encoder: MTLComputeCommandEncoder = command.computeCommandEncoder()
+			encoder.setComputePipelineState(pipelines.exp)
+			encoder.setBuffer(y.mtl, offset: 0, atIndex: 0)
+			encoder.setBuffer(x.mtl, offset: 0, atIndex: 1)
+			encoder.dispatchThreadgroups(MTLSize(width: y.scalar.count/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
+			encoder.endEncoding()
+			command.commit()
+			if flag { command.waitUntilCompleted() }
+		} else {
+			( flag ? sync : async ) {
+				super.exp(y, x, sync: true)
+			}
+		}
+	}
 	override func pdf ( let y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer, let sync flag: Bool = false ) {
 		
 		assert(y.scalar.count==x.scalar.count)
-		assert(y.scalar.count==y.scalar.count)
+		assert(y.scalar.count==u.scalar.count)
 		assert(y.scalar.count==s.scalar.count)
 		
 		if	let y: mtlBuffer = y as? mtlBuffer where y.mtl.device === device,
@@ -146,13 +268,52 @@ public class mtlComputer: cpuComputer {
 	override func cdf ( let y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer, let sync flag: Bool = false ) {
 		
 		assert(y.scalar.count==x.scalar.count)
-		assert(y.scalar.count==y.scalar.count)
+		assert(y.scalar.count==u.scalar.count)
 		assert(y.scalar.count==s.scalar.count)
 		
 		if	let y: mtlBuffer = y as? mtlBuffer where y.mtl.device === device,
 			let x: mtlBuffer = x as? mtlBuffer where x.mtl.device === device,
 			let u: mtlBuffer = u as? mtlBuffer where u.mtl.device === device,
 			let s: mtlBuffer = s as? mtlBuffer where s.mtl.device === device {
+			
+			let command: MTLCommandBuffer = queue.commandBuffer()
+			let encoder: MTLComputeCommandEncoder = command.computeCommandEncoder()
+			encoder.setComputePipelineState(pipelines.cdf)
+			encoder.setBuffer(y.mtl, offset: 0, atIndex: 0)
+			encoder.setBuffer(x.mtl, offset: 0, atIndex: 1)
+			encoder.setBuffer(u.mtl, offset: 0, atIndex: 2)
+			encoder.setBuffer(s.mtl, offset: 0, atIndex: 3)
+			encoder.setBytes([Float(M_SQRT1_2)], length: sizeof(Float), atIndex: 4)
+			encoder.dispatchThreadgroups(MTLSize(width: y.scalar.count/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
+			encoder.endEncoding()
+			command.commit()
+			if flag { command.waitUntilCompleted() }
+		} else {
+			( flag ? sync : async ) {
+				super.cdf(y, x: x, u: u, s: s, sync: true)
+			}
+		}
+	}
+	override func sigmoid( let y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer, let sync flag: Bool = false ) {
+		assert(y.scalar.count==x.scalar.count)
+		assert(y.scalar.count==u.scalar.count)
+		assert(y.scalar.count==s.scalar.count)
+		if	let y: mtlBuffer = y as? mtlBuffer where y.mtl.device === device,
+			let x: mtlBuffer = x as? mtlBuffer where x.mtl.device === device,
+			let u: mtlBuffer = u as? mtlBuffer where u.mtl.device === device,
+			let s: mtlBuffer = s as? mtlBuffer where s.mtl.device === device
+		{
+			let command: MTLCommandBuffer = queue.commandBuffer()
+			let encoder: MTLComputeCommandEncoder = command.computeCommandEncoder()
+			encoder.setComputePipelineState(pipelines.sigmoid)
+			encoder.setBuffer(y.mtl, offset: 0, atIndex: 0)
+			encoder.setBuffer(x.mtl, offset: 0, atIndex: 1)
+			encoder.setBuffer(u.mtl, offset: 0, atIndex: 2)
+			encoder.setBuffer(s.mtl, offset: 0, atIndex: 3)
+			encoder.dispatchThreadgroups(MTLSize(width: y.scalar.count/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
+			encoder.endEncoding()
+			command.commit()
+			if flag { command.waitUntilCompleted() }
 		} else {
 			( flag ? sync : async ) {
 				super.cdf(y, x: x, u: u, s: s, sync: true)
@@ -187,35 +348,18 @@ public class mtlComputer: cpuComputer {
 		let mtl: MTLBuffer = device.newBufferWithLength(length, options: .CPUCacheModeDefaultCache)
 		return mtlBuffer(buffer: mtl)
 	}
-	override func test() {
-		let n = 1 << 22
-		let y = newBuffer(length: sizeof(Float)*n)
-		let u = newBuffer(length: sizeof(Float)*n)
-		let s = newBuffer(length: sizeof(Float)*n)
-		for k in 0..<n {
-			u.scalar[k] = 100
-			s.scalar[k] = 500
-		}
-		super.normal(y, u: u, s: s)
-		join()
-		let mu: Float = y.scalar.reduce(0.0){$0+$1} / Float(n)
-		let sigma: Float = y.scalar.map{($0-mu)*($0-mu)}.reduce(0){$0+$1} / Float(n)
-		print("mu", mu, "sigma", sqrtf(sigma))
+	override func newBuffer( let buffer buffer: [Float] ) -> Buffer {
+		let mtl: MTLBuffer = device.newBufferWithBytes(UnsafePointer<Void>(buffer), length: sizeof(Float)*buffer.count, options: .CPUCacheModeDefaultCache)
+		return mtlBuffer(buffer: mtl)
 	}
 }
-class mtlBuffer: Buffer {
+class mtlBuffer: cpuBuffer {
 	let mtl: MTLBuffer
-	let raw: NSData
-	let stream: UnsafeMutableBufferPointer<UInt8>
-	let scalar: UnsafeMutableBufferPointer<Float>
-	let vector: UnsafeMutableBufferPointer<float4>
-	let matrix: UnsafeMutableBufferPointer<float4x4>
 	init ( let buffer: MTLBuffer ) {
 		mtl = buffer
-		raw = NSData(bytesNoCopy: mtl.contents(), length: mtl.length, freeWhenDone: false)
-		stream = UnsafeMutableBufferPointer<UInt8>(start: UnsafeMutablePointer<UInt8>(raw.bytes), count: raw.length/sizeof(UInt8))
-		scalar = UnsafeMutableBufferPointer<Float>(start: UnsafeMutablePointer<Float>(raw.bytes), count: raw.length/sizeof(Float))
-		vector = UnsafeMutableBufferPointer<float4>(start: UnsafeMutablePointer<float4>(raw.bytes), count: raw.length/sizeof(float4))
-		matrix = UnsafeMutableBufferPointer<float4x4>(start: UnsafeMutablePointer<float4x4>(raw.bytes), count: raw.length/sizeof(float4x4))
+		super.init(buffer: NSData(bytesNoCopy: mtl.contents(), length: mtl.length, freeWhenDone: false))
+	}
+	deinit {
+		mtl.setPurgeableState(.Empty)
 	}
 }
