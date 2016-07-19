@@ -9,15 +9,23 @@
 import Foundation
 internal struct Config {
 	static let bundle: NSBundle = NSBundle(forClass: Context.self)
-	static let identifier: String = Config.bundle.bundleIdentifier!
-	static let framework: String = Config.bundle.infoDictionary!["CFBundleName"]as!String
+	static let identifier: String = {
+		guard let identifier: String = Config.bundle.bundleIdentifier else {
+			fatalError("")
+		}
+		return identifier
+	}()
+	static let framework: String = {
+		guard let dictionary: [String: AnyObject] = Config.bundle.infoDictionary, framework: String = ["CFBundleName"] as? String else {
+			fatalError("")
+		}
+		return framework
+	}()
 	static let coredata: (name: String, ext: String) = (name: "C³", ext: "momd")
-	static let metal: (name: String, ext: String) = (name: "default", ext: "metallib")
 	static let dispatch: (serial: String, parallel: String) = (
 		serial: "\(Config.identifier).dispatch.queue.serial",
 		parallel: "\(Config.identifier).dispatch.queue.parallel"
 	)
-	static let rngurl: NSURL = NSURL(fileURLWithPath: "/dev/urandom")
 }
 internal protocol CoreDataSharedMetal {
 	func setup ( )

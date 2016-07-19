@@ -7,6 +7,20 @@
 	objects = {
 
 /* Begin PBXContainerItemProxy section */
+		87591B051D3C45F300BD9248 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 878C7A5E1D01AE4D002CDFD1 /* Mac.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 87591AEC1D3C45E500BD9248;
+			remoteInfo = Computer;
+		};
+		87591B071D3C45F300BD9248 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 878C7A5E1D01AE4D002CDFD1 /* Mac.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 87591AF51D3C45E500BD9248;
+			remoteInfo = ComputerTests;
+		};
 		878C7AB91D01AF25002CDFD1 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 878C7A5E1D01AE4D002CDFD1 /* Mac.xcodeproj */;
@@ -38,9 +52,15 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		876A4B5B1D06A36200D32E1B /* math.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = math.metal; path = "C³/math.metal"; sourceTree = "<group>"; };
-		877216DC1D057ED300E824F9 /* Buffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Buffer.swift; path = "C³/Buffer.swift"; sourceTree = "<group>"; };
-		877216FB1D059E1200E824F9 /* Computer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Computer.swift; path = "C³/Computer.swift"; sourceTree = "<group>"; };
+		87591AE11D3C45C400BD9248 /* blas.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = blas.metal; path = Computer/blas.metal; sourceTree = "<group>"; };
+		87591AE21D3C45C400BD9248 /* Buffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Buffer.swift; path = Computer/Buffer.swift; sourceTree = "<group>"; };
+		87591AE31D3C45C400BD9248 /* common.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = common.metal; path = Computer/common.metal; sourceTree = "<group>"; };
+		87591AE41D3C45C400BD9248 /* Computer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Computer.swift; path = Computer/Computer.swift; sourceTree = "<group>"; };
+		87591AE51D3C45C400BD9248 /* statistics.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = statistics.metal; path = Computer/statistics.metal; sourceTree = "<group>"; };
+		87591AE61D3C45C400BD9248 /* math.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = math.metal; path = Computer/math.metal; sourceTree = "<group>"; };
+		87591B151D3C472100BD9248 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Config.swift; path = Computer/Config.swift; sourceTree = "<group>"; };
+		87591B181D3C48A200BD9248 /* cpuComputer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = cpuComputer.swift; path = Computer/cpuComputer.swift; sourceTree = "<group>"; };
+		87591B191D3C48B000BD9248 /* mtlComputer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = mtlComputer.swift; path = Computer/mtlComputer.swift; sourceTree = "<group>"; };
 		878985B71D050D42002C2A8D /* C3.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = C3.xcdatamodel; sourceTree = "<group>"; };
 		878985B81D050D42002C2A8D /* Cell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Cell.swift; path = "C³/Cell.swift"; sourceTree = "<group>"; };
 		878985B91D050D42002C2A8D /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Config.swift; path = "C³/Config.swift"; sourceTree = "<group>"; };
@@ -48,7 +68,6 @@
 		878985BB1D050D42002C2A8D /* Dict.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Dict.swift; path = "C³/Dict.swift"; sourceTree = "<group>"; };
 		878985BC1D050D42002C2A8D /* Edge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Edge.swift; path = "C³/Edge.swift"; sourceTree = "<group>"; };
 		878985BD1D050D42002C2A8D /* Error.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Error.swift; path = "C³/Error.swift"; sourceTree = "<group>"; };
-		878985BE1D050D42002C2A8D /* blas.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = blas.metal; path = "C³/blas.metal"; sourceTree = "<group>"; };
 		878C7A5E1D01AE4D002CDFD1 /* Mac.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Mac.xcodeproj; path = Mac/Mac.xcodeproj; sourceTree = "<group>"; };
 		878C7A681D01AE5E002CDFD1 /* iOS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = iOS.xcodeproj; path = iOS/iOS.xcodeproj; sourceTree = "<group>"; };
 		878C7AC11D01AF60002CDFD1 /* MNIST.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MNIST.swift; path = MNIST/MNIST.swift; sourceTree = "<group>"; };
@@ -56,10 +75,25 @@
 		878C7AC31D01AF60002CDFD1 /* t10k-labels.idx1-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "t10k-labels.idx1-ubyte"; path = "MNIST/t10k-labels.idx1-ubyte"; sourceTree = "<group>"; };
 		878C7AC41D01AF60002CDFD1 /* train-images.idx3-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "train-images.idx3-ubyte"; path = "MNIST/train-images.idx3-ubyte"; sourceTree = "<group>"; };
 		878C7AC51D01AF60002CDFD1 /* train-labels.idx1-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "train-labels.idx1-ubyte"; path = "MNIST/train-labels.idx1-ubyte"; sourceTree = "<group>"; };
-		879AB5D01D054FF100E4587F /* common.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = common.metal; path = "C³/common.metal"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
+		87591ADC1D3C451300BD9248 /* Computer */ = {
+			isa = PBXGroup;
+			children = (
+				87591B151D3C472100BD9248 /* Config.swift */,
+				87591AE41D3C45C400BD9248 /* Computer.swift */,
+				87591AE21D3C45C400BD9248 /* Buffer.swift */,
+				87591B181D3C48A200BD9248 /* cpuComputer.swift */,
+				87591B191D3C48B000BD9248 /* mtlComputer.swift */,
+				87591AE11D3C45C400BD9248 /* blas.metal */,
+				87591AE31D3C45C400BD9248 /* common.metal */,
+				87591AE51D3C45C400BD9248 /* statistics.metal */,
+				87591AE61D3C45C400BD9248 /* math.metal */,
+			);
+			name = Computer;
+			sourceTree = "<group>";
+		};
 		878C7A501D01AE2E002CDFD1 = {
 			isa = PBXGroup;
 			children = (
@@ -67,6 +101,7 @@
 				878C7A681D01AE5E002CDFD1 /* iOS.xcodeproj */,
 				878C7A6B1D01AE66002CDFD1 /* C³ */,
 				878C7A6C1D01AE7D002CDFD1 /* MNIST */,
+				87591ADC1D3C451300BD9248 /* Computer */,
 			);
 			sourceTree = "<group>";
 		};
@@ -77,6 +112,8 @@
 				878C7AC01D01AF25002CDFD1 /* MNIST.framework */,
 				878C7ABA1D01AF25002CDFD1 /* C3.framework */,
 				878C7ABC1D01AF25002CDFD1 /* C3Tests.xctest */,
+				87591B061D3C45F300BD9248 /* Computer.framework */,
+				87591B081D3C45F300BD9248 /* ComputerTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -92,17 +129,12 @@
 			isa = PBXGroup;
 			children = (
 				878985B61D050D42002C2A8D /* C³.xcdatamodeld */,
-				877216DC1D057ED300E824F9 /* Buffer.swift */,
 				878985B81D050D42002C2A8D /* Cell.swift */,
 				878985B91D050D42002C2A8D /* Config.swift */,
 				878985BA1D050D42002C2A8D /* Context.swift */,
-				877216FB1D059E1200E824F9 /* Computer.swift */,
 				878985BB1D050D42002C2A8D /* Dict.swift */,
 				878985BC1D050D42002C2A8D /* Edge.swift */,
 				878985BD1D050D42002C2A8D /* Error.swift */,
-				878985BE1D050D42002C2A8D /* blas.metal */,
-				879AB5D01D054FF100E4587F /* common.metal */,
-				876A4B5B1D06A36200D32E1B /* math.metal */,
 			);
 			name = "C³";
 			sourceTree = "<group>";
@@ -153,6 +185,20 @@
 /* End PBXProject section */
 
 /* Begin PBXReferenceProxy section */
+		87591B061D3C45F300BD9248 /* Computer.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = Computer.framework;
+			remoteRef = 87591B051D3C45F300BD9248 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		87591B081D3C45F300BD9248 /* ComputerTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = ComputerTests.xctest;
+			remoteRef = 87591B071D3C45F300BD9248 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
 		878C7ABA1D01AF25002CDFD1 /* C3.framework */ = {
 			isa = PBXReferenceProxy;
 			fileType = wrapper.framework;
