@@ -131,20 +131,24 @@ public class cpuComputer: Computer {
 		vDSP_dotpr(a.scalar.baseAddress, 1, b.scalar.baseAddress, 1, &result, vDSP_Length(a.scalar.count))
 		return result
 	}
-	
-	func gemv ( let y y: Buffer, let beta: Float, let a: Buffer, let x: Buffer, let alpha: Float, let n: Int, let m: Int, let trans: Bool ) {
-		dispatch_apply(m/4, cpuComputer.dispatch.queue) { ( let r: Int ) in
-			var accum: float4 = float4(0)
-			if trans {
-				(0..<n/4).forEach { ( let c: Int ) in
-					accum += a.matrix [ r * n/4 + c ].transpose * x.vector[ c ]
+	func gemv ( let y: Buffer, let a: Buffer, let x: Buffer, let alpha: Float, let beta: Float, let transpose: Bool, let sync flag: Bool = false ) {
+		let m: Int = y.scalar.count
+		let n: Int = x.scalar.count
+		assert(m*n==a.scalar.count)
+		( flag ? sync : async ) {
+			dispatch_apply(m/4, cpuComputer.dispatch.queue) { ( let r: Int ) in
+				var accumulator: float4 = float4(0)
+				if transpose {
+					(0..<n/4).forEach { ( let c: Int ) in
+						accumulator += a.matrix [ r * n/4 + c ].transpose * x.vector[ c ]
+					}
+				} else {
+					(0..<n/4).forEach { ( let c: Int ) in
+						accumulator += a.matrix [ c * m/4 + r ] * x.vector[c]
+					}
 				}
-			} else {
-				(0..<n/4).forEach { ( let c: Int ) in
-					accum += a.matrix [ c * m/4 + r ] * x.vector[ c ]
-				}
+				y.vector[ r ] = alpha * accumulator + beta * y.vector[ r ]
 			}
-			y.vector [ r ] = alpha * accum + beta * y.vector [ r ]
 		}
 	}
 	func normal ( let y: Buffer, let u: Buffer, let s: Buffer, let sync flag: Bool = false ) {

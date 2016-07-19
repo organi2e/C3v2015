@@ -115,7 +115,10 @@ public class mtlComputer: cpuComputer {
 			}
 		}
 	}
-	override func gemv ( let y y: Buffer, let beta: Float, let a: Buffer, let x: Buffer, let alpha: Float, let n: Int, let m: Int, let trans: Bool ) {
+	override func gemv ( let y: Buffer, let a: Buffer, let x: Buffer, let alpha: Float, let beta: Float, let transpose: Bool, let sync: Bool = false ) {
+		let m: Int = y.scalar.count
+		let n: Int = x.scalar.count
+		assert(m*n==a.scalar.count)
 		if	let x: mtlBuffer = x as? mtlBuffer where x.mtl.device === device,
 			let y: mtlBuffer = y as? mtlBuffer where y.mtl.device === device,
 			let a: mtlBuffer = a as? mtlBuffer where a.mtl.device === device {
@@ -123,18 +126,18 @@ public class mtlComputer: cpuComputer {
 			let encoder: MTLComputeCommandEncoder = command.computeCommandEncoder()
 			encoder.setComputePipelineState(pipelines.gemv)
 			encoder.setBuffer(y.mtl, offset: 0, atIndex: 0)
-			encoder.setBytes([beta], length: sizeof(Float), atIndex: 1)
-			encoder.setBuffer(a.mtl, offset: 0, atIndex: 2)
-			encoder.setBuffer(x.mtl, offset: 0, atIndex: 3)
-			encoder.setBytes([alpha], length: sizeof(Float), atIndex: 4)
-			encoder.setBytes([UInt(trans)], length: sizeof(UInt), atIndex: 5)
+			encoder.setBuffer(a.mtl, offset: 0, atIndex: 1)
+			encoder.setBuffer(x.mtl, offset: 0, atIndex: 2)
+			encoder.setBytes([alpha], length: sizeof(Float), atIndex: 3)
+			encoder.setBytes([beta], length: sizeof(Float), atIndex: 4)
+			encoder.setBytes([UInt(transpose)], length: sizeof(UInt), atIndex: 5)
 			encoder.setThreadgroupMemoryLength(sizeof(Float)*n, atIndex: 0)
 			encoder.dispatchThreadgroups(MTLSize(width: m/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: n/4, height: 1, depth: 1))
 			encoder.endEncoding()
 			command.commit()
 		} else {
 			async {
-				super.gemv(y: y, beta: beta, a: a, x: x, alpha: alpha, n: n, m: m, trans: trans)
+				super.gemv(y, a: a, x: x, alpha: alpha, beta: beta, transpose: transpose, sync: true)
 			}
 		}
 	}
