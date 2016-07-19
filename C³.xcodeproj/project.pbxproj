@@ -52,6 +52,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		8719AE501D3DE08C00F8DCA4 /* cpuComputerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = cpuComputerTests.swift; path = Computer/cpuComputerTests.swift; sourceTree = "<group>"; };
+		8719AE591D3DE0BB00F8DCA4 /* mtlComputerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = mtlComputerTests.swift; path = Computer/mtlComputerTests.swift; sourceTree = "<group>"; };
 		87591AE11D3C45C400BD9248 /* blas.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = blas.metal; path = Computer/blas.metal; sourceTree = "<group>"; };
 		87591AE21D3C45C400BD9248 /* Buffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Buffer.swift; path = Computer/Buffer.swift; sourceTree = "<group>"; };
 		87591AE31D3C45C400BD9248 /* common.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = common.metal; path = Computer/common.metal; sourceTree = "<group>"; };
@@ -90,6 +92,8 @@
 				87591AE31D3C45C400BD9248 /* common.metal */,
 				87591AE51D3C45C400BD9248 /* statistics.metal */,
 				87591AE61D3C45C400BD9248 /* math.metal */,
+				8719AE501D3DE08C00F8DCA4 /* cpuComputerTests.swift */,
+				8719AE591D3DE0BB00F8DCA4 /* mtlComputerTests.swift */,
 			);
 			name = Computer;
 			sourceTree = "<group>";

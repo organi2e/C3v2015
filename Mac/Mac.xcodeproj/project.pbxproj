@@ -8,9 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		8719AE4D1D38BBE500F8DCA4 /* MiscTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8719AE4B1D38BB9800F8DCA4 /* MiscTests.swift */; };
+		8719AE581D3DE0A700F8DCA4 /* cpuComputerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8719AE571D3DE0A700F8DCA4 /* cpuComputerTests.swift */; };
+		8719AE5B1D3DE0CB00F8DCA4 /* mtlComputerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8719AE5A1D3DE0CB00F8DCA4 /* mtlComputerTests.swift */; };
 		87591AEF1D3C45E500BD9248 /* Computer.h in Headers */ = {isa = PBXBuildFile; fileRef = 87591AEE1D3C45E500BD9248 /* Computer.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		87591AF61D3C45E500BD9248 /* Computer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 87591AEC1D3C45E500BD9248 /* Computer.framework */; };
-		87591AFB1D3C45E500BD9248 /* ComputerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87591AFA1D3C45E500BD9248 /* ComputerTests.swift */; };
 		87591B0A1D3C460E00BD9248 /* blas.metal in Sources */ = {isa = PBXBuildFile; fileRef = 87591B091D3C460E00BD9248 /* blas.metal */; };
 		87591B0C1D3C461300BD9248 /* Buffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87591B0B1D3C461300BD9248 /* Buffer.swift */; };
 		87591B0E1D3C461600BD9248 /* Computer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87591B0D1D3C461600BD9248 /* Computer.swift */; };
@@ -101,11 +102,12 @@
 
 /* Begin PBXFileReference section */
 		8719AE4B1D38BB9800F8DCA4 /* MiscTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MiscTests.swift; sourceTree = "<group>"; };
+		8719AE571D3DE0A700F8DCA4 /* cpuComputerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = cpuComputerTests.swift; path = ../../Computer/cpuComputerTests.swift; sourceTree = "<group>"; };
+		8719AE5A1D3DE0CB00F8DCA4 /* mtlComputerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = mtlComputerTests.swift; path = ../../Computer/mtlComputerTests.swift; sourceTree = "<group>"; };
 		87591AEC1D3C45E500BD9248 /* Computer.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Computer.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		87591AEE1D3C45E500BD9248 /* Computer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Computer.h; sourceTree = "<group>"; };
 		87591AF01D3C45E500BD9248 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		87591AF51D3C45E500BD9248 /* ComputerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ComputerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		87591AFA1D3C45E500BD9248 /* ComputerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputerTests.swift; sourceTree = "<group>"; };
 		87591AFC1D3C45E500BD9248 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		87591B091D3C460E00BD9248 /* blas.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = blas.metal; path = ../../Computer/blas.metal; sourceTree = "<group>"; };
 		87591B0B1D3C461300BD9248 /* Buffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Buffer.swift; path = ../../Computer/Buffer.swift; sourceTree = "<group>"; };
@@ -217,7 +219,8 @@
 		87591AF91D3C45E500BD9248 /* ComputerTests */ = {
 			isa = PBXGroup;
 			children = (
-				87591AFA1D3C45E500BD9248 /* ComputerTests.swift */,
+				8719AE571D3DE0A700F8DCA4 /* cpuComputerTests.swift */,
+				8719AE5A1D3DE0CB00F8DCA4 /* mtlComputerTests.swift */,
 				87591AFC1D3C45E500BD9248 /* Info.plist */,
 			);
 			path = ComputerTests;
@@ -566,7 +569,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				87591AFB1D3C45E500BD9248 /* ComputerTests.swift in Sources */,
+				8719AE581D3DE0A700F8DCA4 /* cpuComputerTests.swift in Sources */,
+				8719AE5B1D3DE0CB00F8DCA4 /* mtlComputerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1291,6 +1295,7 @@
 				87591AFF1D3C45E500BD9248 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		87591B001D3C45E500BD9248 /* Build configuration list for PBXNativeTarget "ComputerTests" */ = {
 			isa = XCConfigurationList;
@@ -1299,6 +1304,7 @@
 				87591B021D3C45E500BD9248 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		878C7A5B1D01AE4D002CDFD1 /* Build configuration list for PBXProject "Mac" */ = {
 			isa = XCConfigurationList;

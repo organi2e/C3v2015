@@ -38,10 +38,10 @@ protocol Computer {
 	func dot ( let a: Buffer, let _: Buffer ) -> Float
 	func gemv ( let y y: Buffer, let beta: Float, let a: Buffer, let x: Buffer, let alpha: Float, let n: Int, let m: Int, let trans: Bool )
 	
-	func normal ( let y: Buffer, let u: Buffer, let s: Buffer )
-	func pdf ( let y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer )
-	func cdf ( let y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer )
-	func sigmoid ( let y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer )
+	func pdf ( let y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer, let sync: Bool )
+	func cdf ( let y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer, let sync: Bool  )
+	func normal ( let y: Buffer, let u: Buffer, let s: Buffer, let sync: Bool  )
+	func sigmoid ( let y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer, let sync: Bool  )
 	
 	func test ();
 	func newBuffer( let data data: NSData ) -> Buffer

@@ -27,12 +27,13 @@ public class mtlComputer: cpuComputer {
 		let cdf: MTLComputePipelineState
 		let gemv: MTLComputePipelineState
 		let normal: MTLComputePipelineState
+		let sigmoid: MTLComputePipelineState
 	};
 	
 	let device: MTLDevice
 	let queue: MTLCommandQueue
 	let pipelines: Pipelines
-	
+		
 	public init ( let device: MTLDevice ) throws {
 		
 		guard let path: String = Config.bundle.pathForResource(Config.metal.name, ofType: Config.metal.ext) else {
@@ -52,7 +53,8 @@ public class mtlComputer: cpuComputer {
 		                           pdf: try pipeline("pdf"),
 		                           cdf: try pipeline("cdf"),
 		                           gemv: try pipeline("gemv"),
-		                           normal: try pipeline("normal")
+		                           normal: try pipeline("normal"),
+		                           sigmoid: try pipeline("sigmoid")
 		)
 		self.device = device
 		self.queue = device.newCommandQueue()
@@ -80,7 +82,7 @@ public class mtlComputer: cpuComputer {
 			}
 		}
 	}
-	override func normal ( let y: Buffer, let u: Buffer, let s: Buffer ) {
+	override func normal ( let y: Buffer, let u: Buffer, let s: Buffer, let sync flag: Bool = false ) {
 		
 		assert(y.scalar.count==u.scalar.count)
 		assert(y.scalar.count==s.scalar.count)
@@ -105,13 +107,14 @@ public class mtlComputer: cpuComputer {
 				w.mtl.setPurgeableState(.Empty)
 			}
 			command.commit()
+			if flag { command.waitUntilCompleted() }
 		} else {
-			async {
-				super.normal(y, u: u, s: s)
+			( flag ? sync : async ) {
+				super.normal(y, u: u, s: s, sync: true)
 			}
 		}
 	}
-	override func pdf ( let y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer ) {
+	override func pdf ( let y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer, let sync flag: Bool = false ) {
 		
 		assert(y.scalar.count==x.scalar.count)
 		assert(y.scalar.count==y.scalar.count)
@@ -133,13 +136,14 @@ public class mtlComputer: cpuComputer {
 			encoder.dispatchThreadgroups(MTLSize(width: y.scalar.count/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 			encoder.endEncoding()
 			command.commit()
+			if flag { command.waitUntilCompleted() }
 		} else {
-			async {
-				super.pdf(y, x: x, u: u, s: s)
+			( flag ? sync : async ) {
+				super.pdf(y, x: x, u: u, s: s, sync: true)
 			}
 		}
 	}
-	override func cdf ( let y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer ) {
+	override func cdf ( let y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer, let sync flag: Bool = false ) {
 		
 		assert(y.scalar.count==x.scalar.count)
 		assert(y.scalar.count==y.scalar.count)
@@ -150,8 +154,8 @@ public class mtlComputer: cpuComputer {
 			let u: mtlBuffer = u as? mtlBuffer where u.mtl.device === device,
 			let s: mtlBuffer = s as? mtlBuffer where s.mtl.device === device {
 		} else {
-			async {
-				super.cdf(y, x: x, u: u, s: s)
+			( flag ? sync : async ) {
+				super.cdf(y, x: x, u: u, s: s, sync: true)
 			}
 		}
 	}
@@ -199,7 +203,7 @@ public class mtlComputer: cpuComputer {
 		print("mu", mu, "sigma", sqrtf(sigma))
 	}
 }
-struct mtlBuffer: Buffer {
+class mtlBuffer: Buffer {
 	let mtl: MTLBuffer
 	let raw: NSData
 	let stream: UnsafeMutableBufferPointer<UInt8>
