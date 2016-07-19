@@ -15,10 +15,10 @@ kernel void normal(device float4 * random [[buffer(0)]],
 				   device const uint * const noise [[buffer(3)]],
 				   uint const id [[thread_position_in_grid]]
 				   ){
-	float4 const n = unpack_unorm4x8_to_float(noise[id]);
+	float4 const n = unpack_unorm4x8_to_float(noise[id]) + 1/256.0;
 	float2 const c = cospi(2.0*n.xy);
 	float2 const s = sinpi(2.0*n.xy);
-	float2 const l = sqrt(-2.0*log(saturate(n.zw+1.0/65536.0)));
+	float2 const l = sqrt(-2.0*log(saturate(n.zw)));
 	
 	random[id].x = c.x*l.x;
 	random[id].y = s.x*l.x;
@@ -51,4 +51,13 @@ kernel void cdf(device float4 * const p [[ buffer(0) ]],
 				) {
 	float4 const lambda = ( x[id] - u[id] ) / s[id] / M_1_SQRT2;
 	p[id] = 0.5 + 0.5 * erf(lambda);
+}
+
+kernel void sigmoid(device float4 * const p [[ buffer(0) ]],
+				device const float4 * const x [[ buffer(1) ]],
+				device const float4 * const u [[ buffer(2) ]],
+				device const float4 * const s [[ buffer(3) ]],
+				uint const id [[thread_position_in_grid]]
+				) {
+	p[id] = 0.5 + 0.5 * tanh((x[id]-u[id])/s[id]);
 }
