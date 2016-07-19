@@ -13,26 +13,28 @@ protocol Computer {
 	func leave ( )
 	func join ( )
 	
-	func add ( let y: Buffer, let _: Buffer, let _: Buffer )
-	func sub ( let y: Buffer, let _: Buffer, let _: Buffer )
-	func mul ( let y: Buffer, let _: Buffer, let _: Buffer )
-	func div ( let y: Buffer, let _: Buffer, let _: Buffer )
+	func add ( let _: Buffer, let _: Buffer, let _: Buffer )
+	func sub ( let _: Buffer, let _: Buffer, let _: Buffer )
+	func mul ( let _: Buffer, let _: Buffer, let _: Buffer )
+	func div ( let _: Buffer, let _: Buffer, let _: Buffer )
 	
-	func add ( let y: Buffer, let _: Buffer, let _: Float )
-	func sub ( let y: Buffer, let _: Buffer, let _: Float )
-	func mul ( let y: Buffer, let _: Buffer, let _: Float )
-	func div ( let y: Buffer, let _: Buffer, let _: Float )
+	func add ( let _: Buffer, let _: Buffer, let _: Float )
+	func sub ( let _: Buffer, let _: Buffer, let _: Float )
+	func mul ( let _: Buffer, let _: Buffer, let _: Float )
+	func div ( let _: Buffer, let _: Buffer, let _: Float )
 	
-	func abs ( let y: Buffer, let _: Buffer )
-	func neg ( let y: Buffer, let _: Buffer )
-	func sq ( let y: Buffer, let _: Buffer )
-	func sqrt ( let y: Buffer, let _: Buffer )
+	func abs ( let _: Buffer, let _: Buffer, let sync: Bool )
+	func neg ( let _: Buffer, let _: Buffer, let sync: Bool )
+	func sq ( let _: Buffer, let _: Buffer, let sync: Bool )
+	func sqrt ( let _: Buffer, let _: Buffer, let sync: Bool )
 	
-	func exp ( let y: Buffer, let _: Buffer )
-	func log ( let y: Buffer, let _: Buffer )
+	func exp ( let _: Buffer, let _: Buffer, let sync: Bool )
+	func log ( let _: Buffer, let _: Buffer, let sync: Bool )
 
-	func fill( let y: Buffer, let _: Float)
-	func clamp( let y: Buffer, let _: Buffer, let _: Float, let _: Float)
+	func fill( let to _: Buffer, let from: [Float], let sync: Bool )
+	func copy( let to _: Buffer, let from: Buffer, let sync: Bool )
+	func clear( let _: Buffer, let sync: Bool )
+	func clamp( let _: Buffer, let _: Buffer, let _: Float, let _: Float)
 	
 	func sum ( let x: Buffer ) -> Float
 	func dot ( let a: Buffer, let _: Buffer ) -> Float
@@ -43,7 +45,7 @@ protocol Computer {
 	func normal ( let y: Buffer, let u: Buffer, let s: Buffer, let sync: Bool  )
 	func sigmoid ( let y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer, let sync: Bool  )
 	
-	func test ();
 	func newBuffer( let data data: NSData ) -> Buffer
 	func newBuffer( let length length: Int ) -> Buffer
+	func newBuffer( let buffer buffer: [Float] ) -> Buffer
 }
