@@ -39,21 +39,21 @@ kernel void div(device float4 * y [[ buffer(0) ]],
 }
 //Y = alphaAX + betaY
 kernel void gemv(device float4 * y [[ buffer(0) ]],
-				 constant const float & beta [[ buffer(1) ]],
-				 device const float4x4 * const A [[ buffer(2) ]],
-				 uint const lda_m [[ threadgroups_per_grid ]],
-				 uint const lda_n [[ threads_per_threadgroup ]],
-				 device float4 * const x [[ buffer(3) ]],
-				 constant const float & alpha [[ buffer(4) ]],
-				 uint const n [[ thread_position_in_threadgroup ]],
-				 uint const m [[ threadgroup_position_in_grid ]],
+				 device const float4x4 * const A [[ buffer(1) ]],
+				 device const float4 * const x [[ buffer(2) ]],
+				 constant const float & alpha [[ buffer(3) ]],
+				 constant const float & beta [[ buffer(4) ]],
 				 constant const bool & t [[ buffer(5) ]],
+				 uint const m [[ threadgroup_position_in_grid ]],
+				 uint const M [[ threadgroups_per_grid ]],
+				 uint const n [[ thread_position_in_threadgroup ]],
+				 uint const N [[ threads_per_threadgroup ]],
 				 threadgroup float4 * const accumulator [[ threadgroup(0) ]] )
 {
-	accumulator [ n ] = ( t ? transpose( A [ m * lda_n + n ] ) : float4x4 ( A [ n * lda_m + m ] ) ) * x [ n ];
-	uint offset = 1 << ( clz ( uint( 1 ) ) - clz ( lda_n ) );
+	accumulator [ n ] = ( t ? transpose( A [ m * N + n ] ) : float4x4 ( A [ n * M + m ] ) ) * x [ n ];
+	uint offset = 1 << ( clz ( uint( 1 ) ) - clz ( N ) );
 	threadgroup_barrier ( mem_flags::mem_threadgroup );
-	if ( n < ( lda_n % offset ) ) {
+	if ( n < ( N % offset ) ) {
 		accumulator [ n ] += accumulator [ offset + n ];
 	}
 	while ( offset >>= 1 ) {
