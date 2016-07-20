@@ -168,7 +168,7 @@ public class cpuComputer: Computer {
 			vDSP_vfltu32(W, 1, UnsafeMutablePointer<Float>(N), 1, L)
 		
 			vDSP_vsadd(UnsafePointer<Float>(N).advancedBy(0/2), 1, [Float(1.0)], UnsafeMutablePointer<Float>(N), 1, L/2)
-			vDSP_vsmul(UnsafePointer<Float>(N).advancedBy(n/2), 1, [Float(2.0)], UnsafeMutablePointer<Float>(N).advancedBy(n/2), 1, L/2)
+			vDSP_vsmul(UnsafePointer<Float>(N).advancedBy(n/2), 1, [Float(2.0*M_PI)], UnsafeMutablePointer<Float>(N).advancedBy(n/2), 1, L/2)
 			vDSP_vsdiv(UnsafePointer<Float>(N).advancedBy(0/2), 1, [Float(4294967296.0)], UnsafeMutablePointer<Float>(N).advancedBy(0/2), 1, L)
 		
 			vvlogf(UnsafeMutablePointer<Float>(N), N, [Int32(n/2)])

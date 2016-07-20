@@ -17,7 +17,7 @@ kernel void normal(device float4 * random [[buffer(0)]],
 	float2 const c = cospi(2.0*n.xy);
 	float2 const s = sinpi(2.0*n.xy);
 	float2 const l = sqrt(-2.0*log(n.zw));
-
+	
 	random[id].xz = c;
 	random[id].yw = s;
 	random[id].xy *= l.x;

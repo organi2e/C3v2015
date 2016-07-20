@@ -10,6 +10,7 @@
 		8719AE4D1D38BBE500F8DCA4 /* LATests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8719AE4B1D38BB9800F8DCA4 /* LATests.swift */; };
 		8719AE581D3DE0A700F8DCA4 /* cpuComputerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8719AE571D3DE0A700F8DCA4 /* cpuComputerTests.swift */; };
 		8719AE5B1D3DE0CB00F8DCA4 /* mtlComputerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8719AE5A1D3DE0CB00F8DCA4 /* mtlComputerTests.swift */; };
+		874F0BCE1D3FC7AF005A2B62 /* zy_object_t.swift in Sources */ = {isa = PBXBuildFile; fileRef = 874F0BCD1D3FC7AF005A2B62 /* zy_object_t.swift */; };
 		87591AEF1D3C45E500BD9248 /* Computer.h in Headers */ = {isa = PBXBuildFile; fileRef = 87591AEE1D3C45E500BD9248 /* Computer.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		87591AF61D3C45E500BD9248 /* Computer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 87591AEC1D3C45E500BD9248 /* Computer.framework */; };
 		87591B0A1D3C460E00BD9248 /* blas.metal in Sources */ = {isa = PBXBuildFile; fileRef = 87591B091D3C460E00BD9248 /* blas.metal */; };
@@ -119,6 +120,7 @@
 		8719AE4B1D38BB9800F8DCA4 /* LATests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LATests.swift; sourceTree = "<group>"; };
 		8719AE571D3DE0A700F8DCA4 /* cpuComputerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = cpuComputerTests.swift; path = ../../Computer/cpuComputerTests.swift; sourceTree = "<group>"; };
 		8719AE5A1D3DE0CB00F8DCA4 /* mtlComputerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = mtlComputerTests.swift; path = ../../Computer/mtlComputerTests.swift; sourceTree = "<group>"; };
+		874F0BCD1D3FC7AF005A2B62 /* zy_object_t.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = zy_object_t.swift; path = ../../NLA/zy_object_t.swift; sourceTree = "<group>"; };
 		87591AEC1D3C45E500BD9248 /* Computer.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Computer.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		87591AEE1D3C45E500BD9248 /* Computer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Computer.h; sourceTree = "<group>"; };
 		87591AF01D3C45E500BD9248 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -354,6 +356,7 @@
 		87C516B01D3F687900E3F36B /* NLA */ = {
 			isa = PBXGroup;
 			children = (
+				874F0BCD1D3FC7AF005A2B62 /* zy_object_t.swift */,
 				87C516D51D3F743600E3F36B /* Config.swift */,
 				87C516D01D3F72E600E3F36B /* Unit.swift */,
 				87C516D21D3F72E900E3F36B /* Statistics.metal */,
@@ -757,6 +760,7 @@
 				87C516D11D3F72E600E3F36B /* Unit.swift in Sources */,
 				87C516D61D3F743600E3F36B /* Config.swift in Sources */,
 				87C516D31D3F72E900E3F36B /* Statistics.metal in Sources */,
+				874F0BCE1D3FC7AF005A2B62 /* zy_object_t.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1721,6 +1725,7 @@
 				87C516C21D3F687900E3F36B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		87C516C31D3F687900E3F36B /* Build configuration list for PBXNativeTarget "NLATests" */ = {
 			isa = XCConfigurationList;
@@ -1729,6 +1734,7 @@
 				87C516C51D3F687900E3F36B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 

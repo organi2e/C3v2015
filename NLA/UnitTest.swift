@@ -25,11 +25,12 @@ class UnitTests: XCTestCase {
 		let S: la_object_t = la_splat_from_float(100.0, Unit.attr)
 		let mu: la_object_t = la_matrix_from_splat(U, la_count_t(rows), la_count_t(cols))
 		let sigma: la_object_t = la_matrix_from_splat(S, la_count_t(rows), la_count_t(cols))
-		let N: la_object_t = unit.normal(mu: mu, sigma: sigma)
+		let group: dispatch_group_t = dispatch_group_create()
+		let N: la_object_t = unit.normal(mu: mu, sigma: sigma, group: group)
 		let values: [Float] = [Float](count: rows*cols, repeatedValue: 0)
+//		dispatch_group_wait(group, DISPATCH_TIME_FOREVER)
 		unit.join()
 		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(values), la_count_t(cols), N)
-		
 		let m: Float = values.reduce(0){$0+$1}/Float(rows*cols)
 		let s: Float = sqrtf(values.map{($0-m)*($0-m)}.reduce(0){$0+$1}/Float(rows*cols))
 		
