@@ -11,30 +11,19 @@ import CoreData
 import Metal
 
 class Edge: NSManagedObject {
-	@NSManaged var gain: NSData
+	var A: LA = LA(row: 1, col: 1)
+}
+extension Edge {
+	@NSManaged var mean: NSData
+	@NSManaged var variance: NSData
 	@NSManaged var input: Cell
 	@NSManaged var output: Cell
-	class Buffers {
-		var gain: Buffer?
-	}
-	let buf: Buffers = Buffers()
 }
-extension Edge: Network {
-	func clear ( ) {
-		input.clear()
-	}
-	func chain ( let callback: ( Cell -> Void ) ) {
-		input.chain( callback )
-	}
-	func train ( let eps: Float ) {
-		input.train( eps )
-	}
-}
-extension Edge: CoreDataSharedMetal {
+extension Edge {
 	func setup() {
-	}
-	override func awakeFromInsert() {
-		super.awakeFromInsert()
+		let M: Int = output.width
+		let N: Int = input.width
+		A = LA(row: M, col: N)
 	}
 	override func awakeFromFetch() {
 		super.awakeFromFetch()
@@ -43,10 +32,5 @@ extension Edge: CoreDataSharedMetal {
 	override func awakeFromSnapshotEvents(flags: NSSnapshotEventType) {
 		super.awakeFromSnapshotEvents(flags)
 		setup()
-	}
-	override func awakeAfterUsingCoder(aDecoder: NSCoder) -> AnyObject? {
-		let result: AnyObject? = super.awakeAfterUsingCoder(aDecoder)
-		setup()
-		return result
 	}
 }

@@ -11,142 +11,128 @@ import CoreData
 import Metal
 
 public class Cell: NSManagedObject {
-	
+	private enum Status {
+		case READY
+		case ERROR
+		case IDEAL
+	}
+	private struct Statistics {
+		var mu: la_object_t
+		var sigma: la_object_t
+	}
+	private struct Estimated {
+		var mean: la_object_t
+		var variance: la_object_t
+		var lambda: la_object_t
+	}
+	private var status: Set<Status> = Set<Status>()
+	private var values = (
+		state: LA(row: 1, col: 1),
+		value: la_splat_from_float(0, LA.ATTR),
+		ideal: LA(row: 1, col: 1),
+		error: la_splat_from_float(0, LA.ATTR),
+		gauss: LA(row: 1, col: 1)
+	)
+	private var statistics: Statistics = Statistics(
+		mu: la_splat_from_float(0, LA.ATTR),
+		sigma: la_splat_from_float(0, LA.ATTR)
+	)
+	private var estimated = (
+		mean: la_splat_from_float(0, LA.ATTR),
+		variance: la_splat_from_float(1, LA.ATTR),
+		lambda: la_splat_from_float(0, LA.ATTR)
+	)
+	private var C: la_object_t = la_splat_from_float(0, LA.ATTR)
+}
+extension Cell {
 	@NSManaged public private(set) var label: String
 	@NSManaged public private(set) var width: Int
-	@NSManaged public private(set) var recur: Bool
 	@NSManaged public var attribute: [String: AnyObject]
-	@NSManaged private var bias: NSData
+	@NSManaged private var mean: NSData
+	@NSManaged private var variance: NSData
+	@NSManaged private var lambda: NSData
 	@NSManaged private var input: Set<Edge>
 	@NSManaged private var output: Set<Edge>
-	
-	private class MTLRef {
-		/*
-		var bias: Buffer = Buffer()
-		var stage: Buffer = Buffer()
-		var noise: Buffer = Buffer()
-		var value: Buffer = Buffer()
-		var lucky: Buffer = Buffer()
-		var state: Buffer = Buffer()
-		var error: Buffer = Buffer()
-		var delta: Buffer = Buffer()
-*/
-	}
-	private let buf: MTLRef = MTLRef()
 }
-extension Cell: Network {
+extension Cell {
 	public func clear ( ) {
-		if let context: Context = managedObjectContext as? Context {
-			context.async {
-				
+		func parent( let cell: Cell ) {
+			if cell.status.contains(.ERROR) {
+				cell.values.error = la_splat_from_float(0, LA.ATTR)
+				cell.status.remove(.ERROR)
+			}
+			if cell.status.contains(.IDEAL) {
+				cell.values.ideal.clear()
+				cell.status.remove(.IDEAL)
+			}
+			cell.output.forEach {
+				parent($0.output)
 			}
 		}
-	}
-	public func chain ( let callback: ( Cell -> Void ) ) {
-		callback(self)
-		input.forEach {
-			$0.chain(callback)
-		}
-	}
-	public func correct ( let destination: [Bool], let eps: Float ) {
-		if let context: Context = managedObjectContext as? Context {
-			context.async {
-				
+		parent(self)
+		func child( let cell: Cell ) {
+			if cell.status.contains(.READY) {
+				cell.values.value = la_splat_from_float(0, LA.ATTR)
+				cell.values.state.clear()
+				cell.statistics.mu = la_splat_from_float(0, LA.ATTR)
+				cell.statistics.sigma = la_splat_from_float(0, LA.ATTR)
+				cell.status.remove(.READY)
+			}
+			cell.values.gauss.normal()
+			cell.input.forEach {
+				child($0.input)
 			}
 		}
+		child(self)
 	}
-	func train ( let eps: Float ) {
+	public func correct(let eps eps: Float) {
 	
 	}
-	public var terminus: Bool {
+}
+extension Cell {
+	func collect() {
+		if !status.contains(.READY) {
+			
+		}
+	}
+	func backward() {
+		
+	}
+}
+extension Cell {
+	var state: [Bool] {
+		set {
+			assert(width==newValue.count)
+			values.state.fill(newValue.map{Float($0)})
+			status.insert(.READY)
+		}
 		get {
-			return input.isEmpty
+			collect()
+			return values.state.buffer.map{Bool($0)}
+		}
+	}
+	var ideal: [Bool] {
+		set {
+			assert(width==newValue.count)
+			values.ideal.fill(newValue.map{Float($0)})
+			status.insert(.ERROR)
+		}
+		get {
+			return values.ideal.buffer.map{Bool($0)}
 		}
 	}
 }
 extension Cell {
-	/*
-	public func setState ( let newValue buffer: [Bool] ) {
-		if let context: Context = managedObjectContext as? Context, cmd: MTLCommandBuffer = context.newMTLCommandBuffer() {
-			cmd.addCompletedHandler {(_)in
-				NSData(bytesNoCopy: UnsafeMutablePointer(buffer.map{Float($0)}), length: sizeof(Float)*buffer.count, freeWhenDone: false).getBytes(UnsafeMutablePointer<Void>(self.buf.state.raw.bytes), length: self.buf.state.raw.length)
-			}
-			cmd.commit()
-		} else {
-			NSData(bytesNoCopy: UnsafeMutablePointer(buffer.map{Float($0)}), length: sizeof(Float)*buffer.count, freeWhenDone: false).getBytes(UnsafeMutablePointer<Void>(buf.state.raw.bytes), length: buf.state.raw.length)
-		}
-	}
-	public func getState ( let callback fun: ([Bool]->Void) ) {
-		if let context: Context = managedObjectContext as? Context, cmd: MTLCommandBuffer = context.newMTLCommandBuffer() {
-			cmd.addCompletedHandler {(_)in
-				fun(self.buf.state.scalar.map{Bool($0)})
-			}
-			cmd.commit()
-		} else {
-			fun(buf.state.scalar.map{Bool($0)})
-		}
-	}
-	public var state: [Bool] {
-		get {
-			var result: [Float] = [Float](count: width, repeatedValue: 0.0)
-			if let context: Context = managedObjectContext as? Context, cmd: MTLCommandBuffer = context.newMTLCommandBuffer() {
-				cmd.addCompletedHandler {(_)in
-					self.buf.state.raw.getBytes(&result, length: sizeof(Float)*result.count)
-				}
-				cmd.commit()
-				cmd.waitUntilCompleted()
-			} else {
-				buf.state.raw.getBytes(&result, length: sizeof(Float)*result.count)
-			}
-			return result.map{Bool($0)}
-		}
-		set {
-			setState(newValue: newValue)
-		}
-	}
-	public func setValue ( let newValue buffer: [Float] ) {
-		if let cmd: MTLCommandBuffer = (managedObjectContext as? Context)?.newMTLCommandBuffer() {
-			cmd.addCompletedHandler {(_)in
-				NSData(bytesNoCopy: UnsafeMutablePointer(buffer), length: sizeof(Float)*buffer.count, freeWhenDone: false).getBytes(UnsafeMutablePointer<Void>(self.buf.value.raw.bytes), length: self.buf.value.raw.length)
-			}
-			cmd.commit()
-		} else {
-			NSData(bytesNoCopy: UnsafeMutablePointer(buffer), length: sizeof(Float)*buffer.count, freeWhenDone: false).getBytes(UnsafeMutablePointer<Void>(buf.value.raw.bytes), length: buf.value.raw.length)
-		}
-	}
-	public func getValue ( let callback fun: ([Float] -> Void) ) {
+	func setup() {
 		
-		if let cmd: MTLCommandBuffer = (managedObjectContext as? Context)?.newMTLCommandBuffer() {
-			cmd.addCompletedHandler {(_)in
-				fun(Array<Float>(self.buf.value.scalar))
-			}
-			cmd.commit()
-		} else {
-			fun(Array<Float>(buf.value.scalar))
-		}
-	}
-*/
-}
-extension Cell: CoreDataSharedMetal {
-	func setup () {
-		if let context: Context = managedObjectContext as? Context {
-			/*
-			buf.bias = context.newBuffer(data: bias)
-			buf.stage = context.newBuffer(length: sizeof(UInt8))
-			buf.noise = context.newBuffer(length: sizeof(UInt8)*width)
-			buf.value = context.newBuffer(length: sizeof(Float)*width)
-			buf.lucky = context.newBuffer(length: sizeof(Float)*width)
-			buf.state = context.newBuffer(length: sizeof(Float)*width)
-			buf.error = context.newBuffer(length: sizeof(Float)*width)
-			buf.delta = context.newBuffer(length: sizeof(Float)*width)
-			
-			bias = buf.bias.raw
-*/
-		}
-	}
-	public override func awakeFromInsert() {
-		super.awakeFromInsert()
-		attribute = [:]
+		values.ideal = LA(row: width, col: 1)
+		values.state = LA(row: width, col: 1)
+		values.gauss = LA(row: width, col: 1)
+		
+		estimated.mean = la_matrix_from_float_buffer(UnsafePointer<Float>(mean.bytes), la_count_t(width), la_count_t(1), la_count_t(1), LA.HINT, LA.ATTR)
+		estimated.variance = la_matrix_from_float_buffer(UnsafePointer<Float>(variance.bytes), la_count_t(width), la_count_t(1), la_count_t(1), LA.HINT, LA.ATTR)
+		estimated.lambda = la_matrix_from_float_buffer(UnsafePointer<Float>(lambda.bytes), la_count_t(width), la_count_t(1), la_count_t(1), LA.HINT, LA.ATTR)
+		
 	}
 	public override func awakeFromFetch() {
 		super.awakeFromFetch()
@@ -156,28 +142,25 @@ extension Cell: CoreDataSharedMetal {
 		super.awakeFromSnapshotEvents(flags)
 		setup()
 	}
-	public override func awakeAfterUsingCoder(aDecoder: NSCoder) -> AnyObject? {
-		let result: AnyObject? = super.awakeAfterUsingCoder(aDecoder)
-		setup()
-		return result
-	}
 }
 extension Context {
 	public func newCell ( let width size: Int, let label: String = "", let recur: Bool = false, let input: [Cell] = [] ) -> Cell? {
 		let cell: Cell? = new()
-		let width: Int = max( size + 0x0f - ( ( size + 0x0f ) % 0x10 ), 0x10 )
+		let width: Int = size//max( size + 0x0f - ( ( size + 0x0f ) % 0x10 ), 0x10 )
 		if let cell: Cell = cell {
 			cell.width = width
 			cell.label = label
-			cell.recur = recur
-			cell.bias = NSData(bytes: [Float](count: width, repeatedValue: 0.0), length: sizeof(Float)*width)
+			cell.attribute = [:]
+			cell.mean = NSData(bytes: [Float](count: width, repeatedValue: 0.0), length: sizeof(Float)*width)
+			cell.variance = NSData(bytes: [Float](count: width, repeatedValue: 0.0), length: sizeof(Float)*width)
+			cell.lambda = NSData(bytes: [Float](count: width, repeatedValue: 0.0), length: sizeof(Float)*width)
 			cell.setup()
-			
 			input.forEach { ( let input: Cell ) in
 				if input.managedObjectContext === self, let edge: Edge = new() {
 					edge.input = input
 					edge.output = cell
-					edge.gain = NSData(bytes: [Float](count: cell.width*input.width, repeatedValue: 0.0), length: sizeof(Float)*cell.width*input.width)
+					edge.mean = NSData(bytes: [Float](count: cell.width*input.width, repeatedValue: 0.0), length: sizeof(Float)*cell.width*input.width)
+					edge.variance = NSData(bytes: [Float](count: cell.width*input.width, repeatedValue: 0.0), length: sizeof(Float)*cell.width*input.width)
 					edge.setup()
 				}
 			}
@@ -194,5 +177,10 @@ extension Context {
 		}
 		let cell: [Cell] = fetch ( attribute )
 		return cell
+	}
+}
+extension Context {
+	public func train( let pair: [([String:[Bool]], [String:[Bool]])], let count: Int, let eps: Float) {
+		
 	}
 }
