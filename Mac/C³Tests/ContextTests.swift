@@ -17,21 +17,15 @@ class ContextTests: XCTestCase {
 			let url: NSURL = try NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true).URLByAppendingPathComponent("test.sqlite")
 			let context: Context = try Context(storage: url)
 			if let
-				I: Cell = context.newCell(width: 16, label: "I"),
-				H: Cell = context.newCell(width: 16, label: "H", input: [I]),
-				_: Cell = context.newCell(width: 16, label: "G", input: [H]) {
+				I: Cell = context.newCell(width: 4, label: "I"),
+				H: Cell = context.newCell(width: 4, label: "H", input: [I]),
+				_: Cell = context.newCell(width: 4, label: "G", input: [H]) {
 				print("created")
-				context.join()
 				try context.store()
 			}
 		} catch let e {
-			print(e)
+			XCTFail(String(e))
 		}
-    }
-    
-    override func tearDown() {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-        super.tearDown()
     }
 	
     func testExample() {
@@ -40,17 +34,34 @@ class ContextTests: XCTestCase {
 		do {
 			let url: NSURL = try NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true).URLByAppendingPathComponent("test.sqlite")
 			let context: Context = try Context(storage: url)
-			if let O: Cell = context.searchCell(label: "G").first {
-				O.clear()
-				O.chain {
-					print("\($0.label) traced")
-				}
-				O.correct([], eps: 0.0)
+			guard let O: Cell = context.searchCell(width: 4, label: "G").first, I: Cell = context.searchCell(width: 4, label: "I").first else {
+				XCTFail()
+				return
 			}
-			context.join()
-			
+			O.clear()
+			I.state = [true, true, false, false]
+			print(I.state)
+				
+			I.clear()
+			O.ideal = [false, false, false, true]
+			I.correct(eps: 0.01)
+			print(O.ideal)
+
+				
+			/*syntax sugar*/
+			context.train([
+				(
+					["I":[false, false, false, false], /*"H":*/],
+					["O":[false, false, false, false], /*...*/]
+				),(
+					["I":[false, false, false, true], /*"H":*/],
+					["O":[false, false, false, true], /*...*/]
+				)],
+				count: 1024, 
+				eps: 0.01
+			)
 		} catch let e {
-			print(e)
+			XCTFail(String(e))
 		}
     }
     /*

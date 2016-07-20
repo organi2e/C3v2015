@@ -1,31 +1,30 @@
 //
 //  Config.swift
-//  C3
+//  C³
 //
-//  Created by Kota Nakano on 6/4/16.
+//  Created by Kota Nakano on 7/20/16.
 //
 //
 
 import Foundation
-import Accelerate
-
-internal struct Config {
-	static let bundle: NSBundle = NSBundle(forClass: Context.self)
-	static let identifier: String = {
+internal class Config {
+	static let bundle: NSBundle = NSBundle(forClass: Config.self)
+	static let identifier: String = {(_)->String in
 		guard let identifier: String = Config.bundle.bundleIdentifier else {
-			fatalError("")
+			fatalError("Bundle Broken")
 		}
 		return identifier
 	}()
 	static let framework: String = {
 		guard let dictionary: [String: AnyObject] = Config.bundle.infoDictionary, framework: String = dictionary["CFBundleName"] as? String else {
-			fatalError("")
+			fatalError("Bundle Broken")
 		}
 		return framework
 	}()
-	static let coredata: (name: String, ext: String) = (name: "C³", ext: "momd")
+	static let metal: (name: String, ext: String) = (name: "default", ext: "metallib")
 	static let dispatch: (serial: String, parallel: String) = (
 		serial: "\(Config.identifier).dispatch.queue.serial",
 		parallel: "\(Config.identifier).dispatch.queue.parallel"
 	)
 }
+

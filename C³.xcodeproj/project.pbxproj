@@ -49,6 +49,20 @@
 			remoteGlobalIDString = 878C7AA31D01AF13002CDFD1;
 			remoteInfo = MNIST;
 		};
+		87C516CA1D3F728C00E3F36B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 878C7A5E1D01AE4D002CDFD1 /* Mac.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 87C516AF1D3F687900E3F36B;
+			remoteInfo = NLA;
+		};
+		87C516CC1D3F728C00E3F36B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 878C7A5E1D01AE4D002CDFD1 /* Mac.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 87C516B81D3F687900E3F36B;
+			remoteInfo = NLATests;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
@@ -77,6 +91,11 @@
 		878C7AC31D01AF60002CDFD1 /* t10k-labels.idx1-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "t10k-labels.idx1-ubyte"; path = "MNIST/t10k-labels.idx1-ubyte"; sourceTree = "<group>"; };
 		878C7AC41D01AF60002CDFD1 /* train-images.idx3-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "train-images.idx3-ubyte"; path = "MNIST/train-images.idx3-ubyte"; sourceTree = "<group>"; };
 		878C7AC51D01AF60002CDFD1 /* train-labels.idx1-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "train-labels.idx1-ubyte"; path = "MNIST/train-labels.idx1-ubyte"; sourceTree = "<group>"; };
+		87C516CE1D3F72B400E3F36B /* Statistics.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = Statistics.metal; path = NLA/Statistics.metal; sourceTree = "<group>"; };
+		87C516CF1D3F72E000E3F36B /* Unit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Unit.swift; path = NLA/Unit.swift; sourceTree = "<group>"; };
+		87C516D41D3F742500E3F36B /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Config.swift; path = NLA/Config.swift; sourceTree = "<group>"; };
+		87C516D71D3F802C00E3F36B /* UnitTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = UnitTest.swift; path = NLA/UnitTest.swift; sourceTree = "<group>"; };
+		87D18E341D3F18BB00982020 /* LA.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = LA.swift; path = "C³/LA.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -106,6 +125,7 @@
 				878C7A6B1D01AE66002CDFD1 /* C³ */,
 				878C7A6C1D01AE7D002CDFD1 /* MNIST */,
 				87591ADC1D3C451300BD9248 /* Computer */,
+				87C516A81D3F680100E3F36B /* NLA */,
 			);
 			sourceTree = "<group>";
 		};
@@ -118,6 +138,8 @@
 				878C7ABC1D01AF25002CDFD1 /* C3Tests.xctest */,
 				87591B061D3C45F300BD9248 /* Computer.framework */,
 				87591B081D3C45F300BD9248 /* ComputerTests.xctest */,
+				87C516CB1D3F728C00E3F36B /* NLA.framework */,
+				87C516CD1D3F728C00E3F36B /* NLATests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -139,6 +161,7 @@
 				878985BB1D050D42002C2A8D /* Dict.swift */,
 				878985BC1D050D42002C2A8D /* Edge.swift */,
 				878985BD1D050D42002C2A8D /* Error.swift */,
+				87D18E341D3F18BB00982020 /* LA.swift */,
 			);
 			name = "C³";
 			sourceTree = "<group>";
@@ -153,6 +176,17 @@
 				878C7AC51D01AF60002CDFD1 /* train-labels.idx1-ubyte */,
 			);
 			name = MNIST;
+			sourceTree = "<group>";
+		};
+		87C516A81D3F680100E3F36B /* NLA */ = {
+			isa = PBXGroup;
+			children = (
+				87C516D41D3F742500E3F36B /* Config.swift */,
+				87C516CF1D3F72E000E3F36B /* Unit.swift */,
+				87C516CE1D3F72B400E3F36B /* Statistics.metal */,
+				87C516D71D3F802C00E3F36B /* UnitTest.swift */,
+			);
+			name = NLA;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -229,6 +263,20 @@
 			fileType = wrapper.framework;
 			path = MNIST.framework;
 			remoteRef = 878C7ABF1D01AF25002CDFD1 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		87C516CB1D3F728C00E3F36B /* NLA.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = NLA.framework;
+			remoteRef = 87C516CA1D3F728C00E3F36B /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		87C516CD1D3F728C00E3F36B /* NLATests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = NLATests.xctest;
+			remoteRef = 87C516CC1D3F728C00E3F36B /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 /* End PBXReferenceProxy section */

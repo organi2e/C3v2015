@@ -9,7 +9,6 @@
 import Foundation
 enum Error: ErrorType {
 	enum System: String, ErrorType, CustomStringConvertible {
-		case RNGNotFound = "RNG device is not opened"
 		case FailObjectDecode = "Object is not correctly decoded"
 		case InvalidOperation = "Invalid operation"
 		var description: String {

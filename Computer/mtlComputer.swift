@@ -149,7 +149,7 @@ public class mtlComputer: cpuComputer {
 		if	let y: mtlBuffer = y as? mtlBuffer where y.mtl.device === device,
 			let u: mtlBuffer = u as? mtlBuffer where u.mtl.device === device,
 			let s: mtlBuffer = s as? mtlBuffer where s.mtl.device === device,
-			let w: mtlBuffer = newBuffer(length: sizeof(UInt8)*y.scalar.count) as? mtlBuffer {
+			let w: mtlBuffer = newBuffer(length: sizeof(UInt32)*y.scalar.count) as? mtlBuffer {
 			let command: MTLCommandBuffer = queue.commandBuffer()
 			let encoder: MTLComputeCommandEncoder = command.computeCommandEncoder()
 			
@@ -344,15 +344,15 @@ public class mtlComputer: cpuComputer {
 		command.waitUntilCompleted()
 	}
 	override func newBuffer( let data data: NSData ) -> Buffer {
-		let mtl: MTLBuffer = device.newBufferWithBytes(data.bytes, length: data.length, options: .CPUCacheModeDefaultCache)
+		let mtl: MTLBuffer = device.newBufferWithBytes(data.bytes, length: data.length, options: .StorageModeShared)
 		return mtlBuffer(buffer: mtl)
 	}
 	override func newBuffer( let length length: Int ) -> Buffer {
-		let mtl: MTLBuffer = device.newBufferWithLength(length, options: .CPUCacheModeDefaultCache)
+		let mtl: MTLBuffer = device.newBufferWithLength(length, options: .StorageModeShared)
 		return mtlBuffer(buffer: mtl)
 	}
 	override func newBuffer( let buffer buffer: [Float] ) -> Buffer {
-		let mtl: MTLBuffer = device.newBufferWithBytes(UnsafePointer<Void>(buffer), length: sizeof(Float)*buffer.count, options: .CPUCacheModeDefaultCache)
+		let mtl: MTLBuffer = device.newBufferWithBytes(UnsafePointer<Void>(buffer), length: sizeof(Float)*buffer.count, options: .StorageModeShared)
 		return mtlBuffer(buffer: mtl)
 	}
 }

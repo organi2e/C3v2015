@@ -18,18 +18,7 @@ public class Context: NSManagedObjectContext {
 	)
 	
 	public let storage: NSURL?
-	
-	private let rng: NSFileHandle
-	private let computer: Computer
-	
-	public init( let storage nsurl: NSURL? = nil, let platformHint hint: Platform = .GPU ) throws {
-		if hint == .GPU, let device: MTLDevice = MTLCreateSystemDefaultDevice() {
-			computer = try mtlComputer(device: device)
-		}
-		else {
-			computer = cpuComputer()
-		}
-		rng = try NSFileHandle(forReadingFromURL: Config.rngurl)
+	public init( let storage nsurl: NSURL? = nil ) throws {
 		storage = nsurl
 		super.init(concurrencyType: .PrivateQueueConcurrencyType)
 		
@@ -49,17 +38,6 @@ public class Context: NSManagedObjectContext {
 		aCoder.encodeObject(storage, forKey: Context.storageKey)
 	}
 	required public init?(coder aDecoder: NSCoder) {
-		guard let myrng: NSFileHandle = try? NSFileHandle(forReadingFromURL: Config.rngurl) else {
-			fatalError(Error.System.RNGNotFound.rawValue)
-		}
-		rng = myrng
-
-		if let device: MTLDevice = MTLCreateSystemDefaultDevice() {
-			computer = (try?mtlComputer(device: device)) ?? cpuComputer()
-		}
-		else {
-			computer = cpuComputer()
-		}
 		storage = aDecoder.decodeObjectForKey(Context.storageKey)as?NSURL
 		super.init(coder: aDecoder)
 		guard let url: NSURL = Config.bundle.URLForResource(Config.coredata.name, withExtension: Config.coredata.ext) else {
@@ -133,27 +111,5 @@ extension Context {
 		performBlock {
 			self.deleteObject(object)
 		}
-	}
-	public func join ( ) {
-		
-	}
-}
-internal extension Context {
-	internal func newBuffer ( let length length: Int ) -> Buffer {
-		return newBuffer(data: NSData(bytes: [UInt8](count: length, repeatedValue: 0), length: length))
-	}
-	internal func newBuffer ( let data data: NSData ) -> Buffer {
-		return computer.newBuffer(data: data)
-	}
-	internal func sync (let task task: (()->())) {
-		computer.sync ( task )
-	}
-	internal func async (let task task: (()->())) {
-		computer.async ( task )
-	}
-}
-internal extension Context {
-	func entropy ( let buffer: Buffer ) {
-		rng.readDataOfLength(buffer.raw.length).getBytes(UnsafeMutablePointer(buffer.raw.bytes), length: buffer.raw.length)
 	}
 }

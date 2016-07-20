@@ -2,25 +2,27 @@
 <model userDefinedModelVersionIdentifier="" type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="10174" systemVersion="15F34" minimumToolsVersion="Xcode 7.0">
     <entity name="Cell" representedClassName="C3.Cell" syncable="YES">
         <attribute name="attribute" attributeType="Transformable" syncable="YES"/>
-        <attribute name="bias" attributeType="Binary" syncable="YES"/>
         <attribute name="label" attributeType="String" indexed="YES" syncable="YES"/>
-        <attribute name="recur" attributeType="Boolean" syncable="YES"/>
+        <attribute name="lambda" attributeType="Binary" syncable="YES"/>
+        <attribute name="mean" attributeType="Binary" syncable="YES"/>
+        <attribute name="variance" attributeType="Binary" syncable="YES"/>
         <attribute name="width" attributeType="Integer 64" syncable="YES"/>
         <relationship name="input" toMany="YES" deletionRule="Nullify" destinationEntity="Edge" inverseName="output" inverseEntity="Edge" syncable="YES"/>
-        <relationship name="outpu" toMany="YES" deletionRule="Nullify" destinationEntity="Edge" inverseName="input" inverseEntity="Edge" syncable="YES"/>
+        <relationship name="output" toMany="YES" deletionRule="Nullify" destinationEntity="Edge" inverseName="input" inverseEntity="Edge" syncable="YES"/>
     </entity>
     <entity name="Dict" representedClassName="C3.Dict" syncable="YES">
         <attribute name="key" attributeType="Transformable" indexed="YES" syncable="YES"/>
         <attribute name="value" attributeType="Transformable" syncable="YES"/>
     </entity>
     <entity name="Edge" representedClassName="C3.Edge" syncable="YES">
-        <attribute name="gain" attributeType="Binary" syncable="YES"/>
-        <relationship name="input" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Cell" inverseName="outpu" inverseEntity="Cell" syncable="YES"/>
+        <attribute name="mean" attributeType="Binary" syncable="YES"/>
+        <attribute name="variance" optional="YES" attributeType="Binary" syncable="YES"/>
+        <relationship name="input" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Cell" inverseName="output" inverseEntity="Cell" syncable="YES"/>
         <relationship name="output" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Cell" inverseName="input" inverseEntity="Cell" syncable="YES"/>
     </entity>
     <elements>
-        <element name="Cell" positionX="36" positionY="117" width="128" height="30"/>
+        <element name="Cell" positionX="36" positionY="117" width="128" height="165"/>
         <element name="Dict" positionX="18" positionY="81" width="128" height="75"/>
-        <element name="Edge" positionX="54" positionY="108" width="128" height="90"/>
+        <element name="Edge" positionX="54" positionY="108" width="128" height="105"/>
     </elements>
 </model>

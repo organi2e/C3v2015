@@ -284,7 +284,7 @@ class cpuComputerTests: XCTestCase {
 		}
 	}
 	lazy var computer: Computer = self.implementation()
-	let order: Int = 18
+	let order: Int = 24
 	func rmse(let d d: Buffer, let y: Buffer) -> Float {
 		assert(d.scalar.count==y.scalar.count)
 		let df: [Float] = zip(d.scalar, y.scalar).map{$0.0-$0.1}
