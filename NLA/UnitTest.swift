@@ -17,7 +17,7 @@ class UnitTests: XCTestCase {
 				return
 			}
 			let unit: Unit = try Unit(device: device)
-			let x: la_object_t = la_matrix_from_float_buffer(Array<Float>([-1.0, 0.0, 1.0, 2.0]), la_count_t(2), la_count_t(2), la_count_t(2), Unit.hint, Unit.attr)
+			let x: la_object_t = la_matrix_from_float_buffer(Array<Float>([-4.0,-2.0, 0.0, 2.0]), la_count_t(2), la_count_t(2), la_count_t(2), Unit.hint, Unit.attr)
 			let y: la_object_t = unit.sigmoid(x).0
 			unit.join()
 			let v: [Float] = [0,0,0,0]
