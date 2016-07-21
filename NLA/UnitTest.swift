@@ -24,7 +24,7 @@ class UnitTests: XCTestCase {
 		let cols: la_count_t = la_count_t(arc4random_uniform(240)*0+4)
 		let count: Int = Int(rows*cols)
 		let group: dispatch_group_t = dispatch_group_create()
-		let x: la_object_t = unit.normal(rows: Int(rows), cols: Int(cols), group: group)
+		let x: la_object_t = unit.normal(rows: Int(rows), cols: Int(cols), event: group)
 		let u: la_object_t = la_splat_from_float(0, la_attribute_t(LA_DEFAULT_ATTRIBUTES))
 		let s: la_object_t = la_splat_from_float(1, la_attribute_t(LA_DEFAULT_ATTRIBUTES))
 		let n: la_object_t = unit.pdf(x: x, mu: u, sigma: s, waits: [group])
@@ -58,7 +58,7 @@ class UnitTests: XCTestCase {
 		let cols: la_count_t = la_count_t(arc4random_uniform(240)*4+64)
 		let count: Int = Int(rows*cols)
 		let group: dispatch_group_t = dispatch_group_create()
-		let x: la_object_t = unit.normal(rows: Int(rows), cols: Int(cols), group: group)
+		let x: la_object_t = unit.normal(rows: Int(rows), cols: Int(cols), event: group)
 		let u: la_object_t = la_splat_from_float(0, la_attribute_t(LA_DEFAULT_ATTRIBUTES))
 		let s: la_object_t = la_splat_from_float(1, la_attribute_t(LA_DEFAULT_ATTRIBUTES))
 		let n: la_object_t = unit.cdf(x: x, mu: u, sigma: s, waits: [group])
@@ -118,7 +118,7 @@ class UnitTests: XCTestCase {
 		let group: dispatch_group_t = dispatch_group_create()
 		let values: [Float] = [Float](count: count, repeatedValue: 0)
 		
-		let normal: la_object_t = unit.normal(rows: Int(rows), cols: Int(cols), group: group)
+		let normal: la_object_t = unit.normal(rows: Int(rows), cols: Int(cols), event: group)
 		let gauss: la_object_t = la_sum(mu, la_elementwise_product(sigma, normal))
 		
 		group.wait()

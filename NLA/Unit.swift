@@ -47,7 +47,7 @@ public class Unit {
 		group = dispatch_group_create()
 		queue = device.newCommandQueue()
 	}
-	public func step ( let x: la_object_t, let waits: [dispatch_group_t] = [], let group: dispatch_group_t? = nil ) -> la_object_t {
+	public func step ( let x: la_object_t, let waits: [dispatch_group_t] = [], let event: dispatch_group_t? = nil ) -> la_object_t {
 		
 		let rows: Int = x.rows
 		let cols: Int = x.cols
@@ -56,7 +56,7 @@ public class Unit {
 		let cache: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*count))
 		
 		self.enter()
-		group?.enter()
+		event?.enter()
 		
 		async {
 			let command: MTLCommandBuffer = self.queue.commandBuffer()
@@ -72,10 +72,11 @@ public class Unit {
 			encoder.setComputePipelineState(self.pipelines.step)
 			encoder.setBuffer(ybuf, offset: 0, atIndex: 0)
 			encoder.setBuffer(xbuf, offset: 0, atIndex: 1)
+			encoder.dispatchThreadgroups(MTLSize(width: count/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 			encoder.endEncoding()
 			command.addCompletedHandler {(_)in
-				memcpy(cache, ybuf.contents(), ybuf.length)
-				group?.leave()
+				memcpy(cache, ybuf.contents(), ybuf.length)				
+				event?.leave()
 				xbuf.setPurgeableState(.Empty)
 				ybuf.setPurgeableState(.Empty)
 				self.leave()
