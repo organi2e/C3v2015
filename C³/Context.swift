@@ -5,9 +5,8 @@
 //  Created by Kota Nakano on 6/1/16.
 //
 //
-import Accelerate
+import NLA
 import CoreData
-import Metal
 import simd
 
 public class Context: NSManagedObjectContext {
@@ -16,12 +15,15 @@ public class Context: NSManagedObjectContext {
 		queue: dispatch_queue_create(Config.dispatch.serial, DISPATCH_QUEUE_SERIAL),
 		semaphore: dispatch_semaphore_create(1)
 	)
-	
+	public let unit: Unit
 	public let storage: NSURL?
 	public init( let storage nsurl: NSURL? = nil ) throws {
 		storage = nsurl
+		guard let device: MTLDevice = MTLCreateSystemDefaultDevice() else {
+			throw Error.Metal.NoDeviceFound
+		}
+		unit = try Unit(device: device)
 		super.init(concurrencyType: .PrivateQueueConcurrencyType)
-		
 		guard let url: NSURL = Config.bundle.URLForResource(Config.coredata.name, withExtension: Config.coredata.ext) else {
 			throw Error.CoreData.ModelNotFound
 		}
@@ -38,13 +40,27 @@ public class Context: NSManagedObjectContext {
 		aCoder.encodeObject(storage, forKey: Context.storageKey)
 	}
 	required public init?(coder aDecoder: NSCoder) {
+		do {
+			guard let device: MTLDevice = MTLCreateSystemDefaultDevice() else {
+				throw Error.Metal.NoDeviceFound
+			}
+			unit = try Unit(device: device)
+		} catch Unit.Error.LibraryNotAvailable {
+			fatalError(Error.Metal.NoLibraryFound.description)
+		} catch Unit.Error.PipelineNotAvailable(let function) {
+			fatalError("Pipeline \(function) not found")
+		} catch Error.Metal.NoDeviceFound {
+			fatalError(Error.Metal.NoDeviceFound.description)
+		} catch {
+			fatalError(Error.Metal.NoLibraryFound.description)
+		}
 		storage = aDecoder.decodeObjectForKey(Context.storageKey)as?NSURL
 		super.init(coder: aDecoder)
 		guard let url: NSURL = Config.bundle.URLForResource(Config.coredata.name, withExtension: Config.coredata.ext) else {
-			fatalError(Error.CoreData.ModelNotFound.rawValue)
+			fatalError(Error.CoreData.ModelNotFound.description)
 		}
 		guard let model: NSManagedObjectModel = NSManagedObjectModel(contentsOfURL: url) else {
-			fatalError(Error.CoreData.ModelNotAvailable.rawValue)
+			fatalError(Error.CoreData.ModelNotAvailable.description)
 		}
 		let storecoordinator: NSPersistentStoreCoordinator = NSPersistentStoreCoordinator(managedObjectModel: model)
 		do {

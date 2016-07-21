@@ -8,13 +8,24 @@
 
 import Accelerate
 import CoreData
-import Metal
+import NLA
 
 public class Cell: NSManagedObject {
 	private enum Status {
 		case READY
 		case ERROR
 		case IDEAL
+	}
+	private struct AsyncValue {
+		var value: la_object_t
+		let event: dispatch_group_t
+		init() {
+			value = la_splat_from_float(0, la_attribute_t(LA_DEFAULT_ATTRIBUTES))
+			event = dispatch_group_create()
+		}
+		func ready() {
+			dispatch_group_wait(event, DISPATCH_TIME_FOREVER)
+		}
 	}
 	private struct Statistics {
 		var mu: la_object_t
@@ -42,7 +53,7 @@ public class Cell: NSManagedObject {
 		variance: la_splat_from_float(1, LA.ATTR),
 		lambda: la_splat_from_float(0, LA.ATTR)
 	)
-	private var C: la_object_t = la_splat_from_float(0, LA.ATTR)
+	private var C: AsyncValue = AsyncValue()
 }
 extension Cell {
 	@NSManaged public private(set) var label: String
@@ -56,6 +67,7 @@ extension Cell {
 }
 extension Cell {
 	public func clear ( ) {
+		guard let context: Context = managedObjectContext as? Context else { assertionFailure(); return }
 		func parent( let cell: Cell ) {
 			if cell.status.contains(.ERROR) {
 				cell.values.error = la_splat_from_float(0, LA.ATTR)

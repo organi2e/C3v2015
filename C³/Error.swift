@@ -15,6 +15,13 @@ enum Error: ErrorType {
 			return rawValue
 		}
 	}
+	enum Metal: String, ErrorType, CustomStringConvertible {
+		case NoLibraryFound = "No Library Found"
+		case NoDeviceFound = "No Device Found"
+		var description: String {
+			return rawValue
+		}
+	}
 	enum CoreData: String, ErrorType, CustomStringConvertible {
 		case ModelNotFound = "Core Data Model Not Found"
 		case ModelNotAvailable = "Core Data Model Not Available"
