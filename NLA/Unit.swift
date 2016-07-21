@@ -216,7 +216,7 @@ public class Unit {
 		}
 		return la_matrix_from_float_buffer_nocopy(cache, la_count_t(rows), la_count_t(cols), la_count_t(cols), Unit.hint, { free($0) }, Unit.attr)
 	}
-	public func normal ( let rows rows: Int, let cols: Int, let group: dispatch_group_t? = nil ) -> la_object_t {
+	public func normal ( let rows rows: Int, let cols: Int, let event: dispatch_group_t? = nil ) -> la_object_t {
 
 		let count: Int = rows * cols
 		let cache: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*count))
@@ -253,7 +253,7 @@ public class Unit {
 		*/
 		
 		self.enter()
-		group?.enter()
+		event?.enter()
 		
 		async {
 			let command: MTLCommandBuffer = self.queue.commandBuffer()
@@ -271,7 +271,7 @@ public class Unit {
 			
 			command.addCompletedHandler {(_)in
 				memcpy(cache, result.contents(), sizeof(Float)*count)
-				group?.leave()
+				event?.leave()
 				self.leave()
 				random.setPurgeableState(.Empty)
 				result.setPurgeableState(.Empty)
