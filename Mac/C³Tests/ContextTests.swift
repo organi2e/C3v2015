@@ -20,7 +20,6 @@ class ContextTests: XCTestCase {
 				I: Cell = context.newCell(width: 4, label: "I"),
 				H: Cell = context.newCell(width: 4, label: "H", input: [I]),
 				_: Cell = context.newCell(width: 4, label: "G", input: [H]) {
-				print("created")
 				try context.store()
 			}
 		} catch let e {
@@ -38,15 +37,14 @@ class ContextTests: XCTestCase {
 				XCTFail()
 				return
 			}
-			O.clear()
-			I.state = [true, true, false, false]
-			print(I.state)
-				
-			I.clear()
-			O.ideal = [false, false, false, true]
-			I.correct(eps: 0.01)
-			print(O.ideal)
+			O.iClear()
+			I.oClear()
 
+			O.ideal = [false, false, false, true]
+			I.state = [false, false, false, true]
+			
+			I.correct(eps: 0.01)
+			
 				
 			/*syntax sugar*/
 			context.train([
@@ -60,6 +58,8 @@ class ContextTests: XCTestCase {
 				count: 1024, 
 				eps: 0.01
 			)
+			
+			try context.save()
 		} catch let e {
 			XCTFail(String(e))
 		}

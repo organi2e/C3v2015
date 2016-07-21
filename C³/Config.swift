@@ -29,3 +29,8 @@ internal struct Config {
 		parallel: "\(Config.identifier).dispatch.queue.parallel"
 	)
 }
+extension dispatch_group_t {
+	func wait(let time: dispatch_time_t = DISPATCH_TIME_FOREVER) {
+		dispatch_group_wait(self, time)
+	}
+}
