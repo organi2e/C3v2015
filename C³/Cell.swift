@@ -7,7 +7,6 @@
 //
 
 import Accelerate
-import CoreData
 import NLA
 
 public class Cell: C3Object {
@@ -15,6 +14,7 @@ public class Cell: C3Object {
 		case READY
 		case ERROR
 		case IDEAL
+		case VISIT
 	}
 	private var status: Set<Status> = Set<Status>()
 	private var values = (
@@ -35,7 +35,7 @@ public class Cell: C3Object {
 	)
 	private var estimated = (
 		mean: la_splat_from_float(0, ATTR),
-		variance: la_splat_from_float(1, ATTR),
+		deviation: la_splat_from_float(1, ATTR),
 		lambda: la_splat_from_float(0, ATTR)
 	)
 }
@@ -44,94 +44,132 @@ extension Cell {
 	@NSManaged public private(set) var width: Int
 	@NSManaged public var attribute: [String: AnyObject]
 	@NSManaged private var mean: NSData
-	@NSManaged private var variance: NSData
+	@NSManaged private var deviation: NSData
 	@NSManaged private var lambda: NSData
 	@NSManaged private var input: Set<Edge>
 	@NSManaged private var output: Set<Edge>
 }
 extension Cell {
 	public func iClear() {
-		if status.contains(.READY) {
-			input.forEach {
-				$0.iClear()
+		if !visited {
+			enter()
+			
+			if status.contains(.READY) {
+				status.remove(.READY)
+				
+				values.const = unit.normal(rows: width, cols: 1, event: groups.const)
+				assert(values.const.status==LA_SUCCESS)
+				
+				/*
+				values.value = la_splat_from_float(0, Cell.ATTR)
+				assert(values.value.status==LA_SUCCESS)
+				
+				values.state = la_splat_from_float(0, Cell.ATTR)
+				assert(values.state.status==LA_SUCCESS)
+				
+				statistics.mu = la_splat_from_float(0, Cell.ATTR)
+				assert(statistics.mu.status==LA_SUCCESS)
+				
+				statistics.sigma = la_splat_from_float(1, Cell.ATTR)
+				assert(statistics.sigma.status==LA_SUCCESS)
+				*/
+				input.forEach {
+					$0.iClear()
+				}
 			}
+			leave()
 		}
 	}
 	public func oClear() {
-		if status.contains(.ERROR) || status.contains(.IDEAL) {
-			output.forEach {
-				$0.oClear()
+		if !visited {
+			enter()
+			if status.contains(.ERROR) || status.contains(.IDEAL) {
+				output.forEach {
+					$0.oClear()
+				}
 			}
+			if status.contains(.ERROR) {
+				status.remove(.ERROR)
+				values.error = la_splat_from_float(0, Cell.ATTR)
+			}
+			if status.contains(.IDEAL) {
+				status.remove(.IDEAL)
+				values.ideal = la_splat_from_float(0, Cell.ATTR)
+			}
+			leave()
 		}
-	}
-	public func clear ( ) {
-		func parent( let cell: Cell ) {
-			if cell.status.contains(.ERROR) {
-				cell.values.error = la_splat_from_float(0, Cell.ATTR)
-				cell.status.remove(.ERROR)
-			}
-			if cell.status.contains(.IDEAL) {
-				cell.values.ideal = la_splat_from_float(0, Cell.ATTR)
-				cell.status.remove(.IDEAL)
-			}
-			cell.output.forEach {
-				parent($0.output)
-			}
-		}
-		parent(self)
-		func child( let cell: Cell ) {
-			if cell.status.contains(.READY) {
-				cell.values.value = la_splat_from_float(0, Cell.ATTR)
-				cell.values.state = la_splat_from_float(0, Cell.ATTR)
-				cell.statistics.mu = la_splat_from_float(0, Cell.ATTR)
-				cell.statistics.sigma = la_splat_from_float(0, Cell.ATTR)
-				cell.status.remove(.READY)
-			}
-			cell.values.const = estimated.mean + estimated.variance * unit.normal(rows: width, cols: 1)
-			cell.input.forEach {
-				child($0.input)
-			}
-		}
-		child(self)
 	}
 	public func correct(let eps eps: Float) {
-	
+		
 	}
 }
 extension Cell {
 	func collect() {
-		if !status.contains(.READY) {
-			
+		if !visited {
+			enter()
+			if !status.contains(.READY) {
+				var events: [dispatch_group_t] = [groups.const]
+				var accum: la_object_t = values.const
+				
+				input.forEach {
+					$0.input.collect()
+					accum = accum + ($0.values <> $0.input.values.state)
+					events.append($0.groups)
+					events.append($0.input.groups.state)
+				}
+				
+				events.forEach {
+					$0.wait()
+				}
+				values.value = accum
+				values.state = values.const
+			}
+			leave()
 		}
 	}
 	func backward() {
 		
 	}
+	func enter() {
+		status.insert(.VISIT)
+	}
+	func leave() {
+		status.remove(.VISIT)
+	}
+	var visited: Bool {
+		return status.contains(.VISIT)
+	}
+	
 }
 extension Cell {
 	var state: [Bool] {
 		set {
 			assert(width==newValue.count)
 			values.state = la_matrix_from_float_buffer(newValue.map{Float($0)}, la_count_t(width), la_count_t(1), la_count_t(1), Cell.HINT, Cell.ATTR)
+			assert(values.state.status==LA_SUCCESS)
 			status.insert(.READY)
 		}
 		get {
 			collect()
 			let cache: [Float] = [Float](count: width, repeatedValue: 0)
-			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), la_count_t(1), values.state)
+			assert(Int(la_vector_length(values.state))==width)
+			assert(la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), la_count_t(1), values.state)==0)
+			print(cache)
 			return cache.map{Bool($0)}
 		}
 	}
 	var ideal: [Bool] {
 		set {
 			assert(width==newValue.count)
-			collect()
 			values.ideal = la_matrix_from_float_buffer(newValue.map{Float($0)}, la_count_t(width), la_count_t(1), la_count_t(1), Cell.HINT, Cell.ATTR)
+			assert(values.ideal.status==LA_SUCCESS)
 			status.insert(.IDEAL)
 		}
 		get {
+			
 			let cache: [Float] = [Float](count: width, repeatedValue: 0)
-			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), la_count_t(1), values.ideal)
+			assert(Int(la_vector_length(values.ideal))==width)
+			assert(la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), la_count_t(1), values.ideal)==0)
 			return cache.map{Bool($0)}
 		}
 	}
@@ -140,12 +178,19 @@ extension Cell {
 	func setup() {
 		
 		assert(mean.length==sizeof(Float)*width)
-		assert(variance.length==sizeof(Float)*width)
-		assert(lambda.length==sizeof(Float)*width)
-		
 		estimated.mean = la_matrix_from_float_buffer(UnsafePointer<Float>(mean.bytes), la_count_t(width), la_count_t(1), la_count_t(1), Cell.HINT, Cell.ATTR)
-		estimated.variance = la_matrix_from_float_buffer(UnsafePointer<Float>(variance.bytes), la_count_t(width), la_count_t(1), la_count_t(1), Cell.HINT, Cell.ATTR)
+		assert(estimated.mean.status==LA_SUCCESS)
+		
+		assert(deviation.length==sizeof(Float)*width)
+		estimated.deviation = la_matrix_from_float_buffer(UnsafePointer<Float>(deviation.bytes), la_count_t(width), la_count_t(1), la_count_t(1), Cell.HINT, Cell.ATTR)
+		assert(estimated.deviation.status==LA_SUCCESS)
+		
+		assert(lambda.length==sizeof(Float)*width)
 		estimated.lambda = la_matrix_from_float_buffer(UnsafePointer<Float>(lambda.bytes), la_count_t(width), la_count_t(1), la_count_t(1), Cell.HINT, Cell.ATTR)
+		assert(estimated.lambda.status==LA_SUCCESS)
+		
+		values.const = estimated.mean + estimated.deviation * unit.normal(rows: width, cols: 1, event: groups.const)
+		assert(values.const.status==LA_SUCCESS)
 		
 	}
 	public override func awakeFromFetch() {
@@ -166,15 +211,16 @@ extension Context {
 			cell.label = label
 			cell.attribute = [:]
 			cell.mean = NSData(bytes: [Float](count: width, repeatedValue: 0.0), length: sizeof(Float)*width)
-			cell.variance = NSData(bytes: [Float](count: width, repeatedValue: 0.0), length: sizeof(Float)*width)
+			cell.deviation = NSData(bytes: [Float](count: width, repeatedValue: 1.0), length: sizeof(Float)*width)
 			cell.lambda = NSData(bytes: [Float](count: width, repeatedValue: 0.0), length: sizeof(Float)*width)
 			cell.setup()
 			input.forEach { ( let input: Cell ) in
 				if input.managedObjectContext === self, let edge: Edge = new() {
+					let count: Int = cell.width * input.width
 					edge.input = input
 					edge.output = cell
-					edge.mean = NSData(bytes: [Float](count: cell.width*input.width, repeatedValue: 0.0), length: sizeof(Float)*cell.width*input.width)
-					edge.variance = NSData(bytes: [Float](count: cell.width*input.width, repeatedValue: 0.0), length: sizeof(Float)*cell.width*input.width)
+					edge.mean = NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count)
+					edge.deviation = NSData(bytes: [Float](count: count, repeatedValue: 1.0), length: sizeof(Float)*count)
 					edge.setup()
 				}
 			}

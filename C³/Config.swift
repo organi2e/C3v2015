@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import Accelerate
 
 internal struct Config {
 	static let bundle: NSBundle = NSBundle(forClass: Context.self)
