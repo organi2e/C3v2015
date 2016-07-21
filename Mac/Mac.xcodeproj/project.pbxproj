@@ -10,6 +10,8 @@
 		8719AE4D1D38BBE500F8DCA4 /* LATests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8719AE4B1D38BB9800F8DCA4 /* LATests.swift */; };
 		8719AE581D3DE0A700F8DCA4 /* cpuComputerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8719AE571D3DE0A700F8DCA4 /* cpuComputerTests.swift */; };
 		8719AE5B1D3DE0CB00F8DCA4 /* mtlComputerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8719AE5A1D3DE0CB00F8DCA4 /* mtlComputerTests.swift */; };
+		8740E9201D409B880026D1CA /* Special.metal in Sources */ = {isa = PBXBuildFile; fileRef = 8740E91F1D409B880026D1CA /* Special.metal */; };
+		8740E9211D40A3FC0026D1CA /* NLA.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 87C516AF1D3F687900E3F36B /* NLA.framework */; };
 		874F0BCE1D3FC7AF005A2B62 /* zy_object_t.swift in Sources */ = {isa = PBXBuildFile; fileRef = 874F0BCD1D3FC7AF005A2B62 /* zy_object_t.swift */; };
 		87591AEF1D3C45E500BD9248 /* Computer.h in Headers */ = {isa = PBXBuildFile; fileRef = 87591AEE1D3C45E500BD9248 /* Computer.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		87591AF61D3C45E500BD9248 /* Computer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 87591AEC1D3C45E500BD9248 /* Computer.framework */; };
@@ -48,7 +50,6 @@
 		87B1FD3C1D0546FC00981CF4 /* ContextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87B1FD2D1D05468600981CF4 /* ContextTests.swift */; };
 		87C516B21D3F687900E3F36B /* NLA.h in Headers */ = {isa = PBXBuildFile; fileRef = 87C516B11D3F687900E3F36B /* NLA.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		87C516B91D3F687900E3F36B /* NLA.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 87C516AF1D3F687900E3F36B /* NLA.framework */; };
-		87C516BE1D3F687900E3F36B /* NLATests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87C516BD1D3F687900E3F36B /* NLATests.swift */; };
 		87C516D11D3F72E600E3F36B /* Unit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87C516D01D3F72E600E3F36B /* Unit.swift */; };
 		87C516D31D3F72E900E3F36B /* Statistics.metal in Sources */ = {isa = PBXBuildFile; fileRef = 87C516D21D3F72E900E3F36B /* Statistics.metal */; };
 		87C516D61D3F743600E3F36B /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87C516D51D3F743600E3F36B /* Config.swift */; };
@@ -120,6 +121,7 @@
 		8719AE4B1D38BB9800F8DCA4 /* LATests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LATests.swift; sourceTree = "<group>"; };
 		8719AE571D3DE0A700F8DCA4 /* cpuComputerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = cpuComputerTests.swift; path = ../../Computer/cpuComputerTests.swift; sourceTree = "<group>"; };
 		8719AE5A1D3DE0CB00F8DCA4 /* mtlComputerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = mtlComputerTests.swift; path = ../../Computer/mtlComputerTests.swift; sourceTree = "<group>"; };
+		8740E91F1D409B880026D1CA /* Special.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = Special.metal; path = ../../NLA/Special.metal; sourceTree = "<group>"; };
 		874F0BCD1D3FC7AF005A2B62 /* zy_object_t.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = zy_object_t.swift; path = ../../NLA/zy_object_t.swift; sourceTree = "<group>"; };
 		87591AEC1D3C45E500BD9248 /* Computer.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Computer.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		87591AEE1D3C45E500BD9248 /* Computer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Computer.h; sourceTree = "<group>"; };
@@ -167,7 +169,6 @@
 		87C516B11D3F687900E3F36B /* NLA.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NLA.h; sourceTree = "<group>"; };
 		87C516B31D3F687900E3F36B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		87C516B81D3F687900E3F36B /* NLATests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NLATests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		87C516BD1D3F687900E3F36B /* NLATests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NLATests.swift; sourceTree = "<group>"; };
 		87C516BF1D3F687900E3F36B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		87C516D01D3F72E600E3F36B /* Unit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Unit.swift; path = ../../NLA/Unit.swift; sourceTree = "<group>"; };
 		87C516D21D3F72E900E3F36B /* Statistics.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = Statistics.metal; path = ../../NLA/Statistics.metal; sourceTree = "<group>"; };
@@ -212,6 +213,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8740E9211D40A3FC0026D1CA /* NLA.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -356,6 +358,7 @@
 		87C516B01D3F687900E3F36B /* NLA */ = {
 			isa = PBXGroup;
 			children = (
+				8740E91F1D409B880026D1CA /* Special.metal */,
 				874F0BCD1D3FC7AF005A2B62 /* zy_object_t.swift */,
 				87C516D51D3F743600E3F36B /* Config.swift */,
 				87C516D01D3F72E600E3F36B /* Unit.swift */,
@@ -370,7 +373,6 @@
 			isa = PBXGroup;
 			children = (
 				87C516D81D3F803400E3F36B /* UnitTest.swift */,
-				87C516BD1D3F687900E3F36B /* NLATests.swift */,
 				87C516BF1D3F687900E3F36B /* Info.plist */,
 			);
 			path = NLATests;
@@ -760,6 +762,7 @@
 				87C516D11D3F72E600E3F36B /* Unit.swift in Sources */,
 				87C516D61D3F743600E3F36B /* Config.swift in Sources */,
 				87C516D31D3F72E900E3F36B /* Statistics.metal in Sources */,
+				8740E9201D409B880026D1CA /* Special.metal in Sources */,
 				874F0BCE1D3FC7AF005A2B62 /* zy_object_t.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -768,7 +771,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				87C516BE1D3F687900E3F36B /* NLATests.swift in Sources */,
 				87C516D91D3F803400E3F36B /* UnitTest.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

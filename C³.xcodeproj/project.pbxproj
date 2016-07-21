@@ -68,6 +68,7 @@
 /* Begin PBXFileReference section */
 		8719AE501D3DE08C00F8DCA4 /* cpuComputerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = cpuComputerTests.swift; path = Computer/cpuComputerTests.swift; sourceTree = "<group>"; };
 		8719AE591D3DE0BB00F8DCA4 /* mtlComputerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = mtlComputerTests.swift; path = Computer/mtlComputerTests.swift; sourceTree = "<group>"; };
+		8740E9161D409B7F0026D1CA /* Special.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = Special.metal; path = NLA/Special.metal; sourceTree = "<group>"; };
 		874F0BC41D3FC4C0005A2B62 /* zy_object_t.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = zy_object_t.swift; path = NLA/zy_object_t.swift; sourceTree = "<group>"; };
 		87591AE11D3C45C400BD9248 /* blas.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = blas.metal; path = Computer/blas.metal; sourceTree = "<group>"; };
 		87591AE21D3C45C400BD9248 /* Buffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Buffer.swift; path = Computer/Buffer.swift; sourceTree = "<group>"; };
@@ -185,6 +186,7 @@
 				87C516D41D3F742500E3F36B /* Config.swift */,
 				87C516CF1D3F72E000E3F36B /* Unit.swift */,
 				87C516CE1D3F72B400E3F36B /* Statistics.metal */,
+				8740E9161D409B7F0026D1CA /* Special.metal */,
 				87C516D71D3F802C00E3F36B /* UnitTest.swift */,
 				874F0BC41D3FC4C0005A2B62 /* zy_object_t.swift */,
 			);
