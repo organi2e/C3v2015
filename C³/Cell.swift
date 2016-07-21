@@ -24,14 +24,19 @@ public class Cell: C3Object {
 		error: la_splat_from_float(0, ATTR),
 		const: la_splat_from_float(0, ATTR)
 	)
+	private var elders = (
+		state: la_splat_from_float(0, ATTR),
+		value: la_splat_from_float(0, ATTR)
+	)
 	private var groups = (
 		state: dispatch_group_create(),
 		error: dispatch_group_create(),
 		const: dispatch_group_create()
 	)
 	private var statistics = (
-		mu: la_splat_from_float(0, ATTR),
-		sigma: la_splat_from_float(0, ATTR)
+		mean: la_splat_from_float(0, ATTR),
+		deviation: la_splat_from_float(0, ATTR),
+		variance: la_splat_from_float(0, ATTR)
 	)
 	private var estimated = (
 		mean: la_splat_from_float(0, ATTR),
@@ -99,33 +104,49 @@ extension Cell {
 			leave()
 		}
 	}
+	public func refresh() {
+		let zero: la_object_t = la_splat_from_float(0, Cell.ATTR)
+		
+		values.const = estimated.mean + estimated.deviation * unit.normal(rows: width, cols: 1, event: groups.const)
+		assert(values.const.status==LA_SUCCESS)
+		
+		values.ideal = la_matrix_from_splat(zero, la_count_t(width), la_count_t(1))
+		values.error = la_matrix_from_splat(zero, la_count_t(width), la_count_t(1))
+		
+		values.state = la_matrix_from_splat(zero, la_count_t(width), la_count_t(1))
+		values.value = la_matrix_from_splat(zero, la_count_t(width), la_count_t(1))
+		
+		elders.state = la_matrix_from_splat(zero, la_count_t(width), la_count_t(1))
+		elders.value = la_matrix_from_splat(zero, la_count_t(width), la_count_t(1))
+
+		
+	}
 	public func correct(let eps eps: Float) {
 		
 	}
 }
 extension Cell {
 	func collect() {
-		if !visited {
-			enter()
-			if !status.contains(.READY) {
-				var events: [dispatch_group_t] = [groups.const]
-				var accum: la_object_t = values.const
+		enter()
+		if !status.contains(.READY) {
+			var waits: [dispatch_group_t] = [groups.const]
+			var accum: la_object_t = values.const
 				
-				input.forEach {
+			input.forEach {
+				if $0.input.visited {
 					$0.input.collect()
-					accum = accum + ($0.values <> $0.input.values.state)
-					events.append($0.groups)
-					events.append($0.input.groups.state)
+					accum = accum + la_matrix_product($0.values, $0.input.values.state)
+					waits.append($0.input.groups.state)
+				} else {
+					accum = accum + la_matrix_product($0.values, $0.input.elders.state)
 				}
-				
-				events.forEach {
-					$0.wait()
-				}
-				values.value = accum
-				values.state = values.const
+				waits.append($0.groups)
 			}
-			leave()
+			values.value = accum
+			values.state = unit.step(values.value, waits: waits, event: groups.state)
+			status.insert(.READY)
 		}
+		leave()
 	}
 	func backward() {
 		
@@ -151,10 +172,10 @@ extension Cell {
 		}
 		get {
 			collect()
+			groups.state.wait()
 			let cache: [Float] = [Float](count: width, repeatedValue: 0)
 			assert(Int(la_vector_length(values.state))==width)
 			assert(la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), la_count_t(1), values.state)==0)
-			print(cache)
 			return cache.map{Bool($0)}
 		}
 	}
@@ -166,7 +187,6 @@ extension Cell {
 			status.insert(.IDEAL)
 		}
 		get {
-			
 			let cache: [Float] = [Float](count: width, repeatedValue: 0)
 			assert(Int(la_vector_length(values.ideal))==width)
 			assert(la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), la_count_t(1), values.ideal)==0)
@@ -189,8 +209,7 @@ extension Cell {
 		estimated.lambda = la_matrix_from_float_buffer(UnsafePointer<Float>(lambda.bytes), la_count_t(width), la_count_t(1), la_count_t(1), Cell.HINT, Cell.ATTR)
 		assert(estimated.lambda.status==LA_SUCCESS)
 		
-		values.const = estimated.mean + estimated.deviation * unit.normal(rows: width, cols: 1, event: groups.const)
-		assert(values.const.status==LA_SUCCESS)
+		refresh()
 		
 	}
 	public override func awakeFromFetch() {
@@ -205,7 +224,8 @@ extension Cell {
 extension Context {
 	public func newCell ( let width size: Int, let label: String = "", let recur: Bool = false, let input: [Cell] = [] ) -> Cell? {
 		let cell: Cell? = new()
-		let width: Int = size//max( size + 0x0f - ( ( size + 0x0f ) % 0x10 ), 0x10 )
+		let width: Int = ((size-1)/4+1)*4
+		//size//max( size + 0x0f - ( ( size + 0x0f ) % 0x10 ), 0x10 )
 		if let cell: Cell = cell {
 			cell.width = width
 			cell.label = label

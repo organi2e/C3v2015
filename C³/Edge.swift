@@ -43,6 +43,7 @@ extension Edge {
 		
 		values = estimated.mean + estimated.deviation * unit.normal(rows: rows, cols: cols, event: groups)
 		assert(values.status==LA_SUCCESS)
+		groups.wait()
 	}
 	func oClear() {
 		output.oClear()
@@ -53,11 +54,9 @@ extension Edge {
 		
 		values = estimated.mean + estimated.deviation * unit.normal(rows: rows, cols: cols, event: groups)
 		assert(values.status==LA_SUCCESS)
+		groups.wait()
 		
 		input.iClear()
-	}
-	func ready() {
-		groups.wait()
 	}
 	func sync() {
 		let rows: Int = output.width

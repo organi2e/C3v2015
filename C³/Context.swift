@@ -80,17 +80,18 @@ extension Context {
 	)
 }
 extension Context {
-	public func store ( ) throws {
-		var error: ErrorType?
-		performBlockAndWait {
+	public func store ( let async async: Bool = false, let handle: (ErrorType -> Void)? = nil ) {
+		( async ? performBlock : performBlockAndWait ) {
 			do {
 				try self.save()
 			} catch let e {
-				error = e
+				handle?(e)
 			}
 		}
-		if let error: ErrorType = error {
-			throw error
+	}
+	public func purge ( let object: NSManagedObject ) {
+		performBlock {
+			self.deleteObject(object)
 		}
 	}
 	internal func new <T: NSManagedObject>() -> T? {
@@ -123,21 +124,19 @@ extension Context {
 		}
 		return result
 	}
-	internal func purge ( let object: NSManagedObject ) {
-		performBlock {
-			self.deleteObject(object)
-		}
-	}
 }
 public class C3Object: NSManagedObject {
 	static let HINT: la_hint_t =  la_hint_t(LA_NO_HINT)
 	static let ATTR: la_attribute_t = la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING)
-	lazy var unit: Unit = {
-		guard let context: Context = self.managedObjectContext as? Context else {
+	var context: Context {
+		guard let context: Context = managedObjectContext as? Context else {
 			let message: String = "Invalid context"
 			assertionFailure(message)
 			fatalError(message)
 		}
-		return context.unit
+		return context
+	}
+	lazy var unit: Unit = {
+		return self.context.unit
 	}()
 }

@@ -18,9 +18,8 @@ class ContextTests: XCTestCase {
 			let context: Context = try Context(storage: url)
 			if let
 				I: Cell = context.newCell(width: 4, label: "I"),
-				H: Cell = context.newCell(width: 4, label: "H", input: [I]),
-				_: Cell = context.newCell(width: 4, label: "G", input: [H]) {
-				try context.store()
+				_: Cell = context.newCell(width: 4, label: "O", input: [I]) {
+				context.store(async: false)
 			}
 		} catch let e {
 			XCTFail(String(e))
@@ -33,7 +32,10 @@ class ContextTests: XCTestCase {
 		do {
 			let url: NSURL = try NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true).URLByAppendingPathComponent("test.sqlite")
 			let context: Context = try Context(storage: url)
-			guard let O: Cell = context.searchCell(width: 4, label: "G").first, I: Cell = context.searchCell(width: 4, label: "I").first else {
+			guard let
+				O: Cell = context.searchCell(width: 4, label: "O").first,
+				I: Cell = context.searchCell(width: 4, label: "I").first
+			else {
 				XCTFail()
 				return
 			}
@@ -59,8 +61,7 @@ class ContextTests: XCTestCase {
 				count: 1024, 
 				eps: 0.01
 			)
-			
-			try context.save()
+			//context.store(async: false)
 		} catch let e {
 			XCTFail(String(e))
 		}
