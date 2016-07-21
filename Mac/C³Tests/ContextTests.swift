@@ -37,15 +37,16 @@ class ContextTests: XCTestCase {
 				XCTFail()
 				return
 			}
+			
 			O.iClear()
 			I.oClear()
 
 			O.ideal = [false, false, false, true]
 			I.state = [false, false, false, true]
-			
+
+			print("O: \(O.state)")
 			I.correct(eps: 0.01)
 			
-				
 			/*syntax sugar*/
 			context.train([
 				(

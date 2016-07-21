@@ -8,7 +8,6 @@
 import NLA
 import Accelerate
 import CoreData
-import simd
 
 public class Context: NSManagedObjectContext {
 	
@@ -73,27 +72,6 @@ public class Context: NSManagedObjectContext {
 		}
 	}
 }
-public class C3Object: NSManagedObject {
-	static let HINT: la_hint_t =  la_hint_t(LA_NO_HINT)
-	static let ATTR: la_attribute_t = la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING)
-
-	lazy var unit: Unit = {
-		guard let context: Context = self.managedObjectContext as? Context else {
-			assertionFailure()
-			fatalError()
-		}
-		return context.unit
-	}()
-}
-func +(let lhs: la_object_t, let rhs: la_object_t)->la_object_t {
-	return la_sum(lhs, rhs)
-}
-func -(let lhs: la_object_t, let rhs: la_object_t)->la_object_t {
-	return la_difference(lhs, rhs)
-}
-func *(let lhs: la_object_t, let rhs: la_object_t)->la_object_t {
-	return la_elementwise_product(lhs, rhs)
-}
 extension Context {
 	private static let storageKey: String = "storage"
 	private static let dispatch: (queue: dispatch_queue_t, semaphore: dispatch_semaphore_t) = (
@@ -150,4 +128,16 @@ extension Context {
 			self.deleteObject(object)
 		}
 	}
+}
+public class C3Object: NSManagedObject {
+	static let HINT: la_hint_t =  la_hint_t(LA_NO_HINT)
+	static let ATTR: la_attribute_t = la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING)
+	lazy var unit: Unit = {
+		guard let context: Context = self.managedObjectContext as? Context else {
+			let message: String = "Invalid context"
+			assertionFailure(message)
+			fatalError(message)
+		}
+		return context.unit
+	}()
 }
