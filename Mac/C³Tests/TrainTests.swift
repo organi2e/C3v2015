@@ -9,7 +9,7 @@ import Foundation
 import XCTest
 @testable import C3
 class ContextTests: XCTestCase {
-    
+    /*
     override func setUp() {
         super.setUp()
         // Put setup code here. This method is called before the invocation of each test method in the class.
@@ -24,9 +24,6 @@ class ContextTests: XCTestCase {
 					print("created", context.insertedObjects.count, context.updatedObjects.count, context.deletedObjects.count)
 				}
 			}
-			if let _: Cell = context.newCell(width: 4) {
-				print("created")
-			}
 			context.store(async: false)
 		} catch let e {
 			XCTFail(String(e))
@@ -39,7 +36,9 @@ class ContextTests: XCTestCase {
 		do {
 			let url: NSURL = try NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true).URLByAppendingPathComponent("test.sqlite")
 			let context: Context = try Context(storage: url)
-			/*syntax sugar*/
+			if let _: Cell = context.newCell(width: 4) {
+				print("created")
+			}
 			print("study")
 			context.train([
 				(
@@ -55,12 +54,14 @@ class ContextTests: XCTestCase {
 					["I":[true , false, false, false]],
 					["O":[true , false, false, false]]
 				)],
-				count: 64,
+				count: 16,
 				eps: 1/4.0
 			)
 			context.checkpoint(async: false)
 			print(context.updatedObjects.count)
-			context.store(async: false)
+			context.store(async: false) {
+				print($0)
+			}
 		} catch let e {
 			XCTFail(String(e))
 		}
@@ -73,5 +74,6 @@ class ContextTests: XCTestCase {
         }
     }
     */
+*/
 }
 
