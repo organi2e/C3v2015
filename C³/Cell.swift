@@ -162,6 +162,10 @@ extension Cell {
 			leave()
 		}
 	}
+	override public func didChangeValueForKey(key: String) {
+		super.didChangeValueForKey(key)
+		print("Change: \(key)")
+	}
 	private func enter() {
 		ready.insert(.Visit)
 	}
@@ -179,6 +183,9 @@ extension Cell {
 	}
 	func deltaReady() {
 		delta.event.wait()
+	}
+	public override func willSave() {
+		print("Called")
 	}
 }
 extension Cell {
@@ -250,6 +257,9 @@ extension Cell {
 			willChangeValueForKey("mean")
 			UnsafeMutablePointer<Float>(mean.bytes).advancedBy(Int(index)).memory = newValue
 			didChangeValueForKey("mean")
+			
+			mean = mean.copy() as! NSData
+			
 		}
 	}
 	func sync() {

@@ -57,10 +57,10 @@ class CellTests: XCTestCase {
 			if let cell: Cell = context.searchCell(label: "test\(CellTests.key)").first {
 				
 				print("test1")
-				print("\(cell[0]) vs \(CellTests.value[0])")
-				print("\(cell[1]) vs \(CellTests.value[1])")
-				print("\(cell[2]) vs \(CellTests.value[2])")
-				print("\(cell[3]) vs \(CellTests.value[3])")
+				print("V:\(cell[0]) vs M:\(CellTests.value[0])")
+				print("V:\(cell[1]) vs M:\(CellTests.value[1])")
+				print("V:\(cell[2]) vs M:\(CellTests.value[2])")
+				print("V:\(cell[3]) vs M:\(CellTests.value[3])")
 				
 				XCTAssert(cell[0]==CellTests.value[0])
 				XCTAssert(cell[1]==CellTests.value[1])
@@ -72,13 +72,17 @@ class CellTests: XCTestCase {
 				cell[2] = CellTests.value[1]
 				cell[3] = CellTests.value[0]
 				
+				print("V:\(cell[0]) vs M:\(CellTests.value[3])")
+				print("V:\(cell[1]) vs M:\(CellTests.value[2])")
+				print("V:\(cell[2]) vs M:\(CellTests.value[1])")
+				print("V:\(cell[3]) vs M:\(CellTests.value[0])")
+				
 				XCTAssert(cell[0]==CellTests.value[3])
 				XCTAssert(cell[1]==CellTests.value[2])
 				XCTAssert(cell[2]==CellTests.value[1])
 				XCTAssert(cell[3]==CellTests.value[0])
 				
-				cell.save()
-				cell.load()
+				print("STORE")
 				
 				context.store() {(_)in
 					XCTFail()
@@ -98,10 +102,10 @@ class CellTests: XCTestCase {
 			if let cell: Cell = context.searchCell(label: "test\(CellTests.key)").first {
 				
 				print("test2")
-				print("\(cell[0]) vs \(CellTests.value[3])")
-				print("\(cell[1]) vs \(CellTests.value[2])")
-				print("\(cell[2]) vs \(CellTests.value[1])")
-				print("\(cell[3]) vs \(CellTests.value[0])")
+				print("V:\(cell[0]) vs M:\(CellTests.value[3])")
+				print("V:\(cell[1]) vs M:\(CellTests.value[2])")
+				print("V:\(cell[2]) vs M:\(CellTests.value[1])")
+				print("V:\(cell[3]) vs M:\(CellTests.value[0])")
 				
 				XCTAssert(cell[0]==CellTests.value[3])
 				XCTAssert(cell[1]==CellTests.value[2])
