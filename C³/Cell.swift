@@ -136,20 +136,9 @@ extension Cell {
 					edge.output.correct(eps: eps)
 					error.value = error.value + la_matrix_product(la_transpose(edge.weight.value), edge.output.delta.value)
 					
-					//edge.willChangeValueForKey("mean")
+					edge.willChangeValueForKey("mean")
 					edge.weight.mean = edge.weight.mean + eps * la_outer_product(edge.output.delta.value, state.value)
-					managedObjectContext?.performBlock {
-						self.deltaReady()
-						edge.willChangeValueForKey("mean")
-						la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(edge.mean.bytes), 4, edge.weight.mean)
-						edge.didChangeValueForKey("mean")
-						/*let x = UnsafeMutablePointer<Float>.alloc(16)
-						la_matrix_to_float_buffer(x, 4, edge.weight.mean)
-						edge.mean = NSData(bytes: UnsafePointer<Void>(x), length: sizeof(Float)*16)
-						x.destroy()
-						*/
-					}
-					//edge.didChangeValueForKey("mean")
+					edge.didChangeValueForKey("mean")
 					
 					waits.append(edge.output.delta.event)
 					print("\(label), \(edge.weight.mean.eval)")
@@ -161,10 +150,6 @@ extension Cell {
 			ready.insert(.Delta)
 			leave()
 		}
-	}
-	override public func didChangeValueForKey(key: String) {
-		super.didChangeValueForKey(key)
-		print("Change: \(key)")
 	}
 	private func enter() {
 		ready.insert(.Visit)
@@ -183,9 +168,6 @@ extension Cell {
 	}
 	func deltaReady() {
 		delta.event.wait()
-	}
-	public override func willSave() {
-		print("Called")
 	}
 }
 extension Cell {
@@ -217,33 +199,24 @@ extension Cell {
 	}
 }
 extension Cell {
-	func load() {
+	func setup() {
 		let count: Int = Int(width)
-		
-		assert(mean.length==sizeof(Float)*count)
-		willAccessValueForKey("mean")
-		const.mean = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(mean.bytes), width, 1, 1, Cell.HINT, nil, Cell.ATTR)
-		didAccessValueForKey("mean")
-		assert(const.mean.status==LA_SUCCESS)
-		
-		assert(logvariance.length==sizeof(Float)*count)
-		willAccessValueForKey("logvariance")
-		const.logvariance = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logvariance.bytes), width, 1, 1, Cell.HINT, nil, Cell.ATTR)
-		didAccessValueForKey("logvariance")
-		assert(const.logvariance.status==LA_SUCCESS)
-	}
-	func save() {
-		let count: Int = Int(width)
-		
-		assert(const.mean.count==count)
-		willAccessValueForKey("mean")
-		assert(la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(mean.bytes), 1, const.mean)==Int(LA_SUCCESS))
-		didAccessValueForKey("mean")
-		
-		assert(const.logvariance.count==count)
-		willAccessValueForKey("logvariance")
-		assert(la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(logvariance.bytes), 1, const.logvariance)==Int(LA_SUCCESS))
-		didAccessValueForKey("logvariance")
+		if let data: NSData = primitiveValueForKey("mean")?.mutableCopy()as?NSData {
+			setPrimitiveValue(data, forKey: "mean")
+			assert(mean.length==sizeof(Float)*count)
+			const.mean = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(mean.bytes), width, 1, 1, Cell.HINT, nil, Cell.ATTR)
+			assert(const.mean.status==LA_SUCCESS)
+		} else {
+			assertionFailure()
+		}
+		if let data: NSData = primitiveValueForKey("logvariance")?.mutableCopy()as?NSData {
+			setPrimitiveValue(data, forKey: "logvariance")
+			assert(logvariance.length==sizeof(Float)*count)
+			const.logvariance = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logvariance.bytes), width, 1, 1, Cell.HINT, nil, Cell.ATTR)
+			assert(const.logvariance.status==LA_SUCCESS)
+		} else {
+			assertionFailure()
+		}
 	}
 	public subscript(let index: UInt) -> Float {
 		get {
@@ -257,24 +230,21 @@ extension Cell {
 			willChangeValueForKey("mean")
 			UnsafeMutablePointer<Float>(mean.bytes).advancedBy(Int(index)).memory = newValue
 			didChangeValueForKey("mean")
-			
-			mean = mean.copy() as! NSData
-			
 		}
 	}
 	func sync() {
 		delta.event.wait()
-		save()
-		load()
+		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(mean.bytes), 1, const.mean)
+		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(logvariance.bytes), 1, const.logvariance)
 	}
 	public override func awakeFromFetch() {
 		super.awakeFromFetch()
-		load()
+		setup()
 		refresh()
 	}
 	public override func awakeFromSnapshotEvents(flags: NSSnapshotEventType) {
 		super.awakeFromSnapshotEvents(flags)
-		load()
+		setup()
 		refresh()
 	}
 }
@@ -291,8 +261,7 @@ extension Context {
 			cell.mean = NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count)
 			cell.logvariance = NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count)
 			cell.lambda = NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count)
-			cell.load()
-			cell.refresh()
+			cell.setup()
 			input.forEach { ( let input: Cell ) in
 				if input.managedObjectContext === self, let edge: Edge = new() {
 					let count: Int = Int(cell.width * input.width)
@@ -341,5 +310,12 @@ extension Context {
 				}
 			}
 		}
+	}
+}
+extension NSData {
+	var buffer: [Float] {
+		let buffer: [Float] = [Float](count: length/sizeof(Float), repeatedValue: 0)
+		getBytes(UnsafeMutablePointer<Void>(buffer))
+		return buffer
 	}
 }

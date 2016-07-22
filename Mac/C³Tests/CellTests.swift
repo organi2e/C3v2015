@@ -29,9 +29,6 @@ class CellTests: XCTestCase {
 				cell[2] = CellTests.value[2]
 				cell[3] = CellTests.value[3]
 				
-				cell.save()
-				cell.load()
-				
 				XCTAssert(cell[0]==CellTests.value[0])
 				XCTAssert(cell[1]==CellTests.value[1])
 				XCTAssert(cell[2]==CellTests.value[2])
