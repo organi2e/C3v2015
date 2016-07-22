@@ -128,10 +128,15 @@ extension Context {
 				if !attribute.isEmpty {
 					request.predicate = NSPredicate(format: attribute.keys.map{"\($0) = %@"}.joinWithSeparator(" and "), argumentArray: Array<AnyObject>(attribute.values))
 				}
-				if let fetched: [AnyObject] = try? self.executeFetchRequest ( request ) {
+				do {
+					let fetched: [AnyObject] = try self.executeFetchRequest(request)
 					if let sametype: [T] = fetched as? [T] {
 						result = sametype
+					} else {
+						assertionFailure()
 					}
+				} catch {
+					assertionFailure()
 				}
 			}
 		}

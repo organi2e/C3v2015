@@ -27,7 +27,10 @@ extension Edge {
 }
 extension Edge {
 	func dump() {
-		print("mean: \(weight.mean.eval)")
+		let x: [Float] = [Float](count: mean.length/sizeof(Float), repeatedValue: 0)
+		print("mean la: \(weight.mean.eval)")
+		mean.getBytes(UnsafeMutablePointer<Void>(x))
+		print("mean data: \(x)")
 		print("logvariance: \(weight.logvariance.eval)")
 	}
 	func setup() {
@@ -36,18 +39,16 @@ extension Edge {
 		let count: Int = Int(rows * cols)
 
 		assert(mean.length==sizeof(Float)*count)
-		weight.mean = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(mean.bytes), rows, cols, cols, Edge.HINT, nil, Edge.ATTR)
+		weight.mean = la_matrix_from_float_buffer(UnsafeMutablePointer<Float>(mean.bytes), rows, cols, cols, Edge.HINT, Edge.ATTR)
 		assert(weight.mean.status==LA_SUCCESS)
 
 		assert(logvariance.length==sizeof(Float)*count)
-		weight.logvariance = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logvariance.bytes), rows, cols, cols, Edge.HINT, nil, Edge.ATTR)
+		weight.logvariance = la_matrix_from_float_buffer(UnsafeMutablePointer<Float>(logvariance.bytes), rows, cols, cols, Edge.HINT, Edge.ATTR)
 		assert(weight.variance.status==LA_SUCCESS)
 		
-		dump()
 		refresh()
 	}
 	func refresh() {
-		
 		weight.deviation = unit.exp(0.5*weight.logvariance, event: weight.event)
 		weight.variance = weight.deviation * weight.deviation
 		weight.value = weight.mean// + weight.deviation * unit.normal(rows: output.width, cols: input.width, event: weight.event)
@@ -59,12 +60,18 @@ extension Edge {
 		refresh()
 		input.iClear()
 	}
+	override func willSave() {
+		super.willSave()
+		dump()
+	}
 	override func awakeFromFetch() {
 		super.awakeFromFetch()
 		setup()
+		dump()
 	}
 	override func awakeFromSnapshotEvents(flags: NSSnapshotEventType) {
 		super.awakeFromSnapshotEvents(flags)
 		setup()
+		dump()
 	}
 }
