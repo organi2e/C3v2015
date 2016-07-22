@@ -139,7 +139,7 @@
 		87591B1A1D3C48D300BD9248 /* cpuComputer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = cpuComputer.swift; path = ../../Computer/cpuComputer.swift; sourceTree = "<group>"; };
 		87591B1C1D3C48D700BD9248 /* mtlComputer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = mtlComputer.swift; path = ../../Computer/mtlComputer.swift; sourceTree = "<group>"; };
 		876A4B551D066EDC00D32E1B /* ComputerTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ComputerTests.swift; sourceTree = "<group>"; };
-		87799A691D41C0920088B9E7 /* math.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = math.metal; path = ../NLA/math.metal; sourceTree = "<group>"; };
+		87799A691D41C0920088B9E7 /* math.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = math.metal; path = ../../NLA/math.metal; sourceTree = "<group>"; };
 		878C7A8F1D01AF05002CDFD1 /* sandbox.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = sandbox.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		878C7A911D01AF05002CDFD1 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		878C7A931D01AF05002CDFD1 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -276,7 +276,6 @@
 		878C7A571D01AE4D002CDFD1 = {
 			isa = PBXGroup;
 			children = (
-				87799A691D41C0920088B9E7 /* math.metal */,
 				878C7A901D01AF05002CDFD1 /* sandbox */,
 				878C7AA41D01AF13002CDFD1 /* MNIST */,
 				87B1FD021D05461100981CF4 /* C³ */,
@@ -361,6 +360,7 @@
 		87C516B01D3F687900E3F36B /* NLA */ = {
 			isa = PBXGroup;
 			children = (
+				87799A691D41C0920088B9E7 /* math.metal */,
 				8740E91F1D409B880026D1CA /* special.metal */,
 				874F0BCD1D3FC7AF005A2B62 /* AsyncValue.swift */,
 				87C516D51D3F743600E3F36B /* Config.swift */,

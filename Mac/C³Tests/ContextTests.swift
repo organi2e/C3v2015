@@ -16,11 +16,18 @@ class ContextTests: XCTestCase {
 		do {
 			let url: NSURL = try NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true).URLByAppendingPathComponent("test.sqlite")
 			let context: Context = try Context(storage: url)
-			if let
-				I: Cell = context.newCell(width: 4, label: "I"),
-				_: Cell = context.newCell(width: 4, label: "O", input: [I]) {
-				context.store(async: false)
+			print(context.searchCell(label: "O").isEmpty)
+			if context.searchCell(label: "O").isEmpty {
+				if let
+					I: Cell = context.newCell(width: 4, label: "I"),
+					_: Cell = context.newCell(width: 4, label: "O", input: [I]) {
+					print("created", context.insertedObjects.count, context.updatedObjects.count, context.deletedObjects.count)
+				}
 			}
+			if let _: Cell = context.newCell(width: 4) {
+				print("created")
+			}
+			context.store(async: false)
 		} catch let e {
 			XCTFail(String(e))
 		}
@@ -32,36 +39,28 @@ class ContextTests: XCTestCase {
 		do {
 			let url: NSURL = try NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true).URLByAppendingPathComponent("test.sqlite")
 			let context: Context = try Context(storage: url)
-			guard let
-				O: Cell = context.searchCell(width: 4, label: "O").first,
-				I: Cell = context.searchCell(width: 4, label: "I").first
-			else {
-				XCTFail()
-				return
-			}
-			
-			O.iClear()
-			I.oClear()
-
-			O.ideal = [false, false, false, true]
-			I.state = [false, false, false, true]
-
-			print("O: \(O.state)")
-			I.correct(eps: 0.01)
-			
 			/*syntax sugar*/
+			print("study")
 			context.train([
 				(
-					["I":[false, false, false, false], /*"H":*/],
-					["O":[false, false, false, false], /*...*/]
+					["I":[false, false, false, true ]],
+					["O":[false, false, false, true ]]
 				),(
-					["I":[false, false, false, true], /*"H":*/],
-					["O":[false, false, false, true], /*...*/]
+					["I":[false, false, true , false]],
+					["O":[false, false, true , false]]
+				),(
+					["I":[false, true , false, false]],
+					["O":[false, true , false, false]]
+				),(
+					["I":[true , false, false, false]],
+					["O":[true , false, false, false]]
 				)],
-				count: 1024, 
-				eps: 0.01
+				count: 64,
+				eps: 1/4.0
 			)
-			//context.store(async: false)
+			context.checkpoint(async: false)
+			print(context.updatedObjects.count)
+			context.store(async: false)
 		} catch let e {
 			XCTFail(String(e))
 		}
