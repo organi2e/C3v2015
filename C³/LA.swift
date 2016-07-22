@@ -33,3 +33,24 @@ func -(let lhs: la_object_t, let rhs: la_object_t)->la_object_t {
 func *(let lhs: la_object_t, let rhs: la_object_t)->la_object_t {
 	return la_elementwise_product(lhs, rhs)
 }
+
+func +(let lhs: la_object_t, let rhs: Float) -> la_object_t {
+	return la_sum(lhs, la_splat_from_float(rhs, la_attribute_t(LA_DEFAULT_ATTRIBUTES)))
+}
+func +(let lhs: Float, let rhs: la_object_t) -> la_object_t {
+	return la_sum(la_splat_from_float(lhs, la_attribute_t(LA_DEFAULT_ATTRIBUTES)), rhs)
+}
+
+func -(let lhs: la_object_t, let rhs: Float) -> la_object_t {
+	return la_sum(lhs, la_splat_from_float(rhs, la_attribute_t(LA_DEFAULT_ATTRIBUTES)))
+}
+func -(let lhs: Float, let rhs: la_object_t) -> la_object_t {
+	return la_difference(la_splat_from_float(lhs, la_attribute_t(LA_DEFAULT_ATTRIBUTES)), rhs)
+}
+
+func *(let lhs: la_object_t, let rhs: Float) -> la_object_t {
+	return la_scale_with_float(lhs, rhs)
+}
+func *(let lhs: Float, let rhs: la_object_t) -> la_object_t {
+	return la_scale_with_float(rhs, lhs)
+}
