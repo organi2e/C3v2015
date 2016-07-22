@@ -29,8 +29,8 @@ extension Edge {
 }
 extension Edge {
 	func setup() {
-		let rows: Int = output.width
-		let cols: Int = input.width
+		let rows: UInt = output.width
+		let cols: UInt = input.width
 		let count: Int = Int(rows * cols)
 		
 		assert(mean.length==sizeof(Float)*count)
@@ -49,8 +49,8 @@ extension Edge {
 		output.oClear()
 	}
 	func iClear() {
-		let rows: Int = output.width
-		let cols: Int = input.width
+		let rows: UInt = output.width
+		let cols: UInt = input.width
 		
 		values = estimated.mean + estimated.deviation * unit.normal(rows: rows, cols: cols, event: groups)
 		assert(values.status==LA_SUCCESS)
@@ -59,15 +59,16 @@ extension Edge {
 		input.iClear()
 	}
 	func sync() {
-		let rows: Int = output.width
-		let cols: Int = input.width
+		let rows: UInt = output.width
+		let cols: UInt = input.width
+		let count: Int = Int(rows*cols)
 		
-		assert(mean.length==sizeof(Float)*rows*cols)
+		assert(mean.length==sizeof(Float)*count)
 		willChangeValueForKey("mean")
 		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(mean.bytes), la_count_t(cols), estimated.mean)
 		didChangeValueForKey("mean")
 		
-		assert(deviation.length==sizeof(Float)*rows*cols)
+		assert(deviation.length==sizeof(Float)*count)
 		willChangeValueForKey("variance")
 		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(deviation.bytes), la_count_t(cols), estimated.deviation)
 		didChangeValueForKey("variance")

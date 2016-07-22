@@ -45,6 +45,6 @@ kernel void sigmoid(device float4 * const p [[ buffer(0) ]],
 					device const float4 * const x [[ buffer(1) ]],
 					uint const id [[thread_position_in_grid]]
 					) {
-	p[id] = 0.5 + 0.5 * tanh(x[id]);
+	p[id] = 0.5 + 0.5 * tanh( 0.5 * x[id] );
 }
 

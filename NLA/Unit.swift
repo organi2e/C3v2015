@@ -14,7 +14,9 @@ public class Unit {
 	private let pipelines: Pipelines
 	
 	private struct Pipelines {
+		let exp: MTLComputePipelineState
 		let step: MTLComputePipelineState
+		let sign: MTLComputePipelineState
 		let pdf: MTLComputePipelineState
 		let cdf: MTLComputePipelineState
 		let sigmoid: MTLComputePipelineState
@@ -38,7 +40,9 @@ public class Unit {
 			return try device.newComputePipelineStateWithFunction(function)
 		}
 		pipelines = Pipelines(
+			exp: try pipeline("exp"),
 			step: try pipeline("step"),
+			sign: try pipeline("sign"),
 			pdf: try pipeline("pdf"),
 			cdf: try pipeline("cdf"),
 			sigmoid: try pipeline("sigmoid"),
@@ -47,11 +51,10 @@ public class Unit {
 		group = dispatch_group_create()
 		queue = device.newCommandQueue()
 	}
-	public func step ( let x: la_object_t, let waits: [dispatch_group_t] = [], let event: dispatch_group_t? = nil ) -> la_object_t {
-		
+	private func bindWithOneArg ( let pipeline: MTLComputePipelineState, let x: la_object_t,let waits: [dispatch_group_t], let event: dispatch_group_t? ) -> la_object_t {
 		let rows: Int = x.rows
 		let cols: Int = x.cols
-
+		
 		let count: Int = rows * cols
 		let cache: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*count))
 		
@@ -69,13 +72,13 @@ public class Unit {
 			
 			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(xbuf.contents()), la_count_t(cols), x)
 			
-			encoder.setComputePipelineState(self.pipelines.step)
+			encoder.setComputePipelineState(pipeline)
 			encoder.setBuffer(ybuf, offset: 0, atIndex: 0)
 			encoder.setBuffer(xbuf, offset: 0, atIndex: 1)
 			encoder.dispatchThreadgroups(MTLSize(width: count/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 			encoder.endEncoding()
 			command.addCompletedHandler {(_)in
-				memcpy(cache, ybuf.contents(), ybuf.length)				
+				memcpy(cache, ybuf.contents(), ybuf.length)
 				event?.leave()
 				xbuf.setPurgeableState(.Empty)
 				ybuf.setPurgeableState(.Empty)
@@ -85,6 +88,19 @@ public class Unit {
 		}
 		
 		return la_matrix_from_float_buffer_nocopy(cache, la_count_t(rows), la_count_t(cols), la_count_t(cols), Unit.hint, { free($0) }, Unit.attr)
+	
+	}
+	public func sign ( let x: la_object_t, let waits: [dispatch_group_t] = [], let event: dispatch_group_t? = nil ) -> la_object_t {
+		return bindWithOneArg(pipelines.sign, x: x, waits: waits, event: event)
+	}
+	public func exp ( let x: la_object_t, let waits: [dispatch_group_t] = [], let event: dispatch_group_t? = nil ) -> la_object_t {
+		return bindWithOneArg(pipelines.exp, x: x, waits: waits, event: event)
+	}
+	public func step ( let x: la_object_t, let waits: [dispatch_group_t] = [], let event: dispatch_group_t? = nil ) -> la_object_t {
+		return bindWithOneArg(pipelines.step, x: x, waits: waits, event: event)
+	}
+	public func sigmoid ( let x: la_object_t, let waits: [dispatch_group_t] = [], let event: dispatch_group_t? = nil ) -> la_object_t {
+		return bindWithOneArg(pipelines.sigmoid, x: x, waits: waits, event: event)
 	}
 	public func pdf ( let x x: la_object_t, let mu u: la_object_t, let sigma s: la_object_t, let waits: [dispatch_group_t] = [], let group: dispatch_group_t? = nil ) -> la_object_t {
 		
@@ -180,46 +196,9 @@ public class Unit {
 		}
 		return la_matrix_from_float_buffer_nocopy(cache, la_count_t(rows), la_count_t(cols), la_count_t(cols), Unit.hint, {free($0)}, Unit.attr)
 	}
-	public func sigmoid ( let x: la_object_t, let waits: [dispatch_group_t] = [], let group: dispatch_group_t? = nil ) -> la_object_t {
-		
-		let rows: Int = x.rows
-		let cols: Int = x.cols
+	public func normal ( let rows rows: UInt, let cols: UInt, let event: dispatch_group_t? = nil ) -> la_object_t {
 
-		let cache: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*rows*cols))
-		
-		self.enter()
-		group?.enter()
-
-		async {
-			let command: MTLCommandBuffer = self.queue.commandBuffer()
-			let encoder: MTLComputeCommandEncoder = command.computeCommandEncoder()
-			
-			let xbuf: MTLBuffer = command.device.newBufferWithLength(sizeof(Float)*rows*cols, options: .CPUCacheModeDefaultCache)
-			let ybuf: MTLBuffer = command.device.newBufferWithLength(sizeof(Float)*rows*cols, options: .CPUCacheModeDefaultCache)
-	
-			waits.forEach { $0.wait() }
-			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(xbuf.contents()), la_count_t(cols), x)
-		
-			encoder.setComputePipelineState(self.pipelines.sigmoid)
-			encoder.setBuffer(ybuf, offset: 0, atIndex: 0)
-			encoder.setBuffer(xbuf, offset: 0, atIndex: 1)
-			encoder.dispatchThreadgroups(MTLSize(width: rows*cols/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
-			encoder.endEncoding()
-
-			command.addCompletedHandler {(_)in
-				memcpy(cache, ybuf.contents(), ybuf.length)
-				group?.leave()
-				ybuf.setPurgeableState(.Empty)
-				xbuf.setPurgeableState(.Empty)
-				self.leave()
-			}
-			command.commit()
-		}
-		return la_matrix_from_float_buffer_nocopy(cache, la_count_t(rows), la_count_t(cols), la_count_t(cols), Unit.hint, { free($0) }, Unit.attr)
-	}
-	public func normal ( let rows rows: Int, let cols: Int, let event: dispatch_group_t? = nil ) -> la_object_t {
-
-		let count: Int = rows * cols
+		let count: Int = Int(rows * cols)
 		let cache: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*count))
 
 		/*
