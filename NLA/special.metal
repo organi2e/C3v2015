@@ -30,3 +30,9 @@ kernel void step(device float4 * const y [[ buffer(0) ]],
 				 ) {
 	y[id] = step(float4(0), x[id]);
 }
+kernel void sign(device float4 * const y [[ buffer(0) ]],
+				 device const float4 * const x [[ buffer(1) ]],
+				 uint const id [[thread_position_in_grid]]
+				 ) {
+	y[id] = sign(x[id]);
+}

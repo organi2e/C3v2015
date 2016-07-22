@@ -10,7 +10,7 @@
 		8719AE4D1D38BBE500F8DCA4 /* LATests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8719AE4B1D38BB9800F8DCA4 /* LATests.swift */; };
 		8719AE581D3DE0A700F8DCA4 /* cpuComputerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8719AE571D3DE0A700F8DCA4 /* cpuComputerTests.swift */; };
 		8719AE5B1D3DE0CB00F8DCA4 /* mtlComputerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8719AE5A1D3DE0CB00F8DCA4 /* mtlComputerTests.swift */; };
-		8740E9201D409B880026D1CA /* Special.metal in Sources */ = {isa = PBXBuildFile; fileRef = 8740E91F1D409B880026D1CA /* Special.metal */; };
+		8740E9201D409B880026D1CA /* special.metal in Sources */ = {isa = PBXBuildFile; fileRef = 8740E91F1D409B880026D1CA /* special.metal */; };
 		8740E9211D40A3FC0026D1CA /* NLA.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 87C516AF1D3F687900E3F36B /* NLA.framework */; };
 		874F0BCE1D3FC7AF005A2B62 /* AsyncValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 874F0BCD1D3FC7AF005A2B62 /* AsyncValue.swift */; };
 		87591AEF1D3C45E500BD9248 /* Computer.h in Headers */ = {isa = PBXBuildFile; fileRef = 87591AEE1D3C45E500BD9248 /* Computer.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -25,6 +25,7 @@
 		87591B1B1D3C48D300BD9248 /* cpuComputer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87591B1A1D3C48D300BD9248 /* cpuComputer.swift */; };
 		87591B1D1D3C48D700BD9248 /* mtlComputer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87591B1C1D3C48D700BD9248 /* mtlComputer.swift */; };
 		876A4B561D066EDC00D32E1B /* ComputerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 876A4B551D066EDC00D32E1B /* ComputerTests.swift */; };
+		87799A6A1D41C0920088B9E7 /* math.metal in Sources */ = {isa = PBXBuildFile; fileRef = 87799A691D41C0920088B9E7 /* math.metal */; };
 		878C7A921D01AF05002CDFD1 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878C7A911D01AF05002CDFD1 /* AppDelegate.swift */; };
 		878C7A941D01AF05002CDFD1 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878C7A931D01AF05002CDFD1 /* ViewController.swift */; };
 		878C7A961D01AF05002CDFD1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 878C7A951D01AF05002CDFD1 /* Assets.xcassets */; };
@@ -51,7 +52,7 @@
 		87C516B21D3F687900E3F36B /* NLA.h in Headers */ = {isa = PBXBuildFile; fileRef = 87C516B11D3F687900E3F36B /* NLA.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		87C516B91D3F687900E3F36B /* NLA.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 87C516AF1D3F687900E3F36B /* NLA.framework */; };
 		87C516D11D3F72E600E3F36B /* Unit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87C516D01D3F72E600E3F36B /* Unit.swift */; };
-		87C516D31D3F72E900E3F36B /* Statistics.metal in Sources */ = {isa = PBXBuildFile; fileRef = 87C516D21D3F72E900E3F36B /* Statistics.metal */; };
+		87C516D31D3F72E900E3F36B /* statistics.metal in Sources */ = {isa = PBXBuildFile; fileRef = 87C516D21D3F72E900E3F36B /* statistics.metal */; };
 		87C516D61D3F743600E3F36B /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87C516D51D3F743600E3F36B /* Config.swift */; };
 		87C516D91D3F803400E3F36B /* UnitTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87C516D81D3F803400E3F36B /* UnitTest.swift */; };
 		87D18E331D3F18B300982020 /* LA.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87D18E321D3F18B300982020 /* LA.swift */; };
@@ -121,7 +122,7 @@
 		8719AE4B1D38BB9800F8DCA4 /* LATests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LATests.swift; sourceTree = "<group>"; };
 		8719AE571D3DE0A700F8DCA4 /* cpuComputerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = cpuComputerTests.swift; path = ../../Computer/cpuComputerTests.swift; sourceTree = "<group>"; };
 		8719AE5A1D3DE0CB00F8DCA4 /* mtlComputerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = mtlComputerTests.swift; path = ../../Computer/mtlComputerTests.swift; sourceTree = "<group>"; };
-		8740E91F1D409B880026D1CA /* Special.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = Special.metal; path = ../../NLA/Special.metal; sourceTree = "<group>"; };
+		8740E91F1D409B880026D1CA /* special.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = special.metal; path = ../../NLA/special.metal; sourceTree = "<group>"; };
 		874F0BCD1D3FC7AF005A2B62 /* AsyncValue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AsyncValue.swift; path = ../../NLA/AsyncValue.swift; sourceTree = "<group>"; };
 		87591AEC1D3C45E500BD9248 /* Computer.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Computer.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		87591AEE1D3C45E500BD9248 /* Computer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Computer.h; sourceTree = "<group>"; };
@@ -138,6 +139,7 @@
 		87591B1A1D3C48D300BD9248 /* cpuComputer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = cpuComputer.swift; path = ../../Computer/cpuComputer.swift; sourceTree = "<group>"; };
 		87591B1C1D3C48D700BD9248 /* mtlComputer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = mtlComputer.swift; path = ../../Computer/mtlComputer.swift; sourceTree = "<group>"; };
 		876A4B551D066EDC00D32E1B /* ComputerTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ComputerTests.swift; sourceTree = "<group>"; };
+		87799A691D41C0920088B9E7 /* math.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = math.metal; path = ../NLA/math.metal; sourceTree = "<group>"; };
 		878C7A8F1D01AF05002CDFD1 /* sandbox.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = sandbox.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		878C7A911D01AF05002CDFD1 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		878C7A931D01AF05002CDFD1 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -171,7 +173,7 @@
 		87C516B81D3F687900E3F36B /* NLATests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NLATests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		87C516BF1D3F687900E3F36B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		87C516D01D3F72E600E3F36B /* Unit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Unit.swift; path = ../../NLA/Unit.swift; sourceTree = "<group>"; };
-		87C516D21D3F72E900E3F36B /* Statistics.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = Statistics.metal; path = ../../NLA/Statistics.metal; sourceTree = "<group>"; };
+		87C516D21D3F72E900E3F36B /* statistics.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = statistics.metal; path = ../../NLA/statistics.metal; sourceTree = "<group>"; };
 		87C516D51D3F743600E3F36B /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Config.swift; path = ../../NLA/Config.swift; sourceTree = "<group>"; };
 		87C516D81D3F803400E3F36B /* UnitTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = UnitTest.swift; path = ../../NLA/UnitTest.swift; sourceTree = "<group>"; };
 		87D18E321D3F18B300982020 /* LA.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = LA.swift; path = "../../C³/LA.swift"; sourceTree = "<group>"; };
@@ -274,6 +276,7 @@
 		878C7A571D01AE4D002CDFD1 = {
 			isa = PBXGroup;
 			children = (
+				87799A691D41C0920088B9E7 /* math.metal */,
 				878C7A901D01AF05002CDFD1 /* sandbox */,
 				878C7AA41D01AF13002CDFD1 /* MNIST */,
 				87B1FD021D05461100981CF4 /* C³ */,
@@ -358,11 +361,11 @@
 		87C516B01D3F687900E3F36B /* NLA */ = {
 			isa = PBXGroup;
 			children = (
-				8740E91F1D409B880026D1CA /* Special.metal */,
+				8740E91F1D409B880026D1CA /* special.metal */,
 				874F0BCD1D3FC7AF005A2B62 /* AsyncValue.swift */,
 				87C516D51D3F743600E3F36B /* Config.swift */,
 				87C516D01D3F72E600E3F36B /* Unit.swift */,
-				87C516D21D3F72E900E3F36B /* Statistics.metal */,
+				87C516D21D3F72E900E3F36B /* statistics.metal */,
 				87C516B11D3F687900E3F36B /* NLA.h */,
 				87C516B31D3F687900E3F36B /* Info.plist */,
 			);
@@ -761,8 +764,9 @@
 			files = (
 				87C516D11D3F72E600E3F36B /* Unit.swift in Sources */,
 				87C516D61D3F743600E3F36B /* Config.swift in Sources */,
-				87C516D31D3F72E900E3F36B /* Statistics.metal in Sources */,
-				8740E9201D409B880026D1CA /* Special.metal in Sources */,
+				87C516D31D3F72E900E3F36B /* statistics.metal in Sources */,
+				8740E9201D409B880026D1CA /* special.metal in Sources */,
+				87799A6A1D41C0920088B9E7 /* math.metal in Sources */,
 				874F0BCE1D3FC7AF005A2B62 /* AsyncValue.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

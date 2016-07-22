@@ -46,7 +46,7 @@ public class Cell: C3Object {
 }
 extension Cell {
 	@NSManaged public private(set) var label: String
-	@NSManaged public private(set) var width: Int
+	@NSManaged public private(set) var width: UInt
 	@NSManaged public var attribute: [String: AnyObject]
 	@NSManaged private var mean: NSData
 	@NSManaged private var deviation: NSData
@@ -127,26 +127,29 @@ extension Cell {
 }
 extension Cell {
 	func collect() {
-		enter()
 		if !status.contains(.READY) {
+			enter()
+			
 			var waits: [dispatch_group_t] = [groups.const]
 			var accum: la_object_t = values.const
 				
 			input.forEach {
 				if $0.input.visited {
+					accum = accum + la_matrix_product($0.values, $0.input.elders.state)
+				} else {
 					$0.input.collect()
 					accum = accum + la_matrix_product($0.values, $0.input.values.state)
 					waits.append($0.input.groups.state)
-				} else {
-					accum = accum + la_matrix_product($0.values, $0.input.elders.state)
 				}
 				waits.append($0.groups)
 			}
+			
 			values.value = accum
 			values.state = unit.step(values.value, waits: waits, event: groups.state)
+			
 			status.insert(.READY)
+			leave()
 		}
-		leave()
 	}
 	func backward() {
 		
@@ -165,7 +168,7 @@ extension Cell {
 extension Cell {
 	var state: [Bool] {
 		set {
-			assert(width==newValue.count)
+			assert(width==UInt(newValue.count))
 			values.state = la_matrix_from_float_buffer(newValue.map{Float($0)}, la_count_t(width), la_count_t(1), la_count_t(1), Cell.HINT, Cell.ATTR)
 			assert(values.state.status==LA_SUCCESS)
 			status.insert(.READY)
@@ -173,22 +176,22 @@ extension Cell {
 		get {
 			collect()
 			groups.state.wait()
-			let cache: [Float] = [Float](count: width, repeatedValue: 0)
-			assert(Int(la_vector_length(values.state))==width)
+			let cache: [Float] = [Float](count: Int(width), repeatedValue: 0)
+			assert(la_vector_length(values.state)==width)
 			assert(la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), la_count_t(1), values.state)==0)
 			return cache.map{Bool($0)}
 		}
 	}
 	var ideal: [Bool] {
 		set {
-			assert(width==newValue.count)
+			assert(width==UInt(newValue.count))
 			values.ideal = la_matrix_from_float_buffer(newValue.map{Float($0)}, la_count_t(width), la_count_t(1), la_count_t(1), Cell.HINT, Cell.ATTR)
 			assert(values.ideal.status==LA_SUCCESS)
 			status.insert(.IDEAL)
 		}
 		get {
-			let cache: [Float] = [Float](count: width, repeatedValue: 0)
-			assert(Int(la_vector_length(values.ideal))==width)
+			let cache: [Float] = [Float](count: Int(width), repeatedValue: 0)
+			assert(la_vector_length(values.ideal)==width)
 			assert(la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), la_count_t(1), values.ideal)==0)
 			return cache.map{Bool($0)}
 		}
@@ -196,16 +199,16 @@ extension Cell {
 }
 extension Cell {
 	func setup() {
-		
-		assert(mean.length==sizeof(Float)*width)
+		let count: Int = Int(width)
+		assert(mean.length==sizeof(Float)*count)
 		estimated.mean = la_matrix_from_float_buffer(UnsafePointer<Float>(mean.bytes), la_count_t(width), la_count_t(1), la_count_t(1), Cell.HINT, Cell.ATTR)
 		assert(estimated.mean.status==LA_SUCCESS)
 		
-		assert(deviation.length==sizeof(Float)*width)
+		assert(deviation.length==sizeof(Float)*count)
 		estimated.deviation = la_matrix_from_float_buffer(UnsafePointer<Float>(deviation.bytes), la_count_t(width), la_count_t(1), la_count_t(1), Cell.HINT, Cell.ATTR)
 		assert(estimated.deviation.status==LA_SUCCESS)
 		
-		assert(lambda.length==sizeof(Float)*width)
+		assert(lambda.length==sizeof(Float)*count)
 		estimated.lambda = la_matrix_from_float_buffer(UnsafePointer<Float>(lambda.bytes), la_count_t(width), la_count_t(1), la_count_t(1), Cell.HINT, Cell.ATTR)
 		assert(estimated.lambda.status==LA_SUCCESS)
 		
@@ -222,21 +225,22 @@ extension Cell {
 	}
 }
 extension Context {
-	public func newCell ( let width size: Int, let label: String = "", let recur: Bool = false, let input: [Cell] = [] ) -> Cell? {
+	public func newCell ( let width size: UInt, let label: String = "", let recur: Bool = false, let input: [Cell] = [] ) -> Cell? {
 		let cell: Cell? = new()
-		let width: Int = ((size-1)/4+1)*4
+		let width: UInt = ((size-1)/4+1)*4
 		//size//max( size + 0x0f - ( ( size + 0x0f ) % 0x10 ), 0x10 )
 		if let cell: Cell = cell {
+			let count: Int = Int(width)
 			cell.width = width
 			cell.label = label
 			cell.attribute = [:]
-			cell.mean = NSData(bytes: [Float](count: width, repeatedValue: 0.0), length: sizeof(Float)*width)
-			cell.deviation = NSData(bytes: [Float](count: width, repeatedValue: 1.0), length: sizeof(Float)*width)
-			cell.lambda = NSData(bytes: [Float](count: width, repeatedValue: 0.0), length: sizeof(Float)*width)
+			cell.mean = NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count)
+			cell.deviation = NSData(bytes: [Float](count: count, repeatedValue: 1.0), length: sizeof(Float)*count)
+			cell.lambda = NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count)
 			cell.setup()
 			input.forEach { ( let input: Cell ) in
 				if input.managedObjectContext === self, let edge: Edge = new() {
-					let count: Int = cell.width * input.width
+					let count: Int = Int(cell.width * input.width)
 					edge.input = input
 					edge.output = cell
 					edge.mean = NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count)
