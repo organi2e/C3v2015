@@ -13,7 +13,7 @@ kernel void normal(device float4 * random [[buffer(0)]],
 				   device const uchar4 * const noise [[buffer(1)]],
 				   uint const id [[thread_position_in_grid]]
 				   ){
-	float4 const n = (float4(noise[id])+1.0)/256.0;//( unpack_unorm4x8_to_float ( noise[id] ) * 255.0 + 1.0 ) / 256.0;
+	float4 const n = (float4(noise[id])+1.0)/256.0;
 	float2 const c = cospi(2.0*n.xy);
 	float2 const s = sinpi(2.0*n.xy);
 	float2 const l = sqrt(-2.0*log(n.zw));
