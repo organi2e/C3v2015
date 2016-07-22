@@ -10,11 +10,22 @@ extension la_object_t {
 	var status: Int32 {
 		return Int32(la_status(self))
 	}
-	var buffer: [Float] {
-		let rows: Int = Int(la_matrix_rows(self))
-		let cols: Int = Int(la_matrix_cols(self))
-		let buffer: [Float] = [Float](count: rows*cols, repeatedValue: 0)
-		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), la_count_t(cols), self)
+	var rows: UInt {
+		return la_matrix_rows(self)
+	}
+	var cols: UInt {
+		return la_matrix_cols(self)
+	}
+	var width: UInt {
+		return rows*cols
+	}
+	var count: Int {
+		return Int(width)
+	}
+	var eval: [Float] {
+		let count: Int = Int(rows*cols)
+		let buffer: [Float] = [Float](count: count, repeatedValue: 0)
+		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), cols, self)
 		return buffer
 	}
 	static var zeros: la_object_t {

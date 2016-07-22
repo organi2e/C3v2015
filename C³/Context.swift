@@ -80,6 +80,19 @@ extension Context {
 	)
 }
 extension Context {
+	public func checkpoint ( let async async: Bool = false ) {
+		( async ? performBlock : performBlockAndWait ) {
+			self.registeredObjects.forEach {
+				switch $0 {
+				case let cell as Cell:
+					cell.sync()
+					break
+				default:
+					break
+				}
+			}
+		}
+	}
 	public func store ( let async async: Bool = false, let handle: (ErrorType -> Void)? = nil ) {
 		( async ? performBlock : performBlockAndWait ) {
 			do {

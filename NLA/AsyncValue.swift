@@ -6,6 +6,7 @@
 //
 //
 import Accelerate
+/*
 public struct AsyncValue {
 	private var waits: [dispatch_group_t]
 	private var value: la_object_t
@@ -37,11 +38,11 @@ public struct AsyncValue {
 			waits.removeAll()
 		}
 	}
-	public var rows: Int {
-		return Int(la_matrix_rows(value))
+	public var rows: UInt {
+		return la_matrix_rows(value)
 	}
-	public var cols: Int {
-		return Int(la_matrix_cols(value))
+	public var cols: UInt {
+		return la_matrix_cols(value)
 	}
 	public func ready() {
 		depend.forEach { $0.wait() }
@@ -109,3 +110,4 @@ public func -(let l: Float, let r: AsyncValue)->AsyncValue {
 public func *(let l: Float, let r: AsyncValue)->AsyncValue {
 	return AsyncValue(value: la_scale_with_float(r.value, l), waits: r.depend)
 }
+*/

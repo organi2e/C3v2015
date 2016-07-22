@@ -52,11 +52,11 @@ public class Unit {
 		queue = device.newCommandQueue()
 	}
 	private func bindWithOneArg ( let pipeline: MTLComputePipelineState, let x: la_object_t,let waits: [dispatch_group_t], let event: dispatch_group_t? ) -> la_object_t {
-		let rows: Int = x.rows
-		let cols: Int = x.cols
+		let rows: UInt = x.rows
+		let cols: UInt = x.cols
 		
-		let count: Int = rows * cols
-		let cache: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*count))
+		let count: Int = x.count
+		let cache: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>.alloc(count)
 		
 		self.enter()
 		event?.enter()
@@ -87,31 +87,46 @@ public class Unit {
 			command.commit()
 		}
 		
-		return la_matrix_from_float_buffer_nocopy(cache, la_count_t(rows), la_count_t(cols), la_count_t(cols), Unit.hint, { free($0) }, Unit.attr)
+		return la_matrix_from_float_buffer_nocopy(cache, la_count_t(rows), la_count_t(cols), la_count_t(cols), Unit.hint, { $0.destroy() }, Unit.attr)
 	
 	}
 	public func sign ( let x: la_object_t, let waits: [dispatch_group_t] = [], let event: dispatch_group_t? = nil ) -> la_object_t {
-		return bindWithOneArg(pipelines.sign, x: x, waits: waits, event: event)
+		let cache: [Float] = [Float](count: x.count, repeatedValue: 0)
+		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), UInt(x.cols), x)
+		return la_matrix_from_float_buffer(cache.map{Float(0.0 < $0 ? 1.0 : 0.0 > $0 ? -1.0 : 0.0)}, x.rows, x.cols, x.cols, la_hint_t(LA_NO_HINT), la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING))
+//		return bindWithOneArg(pipelines.sign, x: x, waits: waits, event: event)
 	}
 	public func exp ( let x: la_object_t, let waits: [dispatch_group_t] = [], let event: dispatch_group_t? = nil ) -> la_object_t {
-		return bindWithOneArg(pipelines.exp, x: x, waits: waits, event: event)
+		let cache: [Float] = [Float](count: x.count, repeatedValue: 0)
+		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), UInt(x.cols), x)
+		vvexpf(UnsafeMutablePointer<Float>(cache), cache, [Int32(x.count)])
+		return la_matrix_from_float_buffer(cache, x.rows, x.cols, x.cols, la_hint_t(LA_NO_HINT), la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING))
+		//return bindWithOneArg(pipelines.exp, x: x, waits: waits, event: event)
 	}
 	public func step ( let x: la_object_t, let waits: [dispatch_group_t] = [], let event: dispatch_group_t? = nil ) -> la_object_t {
-		return bindWithOneArg(pipelines.step, x: x, waits: waits, event: event)
+		let cache: [Float] = [Float](count: x.count, repeatedValue: 0)
+		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), UInt(x.cols), x)
+		return la_matrix_from_float_buffer(cache.map{Float(0.0 < $0 ? 1.0 : 0.0)}, x.rows, x.cols, x.cols, la_hint_t(LA_NO_HINT), la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING))
+		//return bindWithOneArg(pipelines.step, x: x, waits: waits, event: event)
 	}
 	public func sigmoid ( let x: la_object_t, let waits: [dispatch_group_t] = [], let event: dispatch_group_t? = nil ) -> la_object_t {
-		return bindWithOneArg(pipelines.sigmoid, x: x, waits: waits, event: event)
+		let cache: [Float] = [Float](count: x.count, repeatedValue: 0)
+		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), UInt(x.cols), x)
+		vvtanhf(UnsafeMutablePointer<Float>(cache), cache, [Int32(x.count)])
+		vDSP_vsmsa(UnsafePointer<Float>(cache), 1, [Float(0.5)], [Float(0.5)], UnsafeMutablePointer<Float>(cache), 1, vDSP_Length(x.count))
+		return la_matrix_from_float_buffer(cache, x.rows, x.cols, x.cols, la_hint_t(LA_NO_HINT), la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING))
+		//return bindWithOneArg(pipelines.sigmoid, x: x, waits: waits, event: event)
 	}
 	public func pdf ( let x x: la_object_t, let mu u: la_object_t, let sigma s: la_object_t, let waits: [dispatch_group_t] = [], let group: dispatch_group_t? = nil ) -> la_object_t {
 		
 		let level: la_object_t = la_difference(x, u)
 		let sigma: la_object_t = s
 		
-		let rows: Int = level.count < sigma.count ? sigma.rows : level.rows
-		let cols: Int = level.count < sigma.count ? sigma.cols : level.cols
+		let rows: UInt = level.count < sigma.count ? sigma.rows : level.rows
+		let cols: UInt = level.count < sigma.count ? sigma.cols : level.cols
 		
-		let count: Int = rows * cols
-		let cache: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*count))
+		let count: Int = level.count < sigma.count ? sigma.count : level.count
+		let cache: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>.alloc(count)
 
 		self.enter()
 		group?.enter()
@@ -126,8 +141,8 @@ public class Unit {
 			
 			waits.forEach { $0.wait() }
 			
-			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(xbuf.contents()), la_count_t(cols), rows == level.rows && cols == level.cols ? level : la_matrix_from_splat(level, la_count_t(rows), la_count_t(cols)))
-			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(sbuf.contents()), la_count_t(cols), rows == sigma.rows && cols == sigma.cols ? sigma : la_matrix_from_splat(sigma, la_count_t(rows), la_count_t(cols)))
+			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(xbuf.contents()), cols, rows == level.rows && cols == level.cols ? level : la_matrix_from_splat(level, la_count_t(rows), la_count_t(cols)))
+			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(sbuf.contents()), cols, rows == sigma.rows && cols == sigma.cols ? sigma : la_matrix_from_splat(sigma, la_count_t(rows), la_count_t(cols)))
 
 			encoder.setComputePipelineState(self.pipelines.pdf)
 			encoder.setBuffer(ybuf, offset: 0, atIndex: 0)
@@ -147,17 +162,17 @@ public class Unit {
 			}
 			command.commit()
 		}
-		return la_matrix_from_float_buffer_nocopy(cache, la_count_t(rows), la_count_t(cols), la_count_t(cols), Unit.hint, { free($0) }, Unit.attr)
+		return la_matrix_from_float_buffer_nocopy(cache, la_count_t(rows), la_count_t(cols), la_count_t(cols), Unit.hint, { $0.destroy() }, Unit.attr)
 	}
 	public func cdf ( let x x: la_object_t, let mu u: la_object_t, let sigma s: la_object_t, let waits: [dispatch_group_t] = [], let group: dispatch_group_t? = nil ) -> la_object_t {
 		
 		let level: la_object_t = la_difference(x, u)
 		let sigma: la_object_t = s
 		
-		let rows: Int = level.count < sigma.count ? sigma.rows : level.rows
-		let cols: Int = level.count < sigma.count ? sigma.cols : level.cols
+		let rows: UInt = level.count < sigma.count ? sigma.rows : level.rows
+		let cols: UInt = level.count < sigma.count ? sigma.cols : level.cols
 		
-		let count: Int = rows * cols
+		let count: Int = level.count < sigma.count ? sigma.count : level.count
 		let cache: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*count))
 		
 		self.enter()
@@ -196,10 +211,10 @@ public class Unit {
 		}
 		return la_matrix_from_float_buffer_nocopy(cache, la_count_t(rows), la_count_t(cols), la_count_t(cols), Unit.hint, {free($0)}, Unit.attr)
 	}
-	public func normal ( let rows rows: UInt, let cols: UInt, let event: dispatch_group_t? = nil ) -> la_object_t {
+	public func normal2 ( let rows rows: UInt, let cols: UInt, let event: dispatch_group_t? = nil ) -> la_object_t {
 
 		let count: Int = Int(rows * cols)
-		let cache: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*count))
+		let cache: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>.alloc(count)
 
 		/*
 		group?.enter()
@@ -258,7 +273,7 @@ public class Unit {
 			}
 			command.commit()
 		}
-		return la_matrix_from_float_buffer_nocopy(cache, la_count_t(rows), la_count_t(cols), la_count_t(cols), Unit.hint, { free($0) }, Unit.attr)
+		return la_matrix_from_float_buffer_nocopy(cache, la_count_t(rows), la_count_t(cols), la_count_t(cols), Unit.hint, { $0.destroy() }, Unit.attr)
 	}
 	private func enter ( ) {
 		group.enter()
@@ -323,14 +338,14 @@ internal extension dispatch_semaphore_t {
 	}
 }
 internal extension la_object_t {
-	var rows: Int {
-		return Int(la_matrix_rows(self))
+	var rows: UInt {
+		return la_matrix_rows(self)
 	}
-	var cols: Int {
-		return Int(la_matrix_cols(self))
+	var cols: UInt {
+		return la_matrix_cols(self)
 	}
 	var count: Int {
-		return rows * cols
+		return Int(rows * cols)
 	}
 }
 func + ( let lhs: la_object_t, let rhs: la_object_t ) -> la_object_t {
