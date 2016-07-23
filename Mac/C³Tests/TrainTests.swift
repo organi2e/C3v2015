@@ -9,7 +9,6 @@ import Foundation
 import XCTest
 @testable import C3
 class ContextTests: XCTestCase {
-    /*
     override func setUp() {
         super.setUp()
         // Put setup code here. This method is called before the invocation of each test method in the class.
@@ -42,19 +41,19 @@ class ContextTests: XCTestCase {
 			print("study")
 			context.train([
 				(
-					["I":[false, false, false, true ]],
+					["I":[true , false, false, false ]],
 					["O":[false, false, false, true ]]
 				),(
-					["I":[false, false, true , false]],
+					["I":[false, true, false , false]],
 					["O":[false, false, true , false]]
 				),(
-					["I":[false, true , false, false]],
+					["I":[false, false , true, false]],
 					["O":[false, true , false, false]]
 				),(
-					["I":[true , false, false, false]],
+					["I":[false ,false, false, true ]],
 					["O":[true , false, false, false]]
 				)],
-				count: 16,
+				count: 256,
 				eps: 1/4.0
 			)
 			context.checkpoint(async: false)
@@ -66,14 +65,5 @@ class ContextTests: XCTestCase {
 			XCTFail(String(e))
 		}
     }
-    /*
-    func testPerformanceExample() {
-        // This is an example of a performance test case.
-        self.measureBlock {
-            // Put the code you want to measure the time of here.
-        }
-    }
-    */
-*/
 }
 
