@@ -9,6 +9,9 @@
 import Foundation
 import CoreData
 public class Dict: NSManagedObject {
+	
+}
+extension Dict {
 	@NSManaged public var key: AnyObject
 	@NSManaged public var value: AnyObject
 }
