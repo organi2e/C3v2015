@@ -20,17 +20,15 @@ internal class Edge: C3Object {
 	)
 }
 extension Edge {
-	@NSManaged var mean: NSData
-	@NSManaged var logvariance: NSData
+	@NSManaged var mean: NSMutableData
+	@NSManaged var logvariance: NSMutableData
 	@NSManaged var input: Cell
 	@NSManaged var output: Cell
 }
 extension Edge {
 	func dump() {
-		let x: [Float] = [Float](count: mean.length/sizeof(Float), repeatedValue: 0)
 		print("mean la: \(weight.mean.eval)")
-		mean.getBytes(UnsafeMutablePointer<Void>(x))
-		print("mean data: \(x)")
+		print("mean data: \(mean.buffer)")
 		print("logvariance: \(weight.logvariance.eval)")
 	}
 	func setup() {
@@ -38,14 +36,22 @@ extension Edge {
 		let cols: UInt = input.width
 		let count: Int = Int(rows * cols)
 
-		assert(mean.length==sizeof(Float)*count)
-		weight.mean = la_matrix_from_float_buffer(UnsafeMutablePointer<Float>(mean.bytes), rows, cols, cols, Edge.HINT, Edge.ATTR)
-		assert(weight.mean.status==LA_SUCCESS)
-
-		assert(logvariance.length==sizeof(Float)*count)
-		weight.logvariance = la_matrix_from_float_buffer(UnsafeMutablePointer<Float>(logvariance.bytes), rows, cols, cols, Edge.HINT, Edge.ATTR)
-		assert(weight.variance.status==LA_SUCCESS)
-		
+		if let data: NSMutableData = primitiveValueForKey("mean")?.mutableCopy()as?NSMutableData {
+			setPrimitiveValue(data, forKey: "mean")
+			assert(mean.length==sizeof(Float)*count)
+			weight.mean = la_matrix_from_float_buffer(UnsafeMutablePointer<Float>(mean.mutableBytes), rows, cols, cols, Edge.HINT, Edge.ATTR)
+			assert(weight.mean.status==LA_SUCCESS)
+		} else {
+			assertionFailure()
+		}
+		if let data: NSMutableData = primitiveValueForKey("logvariance")?.mutableCopy()as?NSMutableData {
+			setPrimitiveValue(data, forKey: "logvariance")
+			assert(logvariance.length==sizeof(Float)*count)
+			weight.logvariance = la_matrix_from_float_buffer(UnsafeMutablePointer<Float>(logvariance.mutableBytes), rows, cols, cols, Edge.HINT, Edge.ATTR)
+			assert(weight.variance.status==LA_SUCCESS)
+		} else {
+			assertionFailure()
+		}
 		refresh()
 	}
 	func refresh() {
@@ -62,6 +68,7 @@ extension Edge {
 	}
 	override func willSave() {
 		super.willSave()
+		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(mean.mutableBytes), input.width, weight.mean)
 		dump()
 	}
 	override func awakeFromFetch() {

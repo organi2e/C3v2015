@@ -141,12 +141,13 @@ extension Cell {
 					edge.didChangeValueForKey("mean")
 					
 					waits.append(edge.output.delta.event)
-					print("\(label), \(edge.weight.mean.eval)")
+					//print("\(label), \(edge.weight.mean.eval)")
 				}
 			}
 			delta.value = unit.sign(error.value, waits: waits, event: delta.event)
-			
+			willChangeValueForKey("mean")
 			const.mean = const.mean + eps * delta.value
+			didChangeValueForKey("mean")
 			ready.insert(.Delta)
 			leave()
 		}
@@ -168,6 +169,11 @@ extension Cell {
 	}
 	func deltaReady() {
 		delta.event.wait()
+	}
+	public override func willSave() {
+		super.willSave()
+		deltaReady()
+		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(mean.bytes), 1, const.mean)
 	}
 }
 extension Cell {
@@ -217,6 +223,7 @@ extension Cell {
 		} else {
 			assertionFailure()
 		}
+		refresh()
 	}
 	public subscript(let index: UInt) -> Float {
 		get {
@@ -267,8 +274,8 @@ extension Context {
 					let count: Int = Int(cell.width * input.width)
 					edge.input = input
 					edge.output = cell
-					edge.mean = NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count)
-					edge.logvariance = NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count)
+					edge.mean = NSMutableData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count)
+					edge.logvariance = NSMutableData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count)
 					edge.setup()
 				}
 			}
@@ -306,6 +313,11 @@ extension Context {
 				$0.0.forEach {
 					if let cell: Cell = searchCell(label: $0.0).first {
 						cell.correct(eps: eps)
+					}
+				}
+				$0.1.forEach {
+					if let cell: Cell = searchCell(label: $0.0).first {
+						print(cell.active)
 					}
 				}
 			}
