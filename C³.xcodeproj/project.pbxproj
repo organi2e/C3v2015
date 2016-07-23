@@ -159,6 +159,7 @@
 			isa = PBXGroup;
 			children = (
 				878985B61D050D42002C2A8D /* C³.xcdatamodeld */,
+				873934A91D42FCF800888988 /* Blob.swift */,
 				878985B81D050D42002C2A8D /* Cell.swift */,
 				878985B91D050D42002C2A8D /* Config.swift */,
 				878985BA1D050D42002C2A8D /* Context.swift */,
@@ -166,7 +167,6 @@
 				878985BC1D050D42002C2A8D /* Edge.swift */,
 				878985BD1D050D42002C2A8D /* Error.swift */,
 				87D18E341D3F18BB00982020 /* LA.swift */,
-				873934A91D42FCF800888988 /* Blob.swift */,
 			);
 			name = "C³";
 			sourceTree = "<group>";
