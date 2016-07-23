@@ -68,6 +68,7 @@
 /* Begin PBXFileReference section */
 		8719AE501D3DE08C00F8DCA4 /* cpuComputerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = cpuComputerTests.swift; path = Computer/cpuComputerTests.swift; sourceTree = "<group>"; };
 		8719AE591D3DE0BB00F8DCA4 /* mtlComputerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = mtlComputerTests.swift; path = Computer/mtlComputerTests.swift; sourceTree = "<group>"; };
+		873934A91D42FCF800888988 /* Blob.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Blob.swift; path = "C³/Blob.swift"; sourceTree = "<group>"; };
 		8740E9161D409B7F0026D1CA /* special.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = special.metal; path = NLA/special.metal; sourceTree = "<group>"; };
 		874F0BC41D3FC4C0005A2B62 /* AsyncValue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AsyncValue.swift; path = NLA/AsyncValue.swift; sourceTree = "<group>"; };
 		87591AE11D3C45C400BD9248 /* blas.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = blas.metal; path = Computer/blas.metal; sourceTree = "<group>"; };
@@ -165,6 +166,7 @@
 				878985BC1D050D42002C2A8D /* Edge.swift */,
 				878985BD1D050D42002C2A8D /* Error.swift */,
 				87D18E341D3F18BB00982020 /* LA.swift */,
+				873934A91D42FCF800888988 /* Blob.swift */,
 			);
 			name = "C³";
 			sourceTree = "<group>";
