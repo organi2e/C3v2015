@@ -15,18 +15,31 @@ public class Blob: NSManagedObject {
 	}
 	public override func awakeFromFetch() {
 		super.awakeFromFetch()
-		setPrimitiveValue(NSData(bytes: data.bytes, length: data.length), forKey: "data")
+		if let cache: NSData = primitiveValueForKey("data")as?NSData {
+			setPrimitiveValue(NSData(bytes: cache.bytes, length: cache.length), forKey: "data")
+		} else {
+			assertionFailure()
+		}
 	}
 	public override func awakeFromSnapshotEvents(flags: NSSnapshotEventType) {
 		super.awakeFromSnapshotEvents(flags)
-		setPrimitiveValue(NSData(bytes: data.bytes, length: data.length), forKey: "data")
+		if let cache: NSData = primitiveValueForKey("data")as?NSData {
+			setPrimitiveValue(NSData(bytes: cache.bytes, length: cache.length), forKey: "data")
+		} else {
+			assertionFailure()
+		}
 	}
 }
 extension Blob {
 	@NSManaged var name: String
-	@NSManaged var data: NSData
+//	@NSManaged var data: NSData
 }
 extension Blob {
+	var data: NSData {
+		willAccessValueForKey("data")
+		defer { didAccessValueForKey("data") }
+		return primitiveValueForKey("data")as!NSData
+	}
 	internal func resize(let index: Int) {
 		if index < data.length {
 		
