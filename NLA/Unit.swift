@@ -106,6 +106,21 @@ public class Unit {
 //		return bindWithOneArg(pipelines.sign, x: x, waits: waits, event: event)
 	}
 	public func exp ( let x: la_object_t, let waits: [dispatch_group_t] = [], let event: dispatch_group_t? = nil ) -> la_object_t {
+		let count: Int = x.count
+		let cache: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>.alloc(count)
+		event?.enter()
+		async {
+			waits.forEach { $0.wait() }
+			la_matrix_to_float_buffer(cache, x.cols, x)
+			(0..<count).forEach {
+				cache.advancedBy($0).memory = 0 < cache.advancedBy($0).memory ? 1 : 0 > cache.advancedBy($0).memory ? -1 : 0
+			}
+			event?.leave()
+		}
+		return la_matrix_from_float_buffer_nocopy(cache, x.rows, x.cols, x.cols, la_hint_t(LA_NO_HINT), { $0.destroy() }, la_attribute_t(LA_DEFAULT_ATTRIBUTES))
+		//return bindWithOneArg(pipelines.exp, x: x, waits: waits, event: event)
+	}
+	public func sqrt( let x: la_object_t, let waits: [dispatch_group_t] = [], let event: dispatch_group_t? = nil ) -> la_object_t {
 		let cache: [Float] = [Float](count: x.count, repeatedValue: 0)
 		waits.forEach { $0.wait() }
 		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), x.cols, x)
@@ -238,20 +253,35 @@ public class Unit {
 		///*
 		event?.enter()
 		async {
-			let N: vDSP_Length = vDSP_Length(rows*cols)
+			typealias Type = UInt32
+			
+			let N: vDSP_Length = vDSP_Length(count)
 			let H: vDSP_Length = vDSP_Length(N/2)
-			let W: [UInt8] = [UInt8](count: count, repeatedValue: 0)
+			let W: [Type] = [Type](count: count, repeatedValue: 0)
 			let C: [Float] = [Float](count: count, repeatedValue: 0)
 			let L: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(C).advancedBy(Int(0))
 			let R: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(C).advancedBy(Int(H))
 			let P: UnsafeMutablePointer<Float> = cache.advancedBy(Int(0))
 			let Q: UnsafeMutablePointer<Float> = cache.advancedBy(Int(H))
 			
-			arc4random_buf(UnsafeMutablePointer<Void>(W), sizeof(UInt8)*W.count)
-			vDSP_vfltu8(W, 1, L, 1, N)
-		
+			arc4random_buf(UnsafeMutablePointer<Void>(W), sizeof(Type)*W.count)
+			
+			switch sizeof(Type) {
+			case 1:
+				vDSP_vfltu8(UnsafePointer<UInt8>(W), 1, UnsafeMutablePointer<Float>(C), 1, vDSP_Length(count))
+				break
+			case 2:
+				vDSP_vfltu16(UnsafePointer<UInt16>(W), 1, UnsafeMutablePointer<Float>(C), 1, vDSP_Length(count))
+				break
+			case 4:
+				vDSP_vfltu32(UnsafePointer<UInt32>(W), 1, UnsafeMutablePointer<Float>(C), 1, vDSP_Length(count))
+				break
+			default:
+				break
+			}
+			
 			vDSP_vsadd(L, 1, [Float(1.0)], L, 1, H)
-			vDSP_vsdiv(L, 1, [Float(UInt8.max)+1.0], L, 1, N)
+			vDSP_vsdiv(L, 1, [Float(Type.max)+1.0], L, 1, N)
 			
 			vvlogf(L, L, [Int32(H)])
 			vDSP_vsmul(L, 1, [Float(-2.0)], L, 1, H)
@@ -293,6 +323,31 @@ public class Unit {
 		}
 		*/
 		return la_matrix_from_float_buffer_nocopy(cache, la_count_t(rows), la_count_t(cols), la_count_t(cols), Unit.hint, { $0.destroy() }, Unit.attr)
+	}
+	public func div(let y y: la_object_t, let x: la_object_t, let waits: [dispatch_group_t] = [], let event: dispatch_group_t? = nil) -> la_object_t {
+		
+		assert(x.count==0 || y.count==0 || x.count==y.count)
+		
+		let count: Int = max(x.count, y.count)
+		let rows: UInt = ( x.count < y.count ? y : x ).rows
+		let cols: UInt = ( x.count < y.count ? y : x ).cols
+		let cache: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>.alloc(Int(count))
+		
+		event?.enter()
+		async {
+			let xbuf: [Float] = [Float](count: count, repeatedValue: 0)
+			let ybuf: [Float] = [Float](count: count, repeatedValue: 0)
+
+			waits.forEach { $0.wait() }
+			
+			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(xbuf), x.cols, x)
+			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(ybuf), y.cols, y)
+			
+			vDSP_vdiv(xbuf, 1, ybuf, 1, cache, 1, vDSP_Length(count))
+			
+			event?.leave()
+		}
+		return la_matrix_from_float_buffer_nocopy(cache, rows, cols, cols, la_hint_t(LA_NO_HINT), { $0.destroy() }, la_attribute_t(LA_DEFAULT_ATTRIBUTES))
 	}
 	private func enter ( ) {
 		group.enter()

@@ -72,9 +72,11 @@ extension Cell {
 	func save() {
 		let buffer: [Float] = [Float](count: Int(width), repeatedValue: 0)
 
+		assert(buffer.count==const.mean.count)
 		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), 1, const.mean)
 		mean = NSData(bytes: UnsafePointer<Void>(buffer), length: sizeof(Float)*buffer.count)
 		
+		assert(buffer.count==const.logvariance.count)
 		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), 1, const.logvariance)
 		logvariance = NSData(bytes: UnsafePointer<Void>(buffer), length: sizeof(Float)*buffer.count)
 	}
@@ -163,8 +165,7 @@ extension Cell {
 				}
 			}
 			
-			delta.value = unit.sign(error.value, waits: waits, event: delta.event)
-			delta.event.wait()
+			delta.value = error.value//unit.sign(error.value, waits: waits, event: delta.event)
 			
 			willChangeValueForKey("mean")
 			const.mean = const.mean + eps * delta.value
@@ -218,7 +219,7 @@ extension Context {
 			cell.label = label
 			cell.attribute = [:]
 			cell.mean = NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count)
-			cell.logvariance = NSData(bytes: [Float](count: count, repeatedValue: -25.0), length: sizeof(Float)*count)
+			cell.logvariance = NSData(bytes: [Float](count: count, repeatedValue: -27.0), length: sizeof(Float)*count)
 			cell.lambda = NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count)
 			cell.load()
 			input.forEach { ( let input: Cell ) in
@@ -227,7 +228,7 @@ extension Context {
 					edge.input = input
 					edge.output = cell
 					edge.mean = NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count)
-					edge.logvariance = NSData(bytes: [Float](count: count, repeatedValue: -25.0), length: sizeof(Float)*count)
+					edge.logvariance = NSData(bytes: [Float](count: count, repeatedValue: -27.0), length: sizeof(Float)*count)
 					edge.load()
 				}
 			}

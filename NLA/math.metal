@@ -14,3 +14,9 @@ kernel void exp(device float4 * const y [[ buffer(0) ]],
 				 ) {
 	y[id] = exp(x[id]);
 }
+kernel void sqrt(device float4 * const y [[ buffer(0) ]],
+				device const float4 * const x [[ buffer(1) ]],
+				uint const id [[thread_position_in_grid]]
+				) {
+	y[id] = sqrt(x[id]);
+}
