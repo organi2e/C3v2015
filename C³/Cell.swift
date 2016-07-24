@@ -218,7 +218,7 @@ extension Context {
 			cell.label = label
 			cell.attribute = [:]
 			cell.mean = NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count)
-			cell.logvariance = NSData(bytes: [Float](count: count, repeatedValue: -24.0), length: sizeof(Float)*count)
+			cell.logvariance = NSData(bytes: [Float](count: count, repeatedValue: -25.0), length: sizeof(Float)*count)
 			cell.lambda = NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count)
 			cell.load()
 			input.forEach { ( let input: Cell ) in
@@ -227,7 +227,7 @@ extension Context {
 					edge.input = input
 					edge.output = cell
 					edge.mean = NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count)
-					edge.logvariance = NSData(bytes: [Float](count: count, repeatedValue: -24.0), length: sizeof(Float)*count)
+					edge.logvariance = NSData(bytes: [Float](count: count, repeatedValue: -25.0), length: sizeof(Float)*count)
 					edge.load()
 				}
 			}

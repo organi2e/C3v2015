@@ -91,10 +91,18 @@ public class Unit {
 	
 	}
 	public func sign ( let x: la_object_t, let waits: [dispatch_group_t] = [], let event: dispatch_group_t? = nil ) -> la_object_t {
-		let cache: [Float] = [Float](count: x.count, repeatedValue: 0)
-		waits.forEach { $0.wait() }
-		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), x.cols, x)
-		return la_matrix_from_float_buffer(cache.map{Float(0.0 < $0 ? 1.0 : 0.0 > $0 ? -1.0 : 0.0)}, x.rows, x.cols, x.cols, la_hint_t(LA_NO_HINT), la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING))
+		let count: Int = x.count
+		let cache: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>.alloc(count)
+		event?.enter()
+		async {
+			waits.forEach { $0.wait() }
+			la_matrix_to_float_buffer(cache, x.cols, x)
+			(0..<count).forEach {
+				cache.advancedBy($0).memory = 0 < cache.advancedBy($0).memory ? 1 : 0 > cache.advancedBy($0).memory ? -1 : 0
+			}
+			event?.leave()
+		}
+		return la_matrix_from_float_buffer_nocopy(cache, x.rows, x.cols, x.cols, la_hint_t(LA_NO_HINT), { $0.destroy() }, la_attribute_t(LA_DEFAULT_ATTRIBUTES))
 //		return bindWithOneArg(pipelines.sign, x: x, waits: waits, event: event)
 	}
 	public func exp ( let x: la_object_t, let waits: [dispatch_group_t] = [], let event: dispatch_group_t? = nil ) -> la_object_t {
@@ -106,10 +114,18 @@ public class Unit {
 		//return bindWithOneArg(pipelines.exp, x: x, waits: waits, event: event)
 	}
 	public func step ( let x: la_object_t, let waits: [dispatch_group_t] = [], let event: dispatch_group_t? = nil ) -> la_object_t {
-		let cache: [Float] = [Float](count: x.count, repeatedValue: 0)
-		waits.forEach { $0.wait() }
-		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), x.cols, x)
-		return la_matrix_from_float_buffer(cache.map{Float(0.0 < $0 ? 1.0 : 0.0)}, x.rows, x.cols, x.cols, la_hint_t(LA_NO_HINT), la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING))
+		let count: Int = x.count
+		let cache: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>.alloc(count)
+		event?.enter()
+		async {
+			waits.forEach { $0.wait() }
+			la_matrix_to_float_buffer(cache, x.cols, x)
+			(0..<count).forEach {
+				cache.advancedBy($0).memory = 0 < cache.advancedBy($0).memory ? 1 : 0
+			}
+			event?.leave()
+		}
+		return la_matrix_from_float_buffer_nocopy(cache, x.rows, x.cols, x.cols, la_hint_t(LA_NO_HINT), { $0.destroy() }, la_attribute_t(LA_DEFAULT_ATTRIBUTES))
 		//return bindWithOneArg(pipelines.step, x: x, waits: waits, event: event)
 	}
 	public func sigmoid ( let x: la_object_t, let waits: [dispatch_group_t] = [], let event: dispatch_group_t? = nil ) -> la_object_t {
