@@ -8,6 +8,7 @@
 import Foundation
 import XCTest
 @testable import C3
+/*
 class ContextTests: XCTestCase {
     override func setUp() {
         super.setUp()
@@ -66,4 +67,4 @@ class ContextTests: XCTestCase {
 		}
     }
 }
-
+*/

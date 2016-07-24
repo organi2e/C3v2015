@@ -10,56 +10,45 @@ import CoreData
 public class Blob: NSManagedObject {
 	public override func awakeFromInsert() {
 		super.awakeFromInsert()
-		setPrimitiveValue("", forKey: "name")
-		setPrimitiveValue(NSData(), forKey: "data")
+		setPrimitiveValue("", forKey: Blob.namekey)
+		setPrimitiveValue(NSData(), forKey: Blob.datakey)
 	}
 	public override func awakeFromFetch() {
 		super.awakeFromFetch()
-		if let cache: NSData = primitiveValueForKey("data")as?NSData {
-			setPrimitiveValue(NSData(bytes: cache.bytes, length: cache.length), forKey: "data")
-		} else {
-			assertionFailure()
-		}
-	}
-	public override func awakeFromSnapshotEvents(flags: NSSnapshotEventType) {
-		super.awakeFromSnapshotEvents(flags)
-		if let cache: NSData = primitiveValueForKey("data")as?NSData {
-			setPrimitiveValue(NSData(bytes: cache.bytes, length: cache.length), forKey: "data")
+		if let cache: NSData = primitiveValueForKey(Blob.datakey)as?NSData {
+			setPrimitiveValue(NSData(data: cache), forKey: Blob.datakey)
 		} else {
 			assertionFailure()
 		}
 	}
 }
 extension Blob {
+	private static let namekey: String = "name"
+	private static let datakey: String = "data"
 	@NSManaged var name: String
-//	@NSManaged var data: NSData
+	@NSManaged var data: NSData
 }
 extension Blob {
-	var data: NSData {
-		willAccessValueForKey("data")
-		defer { didAccessValueForKey("data") }
-		return primitiveValueForKey("data")as!NSData
-	}
-	internal func resize(let index: Int) {
+	private func checksum ( let index: Int ) {
 		if index < data.length {
 		
 		} else {
 			let buff: [UInt8] = [UInt8](count: index+1, repeatedValue: 0)
-			data.getBytes(UnsafeMutablePointer<Void>(buff), length: index+1)
-			setPrimitiveValue(NSData(bytes: buff, length: index+1), forKey: "data")
+			data.getBytes(UnsafeMutablePointer<Void>(buff), length: buff.count)
+			setPrimitiveValue(NSData(bytes: buff, length: buff.count), forKey: Blob.datakey)
 		}
 	}
-	public subscript(let index: UInt) -> UInt8 {
+	public subscript ( let index: UInt ) -> UInt8 {
 		get {
-			resize(Int(index))
-			willAccessValueForKey("data")
-			defer { didAccessValueForKey("data") }
+			checksum(Int(index))
+			willAccessValueForKey(Blob.datakey)
+			defer { didAccessValueForKey(Blob.datakey) }
 			return UnsafeMutablePointer<UInt8>(data.bytes).advancedBy(Int(index)).memory
 		}
 		set {
-			resize(Int(index))
-			willChangeValueForKey("data")
-			defer { didChangeValueForKey("data") }
+			checksum(Int(index))
+			willChangeValueForKey(Blob.datakey)
+			defer { didChangeValueForKey(Blob.datakey) }
 			UnsafeMutablePointer<UInt8>(data.bytes).advancedBy(Int(index)).memory = newValue
 		}
 	}

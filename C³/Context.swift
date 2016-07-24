@@ -10,7 +10,6 @@ import Accelerate
 import CoreData
 
 public class Context: NSManagedObjectContext {
-	
 	private let dispatch: (queue: dispatch_queue_t, semaphore: dispatch_semaphore_t) = (
 		queue: dispatch_queue_create(Config.dispatch.serial, DISPATCH_QUEUE_SERIAL),
 		semaphore: dispatch_semaphore_create(1)
@@ -80,12 +79,17 @@ extension Context {
 	)
 }
 extension Context {
-	public func checkpoint ( let async async: Bool = false ) {
+	public func commit ( let async async: Bool = false ) {
 		( async ? performBlock : performBlockAndWait ) {
 			self.registeredObjects.forEach {
 				switch $0 {
 				case let cell as Cell:
-					cell.sync()
+					cell.delta.event.wait()
+					cell.save()
+					break
+				case let edge as Edge:
+					edge.output.delta.event.wait()
+					edge.save()
 					break
 				default:
 					break

@@ -20,65 +20,43 @@ internal class Edge: C3Object {
 	)
 }
 extension Edge {
-	@NSManaged var mean: NSMutableData
-	@NSManaged var logvariance: NSMutableData
+	private static let meankey: String = "mean"
+	private static let logvariancekey: String = "logvariance"
+	@NSManaged var mean: NSData
+	@NSManaged var logvariance: NSData
 	@NSManaged var input: Cell
 	@NSManaged var output: Cell
 }
 extension Edge {
-	func dump() {
-		print("mean la: \(weight.mean.eval)")
-		print("mean data: \(mean.buffer)")
-		print("logvariance: \(weight.logvariance.eval)")
-	}
-	func setup() {
-		let rows: UInt = output.width
-		let cols: UInt = input.width
-		let count: Int = Int(rows * cols)
-
-		if let data: NSMutableData = primitiveValueForKey("mean")?.mutableCopy()as?NSMutableData {
-			setPrimitiveValue(data, forKey: "mean")
-			assert(mean.length==sizeof(Float)*count)
-			weight.mean = la_matrix_from_float_buffer(UnsafeMutablePointer<Float>(mean.mutableBytes), rows, cols, cols, Edge.HINT, Edge.ATTR)
-			assert(weight.mean.status==LA_SUCCESS)
-		} else {
-			assertionFailure()
-		}
-		if let data: NSMutableData = primitiveValueForKey("logvariance")?.mutableCopy()as?NSMutableData {
-			setPrimitiveValue(data, forKey: "logvariance")
-			assert(logvariance.length==sizeof(Float)*count)
-			weight.logvariance = la_matrix_from_float_buffer(UnsafeMutablePointer<Float>(logvariance.mutableBytes), rows, cols, cols, Edge.HINT, Edge.ATTR)
-			assert(weight.variance.status==LA_SUCCESS)
-		} else {
-			assertionFailure()
-		}
-		refresh()
-	}
-	func refresh() {
-		weight.deviation = unit.exp(0.5*weight.logvariance, event: weight.event)
-		weight.variance = weight.deviation * weight.deviation
-		weight.value = weight.mean// + weight.deviation * unit.normal(rows: output.width, cols: input.width, event: weight.event)
-	}
-	func oClear() {
-		output.oClear()
-	}
-	func iClear() {
-		refresh()
-		input.iClear()
-	}
-	override func willSave() {
-		super.willSave()
-		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(mean.mutableBytes), input.width, weight.mean)
-		dump()
+	override func awakeFromInsert() {
+		super.awakeFromInsert()
+		setPrimitiveValue(NSData(), forKey: Edge.meankey)
+		setPrimitiveValue(NSData(), forKey: Edge.logvariancekey)
 	}
 	override func awakeFromFetch() {
 		super.awakeFromFetch()
-		setup()
-		dump()
+		load()
 	}
-	override func awakeFromSnapshotEvents(flags: NSSnapshotEventType) {
-		super.awakeFromSnapshotEvents(flags)
-		setup()
-		dump()
+}
+extension Edge {
+	internal func shuffle() {
+		weight.deviation = unit.exp(0.5*weight.logvariance, event: weight.event)
+		weight.variance = weight.deviation * weight.deviation
+		weight.value = weight.mean + weight.deviation * unit.normal(rows: output.width, cols: input.width, event: weight.event)
+		weight.event.wait()
+	}
+	internal func load() {
+		weight.mean = la_matrix_from_float_buffer(UnsafePointer<Float>(mean.bytes), output.width, input.width, input.width, Edge.HINT, Edge.ATTR)
+		weight.logvariance = la_matrix_from_float_buffer(UnsafePointer<Float>(logvariance.bytes), output.width, input.width, input.width, Edge.HINT, Edge.ATTR)
+		shuffle()
+	}
+	internal func save() {
+		let buffer: [Float] = [Float](count: Int(output.width*input.width), repeatedValue: 0)
+		
+		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), input.width, weight.mean)
+		mean = NSData(bytes: buffer, length: sizeof(Float)*buffer.count)
+		
+		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), input.width, weight.logvariance)
+		logvariance = NSData(bytes: buffer, length: sizeof(Float)*buffer.count)
 	}
 }

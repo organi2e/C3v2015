@@ -92,26 +92,30 @@ public class Unit {
 	}
 	public func sign ( let x: la_object_t, let waits: [dispatch_group_t] = [], let event: dispatch_group_t? = nil ) -> la_object_t {
 		let cache: [Float] = [Float](count: x.count, repeatedValue: 0)
-		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), UInt(x.cols), x)
+		waits.forEach { $0.wait() }
+		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), x.cols, x)
 		return la_matrix_from_float_buffer(cache.map{Float(0.0 < $0 ? 1.0 : 0.0 > $0 ? -1.0 : 0.0)}, x.rows, x.cols, x.cols, la_hint_t(LA_NO_HINT), la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING))
 //		return bindWithOneArg(pipelines.sign, x: x, waits: waits, event: event)
 	}
 	public func exp ( let x: la_object_t, let waits: [dispatch_group_t] = [], let event: dispatch_group_t? = nil ) -> la_object_t {
 		let cache: [Float] = [Float](count: x.count, repeatedValue: 0)
-		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), UInt(x.cols), x)
+		waits.forEach { $0.wait() }
+		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), x.cols, x)
 		vvexpf(UnsafeMutablePointer<Float>(cache), cache, [Int32(x.count)])
 		return la_matrix_from_float_buffer(cache, x.rows, x.cols, x.cols, la_hint_t(LA_NO_HINT), la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING))
 		//return bindWithOneArg(pipelines.exp, x: x, waits: waits, event: event)
 	}
 	public func step ( let x: la_object_t, let waits: [dispatch_group_t] = [], let event: dispatch_group_t? = nil ) -> la_object_t {
 		let cache: [Float] = [Float](count: x.count, repeatedValue: 0)
-		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), UInt(x.cols), x)
+		waits.forEach { $0.wait() }
+		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), x.cols, x)
 		return la_matrix_from_float_buffer(cache.map{Float(0.0 < $0 ? 1.0 : 0.0)}, x.rows, x.cols, x.cols, la_hint_t(LA_NO_HINT), la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING))
 		//return bindWithOneArg(pipelines.step, x: x, waits: waits, event: event)
 	}
 	public func sigmoid ( let x: la_object_t, let waits: [dispatch_group_t] = [], let event: dispatch_group_t? = nil ) -> la_object_t {
 		let cache: [Float] = [Float](count: x.count, repeatedValue: 0)
-		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), UInt(x.cols), x)
+		waits.forEach { $0.wait() }
+		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), x.cols, x)
 		vvtanhf(UnsafeMutablePointer<Float>(cache), cache, [Int32(x.count)])
 		vDSP_vsmsa(UnsafePointer<Float>(cache), 1, [Float(0.5)], [Float(0.5)], UnsafeMutablePointer<Float>(cache), 1, vDSP_Length(x.count))
 		return la_matrix_from_float_buffer(cache, x.rows, x.cols, x.cols, la_hint_t(LA_NO_HINT), la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING))
@@ -211,18 +215,17 @@ public class Unit {
 		}
 		return la_matrix_from_float_buffer_nocopy(cache, la_count_t(rows), la_count_t(cols), la_count_t(cols), Unit.hint, {free($0)}, Unit.attr)
 	}
-	public func normal2 ( let rows rows: UInt, let cols: UInt, let event: dispatch_group_t? = nil ) -> la_object_t {
+	public func normal ( let rows rows: UInt, let cols: UInt, let event: dispatch_group_t? = nil ) -> la_object_t {
 
 		let count: Int = Int(rows * cols)
 		let cache: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>.alloc(count)
-
-		/*
-		group?.enter()
+		///*
+		event?.enter()
 		async {
 			let N: vDSP_Length = vDSP_Length(rows*cols)
 			let H: vDSP_Length = vDSP_Length(N/2)
-			let W: [UInt8] = [UInt8](count: rows*cols, repeatedValue: 0)
-			let C: [Float] = [Float](count: rows*cols, repeatedValue: 0)
+			let W: [UInt8] = [UInt8](count: count, repeatedValue: 0)
+			let C: [Float] = [Float](count: count, repeatedValue: 0)
 			let L: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(C).advancedBy(Int(0))
 			let R: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(C).advancedBy(Int(H))
 			let P: UnsafeMutablePointer<Float> = cache.advancedBy(Int(0))
@@ -243,13 +246,12 @@ public class Unit {
 
 			vDSP_vmul(P, 1, L, 1, P, 1, H)
 			vDSP_vmul(Q, 1, L, 1, Q, 1, H)
-			group?.leave()
+			event?.leave()
 		}
-		*/
-		
+		//*/
+		/*
 		self.enter()
 		event?.enter()
-		
 		async {
 			let command: MTLCommandBuffer = self.queue.commandBuffer()
 			let encoder: MTLComputeCommandEncoder = command.computeCommandEncoder()
@@ -267,12 +269,13 @@ public class Unit {
 			command.addCompletedHandler {(_)in
 				memcpy(cache, result.contents(), sizeof(Float)*count)
 				event?.leave()
-				self.leave()
 				random.setPurgeableState(.Empty)
 				result.setPurgeableState(.Empty)
+				self.leave()
 			}
 			command.commit()
 		}
+		*/
 		return la_matrix_from_float_buffer_nocopy(cache, la_count_t(rows), la_count_t(cols), la_count_t(cols), Unit.hint, { $0.destroy() }, Unit.attr)
 	}
 	private func enter ( ) {

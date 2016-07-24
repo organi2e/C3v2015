@@ -13,10 +13,12 @@ import MNIST
 class AppDelegate: NSObject, NSApplicationDelegate {
 	
 	func applicationDidFinishLaunching(aNotification: NSNotification) {
+		/*
 		let x: CellTests = CellTests()
 		x.testSearch0()
 		x.testSearch1()
 		x.testSearch2()
+		*/
 	}
 
 	func applicationWillTerminate(aNotification: NSNotification) {
@@ -25,8 +27,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
 
 }
-
-
+/*
 class CellTests {
 	static let key: Int = Int(arc4random())
 	static let value: [Float] = [arc4random(), arc4random(), arc4random(), arc4random()].map{Float($0)/Float(UInt32.max)}
@@ -143,3 +144,4 @@ class CellTests {
 		}
 	}
 }
+*/
