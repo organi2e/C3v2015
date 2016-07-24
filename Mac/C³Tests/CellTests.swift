@@ -54,7 +54,7 @@ class CellTests: XCTestCase {
 				I: Cell = context.searchCell(label: "I").last,
 				O: Cell = context.searchCell(label: "O").last
 			{
-				(0..<4096).forEach {
+				(0..<8192).forEach {
 					
 					I.oClear()
 					O.iClear()
@@ -63,7 +63,7 @@ class CellTests: XCTestCase {
 					I.active = IS[$0%4]
 					
 					print("epoch \($0): \(O.active)")
-					I.correct(eps: 1/16.0)
+					I.correct(eps: 1/4.0)
 				}
 				context.commit()
 				context.store() {(_)in
