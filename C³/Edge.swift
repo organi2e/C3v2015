@@ -39,16 +39,15 @@ extension Edge {
 	}
 }
 extension Edge {
-	internal func shuffle() {
+	internal func refresh() {
 		weight.deviation = unit.exp(0.5*weight.logvariance, event: weight.event)
 		weight.variance = weight.deviation * weight.deviation
 		weight.value = weight.mean + weight.deviation * unit.normal(rows: output.width, cols: input.width, event: weight.event)
-		weight.event.wait()
 	}
 	internal func load() {
 		weight.mean = la_matrix_from_float_buffer(UnsafePointer<Float>(mean.bytes), output.width, input.width, input.width, Edge.HINT, Edge.ATTR)
 		weight.logvariance = la_matrix_from_float_buffer(UnsafePointer<Float>(logvariance.bytes), output.width, input.width, input.width, Edge.HINT, Edge.ATTR)
-		shuffle()
+		refresh()
 	}
 	internal func save() {
 		let buffer: [Float] = [Float](count: Int(output.width*input.width), repeatedValue: 0)

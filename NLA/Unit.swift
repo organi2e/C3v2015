@@ -51,6 +51,13 @@ public class Unit {
 		group = dispatch_group_create()
 		queue = device.newCommandQueue()
 	}
+	private func apply(let event: dispatch_group_t?, let task: ()->()) {
+		event?.enter()
+		dispatch_group_async(group, Unit.dispatch.queue) {
+			task()
+			event?.leave()
+		}
+	}
 	private func bindWithOneArg ( let pipeline: MTLComputePipelineState, let x: la_object_t,let waits: [dispatch_group_t], let event: dispatch_group_t? ) -> la_object_t {
 		let rows: UInt = x.rows
 		let cols: UInt = x.cols
@@ -121,11 +128,17 @@ public class Unit {
 		//return bindWithOneArg(pipelines.exp, x: x, waits: waits, event: event)
 	}
 	public func sqrt( let x: la_object_t, let waits: [dispatch_group_t] = [], let event: dispatch_group_t? = nil ) -> la_object_t {
-		let cache: [Float] = [Float](count: x.count, repeatedValue: 0)
-		waits.forEach { $0.wait() }
-		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), x.cols, x)
-		vvexpf(UnsafeMutablePointer<Float>(cache), cache, [Int32(x.count)])
-		return la_matrix_from_float_buffer(cache, x.rows, x.cols, x.cols, la_hint_t(LA_NO_HINT), la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING))
+		
+		assert(x.count != 0)
+		
+		let count: Int = x.count
+		let cache: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>.alloc(count)
+		apply(event) {
+			waits.forEach { $0.wait() }
+			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), x.cols, x)
+			vvsqrtf(cache, cache, [Int32(x.count)])
+		}
+		return la_matrix_from_float_buffer_nocopy(cache, x.rows, x.cols, x.cols, la_hint_t(LA_NO_HINT), { $0.destroy() }, la_attribute_t(LA_DEFAULT_ATTRIBUTES))
 		//return bindWithOneArg(pipelines.exp, x: x, waits: waits, event: event)
 	}
 	public func step ( let x: la_object_t, let waits: [dispatch_group_t] = [], let event: dispatch_group_t? = nil ) -> la_object_t {
@@ -140,7 +153,7 @@ public class Unit {
 			}
 			event?.leave()
 		}
-		return la_matrix_from_float_buffer_nocopy(cache, x.rows, x.cols, x.cols, la_hint_t(LA_NO_HINT), { $0.destroy() }, la_attribute_t(LA_DEFAULT_ATTRIBUTES))
+		return la_matrix_from_float_buffer_nocopy(cache, x.rows, x.cols, x.cols, Unit.hint, { $0.destroy() }, Unit.attr)
 		//return bindWithOneArg(pipelines.step, x: x, waits: waits, event: event)
 	}
 	public func sigmoid ( let x: la_object_t, let waits: [dispatch_group_t] = [], let event: dispatch_group_t? = nil ) -> la_object_t {
@@ -152,17 +165,45 @@ public class Unit {
 		return la_matrix_from_float_buffer(cache, x.rows, x.cols, x.cols, la_hint_t(LA_NO_HINT), la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING))
 		//return bindWithOneArg(pipelines.sigmoid, x: x, waits: waits, event: event)
 	}
-	public func pdf ( let x x: la_object_t, let mu u: la_object_t, let sigma s: la_object_t, let waits: [dispatch_group_t] = [], let group: dispatch_group_t? = nil ) -> la_object_t {
+	public func pdf ( let x x: la_object_t, let mu u: la_object_t, let sigma s: la_object_t, let waits: [dispatch_group_t] = [], let event: dispatch_group_t? = nil ) -> la_object_t {
 		
-		let level: la_object_t = la_difference(x, u)
-		let sigma: la_object_t = s
+		let rows: UInt = max(x.rows, u.rows, s.rows)
+		let cols: UInt = max(x.cols, u.cols, s.cols)
 		
-		let rows: UInt = level.count < sigma.count ? sigma.rows : level.rows
-		let cols: UInt = level.count < sigma.count ? sigma.cols : level.cols
+		assert((x.rows==0&&x.cols==0)||(x.rows==rows&&x.cols==cols))
+		assert((u.rows==0&&u.cols==0)||(u.rows==rows&&u.cols==cols))
+		assert((s.rows==0&&s.cols==0)||(s.rows==rows&&s.cols==cols))
 		
-		let count: Int = level.count < sigma.count ? sigma.count : level.count
+		let X: la_object_t = x.count == 0 ? la_matrix_from_splat(x, rows, cols) : x
+		let U: la_object_t = u.count == 0 ? la_matrix_from_splat(u, rows, cols) : u
+		let S: la_object_t = s.count == 0 ? la_matrix_from_splat(s, rows, cols) : s
+		
+		let count: Int = Int(rows*cols)
 		let cache: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>.alloc(count)
 
+		apply(event) {
+			let level: [Float] = [Float](count: count, repeatedValue: 0)
+			let sigma: [Float] = [Float](count: count, repeatedValue: 0)
+			
+			waits.forEach { $0.wait() }
+			
+			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(level), cols, la_difference(X, U))
+			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(sigma), cols, S)
+			
+			vDSP_vdiv(sigma, 1, level, 1, cache, 1, vDSP_Length(count))
+			
+			vDSP_vsq(cache, 1, cache, 1, vDSP_Length(count))
+			vDSP_vsmul(cache, 1, [Float(-0.5)], cache, 1, vDSP_Length(count))
+			
+			vvexpf(cache, cache, [Int32(count)])
+			
+			vDSP_vdiv(sigma, 1, cache, 1, cache, 1, vDSP_Length(count))
+			vDSP_vsmul(cache, 1, [Float(0.5*M_2_SQRTPI*M_SQRT1_2)], cache, 1, vDSP_Length(count))
+			
+		}
+		return la_matrix_from_float_buffer_nocopy(cache, la_count_t(rows), la_count_t(cols), la_count_t(cols), Unit.hint, { $0.destroy() }, Unit.attr)
+		
+/*
 		self.enter()
 		group?.enter()
 
@@ -197,7 +238,7 @@ public class Unit {
 			}
 			command.commit()
 		}
-		return la_matrix_from_float_buffer_nocopy(cache, la_count_t(rows), la_count_t(cols), la_count_t(cols), Unit.hint, { $0.destroy() }, Unit.attr)
+*/
 	}
 	public func cdf ( let x x: la_object_t, let mu u: la_object_t, let sigma s: la_object_t, let waits: [dispatch_group_t] = [], let group: dispatch_group_t? = nil ) -> la_object_t {
 		
@@ -251,9 +292,8 @@ public class Unit {
 		let count: Int = Int(rows * cols)
 		let cache: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>.alloc(count)
 		///*
-		event?.enter()
-		async {
-			typealias Type = UInt32
+		apply(event) {
+			typealias Type = UInt16
 			
 			let N: vDSP_Length = vDSP_Length(count)
 			let H: vDSP_Length = vDSP_Length(N/2)
@@ -292,7 +332,7 @@ public class Unit {
 
 			vDSP_vmul(P, 1, L, 1, P, 1, H)
 			vDSP_vmul(Q, 1, L, 1, Q, 1, H)
-			event?.leave()
+
 		}
 		//*/
 		/*
@@ -326,18 +366,18 @@ public class Unit {
 	}
 	public func div(let y y: la_object_t, let x: la_object_t, let waits: [dispatch_group_t] = [], let event: dispatch_group_t? = nil) -> la_object_t {
 		
-		assert(x.count==0 || y.count==0 || x.count==y.count)
+		assert(( x.count != 0 && y.count != 0 && x.count == y.count ) || ( x.count == 0 && y.count != 0 ) || ( x.count != 0 && y.count == 0 ))
 		
 		let count: Int = max(x.count, y.count)
 		let rows: UInt = ( x.count < y.count ? y : x ).rows
 		let cols: UInt = ( x.count < y.count ? y : x ).cols
 		let cache: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>.alloc(Int(count))
 		
-		event?.enter()
-		async {
+		apply(event) {
+			
 			let xbuf: [Float] = [Float](count: count, repeatedValue: 0)
 			let ybuf: [Float] = [Float](count: count, repeatedValue: 0)
-
+			
 			waits.forEach { $0.wait() }
 			
 			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(xbuf), x.cols, x)
@@ -345,7 +385,6 @@ public class Unit {
 			
 			vDSP_vdiv(xbuf, 1, ybuf, 1, cache, 1, vDSP_Length(count))
 			
-			event?.leave()
 		}
 		return la_matrix_from_float_buffer_nocopy(cache, rows, cols, cols, la_hint_t(LA_NO_HINT), { $0.destroy() }, la_attribute_t(LA_DEFAULT_ATTRIBUTES))
 	}
@@ -366,9 +405,9 @@ public class Unit {
 	}
 }
 extension Unit {
-	private static let dispatch: (queue: dispatch_queue_t, group: dispatch_group_t, semaphore: dispatch_semaphore_t) = (
+	private static let dispatch: (queue: dispatch_queue_t, __group: dispatch_group_t, semaphore: dispatch_semaphore_t) = (
 		queue: dispatch_queue_create("\(Config.identifier).\(NSStringFromClass(Unit.self)).parallel", DISPATCH_QUEUE_CONCURRENT),
-		group: dispatch_group_create(),
+		__group: dispatch_group_create(),
 		semaphore: dispatch_semaphore_create(1)
 	)
 	/*
