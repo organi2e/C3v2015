@@ -185,10 +185,14 @@ func step(let x: la_object_t) -> la_object_t {
 	} else {
 		let buffer: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*x.count))
 		la_matrix_to_float_buffer(buffer, x.cols, x)
+		/*
 		(0..<x.count).forEach {
 			let ref: UnsafeMutablePointer<Float> = buffer.advancedBy($0)
 			ref.memory = 0 < ref.memory ? 1 : 0
 		}
+		*/
+		vDSP_vthrsc(buffer, 1, [Float(0.0)], [Float(0.5)], buffer, 1, vDSP_Length(x.count))
+		vDSP_vsadd(buffer, 1, [Float(0.5)], buffer, 1, vDSP_Length(x.count))
 		return la_matrix_from_float_buffer_nocopy(buffer, x.rows, x.cols, x.cols, la_hint_t(LA_NO_HINT), { free($0) }, la_attribute_t(LA_DEFAULT_ATTRIBUTES))
 		/*
 		let buffer: [Float] = [Float](count: x.count, repeatedValue: 0)
