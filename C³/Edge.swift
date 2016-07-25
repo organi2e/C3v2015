@@ -9,7 +9,9 @@
 import Accelerate
 import NLA
 
-internal class Edge: C3Object {
+internal class Edge: NSManagedObject {
+	static let ATTR: la_attribute_t = la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING)
+	static let HINT: la_hint_t = la_hint_t(LA_NO_HINT)
 	var weight = (
 		value: la_splat_from_float(0, ATTR),
 		mean: la_splat_from_float(0, ATTR),
@@ -36,18 +38,18 @@ extension Edge {
 	override func awakeFromFetch() {
 		super.awakeFromFetch()
 		load()
+		refresh()
 	}
 }
 extension Edge {
 	internal func refresh() {
-		weight.deviation = unit.exp(0.5*weight.logvariance, event: weight.event)
+		weight.deviation = exp(0.5*weight.logvariance)
 		weight.variance = weight.deviation * weight.deviation
-		weight.value = weight.mean + weight.deviation * unit.normal(rows: output.width, cols: input.width, event: weight.event)
+		weight.value = weight.mean + weight.deviation * normal(rows: output.width, cols: input.width)
 	}
 	internal func load() {
 		weight.mean = la_matrix_from_float_buffer(UnsafePointer<Float>(mean.bytes), output.width, input.width, input.width, Edge.HINT, Edge.ATTR)
 		weight.logvariance = la_matrix_from_float_buffer(UnsafePointer<Float>(logvariance.bytes), output.width, input.width, input.width, Edge.HINT, Edge.ATTR)
-		refresh()
 	}
 	internal func save() {
 		let buffer: [Float] = [Float](count: Int(output.width*input.width), repeatedValue: 0)

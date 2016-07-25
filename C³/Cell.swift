@@ -9,7 +9,9 @@
 import Accelerate
 import NLA
 
-public class Cell: C3Object {
+public class Cell: NSManagedObject {
+	static let ATTR: la_attribute_t = la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING)
+	static let HINT: la_hint_t = la_hint_t(LA_NO_HINT)
 	private enum Ready {
 		case State
 		case Delta
@@ -17,13 +19,14 @@ public class Cell: C3Object {
 	}
 	private var ready: Set<Ready> = Set<Ready>()
 	internal var delta = (
-		value: la_splat_from_float(0, ATTR),
-		event: dispatch_group_create()
+		mean: la_splat_from_float(0, ATTR),
+		variance: la_splat_from_float(0, ATTR)
+		//event: dispatch_group_create()
 	)
 	internal var error = (
-		value: la_splat_from_float(0, ATTR),
 		mean: la_splat_from_float(0, ATTR),
-		variance: la_splat_from_float(1, ATTR)
+		//variance: la_splat_from_float(1, ATTR),
+		event: dispatch_group_create()
 	)
 	internal var desired = (
 		value: la_splat_from_float(0, ATTR),
@@ -32,13 +35,12 @@ public class Cell: C3Object {
 	)
 	internal var state = (
 		value: la_splat_from_float(0, ATTR),
-		probably: la_splat_from_float(0, ATTR),
-		event: dispatch_group_create()
+		probably: la_splat_from_float(0, ATTR)//,
+		//event: dispatch_group_create()
 	)
 	internal var potential = (
 		value: la_splat_from_float(0, ATTR),
 		mean: la_splat_from_float(0, ATTR),
-		deviation: la_splat_from_float(0, ATTR),
 		variance: la_splat_from_float(1, ATTR)
 	)
 	internal var const = (
@@ -46,8 +48,8 @@ public class Cell: C3Object {
 		mean: la_splat_from_float(0, ATTR),
 		deviation: la_splat_from_float(1, ATTR),
 		variance: la_splat_from_float(1, ATTR),
-		logvariance: la_splat_from_float(0, ATTR),
-		event: dispatch_group_create()
+		logvariance: la_splat_from_float(0, ATTR)//,
+		//event: dispatch_group_create()
 	)
 }
 extension Cell {
@@ -66,8 +68,6 @@ extension Cell {
 	func load() {
 		const.mean = la_matrix_from_float_buffer(UnsafePointer<Float>(mean.bytes), width, 1, 1, Cell.HINT, Cell.ATTR)
 		const.logvariance = la_matrix_from_float_buffer(UnsafePointer<Float>(logvariance.bytes), width, 1, 1, Cell.HINT, Cell.ATTR)
-		
-		refresh()
 	}
 	func save() {
 		let buffer: [Float] = [Float](count: Int(width), repeatedValue: 0)
@@ -84,9 +84,9 @@ extension Cell {
 extension Cell {
 	func refresh() {
 		
-		const.deviation = unit.exp(0.5*const.logvariance, event: const.event)
+		const.deviation = exp(0.5*const.logvariance)
 		const.variance = const.deviation * const.deviation
-		const.value = const.mean + const.deviation * unit.normal(rows: width, cols: 1, event: const.event)
+		const.value = const.mean + const.deviation * normal(rows: width, cols: 1)
 		
 		potential.mean = const.mean
 		potential.variance = const.variance
@@ -119,8 +119,6 @@ extension Cell {
 			
 		} else {
 			do {
-				var waits: [dispatch_group_t] = [const.event]
-				
 				ready.insert(.State)
 				
 				potential.value = const.value
@@ -130,16 +128,13 @@ extension Cell {
 				input.forEach {
 					
 					$0.input.collect()
-					
-					waits.append($0.weight.event)
-					waits.append($0.input.state.event)
 				
 					potential.value = potential.value + la_matrix_product($0.weight.value, $0.input.state.value)
 					potential.mean = potential.mean + la_matrix_product($0.weight.mean, $0.input.state.value)
 					potential.variance = potential.variance + la_matrix_product($0.weight.variance, $0.input.state.value * $0.input.state.value)
 				
 				}
-				state.value = unit.step(potential.value, waits: waits, event: state.event)
+				state.value = step(potential.value)
 			}
 		}
 	}
@@ -147,40 +142,31 @@ extension Cell {
 		if ready.contains(.Delta) {
 		
 		} else {
-			var waits: [dispatch_group_t] = []
 			ready.insert(.Delta)
 			if ready.contains(.Learn) {
 				collect()
-				state.event.wait()
-				error.value = desired.value - state.value
+				error.mean = desired.value - state.value
 			} else {
-				error.value = la_splat_from_float(0, Cell.ATTR)
+				error.mean = la_splat_from_float(0, Cell.ATTR)
 				
 				output.forEach {
-					
 					$0.output.correct(eps: eps)
-					$0.output.delta.event.wait()
-					
-					waits.append($0.output.delta.event)
-					
-					error.value = error.value + la_matrix_product(la_transpose($0.weight.value), $0.output.delta.value)
-					
-					$0.willChangeValueForKey("mean")
-					$0.weight.mean = $0.weight.mean + eps * la_outer_product($0.output.delta.value, state.value)
-					$0.didChangeValueForKey("mean")
+
+					error.mean = error.mean + la_matrix_product(la_transpose($0.weight.value), $0.output.delta.mean)
+			
+					$0.weight.mean = $0.weight.mean + eps * la_outer_product($0.output.delta.mean, state.value)
+					$0.weight.logvariance = $0.weight.logvariance - eps * 0.5 * $0.weight.variance * (la_outer_product($0.output.delta.variance, state.value * state.value))
+					$0.save()
+					$0.load()
 				}
-				
-				
 			}
-			potential.deviation = unit.sqrt(potential.variance, event: delta.event)
-			delta.value =
-				unit.pdf(x: la_splat_from_float(0, Cell.ATTR), mu: potential.value, sigma: potential.deviation, waits: waits, event: delta.event) *
-				unit.sign(error.value, waits: waits, event: delta.event)
+			delta.mean = pdf(x: la_splat_from_float(0, Cell.ATTR), mu: potential.value, sigma: sqrt(potential.variance)) * sign(error.mean)
+			delta.variance = delta.mean * potential.mean / potential.variance
 			
-			willChangeValueForKey("mean")
-			const.mean = const.mean + eps * delta.value
-			didChangeValueForKey("mean")
-			
+			const.mean = const.mean + eps * delta.mean
+			const.logvariance = const.logvariance - eps * 0.5 * const.variance * delta.variance
+			save()
+			load()
 		}
 	}
 }
@@ -194,7 +180,6 @@ extension Cell {
 		}
 		get {
 			collect()
-			state.event.wait()
 			assert(state.value.width==width)
 			return state.value.eval.map{Bool($0)}
 		}
@@ -216,6 +201,7 @@ extension Cell {
 	public override func awakeFromFetch() {
 		super.awakeFromFetch()
 		load()
+		refresh()
 	}
 }
 extension Context {
@@ -229,17 +215,19 @@ extension Context {
 			cell.label = label
 			cell.attribute = [:]
 			cell.mean = NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count)
-			cell.logvariance = NSData(bytes: [Float](count: count, repeatedValue: -27.0), length: sizeof(Float)*count)
+			cell.logvariance = NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count)
 			cell.lambda = NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count)
 			cell.load()
+			cell.refresh()
 			input.forEach { ( let input: Cell ) in
 				if input.managedObjectContext === self, let edge: Edge = new() {
 					let count: Int = Int(cell.width * input.width)
 					edge.input = input
 					edge.output = cell
 					edge.mean = NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count)
-					edge.logvariance = NSData(bytes: [Float](count: count, repeatedValue: -27.0), length: sizeof(Float)*count)
+					edge.logvariance = NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count)
 					edge.load()
+					edge.refresh()
 				}
 			}
 		}

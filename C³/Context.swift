@@ -79,24 +79,6 @@ extension Context {
 	)
 }
 extension Context {
-	public func commit ( let async async: Bool = false ) {
-		( async ? performBlock : performBlockAndWait ) {
-			self.registeredObjects.forEach {
-				switch $0 {
-				case let cell as Cell:
-					cell.delta.event.wait()
-					cell.save()
-					break
-				case let edge as Edge:
-					edge.output.delta.event.wait()
-					edge.save()
-					break
-				default:
-					break
-				}
-			}
-		}
-	}
 	public func store ( let async async: Bool = false, let handle: (ErrorType -> Void)? = nil ) {
 		( async ? performBlock : performBlockAndWait ) {
 			do {
