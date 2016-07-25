@@ -67,7 +67,7 @@ extension Cell {
 		const.mean = la_matrix_from_float_buffer(UnsafePointer<Float>(mean.bytes), width, 1, 1, Cell.HINT, Cell.ATTR)
 		const.logvariance = la_matrix_from_float_buffer(UnsafePointer<Float>(logvariance.bytes), width, 1, 1, Cell.HINT, Cell.ATTR)
 		
-		shuffle()
+		refresh()
 	}
 	func save() {
 		let buffer: [Float] = [Float](count: Int(width), repeatedValue: 0)
@@ -82,18 +82,24 @@ extension Cell {
 	}
 }
 extension Cell {
-	func shuffle() {
+	func refresh() {
+		
 		const.deviation = unit.exp(0.5*const.logvariance, event: const.event)
 		const.variance = const.deviation * const.deviation
 		const.value = const.mean + const.deviation * unit.normal(rows: width, cols: 1, event: const.event)
+		
+		potential.mean = const.mean
+		potential.variance = const.variance
+		potential.value = const.value
+		
 	}
 	func iClear() {
 		if ready.contains(.State) {
 			ready.remove(.State)
 			
-			shuffle()
+			refresh()
 			input.forEach {
-				$0.shuffle()
+				$0.refresh()
 				$0.input.iClear()
 			}
 		}
@@ -133,7 +139,6 @@ extension Cell {
 					potential.variance = potential.variance + la_matrix_product($0.weight.variance, $0.input.state.value * $0.input.state.value)
 				
 				}
-				
 				state.value = unit.step(potential.value, waits: waits, event: state.event)
 			}
 		}
@@ -155,6 +160,7 @@ extension Cell {
 					
 					$0.output.correct(eps: eps)
 					$0.output.delta.event.wait()
+					
 					waits.append($0.output.delta.event)
 					
 					error.value = error.value + la_matrix_product(la_transpose($0.weight.value), $0.output.delta.value)
@@ -163,9 +169,13 @@ extension Cell {
 					$0.weight.mean = $0.weight.mean + eps * la_outer_product($0.output.delta.value, state.value)
 					$0.didChangeValueForKey("mean")
 				}
+				
+				
 			}
-			
-			delta.value = error.value//unit.sign(error.value, waits: waits, event: delta.event)
+			potential.deviation = unit.sqrt(potential.variance, event: delta.event)
+			delta.value =
+				unit.pdf(x: la_splat_from_float(0, Cell.ATTR), mu: potential.value, sigma: potential.deviation, waits: waits, event: delta.event) *
+				unit.sign(error.value, waits: waits, event: delta.event)
 			
 			willChangeValueForKey("mean")
 			const.mean = const.mean + eps * delta.value
