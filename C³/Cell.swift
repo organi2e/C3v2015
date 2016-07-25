@@ -20,13 +20,15 @@ public class Cell: NSManagedObject {
 	private var ready: Set<Ready> = Set<Ready>()
 	internal var delta = (
 		mean: la_splat_from_float(0, ATTR),
-		variance: la_splat_from_float(0, ATTR)
+		variance: la_splat_from_float(0, ATTR),
+		lock: NSLock()
 		//event: dispatch_group_create()
 	)
 	internal var error = (
 		mean: la_splat_from_float(0, ATTR),
 		//variance: la_splat_from_float(1, ATTR),
-		event: dispatch_group_create()
+		//event: dispatch_group_create()
+		lock: NSLock()
 	)
 	internal var desired = (
 		value: la_splat_from_float(0, ATTR),
@@ -35,13 +37,15 @@ public class Cell: NSManagedObject {
 	)
 	internal var state = (
 		value: la_splat_from_float(0, ATTR),
-		probably: la_splat_from_float(0, ATTR)//,
+		probably: la_splat_from_float(0, ATTR),
+		lock: NSLock()
 		//event: dispatch_group_create()
 	)
 	internal var potential = (
 		value: la_splat_from_float(0, ATTR),
 		mean: la_splat_from_float(0, ATTR),
-		variance: la_splat_from_float(1, ATTR)
+		variance: la_splat_from_float(1, ATTR),
+		lock: NSLock()
 	)
 	internal var const = (
 		value: la_splat_from_float(0, ATTR),
@@ -53,8 +57,6 @@ public class Cell: NSManagedObject {
 	)
 }
 extension Cell {
-	private static let meankey: String = "mean"
-	private static let logvariance: String = "logvariance"
 	@NSManaged public private(set) var label: String
 	@NSManaged public private(set) var width: UInt
 	@NSManaged public var attribute: [String: AnyObject]
@@ -80,9 +82,13 @@ extension Cell {
 		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), 1, const.logvariance)
 		logvariance = NSData(bytes: UnsafePointer<Void>(buffer), length: sizeof(Float)*buffer.count)
 	}
+	func sync() {
+		save()
+		load()
+	}
 }
 extension Cell {
-	func refresh() {
+	private func refresh() {
 		
 		const.deviation = exp(0.5*const.logvariance)
 		const.variance = const.deviation * const.deviation
@@ -93,71 +99,77 @@ extension Cell {
 		potential.value = const.value
 		
 	}
+	private func forget() {
+		error.mean = la_splat_from_float(0, Cell.ATTR)
+	}
 	func iClear() {
+		state.lock.lock()
 		if ready.contains(.State) {
 			ready.remove(.State)
-			
 			refresh()
-			input.forEach {
+			Cell.refer(input) {
+			//iEnum {
 				$0.refresh()
 				$0.input.iClear()
 			}
 		}
+		state.lock.unlock()
 	}
 	func oClear() {
+		delta.lock.lock()
 		if ready.contains(.Delta) {
 			ready.remove(.Delta)
 			ready.remove(.Learn)
-			
-			output.forEach {
+			forget()
+			oEnum {
 				$0.output.oClear()
 			}
 		}
+		delta.lock.unlock()
 	}
 	func collect() {
 		if ready.contains(.State) {
 			
 		} else {
-			do {
-				ready.insert(.State)
+			ready.insert(.State)
+			Cell.refer(input) {
+			//iEnum {
 				
-				potential.value = const.value
-				potential.mean = const.mean
-				potential.variance = const.variance
+				self.state.lock.lock()
+				$0.input.collect()
+				self.state.lock.unlock()
 				
-				input.forEach {
-					
-					$0.input.collect()
-				
-					potential.value = potential.value + la_matrix_product($0.weight.value, $0.input.state.value)
-					potential.mean = potential.mean + la_matrix_product($0.weight.mean, $0.input.state.value)
-					potential.variance = potential.variance + la_matrix_product($0.weight.variance, $0.input.state.value * $0.input.state.value)
-				
-				}
-				state.value = step(potential.value)
+				self.potential.lock.lock()
+				self.potential.value = self.potential.value + la_matrix_product($0.weight.value, $0.input.state.value)
+				self.potential.mean = self.potential.mean + la_matrix_product($0.weight.mean, $0.input.state.value)
+				self.potential.variance = self.potential.variance + la_matrix_product($0.weight.variance, $0.input.state.value * $0.input.state.value)
+				self.potential.lock.unlock()
 			}
+			state.value = step(potential.value)
 		}
 	}
-	func correct(let eps eps: Float) {
+	func correct(let eps eps: Float, let commit: Bool = false) {
 		if ready.contains(.Delta) {
 		
 		} else {
 			ready.insert(.Delta)
 			if ready.contains(.Learn) {
 				collect()
-				error.mean = desired.value - state.value
+				error.mean = error.mean + desired.value - state.value
 			} else {
-				error.mean = la_splat_from_float(0, Cell.ATTR)
-				
-				output.forEach {
-					$0.output.correct(eps: eps)
+				oEnum {
+					self.delta.lock.lock()
+					$0.output.correct(eps: eps, commit: commit)
+					self.delta.lock.unlock()
+					
+					self.error.lock.lock()
+					self.error.mean = self.error.mean + la_matrix_product(la_transpose($0.weight.value), $0.output.delta.mean)
+					self.error.lock.unlock()
+					
+					$0.weight.mean = $0.weight.mean + eps * la_outer_product($0.output.delta.mean, self.state.value)
+					$0.weight.logvariance = $0.weight.logvariance - eps * 0.5 * $0.weight.variance * (la_outer_product($0.output.delta.variance, self.state.value * self.state.value))
 
-					error.mean = error.mean + la_matrix_product(la_transpose($0.weight.value), $0.output.delta.mean)
-			
-					$0.weight.mean = $0.weight.mean + eps * la_outer_product($0.output.delta.mean, state.value)
-					$0.weight.logvariance = $0.weight.logvariance - eps * 0.5 * $0.weight.variance * (la_outer_product($0.output.delta.variance, state.value * state.value))
-					$0.save()
-					$0.load()
+					$0.sync()
 				}
 			}
 			delta.mean = pdf(x: la_splat_from_float(0, Cell.ATTR), mu: potential.value, sigma: sqrt(potential.variance)) * sign(error.mean)
@@ -165,8 +177,8 @@ extension Cell {
 			
 			const.mean = const.mean + eps * delta.mean
 			const.logvariance = const.logvariance - eps * 0.5 * const.variance * delta.variance
-			save()
-			load()
+			
+			sync()
 		}
 	}
 }
@@ -243,6 +255,26 @@ extension Context {
 		}
 		let cell: [Cell] = fetch ( attribute )
 		return cell
+	}
+}
+extension Cell {
+	private static let dispatch = (
+		queue: dispatch_queue_create("\(Config.identifier).\(NSStringFromClass(Cell.self)).queue", DISPATCH_QUEUE_CONCURRENT),
+		group: dispatch_group_create()
+	)
+	private static func refer(let refer:Set<Edge>, let task: Edge->()) {
+		dispatch_apply(refer.count, dispatch.queue) {
+			let edge: Edge = refer[refer.startIndex.advancedBy($0)]
+			task(edge)
+		}
+	}
+	private func iEnum(let task: Edge -> () ) {
+		Cell.refer(input, task: task)
+		//input.forEach { task($0) }
+	}
+	private func oEnum(let task: Edge -> () ) {
+		Cell.refer(output, task: task)
+		//output.forEach { task($0) }
 	}
 }
 extension Context {

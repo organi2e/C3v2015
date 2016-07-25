@@ -25,16 +25,16 @@ class CellTests: XCTestCase {
 			let context: Context = try Context(storage: url)
 			if let
 				I: Cell = context.newCell(width: 4, label: "I"),
-				H: Cell = context.newCell(width: 4, label: "H", input: [I]),
-				O: Cell = context.newCell(width: 4, label: "O", input: [H])
+				H0: Cell = context.newCell(width: 1024, label: "H0", input: [I]),
+				H1: Cell = context.newCell(width: 1024, label: "H1", input: [I]),
+				H2: Cell = context.newCell(width: 1024, label: "H2", input: [I]),
+				H3: Cell = context.newCell(width: 1024, label: "H3", input: [I]),
+				H4: Cell = context.newCell(width: 1024, label: "H4", input: [I]),
+				H5: Cell = context.newCell(width: 1024, label: "H5", input: [I]),
+				H6: Cell = context.newCell(width: 1024, label: "H6", input: [I]),
+				H7: Cell = context.newCell(width: 1024, label: "H7", input: [I]),
+				_: Cell = context.newCell(width: 4, label: "O", input: [H0, H1, H2, H3, H4, H5, H6, H7])
 			{
-				I.oClear()
-				O.iClear()
-				I.active = [true, false, false, false]
-				print("try fire: \(O.active)")
-				print("test correct")
-				O.answer = [true, false, false, false]
-				I.correct(eps: 1/4.0)
 				context.store() {(_)in
 					XCTFail()
 				}
@@ -54,7 +54,7 @@ class CellTests: XCTestCase {
 				I: Cell = context.searchCell(label: "I").last,
 				O: Cell = context.searchCell(label: "O").last
 			{
-				(0..<4096).forEach {
+				(0..<16384).forEach {
 					
 					I.oClear()
 					O.iClear()
@@ -62,7 +62,7 @@ class CellTests: XCTestCase {
 					I.active = IS[$0%4]
 					O.answer = OS[$0%4]
 					
-					I.correct(eps: 1/16.0)
+					I.correct(eps: 1/4.0)
 				}
 				context.store() {(_)in
 					XCTFail()
@@ -91,7 +91,7 @@ class CellTests: XCTestCase {
 					I.active = IS[$0%4]
 					print("validate: \(O.active)")
 					
-				//	XCTAssert(O.active==OS[$0%4])
+					XCTAssert(O.active==OS[$0%4])
 				}
 				context.store() {(_)in
 					XCTFail()
