@@ -52,11 +52,11 @@ func /(let lhs: la_object_t, let rhs: la_object_t)->la_object_t {
 		return la_splat_from_float(y/x, la_attribute_t(LA_DEFAULT_ATTRIBUTES))
 	} else if lhs.count == 0 {
 		var y: Float = 0
-		let buffer: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*rhs.count))
+		let buffer: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>.alloc(rhs.count)
 		la_matrix_to_float_buffer(buffer, rhs.cols, rhs)
 		la_vector_to_float_buffer(&y, 1, la_vector_from_splat(lhs, 1))
 		vDSP_svdiv(&y, buffer, 1, buffer, 1, vDSP_Length(rhs.count))
-		return la_matrix_from_float_buffer_nocopy(buffer, rhs.rows, rhs.cols, rhs.cols, la_hint_t(LA_NO_HINT), { free($0) }, la_attribute_t(LA_DEFAULT_ATTRIBUTES))
+		return la_matrix_from_float_buffer_nocopy(buffer, rhs.rows, rhs.cols, rhs.cols, la_hint_t(LA_NO_HINT), { $0.destroy() }, la_attribute_t(LA_DEFAULT_ATTRIBUTES))
 	} else if rhs.count == 0 {
 		var x: Float = 0
 		la_vector_to_float_buffer(&x, 1, la_vector_from_splat(lhs, 1))
@@ -64,10 +64,10 @@ func /(let lhs: la_object_t, let rhs: la_object_t)->la_object_t {
 	} else {
 		assert(lhs.rows==rhs.rows)
 		assert(lhs.cols==rhs.cols)
-		let buffer: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*rhs.count))
+		let buffer: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>.alloc(rhs.count)
 		la_matrix_to_float_buffer(buffer, rhs.cols, rhs)
 		vDSP_svdiv([Float(1.0)], buffer, 1, buffer, 1, vDSP_Length(rhs.count))
-		return la_elementwise_product(lhs, la_matrix_from_float_buffer_nocopy(buffer, rhs.rows, rhs.cols, rhs.cols, la_hint_t(LA_NO_HINT), { free($0) }, la_attribute_t(LA_DEFAULT_ATTRIBUTES)))
+		return la_elementwise_product(lhs, la_matrix_from_float_buffer_nocopy(buffer, rhs.rows, rhs.cols, rhs.cols, la_hint_t(LA_NO_HINT), { $0.destroy() }, la_attribute_t(LA_DEFAULT_ATTRIBUTES)))
 	}
 }
 
@@ -101,10 +101,10 @@ func /(let lhs: Float, let rhs: la_object_t) -> la_object_t {
 		la_vector_to_float_buffer(&value, 1, la_vector_from_splat(rhs, 1))
 		return la_splat_from_float(lhs/value, la_attribute_t(LA_DEFAULT_ATTRIBUTES))
 	} else {
-		let buffer: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*rhs.count))
+		let buffer: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>.alloc(rhs.count)
 		la_matrix_to_float_buffer(buffer, rhs.cols, rhs)
 		vDSP_svdiv([Float(1.0)], buffer, 1, buffer, 1, vDSP_Length(rhs.count))
-		return la_scale_with_float(la_matrix_from_float_buffer_nocopy(buffer, rhs.rows, rhs.cols, rhs.cols, la_hint_t(LA_NO_HINT), { free($0) }, la_attribute_t(LA_DEFAULT_ATTRIBUTES)), lhs)
+		return la_scale_with_float(la_matrix_from_float_buffer_nocopy(buffer, rhs.rows, rhs.cols, rhs.cols, la_hint_t(LA_NO_HINT), { $0.destroy() }, la_attribute_t(LA_DEFAULT_ATTRIBUTES)), lhs)
 	}
 }
 func sqrt(let x: la_object_t) -> la_object_t {
@@ -125,10 +125,10 @@ func exp(let x: la_object_t) -> la_object_t {
 		la_vector_to_float_buffer(&value, 1, la_vector_from_splat(x, 1))
 		return la_splat_from_float(expf(value), la_attribute_t(LA_DEFAULT_ATTRIBUTES))
 	} else {
-		let buffer: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*x.count))
+		let buffer: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>.alloc(x.count)
 		la_matrix_to_float_buffer(buffer, x.cols, x)
 		vvexpf(buffer, buffer, [Int32(x.count)])
-		return la_matrix_from_float_buffer_nocopy(buffer, x.rows, x.cols, x.cols, la_hint_t(LA_NO_HINT), { free($0) }, la_attribute_t(LA_DEFAULT_ATTRIBUTES))
+		return la_matrix_from_float_buffer_nocopy(buffer, x.rows, x.cols, x.cols, la_hint_t(LA_NO_HINT), { $0.destroy() }, la_attribute_t(LA_DEFAULT_ATTRIBUTES))
 	}
 }
 func pdf(let x x: la_object_t, let mu u: la_object_t, let sigma s: la_object_t ) -> la_object_t {
@@ -156,7 +156,7 @@ func pdf(let x x: la_object_t, let mu u: la_object_t, let sigma s: la_object_t )
 		let S: la_object_t = s.count == 0 ? la_matrix_from_splat(s, rows, cols) : s
 		
 		let count: Int = Int(rows*cols)
-		let cache: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*count))
+		let cache: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>.alloc(count)
 		
 		let level: [Float] = [Float](count: count, repeatedValue: 0)
 		let sigma: [Float] = [Float](count: count, repeatedValue: 0)
@@ -174,7 +174,7 @@ func pdf(let x x: la_object_t, let mu u: la_object_t, let sigma s: la_object_t )
 		vDSP_vdiv(sigma, 1, cache, 1, cache, 1, vDSP_Length(count))
 		vDSP_vsmul(cache, 1, [Float(0.5*M_2_SQRTPI*M_SQRT1_2)], cache, 1, vDSP_Length(count))
 		
-		return la_matrix_from_float_buffer_nocopy(cache, rows, cols, cols, la_hint_t(LA_NO_HINT), { free($0) }, la_attribute_t(LA_DEFAULT_ATTRIBUTES))
+		return la_matrix_from_float_buffer_nocopy(cache, rows, cols, cols, la_hint_t(LA_NO_HINT), { $0.destroy() }, la_attribute_t(LA_DEFAULT_ATTRIBUTES))
 	}
 }
 func step(let x: la_object_t) -> la_object_t {
@@ -183,7 +183,7 @@ func step(let x: la_object_t) -> la_object_t {
 		la_vector_to_float_buffer(&value, 1, la_vector_from_splat(x, 1))
 		return la_splat_from_float(0 < value ? 1 : 0, la_attribute_t(LA_DEFAULT_ATTRIBUTES))
 	} else {
-		let buffer: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*x.count))
+		let buffer: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>.alloc(x.count)
 		la_matrix_to_float_buffer(buffer, x.cols, x)
 		/*
 		(0..<x.count).forEach {
@@ -193,7 +193,7 @@ func step(let x: la_object_t) -> la_object_t {
 		*/
 		vDSP_vthrsc(buffer, 1, [Float(0.0)], [Float(0.5)], buffer, 1, vDSP_Length(x.count))
 		vDSP_vsadd(buffer, 1, [Float(0.5)], buffer, 1, vDSP_Length(x.count))
-		return la_matrix_from_float_buffer_nocopy(buffer, x.rows, x.cols, x.cols, la_hint_t(LA_NO_HINT), { free($0) }, la_attribute_t(LA_DEFAULT_ATTRIBUTES))
+		return la_matrix_from_float_buffer_nocopy(buffer, x.rows, x.cols, x.cols, la_hint_t(LA_NO_HINT), { $0.destroy() }, la_attribute_t(LA_DEFAULT_ATTRIBUTES))
 		/*
 		let buffer: [Float] = [Float](count: x.count, repeatedValue: 0)
 		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), x.cols, x)
@@ -207,13 +207,13 @@ func sign(let x: la_object_t) -> la_object_t {
 		la_vector_to_float_buffer(&value, 1, la_vector_from_splat(x, 1))
 		return la_splat_from_float(0 < value ? 1 : 0 > value ? -1 : 0, la_attribute_t(LA_DEFAULT_ATTRIBUTES))
 	} else {
-		let buffer: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*x.count))
+		let buffer: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>.alloc(x.count)
 		la_matrix_to_float_buffer(buffer, x.cols, x)
 		(0..<x.count).forEach {
 			let ref: UnsafeMutablePointer<Float> = buffer.advancedBy($0)
 			ref.memory = 0 < ref.memory ? 1 : 0 > ref.memory ? -1 : 0
 		}
-		return la_matrix_from_float_buffer_nocopy(buffer, x.rows, x.cols, x.cols, la_hint_t(LA_NO_HINT), { free($0) }, la_attribute_t(LA_DEFAULT_ATTRIBUTES))
+		return la_matrix_from_float_buffer_nocopy(buffer, x.rows, x.cols, x.cols, la_hint_t(LA_NO_HINT), { $0.destroy() }, la_attribute_t(LA_DEFAULT_ATTRIBUTES))
 		/*
 		let buffer: [Float] = [Float](count: x.count, repeatedValue: 0)
 		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), x.cols, x)
@@ -224,7 +224,7 @@ func sign(let x: la_object_t) -> la_object_t {
 func normal(let rows rows: UInt, let cols: UInt) -> la_object_t {
 	
 	let count: Int = Int(rows*cols)
-	let cache: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*count))
+	let cache: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>.alloc(count)
 	
 	let N: vDSP_Length = vDSP_Length(count)
 	let H: vDSP_Length = vDSP_Length(N/2)
@@ -253,5 +253,5 @@ func normal(let rows rows: UInt, let cols: UInt) -> la_object_t {
 	vDSP_vmul(P, 1, L, 1, P, 1, H)
 	vDSP_vmul(Q, 1, L, 1, Q, 1, H)
 
-	return la_matrix_from_float_buffer_nocopy(cache, rows, cols, cols, la_hint_t(LA_NO_HINT), { free($0) }, la_attribute_t(LA_DEFAULT_ATTRIBUTES))
+	return la_matrix_from_float_buffer_nocopy(cache, rows, cols, cols, la_hint_t(LA_NO_HINT), { $0.destroy() }, la_attribute_t(LA_DEFAULT_ATTRIBUTES))
 }
