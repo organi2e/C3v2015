@@ -24,10 +24,6 @@ public class Cell: NSManagedObject {
 		variance: la_splat_from_float(0, ATTR),
 		lock: dispatch_semaphore_create(1)
 	)
-	private var error = (
-		mean: la_splat_from_float(0, ATTR),
-		lock: dispatch_semaphore_create(1)
-	)
 	private var desired = (
 		value: la_splat_from_float(0, ATTR),
 		mean: la_splat_from_float(0, ATTR),
@@ -41,8 +37,7 @@ public class Cell: NSManagedObject {
 	private var potential = (
 		value: la_splat_from_float(0, ATTR),
 		mean: la_splat_from_float(0, ATTR),
-		variance: la_splat_from_float(1, ATTR),
-		lock: dispatch_semaphore_create(1)
+		variance: la_splat_from_float(1, ATTR)
 	)
 	private var const = (
 		value: la_splat_from_float(0, ATTR),
@@ -64,8 +59,14 @@ extension Cell {
 }
 extension Cell {
 	func load() {
+
+		setPrimitiveValue(NSData(data: mean), forKey: "mean")
+		setPrimitiveValue(NSData(data: logvariance), forKey: "logvariance")
+
 		const.mean = la_matrix_from_float_buffer(UnsafePointer<Float>(mean.bytes), width, 1, 1, Cell.HINT, Cell.ATTR)
 		const.logvariance = la_matrix_from_float_buffer(UnsafePointer<Float>(logvariance.bytes), width, 1, 1, Cell.HINT, Cell.ATTR)
+		
+		refresh()
 	}
 	func save() {
 		let buffer: [Float] = [Float](count: Int(width), repeatedValue: 0)
@@ -84,14 +85,18 @@ extension Cell {
 		
 		assert(buffer.count==const.mean.count)
 		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), 1, const.mean)
-		mean = NSData(bytes: UnsafePointer<Void>(buffer), length: sizeof(Float)*buffer.count)
+		let mean = NSData(bytes: UnsafePointer<Void>(buffer), length: sizeof(Float)*buffer.count)
 		
 		assert(buffer.count==const.logvariance.count)
 		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), 1, const.logvariance)
-		logvariance = NSData(bytes: UnsafePointer<Void>(buffer), length: sizeof(Float)*buffer.count)
+		let logvariance = NSData(bytes: UnsafePointer<Void>(buffer), length: sizeof(Float)*buffer.count)
 		
 		const.mean = la_matrix_from_float_buffer(UnsafePointer<Float>(mean.bytes), width, 1, 1, Cell.HINT, Cell.ATTR)
 		const.logvariance = la_matrix_from_float_buffer(UnsafePointer<Float>(logvariance.bytes), width, 1, 1, Cell.HINT, Cell.ATTR)
+		managedObjectContext?.performBlockAndWait {
+			self.mean = mean
+			self.logvariance = logvariance
+		}
 	}
 }
 extension Cell {
@@ -107,17 +112,15 @@ extension Cell {
 		
 	}
 	private func forget() {
-		error.mean = la_splat_from_float(0, Cell.ATTR)
+		
 	}
 	public func iClear() {
 		state.lock.lock()
 		if ready.contains(.State) {
 			ready.remove(.State)
 			refresh()
-			dispatch_apply(input.count, Cell.dispatch.queue) {
-				let edge: Edge = self.input[self.input.startIndex.advancedBy($0)]
-				edge.refresh()
-				edge.input.iClear()
+			dispatch_apply(input.count, Cell.dispatch.parallel) {
+				self.input[self.input.startIndex.advancedBy($0)].iClear()
 			}
 		}
 		state.lock.unlock()
@@ -128,60 +131,56 @@ extension Cell {
 			ready.remove(.Delta)
 			ready.remove(.Learn)
 			forget()
-			dispatch_apply(output.count, Cell.dispatch.queue) {
-				let edge: Edge = self.output[self.output.startIndex.advancedBy($0)]
-				edge.output.oClear()
+			dispatch_apply(output.count, Cell.dispatch.parallel) {
+				self.output[self.output.startIndex.advancedBy($0)].oClear()
 			}
 		}
 		delta.lock.unlock()
 	}
-	public func collect() {
+	public func collect() -> la_object_t {
 		state.lock.lock()
 		if ready.contains(.State) {
 			
 		} else {
 			ready.insert(.State)
-			dispatch_apply(input.count, Cell.dispatch.queue) {
+			let lock: dispatch_semaphore_t = dispatch_semaphore_create(1)
+			dispatch_apply(input.count, Cell.dispatch.parallel) {
 				let edge: Edge = self.input[self.input.startIndex.advancedBy($0)]
-				
-				edge.input.collect()
-				
-				self.potential.lock.lock()
-				self.potential.value = self.potential.value + la_matrix_product(edge.weight.value, edge.input.state.value)
-				self.potential.mean = self.potential.mean + la_matrix_product(edge.weight.mean, edge.input.state.value)
-				self.potential.variance = self.potential.variance + la_matrix_product(edge.weight.variance, edge.input.state.value * edge.input.state.value)
-				self.potential.lock.unlock()
+				let (value, mean, variance) = edge.collect()
+
+				lock.lock()
+				self.potential.value = self.potential.value + value
+				self.potential.mean = self.potential.mean + mean
+				self.potential.variance = self.potential.variance + variance
+				lock.unlock()
 			}
 			state.value = step(potential.value)
 		}
 		state.lock.unlock()
+		return state.value
 	}
-	public func correct(let eps eps: Float) {
+	public func correct(let eps eps: Float) -> (la_object_t, la_object_t) {
 		delta.lock.lock()
 		if ready.contains(.Delta) {
 		
 		} else {
 			ready.insert(.Delta)
+			var error: la_object_t = la_splat_from_float(0, Cell.ATTR)
 			if ready.contains(.Learn) {
-				error.mean = error.mean + desired.value - state.value
+				error = desired.value - state.value
 				
 			} else {
-				dispatch_apply(output.count, Cell.dispatch.queue) {
+				let lock: dispatch_semaphore_t = dispatch_semaphore_create(1)
+				dispatch_apply(output.count, Cell.dispatch.parallel) {
 					let edge: Edge = self.output[self.output.startIndex.advancedBy($0)]
-
-					edge.output.correct(eps: eps)
+					let delta: la_object_t = edge.correct(eps: eps)
 					
-					self.error.lock.lock()
-					self.error.mean = self.error.mean + la_matrix_product(la_transpose(edge.weight.value), edge.output.delta.mean)
-					self.error.lock.unlock()
-					
-					edge.weight.mean = edge.weight.mean + eps * la_outer_product(edge.output.delta.mean, self.state.value)
-					edge.weight.logvariance = edge.weight.logvariance - eps * 0.5 * edge.weight.variance * (la_outer_product(edge.output.delta.variance, self.state.value * self.state.value))
-					edge.sync()
-					
+					lock.lock()
+					error = error + delta
+					lock.unlock()
 				}
 			}
-			delta.mean = pdf(x: la_splat_from_float(0, Cell.ATTR), mu: potential.value, sigma: sqrt(potential.variance)) * sign(error.mean)
+			delta.mean = pdf(x: la_splat_from_float(0, Cell.ATTR), mu: potential.value, sigma: sqrt(potential.variance)) * sign(error)
 			delta.variance = delta.mean * potential.mean / potential.variance
 			
 			const.mean = const.mean + eps * delta.mean
@@ -190,6 +189,7 @@ extension Cell {
 			sync()
 		}
 		delta.lock.unlock()
+		return (delta.mean, delta.variance)
 	}
 }
 extension Cell {
@@ -223,7 +223,6 @@ extension Cell {
 	public override func awakeFromFetch() {
 		super.awakeFromFetch()
 		load()
-		refresh()
 	}
 }
 extension Context {
@@ -240,16 +239,14 @@ extension Context {
 			cell.logvariance = NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count)
 			cell.lambda = NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count)
 			cell.load()
-			cell.refresh()
 			input.forEach { ( let input: Cell ) in
-				if input.managedObjectContext === self, let edge: Edge = new() {
+				if let edge: Edge = new() {
 					let count: Int = Int(cell.width * input.width)
-					edge.input = input
-					edge.output = cell
-					edge.mean = NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count)
-					edge.logvariance = NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count)
+					edge.setValue(input, forKey: "input")
+					edge.setValue(cell, forKey: "output")
+					edge.setValue(NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count), forKey: "mean")
+					edge.setValue(NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count), forKey: "logvariance")
 					edge.load()
-					edge.refresh()
 				}
 			}
 		}
@@ -269,7 +266,8 @@ extension Context {
 }
 extension Cell {
 	private static let dispatch = (
-		queue: dispatch_queue_create("\(Config.identifier).\(NSStringFromClass(Cell.self)).queue", DISPATCH_QUEUE_CONCURRENT),
+		parallel: dispatch_queue_create("\(Config.identifier).\(NSStringFromClass(Cell.self)).queue", DISPATCH_QUEUE_CONCURRENT),
+		serial: dispatch_queue_create("\(Config.identifier).\(NSStringFromClass(Cell.self)).queue.serial", DISPATCH_QUEUE_SERIAL),
 		group: dispatch_group_create()
 	)
 }
