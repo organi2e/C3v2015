@@ -107,8 +107,7 @@ extension Cell {
 		if ready.contains(.State) {
 			ready.remove(.State)
 			refresh()
-			Cell.refer(input) {
-			//iEnum {
+			iEnum {
 				$0.refresh()
 				$0.input.iClear()
 			}
