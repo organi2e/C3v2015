@@ -7,7 +7,7 @@
 //
 
 import Foundation
-
+import Accelerate
 internal struct Config {
 	static let bundle: NSBundle = NSBundle(forClass: Context.self)
 	static let identifier: String = {
@@ -27,6 +27,8 @@ internal struct Config {
 		serial: "\(Config.identifier).dispatch.queue.serial",
 		parallel: "\(Config.identifier).dispatch.queue.parallel"
 	)
+	static let HINT: la_hint_t = la_hint_t(LA_NO_HINT)
+	static let ATTR: la_attribute_t = la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING)
 }
 extension dispatch_group_t {
 	func wait(let time: dispatch_time_t = DISPATCH_TIME_FOREVER) {

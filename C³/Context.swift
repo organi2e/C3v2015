@@ -5,7 +5,6 @@
 //  Created by Kota Nakano on 6/1/16.
 //
 //
-import NLA
 import Accelerate
 import CoreData
 
@@ -14,14 +13,9 @@ public class Context: NSManagedObjectContext {
 		queue: dispatch_queue_create(Config.dispatch.serial, DISPATCH_QUEUE_SERIAL),
 		semaphore: dispatch_semaphore_create(1)
 	)
-	public let unit: Unit
 	public let storage: NSURL?
 	public init( let storage nsurl: NSURL? = nil ) throws {
 		storage = nsurl
-		guard let device: MTLDevice = MTLCreateSystemDefaultDevice() else {
-			throw Error.Metal.NoDeviceFound
-		}
-		unit = try Unit(device: device)
 		super.init(concurrencyType: .PrivateQueueConcurrencyType)
 		guard let url: NSURL = Config.bundle.URLForResource(Config.coredata.name, withExtension: Config.coredata.ext) else {
 			throw Error.CoreData.ModelNotFound
@@ -36,24 +30,10 @@ public class Context: NSManagedObjectContext {
 	}
 	public override func encodeWithCoder(aCoder: NSCoder) {
 		super.encodeWithCoder(aCoder)
-		aCoder.encodeObject(storage, forKey: Context.storageKey)
+		aCoder.encodeObject(storage, forKey: "storage")
 	}
 	required public init?(coder aDecoder: NSCoder) {
-		do {
-			guard let device: MTLDevice = MTLCreateSystemDefaultDevice() else {
-				throw Error.Metal.NoDeviceFound
-			}
-			unit = try Unit(device: device)
-		} catch Unit.Error.LibraryNotAvailable {
-			fatalError(Error.Metal.NoLibraryFound.description)
-		} catch Unit.Error.PipelineNotAvailable(let function) {
-			fatalError("Pipeline \(function) not found")
-		} catch Error.Metal.NoDeviceFound {
-			fatalError(Error.Metal.NoDeviceFound.description)
-		} catch {
-			fatalError(Error.Metal.NoLibraryFound.description)
-		}
-		storage = aDecoder.decodeObjectForKey(Context.storageKey)as?NSURL
+		storage = aDecoder.decodeObjectForKey("storage")as?NSURL
 		super.init(coder: aDecoder)
 		guard let url: NSURL = Config.bundle.URLForResource(Config.coredata.name, withExtension: Config.coredata.ext) else {
 			fatalError(Error.CoreData.ModelNotFound.description)
@@ -72,21 +52,14 @@ public class Context: NSManagedObjectContext {
 	}
 }
 extension Context {
-	private static let storageKey: String = "storage"
-	private static let dispatch: (queue: dispatch_queue_t, semaphore: dispatch_semaphore_t) = (
-		queue: dispatch_queue_create(Config.dispatch.parallel, DISPATCH_QUEUE_CONCURRENT),
-		semaphore: dispatch_semaphore_create(1)
-	)
-}
-extension Context {
 	public func store ( let async async: Bool = false, let handle: (ErrorType -> Void)? = nil ) {
-		//( async ? performBlock : performBlockAndWait ) {
+		( async ? performBlock : performBlockAndWait ) {
 			do {
 				try self.save()
 			} catch let e {
 				handle?(e)
 			}
-		//}
+		}
 	}
 	public func purge ( let async async: Bool = false, let object: NSManagedObject ) {
 		( async ? performBlock : performBlockAndWait ) {
@@ -125,39 +98,6 @@ extension Context {
 					assertionFailure()
 				}
 			}
-		}
-		return result
-	}
-}
-public class C3Object: NSManagedObject {
-	static let HINT: la_hint_t =  la_hint_t(LA_NO_HINT)
-	static let ATTR: la_attribute_t = la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING)
-	var context: Context {
-		guard let context: Context = managedObjectContext as? Context else {
-			let message: String = "Invalid context"
-			assertionFailure(message)
-			fatalError(message)
-		}
-		return context
-	}
-	lazy var unit: Unit = {
-		return self.context.unit
-	}()
-}
-extension Context {
-	public func newBlob(let name name: String, let data: NSData = NSData()) -> Blob? {
-		var result: Blob?
-		if let blob: Blob = new() {
-			blob.name = name
-			//blob.data = data
-			result = blob
-		}
-		return result
-	}
-	public func searchBlob(let name name: String) -> [Blob] {
-		var result: [Blob] = []
-		if let blobs: [Blob] = fetch(["name": name]) {
-			result = blobs
 		}
 		return result
 	}
