@@ -29,14 +29,42 @@ extension Edge {
 extension Edge {
 	override func awakeFromFetch() {
 		super.awakeFromFetch()
-		load()
+		setup()
 	}
 }
 extension Edge {
+	internal func setup() {
+		managedObjectContext?.performBlockAndWait {
+			if let data: NSData = self.primitiveValueForKey("mean")as?NSData {
+				self.setPrimitiveValue(NSData(data: data), forKey: "mean")
+			}
+			if let data: NSData = self.primitiveValueForKey("logvariance")as?NSData {
+				self.setPrimitiveValue(NSData(data: data), forKey: "logvariance")
+			}
+		}
+		weight.mean = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(mean.bytes), output.width, input.width, input.width, Edge.HINT, nil, Edge.ATTR)
+		weight.logvariance = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logvariance.bytes), output.width, input.width, input.width, Edge.HINT, nil, Edge.ATTR)
+		refresh()
+	}
+	internal func commit() {
+		managedObjectContext?.performBlockAndWait {
+			self.willChangeValueForKey("mean")
+			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(self.mean.bytes), self.input.width, self.weight.mean)
+			self.didChangeValueForKey("mean")
+			
+			self.willChangeValueForKey("logvariance")
+			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(self.logvariance.bytes), self.input.width, self.weight.logvariance)
+			self.didChangeValueForKey("logvariance")
+		}
+		weight.mean = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(mean.bytes), output.width, input.width, input.width, Edge.HINT, nil, Edge.ATTR)
+		weight.logvariance = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logvariance.bytes), output.width, input.width, input.width, Edge.HINT, nil, Edge.ATTR)
+	}
 	private func refresh() {
+		
 		weight.deviation = exp(0.5*weight.logvariance)
 		weight.variance = weight.deviation * weight.deviation
 		weight.value = weight.mean + weight.deviation * normal(rows: output.width, cols: input.width)
+		
 	}
 	private func forget() {
 	
@@ -48,42 +76,6 @@ extension Edge {
 	internal func oClear() {
 		forget()
 		output.oClear()
-	}
-	internal func sync() {
-		
-		let buffer: [Float] = [Float](count: Int(output.width*input.width), repeatedValue: 0)
-		
-		assert(buffer.count==weight.mean.count)
-		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), input.width, weight.mean)
-		let mean = NSData(bytes: buffer, length: sizeof(Float)*buffer.count)
-		
-		assert(buffer.count==weight.logvariance.count)
-		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), input.width, weight.logvariance)
-		let logvariance = NSData(bytes: buffer, length: sizeof(Float)*buffer.count)
-		
-		weight.mean = la_matrix_from_float_buffer(UnsafePointer<Float>(mean.bytes), output.width, input.width, input.width, Edge.HINT, Edge.ATTR)
-		weight.logvariance = la_matrix_from_float_buffer(UnsafePointer<Float>(logvariance.bytes), output.width, input.width, input.width, Edge.HINT, Edge.ATTR)
-		
-		managedObjectContext?.performBlockAndWait {
-			self.mean = mean
-			self.logvariance = logvariance
-		}
-	}
-	internal func load() {
-		weight.mean = la_matrix_from_float_buffer(UnsafePointer<Float>(mean.bytes), output.width, input.width, input.width, Edge.HINT, Edge.ATTR)
-		weight.logvariance = la_matrix_from_float_buffer(UnsafePointer<Float>(logvariance.bytes), output.width, input.width, input.width, Edge.HINT, Edge.ATTR)
-		refresh()
-	}
-	internal func save() {
-		let buffer: [Float] = [Float](count: Int(output.width*input.width), repeatedValue: 0)
-		
-		assert(buffer.count==weight.mean.count)
-		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), input.width, weight.mean)
-		mean = NSData(bytes: buffer, length: sizeof(Float)*buffer.count)
-		
-		assert(buffer.count==weight.logvariance.count)
-		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), input.width, weight.logvariance)
-		logvariance = NSData(bytes: buffer, length: sizeof(Float)*buffer.count)
 	}
 	internal func collect() -> (la_object_t, la_object_t, la_object_t) {
 		let state: la_object_t = input.collect()
@@ -99,9 +91,9 @@ extension Edge {
 		let delta: la_object_t = la_matrix_product(la_transpose(weight.value), mean)
 		
 		weight.mean = weight.mean + eps * la_outer_product(mean, state)
-		weight.variance = weight.variance - eps * 0.5 * weight.variance * la_outer_product(variance, state*state)
+		weight.logvariance = weight.logvariance - eps * 0.5 * weight.variance * la_outer_product(variance, state*state)
 		
-		sync()
+		commit()
 		
 		return delta
 	}

@@ -18,11 +18,12 @@ public class Cell: NSManagedObject {
 		case Delta
 		case Learn
 	}
+	private let dlock: dispatch_semaphore_t = dispatch_semaphore_create(1)
+	private let slock: dispatch_semaphore_t = dispatch_semaphore_create(1)
 	private var ready: Set<Ready> = Set<Ready>()
 	private var delta = (
 		mean: la_splat_from_float(0, ATTR),
-		variance: la_splat_from_float(0, ATTR),
-		lock: dispatch_semaphore_create(1)
+		variance: la_splat_from_float(0, ATTR)
 	)
 	private var desired = (
 		value: la_splat_from_float(0, ATTR),
@@ -31,8 +32,7 @@ public class Cell: NSManagedObject {
 	)
 	private var state = (
 		value: la_splat_from_float(0, ATTR),
-		probably: la_splat_from_float(0, ATTR),
-		lock: dispatch_semaphore_create(1)
+		probably: la_splat_from_float(0, ATTR)
 	)
 	private var potential = (
 		value: la_splat_from_float(0, ATTR),
@@ -58,45 +58,38 @@ extension Cell {
 	@NSManaged private var output: Set<Edge>
 }
 extension Cell {
-	func load() {
-
-		setPrimitiveValue(NSData(data: mean), forKey: "mean")
-		setPrimitiveValue(NSData(data: logvariance), forKey: "logvariance")
-
-		const.mean = la_matrix_from_float_buffer(UnsafePointer<Float>(mean.bytes), width, 1, 1, Cell.HINT, Cell.ATTR)
-		const.logvariance = la_matrix_from_float_buffer(UnsafePointer<Float>(logvariance.bytes), width, 1, 1, Cell.HINT, Cell.ATTR)
-		
+	public override func awakeFromFetch() {
+		super.awakeFromFetch()
+		setup()
+	}
+}
+extension Cell {
+	func setup() {
+		managedObjectContext?.performBlockAndWait {
+			if let data: NSData = self.primitiveValueForKey("mean")as?NSData {
+				self.setPrimitiveValue(NSData(data: data), forKey: "mean")
+			}
+			if let data: NSData = self.primitiveValueForKey("logvariance")as?NSData {
+				self.setPrimitiveValue(NSData(data: data), forKey: "logvariance")
+			}
+		}
+		const.mean = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(mean.bytes), width, 1, 1, Cell.HINT, nil, Cell.ATTR)
+		const.logvariance = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logvariance.bytes), width, 1, 1, Cell.HINT, nil, Cell.ATTR)
 		refresh()
 	}
-	func save() {
-		let buffer: [Float] = [Float](count: Int(width), repeatedValue: 0)
-
-		assert(buffer.count==const.mean.count)
-		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), 1, const.mean)
-		mean = NSData(bytes: UnsafePointer<Void>(buffer), length: sizeof(Float)*buffer.count)
-		
-		assert(buffer.count==const.logvariance.count)
-		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), 1, const.logvariance)
-		logvariance = NSData(bytes: UnsafePointer<Void>(buffer), length: sizeof(Float)*buffer.count)
-	}
-	func sync() {
-		
-		let buffer: [Float] = [Float](count: Int(width), repeatedValue: 0)
-		
-		assert(buffer.count==const.mean.count)
-		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), 1, const.mean)
-		let mean = NSData(bytes: UnsafePointer<Void>(buffer), length: sizeof(Float)*buffer.count)
-		
-		assert(buffer.count==const.logvariance.count)
-		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), 1, const.logvariance)
-		let logvariance = NSData(bytes: UnsafePointer<Void>(buffer), length: sizeof(Float)*buffer.count)
-		
-		const.mean = la_matrix_from_float_buffer(UnsafePointer<Float>(mean.bytes), width, 1, 1, Cell.HINT, Cell.ATTR)
-		const.logvariance = la_matrix_from_float_buffer(UnsafePointer<Float>(logvariance.bytes), width, 1, 1, Cell.HINT, Cell.ATTR)
+	func commit() {
 		managedObjectContext?.performBlockAndWait {
-			self.mean = mean
-			self.logvariance = logvariance
+			self.willChangeValueForKey("mean")
+			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(self.mean.bytes), 1, self.const.mean)
+			self.didChangeValueForKey("mean")
+			
+			self.willChangeValueForKey("logvariance")
+			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(self.logvariance.bytes), 1, self.const.logvariance)
+			self.didChangeValueForKey("logvariance")
 		}
+		const.mean = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(mean.bytes), width, 1, 1, Cell.HINT, nil, Cell.ATTR)
+		const.logvariance = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logvariance.bytes), width, 1, 1, Cell.HINT, nil, Cell.ATTR)
+		
 	}
 }
 extension Cell {
@@ -113,9 +106,12 @@ extension Cell {
 	}
 	private func forget() {
 		
+		delta.mean = la_splat_from_float(0, Cell.ATTR)
+		delta.variance = la_splat_from_float(0, Cell.ATTR)
+		
 	}
 	public func iClear() {
-		state.lock.lock()
+		slock.lock()
 		if ready.contains(.State) {
 			ready.remove(.State)
 			refresh()
@@ -123,10 +119,10 @@ extension Cell {
 				self.input[self.input.startIndex.advancedBy($0)].iClear()
 			}
 		}
-		state.lock.unlock()
+		slock.unlock()
 	}
 	public func oClear() {
-		delta.lock.lock()
+		dlock.lock()
 		if ready.contains(.Delta) {
 			ready.remove(.Delta)
 			ready.remove(.Learn)
@@ -135,10 +131,10 @@ extension Cell {
 				self.output[self.output.startIndex.advancedBy($0)].oClear()
 			}
 		}
-		delta.lock.unlock()
+		dlock.unlock()
 	}
 	public func collect() -> la_object_t {
-		state.lock.lock()
+		slock.lock()
 		if ready.contains(.State) {
 			
 		} else {
@@ -156,14 +152,14 @@ extension Cell {
 			}
 			state.value = step(potential.value)
 		}
-		state.lock.unlock()
+		slock.unlock()
 		return state.value
 	}
 	public func correct(let eps eps: Float) -> (la_object_t, la_object_t) {
-		delta.lock.lock()
+		dlock.lock()
 		if ready.contains(.Delta) {
 		
-		} else {
+		} else if ready.contains(.State) {
 			ready.insert(.Delta)
 			var error: la_object_t = la_splat_from_float(0, Cell.ATTR)
 			if ready.contains(.Learn) {
@@ -186,9 +182,9 @@ extension Cell {
 			const.mean = const.mean + eps * delta.mean
 			const.logvariance = const.logvariance - eps * 0.5 * const.variance * delta.variance
 			
-			sync()
+			commit()
 		}
-		delta.lock.unlock()
+		dlock.unlock()
 		return (delta.mean, delta.variance)
 	}
 }
@@ -219,17 +215,9 @@ extension Cell {
 		}
 	}
 }
-extension Cell {
-	public override func awakeFromFetch() {
-		super.awakeFromFetch()
-		load()
-	}
-}
 extension Context {
 	public func newCell ( let width width: UInt, let label: String = "", let recur: Bool = false, let input: [Cell] = [] ) -> Cell? {
 		let cell: Cell? = new()
-		//let width: UInt = ((size-1)/4+1)*4
-		//size//max( size + 0x0f - ( ( size + 0x0f ) % 0x10 ), 0x10 )
 		if let cell: Cell = cell {
 			let count: Int = Int(width)
 			cell.width = width
@@ -238,7 +226,7 @@ extension Context {
 			cell.mean = NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count)
 			cell.logvariance = NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count)
 			cell.lambda = NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count)
-			cell.load()
+			cell.setup()
 			input.forEach { ( let input: Cell ) in
 				if let edge: Edge = new() {
 					let count: Int = Int(cell.width * input.width)
@@ -246,7 +234,7 @@ extension Context {
 					edge.setValue(cell, forKey: "output")
 					edge.setValue(NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count), forKey: "mean")
 					edge.setValue(NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count), forKey: "logvariance")
-					edge.load()
+					edge.setup()
 				}
 			}
 		}
@@ -267,7 +255,6 @@ extension Context {
 extension Cell {
 	private static let dispatch = (
 		parallel: dispatch_queue_create("\(Config.identifier).\(NSStringFromClass(Cell.self)).queue", DISPATCH_QUEUE_CONCURRENT),
-		serial: dispatch_queue_create("\(Config.identifier).\(NSStringFromClass(Cell.self)).queue.serial", DISPATCH_QUEUE_SERIAL),
 		group: dispatch_group_create()
 	)
 }
