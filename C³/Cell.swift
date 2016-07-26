@@ -11,8 +11,6 @@ import Accelerate
 import NLA
 
 public class Cell: NSManagedObject {
-	private static let ATTR: la_attribute_t = la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING)
-	private static let HINT: la_hint_t = la_hint_t(LA_NO_HINT)
 	private enum Ready {
 		case State
 		case Delta
@@ -22,29 +20,29 @@ public class Cell: NSManagedObject {
 	private let slock: dispatch_semaphore_t = dispatch_semaphore_create(1)
 	private var ready: Set<Ready> = Set<Ready>()
 	private var delta = (
-		mean: la_splat_from_float(0, ATTR),
-		variance: la_splat_from_float(0, ATTR)
+		mean: la_splat_from_float(0, Config.ATTR),
+		variance: la_splat_from_float(0, Config.ATTR)
 	)
 	private var desired = (
-		value: la_splat_from_float(0, ATTR),
-		mean: la_splat_from_float(0, ATTR),
-		variance: la_splat_from_float(1, ATTR)
+		value: la_splat_from_float(0, Config.ATTR),
+		mean: la_splat_from_float(0, Config.ATTR),
+		variance: la_splat_from_float(1, Config.ATTR)
 	)
 	private var state = (
-		value: la_splat_from_float(0, ATTR),
-		probably: la_splat_from_float(0, ATTR)
+		value: la_splat_from_float(0, Config.ATTR),
+		probably: la_splat_from_float(0, Config.ATTR)
 	)
 	private var potential = (
-		value: la_splat_from_float(0, ATTR),
-		mean: la_splat_from_float(0, ATTR),
-		variance: la_splat_from_float(1, ATTR)
+		value: la_splat_from_float(0, Config.ATTR),
+		mean: la_splat_from_float(0, Config.ATTR),
+		variance: la_splat_from_float(1, Config.ATTR)
 	)
 	private var const = (
-		value: la_splat_from_float(0, ATTR),
-		mean: la_splat_from_float(0, ATTR),
-		deviation: la_splat_from_float(1, ATTR),
-		variance: la_splat_from_float(1, ATTR),
-		logvariance: la_splat_from_float(0, ATTR)//,
+		value: la_splat_from_float(0, Config.ATTR),
+		mean: la_splat_from_float(0, Config.ATTR),
+		deviation: la_splat_from_float(1, Config.ATTR),
+		variance: la_splat_from_float(1, Config.ATTR),
+		logvariance: la_splat_from_float(0, Config.ATTR)
 	)
 }
 extension Cell {
@@ -73,8 +71,8 @@ extension Cell {
 				self.setPrimitiveValue(NSData(data: data), forKey: "logvariance")
 			}
 		}
-		const.mean = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(mean.bytes), width, 1, 1, Cell.HINT, nil, Cell.ATTR)
-		const.logvariance = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logvariance.bytes), width, 1, 1, Cell.HINT, nil, Cell.ATTR)
+		const.mean = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(mean.bytes), width, 1, 1, Config.HINT, nil, Config.ATTR)
+		const.logvariance = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logvariance.bytes), width, 1, 1, Config.HINT, nil, Config.ATTR)
 		refresh()
 	}
 	func commit() {
@@ -87,8 +85,8 @@ extension Cell {
 			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(self.logvariance.bytes), 1, self.const.logvariance)
 			self.didChangeValueForKey("logvariance")
 		}
-		const.mean = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(mean.bytes), width, 1, 1, Cell.HINT, nil, Cell.ATTR)
-		const.logvariance = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logvariance.bytes), width, 1, 1, Cell.HINT, nil, Cell.ATTR)
+		const.mean = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(mean.bytes), width, 1, 1, Config.HINT, nil, Config.ATTR)
+		const.logvariance = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logvariance.bytes), width, 1, 1, Config.HINT, nil, Config.ATTR)
 		
 	}
 }
@@ -106,8 +104,8 @@ extension Cell {
 	}
 	private func forget() {
 		
-		delta.mean = la_splat_from_float(0, Cell.ATTR)
-		delta.variance = la_splat_from_float(0, Cell.ATTR)
+		delta.mean = la_splat_from_float(0, Config.ATTR)
+		delta.variance = la_splat_from_float(0, Config.ATTR)
 		
 	}
 	public func iClear() {
@@ -161,7 +159,7 @@ extension Cell {
 		
 		} else if ready.contains(.State) {
 			ready.insert(.Delta)
-			var error: la_object_t = la_splat_from_float(0, Cell.ATTR)
+			var error: la_object_t = la_splat_from_float(0, Config.ATTR)
 			if ready.contains(.Learn) {
 				error = desired.value - state.value
 				
@@ -176,7 +174,7 @@ extension Cell {
 					lock.unlock()
 				}
 			}
-			delta.mean = pdf(x: la_splat_from_float(0, Cell.ATTR), mu: potential.value, sigma: sqrt(potential.variance)) * sign(error)
+			delta.mean = pdf(x: la_splat_from_float(0, Config.ATTR), mu: potential.value, sigma: sqrt(potential.variance)) * sign(error)
 			delta.variance = delta.mean * potential.mean / potential.variance
 			
 			const.mean = const.mean + eps * delta.mean
@@ -192,7 +190,7 @@ extension Cell {
 	var active: [Bool] {
 		set {
 			assert(width==UInt(newValue.count))
-			state.value = la_matrix_from_float_buffer(newValue.map{Float($0)}, width, 1, 1, Cell.HINT, Cell.ATTR)
+			state.value = la_matrix_from_float_buffer(newValue.map{Float($0)}, width, 1, 1, Config.HINT, Config.ATTR)
 			assert(state.value.status==LA_SUCCESS)
 			ready.insert(.State)
 		}
@@ -205,7 +203,7 @@ extension Cell {
 	var answer: [Bool] {
 		set {
 			assert(width==UInt(newValue.count))
-			desired.value = la_matrix_from_float_buffer(newValue.map{Float($0)}, width, 1, 1, Cell.HINT, Cell.ATTR)
+			desired.value = la_matrix_from_float_buffer(newValue.map{Float($0)}, width, 1, 1, Config.HINT, Config.ATTR)
 			assert(desired.value.status==LA_SUCCESS)
 			ready.insert(.Learn)
 		}

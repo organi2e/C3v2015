@@ -10,14 +10,12 @@ import Accelerate
 import NLA
 
 internal class Edge: NSManagedObject {
-	static let ATTR: la_attribute_t = la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING)
-	static let HINT: la_hint_t = la_hint_t(LA_NO_HINT)
 	private var weight = (
-		value: la_splat_from_float(0, ATTR),
-		mean: la_splat_from_float(0, ATTR),
-		deviation: la_splat_from_float(0, ATTR),
-		variance: la_splat_from_float(0, ATTR),
-		logvariance: la_splat_from_float(0, ATTR)
+		value: la_splat_from_float(0, Config.ATTR),
+		mean: la_splat_from_float(0, Config.ATTR),
+		deviation: la_splat_from_float(0, Config.ATTR),
+		variance: la_splat_from_float(0, Config.ATTR),
+		logvariance: la_splat_from_float(0, Config.ATTR)
 	)
 }
 extension Edge {
@@ -42,8 +40,8 @@ extension Edge {
 				self.setPrimitiveValue(NSData(data: data), forKey: "logvariance")
 			}
 		}
-		weight.mean = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(mean.bytes), output.width, input.width, input.width, Edge.HINT, nil, Edge.ATTR)
-		weight.logvariance = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logvariance.bytes), output.width, input.width, input.width, Edge.HINT, nil, Edge.ATTR)
+		weight.mean = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(mean.bytes), output.width, input.width, input.width, Config.HINT, nil, Config.ATTR)
+		weight.logvariance = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logvariance.bytes), output.width, input.width, input.width, Config.HINT, nil, Config.ATTR)
 		refresh()
 	}
 	internal func commit() {
@@ -56,8 +54,8 @@ extension Edge {
 			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(self.logvariance.bytes), self.input.width, self.weight.logvariance)
 			self.didChangeValueForKey("logvariance")
 		}
-		weight.mean = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(mean.bytes), output.width, input.width, input.width, Edge.HINT, nil, Edge.ATTR)
-		weight.logvariance = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logvariance.bytes), output.width, input.width, input.width, Edge.HINT, nil, Edge.ATTR)
+		weight.mean = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(mean.bytes), output.width, input.width, input.width, Config.HINT, nil, Config.ATTR)
+		weight.logvariance = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logvariance.bytes), output.width, input.width, input.width, Config.HINT, nil, Config.ATTR)
 	}
 	private func refresh() {
 		

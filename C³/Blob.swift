@@ -59,3 +59,21 @@ extension Blob {
 		return UnsafeMutablePointer<Void>(data.bytes)
 	}
 }
+extension Context {
+	public func newBlob(let name name: String, let data: NSData = NSData()) -> Blob? {
+		var result: Blob?
+		if let blob: Blob = new() {
+			blob.name = name
+			blob.data = data
+			result = blob
+		}
+		return result
+	}
+	public func searchBlob(let name name: String) -> [Blob] {
+		var result: [Blob] = []
+		if let blobs: [Blob] = fetch(["name": name]) {
+			result = blobs
+		}
+		return result
+	}
+}
