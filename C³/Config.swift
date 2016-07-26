@@ -33,3 +33,11 @@ extension dispatch_group_t {
 		dispatch_group_wait(self, time)
 	}
 }
+extension dispatch_semaphore_t {
+	func lock(let time: dispatch_time_t = DISPATCH_TIME_FOREVER) {
+		dispatch_semaphore_wait(self, time)
+	}
+	func unlock() {
+		dispatch_semaphore_signal(self)
+	}
+}

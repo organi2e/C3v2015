@@ -17,8 +17,7 @@ internal class Edge: NSManagedObject {
 		mean: la_splat_from_float(0, ATTR),
 		deviation: la_splat_from_float(0, ATTR),
 		variance: la_splat_from_float(0, ATTR),
-		logvariance: la_splat_from_float(0, ATTR),
-		event: dispatch_group_create()
+		logvariance: la_splat_from_float(0, ATTR)
 	)
 }
 extension Edge {
@@ -46,8 +45,20 @@ extension Edge {
 	
 	}
 	internal func sync() {
-		save()
-		load()
+		
+		let buffer: [Float] = [Float](count: Int(output.width*input.width), repeatedValue: 0)
+		
+		assert(buffer.count==weight.mean.count)
+		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), input.width, weight.mean)
+		mean = NSData(bytes: buffer, length: sizeof(Float)*buffer.count)
+		
+		assert(buffer.count==weight.logvariance.count)
+		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), input.width, weight.logvariance)
+		logvariance = NSData(bytes: buffer, length: sizeof(Float)*buffer.count)
+		
+		weight.mean = la_matrix_from_float_buffer(UnsafePointer<Float>(mean.bytes), output.width, input.width, input.width, Edge.HINT, Edge.ATTR)
+		weight.logvariance = la_matrix_from_float_buffer(UnsafePointer<Float>(logvariance.bytes), output.width, input.width, input.width, Edge.HINT, Edge.ATTR)
+		
 	}
 	internal func load() {
 		weight.mean = la_matrix_from_float_buffer(UnsafePointer<Float>(mean.bytes), output.width, input.width, input.width, Edge.HINT, Edge.ATTR)
