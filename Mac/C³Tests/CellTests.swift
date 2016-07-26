@@ -25,15 +25,15 @@ class CellTests: XCTestCase {
 			let context: Context = try Context(storage: url)
 			if let
 				I: Cell = context.newCell(width: 4, label: "I"),
-				H0: Cell = context.newCell(width: 64, label: "H0", input: [I]),
-				H1: Cell = context.newCell(width: 64, label: "H1", input: [I]),//, H0]),
-				H2: Cell = context.newCell(width: 64, label: "H2", input: [I]),//, H0, H1]),
-				H3: Cell = context.newCell(width: 64, label: "H3", input: [I]),//, H0, H1, H2]),
-				H4: Cell = context.newCell(width: 64, label: "H4", input: [I]),//, H0, H1, H2, H3]),
-				H5: Cell = context.newCell(width: 64, label: "H5", input: [I]),//, H0, H1, H2, H3, H4]),
-				H6: Cell = context.newCell(width: 64, label: "H6", input: [I]),//, H0, H1, H2, H3, H4, H5]),
-				H7: Cell = context.newCell(width: 64, label: "H7", input: [I]),//, H0, H1, H2, H3, H4, H5, H6]),
-				_: Cell = context.newCell(width: 4, label: "O", input: [H0, H1, H2, H3, H4, H5, H6, H7])
+				H0: Cell = context.newCell(width: 16, label: "H0", input: [I]),
+				H1: Cell = context.newCell(width: 16, label: "H1", input: [I, H0]),
+				H2: Cell = context.newCell(width: 16, label: "H2", input: [I, H0, H1]),
+				H3: Cell = context.newCell(width: 16, label: "H3", input: [I, H0, H1, H2]),
+				H4: Cell = context.newCell(width: 16, label: "H4", input: [I, H0, H1, H2, H3]),
+				H5: Cell = context.newCell(width: 16, label: "H5", input: [I, H0, H1, H2, H3, H4]),
+				H6: Cell = context.newCell(width: 16, label: "H6", input: [I, H0, H1, H2, H3, H4, H5]),
+				H7: Cell = context.newCell(width: 16, label: "H7", input: [I, H0, H1, H2, H3, H4, H5, H6]),
+				_: Cell = context.newCell(width: 4, label: "O", input: [I, H0, H1, H2, H3, H4, H5, H6, H7])
 			{
 				context.store() {(_)in
 					XCTFail()
