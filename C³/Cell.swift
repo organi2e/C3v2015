@@ -1,3 +1,4 @@
+
 //
 //  Cell.swift
 //  iOS
@@ -10,50 +11,45 @@ import Accelerate
 import NLA
 
 public class Cell: NSManagedObject {
-	static let ATTR: la_attribute_t = la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING)
-	static let HINT: la_hint_t = la_hint_t(LA_NO_HINT)
+	private static let ATTR: la_attribute_t = la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING)
+	private static let HINT: la_hint_t = la_hint_t(LA_NO_HINT)
 	private enum Ready {
 		case State
 		case Delta
 		case Learn
 	}
 	private var ready: Set<Ready> = Set<Ready>()
-	internal var delta = (
+	private var delta = (
 		mean: la_splat_from_float(0, ATTR),
 		variance: la_splat_from_float(0, ATTR),
-		lock: NSLock()
-		//event: dispatch_group_create()
+		lock: dispatch_semaphore_create(1)
 	)
-	internal var error = (
+	private var error = (
 		mean: la_splat_from_float(0, ATTR),
-		//variance: la_splat_from_float(1, ATTR),
-		//event: dispatch_group_create()
-		lock: NSLock()
+		lock: dispatch_semaphore_create(1)
 	)
-	internal var desired = (
+	private var desired = (
 		value: la_splat_from_float(0, ATTR),
 		mean: la_splat_from_float(0, ATTR),
 		variance: la_splat_from_float(1, ATTR)
 	)
-	internal var state = (
+	private var state = (
 		value: la_splat_from_float(0, ATTR),
 		probably: la_splat_from_float(0, ATTR),
-		lock: NSLock()
-		//event: dispatch_group_create()
+		lock: dispatch_semaphore_create(1)
 	)
-	internal var potential = (
+	private var potential = (
 		value: la_splat_from_float(0, ATTR),
 		mean: la_splat_from_float(0, ATTR),
 		variance: la_splat_from_float(1, ATTR),
-		lock: NSLock()
+		lock: dispatch_semaphore_create(1)
 	)
-	internal var const = (
+	private var const = (
 		value: la_splat_from_float(0, ATTR),
 		mean: la_splat_from_float(0, ATTR),
 		deviation: la_splat_from_float(1, ATTR),
 		variance: la_splat_from_float(1, ATTR),
 		logvariance: la_splat_from_float(0, ATTR)//,
-		//event: dispatch_group_create()
 	)
 }
 extension Cell {
@@ -83,8 +79,19 @@ extension Cell {
 		logvariance = NSData(bytes: UnsafePointer<Void>(buffer), length: sizeof(Float)*buffer.count)
 	}
 	func sync() {
-		save()
-		load()
+		
+		let buffer: [Float] = [Float](count: Int(width), repeatedValue: 0)
+		
+		assert(buffer.count==const.mean.count)
+		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), 1, const.mean)
+		mean = NSData(bytes: UnsafePointer<Void>(buffer), length: sizeof(Float)*buffer.count)
+		
+		assert(buffer.count==const.logvariance.count)
+		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), 1, const.logvariance)
+		logvariance = NSData(bytes: UnsafePointer<Void>(buffer), length: sizeof(Float)*buffer.count)
+		
+		const.mean = la_matrix_from_float_buffer(UnsafePointer<Float>(mean.bytes), width, 1, 1, Cell.HINT, Cell.ATTR)
+		const.logvariance = la_matrix_from_float_buffer(UnsafePointer<Float>(logvariance.bytes), width, 1, 1, Cell.HINT, Cell.ATTR)
 	}
 }
 extension Cell {
@@ -102,73 +109,76 @@ extension Cell {
 	private func forget() {
 		error.mean = la_splat_from_float(0, Cell.ATTR)
 	}
-	func iClear() {
+	public func iClear() {
 		state.lock.lock()
 		if ready.contains(.State) {
 			ready.remove(.State)
 			refresh()
-			iEnum {
-				$0.refresh()
-				$0.input.iClear()
+			dispatch_apply(input.count, Cell.dispatch.queue) {
+				let edge: Edge = self.input[self.input.startIndex.advancedBy($0)]
+				edge.refresh()
+				edge.input.iClear()
 			}
 		}
 		state.lock.unlock()
 	}
-	func oClear() {
+	public func oClear() {
 		delta.lock.lock()
 		if ready.contains(.Delta) {
 			ready.remove(.Delta)
 			ready.remove(.Learn)
 			forget()
-			oEnum {
-				$0.output.oClear()
+			dispatch_apply(output.count, Cell.dispatch.queue) {
+				let edge: Edge = self.output[self.output.startIndex.advancedBy($0)]
+				edge.output.oClear()
 			}
 		}
 		delta.lock.unlock()
 	}
-	func collect() {
+	public func collect() {
+		state.lock.lock()
 		if ready.contains(.State) {
 			
 		} else {
 			ready.insert(.State)
-			Cell.refer(input) {
-			//iEnum {
+			dispatch_apply(input.count, Cell.dispatch.queue) {
+				let edge: Edge = self.input[self.input.startIndex.advancedBy($0)]
 				
-				self.state.lock.lock()
-				$0.input.collect()
-				self.state.lock.unlock()
+				edge.input.collect()
 				
 				self.potential.lock.lock()
-				self.potential.value = self.potential.value + la_matrix_product($0.weight.value, $0.input.state.value)
-				self.potential.mean = self.potential.mean + la_matrix_product($0.weight.mean, $0.input.state.value)
-				self.potential.variance = self.potential.variance + la_matrix_product($0.weight.variance, $0.input.state.value * $0.input.state.value)
+				self.potential.value = self.potential.value + la_matrix_product(edge.weight.value, edge.input.state.value)
+				self.potential.mean = self.potential.mean + la_matrix_product(edge.weight.mean, edge.input.state.value)
+				self.potential.variance = self.potential.variance + la_matrix_product(edge.weight.variance, edge.input.state.value * edge.input.state.value)
 				self.potential.lock.unlock()
 			}
 			state.value = step(potential.value)
 		}
+		state.lock.unlock()
 	}
-	func correct(let eps eps: Float, let commit: Bool = false) {
+	public func correct(let eps eps: Float) {
+		delta.lock.lock()
 		if ready.contains(.Delta) {
 		
 		} else {
 			ready.insert(.Delta)
 			if ready.contains(.Learn) {
-				collect()
 				error.mean = error.mean + desired.value - state.value
+				
 			} else {
-				oEnum {
-					self.delta.lock.lock()
-					$0.output.correct(eps: eps, commit: commit)
-					self.delta.lock.unlock()
+				dispatch_apply(output.count, Cell.dispatch.queue) {
+					let edge: Edge = self.output[self.output.startIndex.advancedBy($0)]
+
+					edge.output.correct(eps: eps)
 					
 					self.error.lock.lock()
-					self.error.mean = self.error.mean + la_matrix_product(la_transpose($0.weight.value), $0.output.delta.mean)
+					self.error.mean = self.error.mean + la_matrix_product(la_transpose(edge.weight.value), edge.output.delta.mean)
 					self.error.lock.unlock()
 					
-					$0.weight.mean = $0.weight.mean + eps * la_outer_product($0.output.delta.mean, self.state.value)
-					$0.weight.logvariance = $0.weight.logvariance - eps * 0.5 * $0.weight.variance * (la_outer_product($0.output.delta.variance, self.state.value * self.state.value))
-
-					$0.sync()
+					edge.weight.mean = edge.weight.mean + eps * la_outer_product(edge.output.delta.mean, self.state.value)
+					edge.weight.logvariance = edge.weight.logvariance - eps * 0.5 * edge.weight.variance * (la_outer_product(edge.output.delta.variance, self.state.value * self.state.value))
+					edge.sync()
+					
 				}
 			}
 			delta.mean = pdf(x: la_splat_from_float(0, Cell.ATTR), mu: potential.value, sigma: sqrt(potential.variance)) * sign(error.mean)
@@ -179,6 +189,7 @@ extension Cell {
 			
 			sync()
 		}
+		delta.lock.unlock()
 	}
 }
 extension Cell {
@@ -216,9 +227,9 @@ extension Cell {
 	}
 }
 extension Context {
-	public func newCell ( let width size: UInt, let label: String = "", let recur: Bool = false, let input: [Cell] = [] ) -> Cell? {
+	public func newCell ( let width width: UInt, let label: String = "", let recur: Bool = false, let input: [Cell] = [] ) -> Cell? {
 		let cell: Cell? = new()
-		let width: UInt = ((size-1)/4+1)*4
+		//let width: UInt = ((size-1)/4+1)*4
 		//size//max( size + 0x0f - ( ( size + 0x0f ) % 0x10 ), 0x10 )
 		if let cell: Cell = cell {
 			let count: Int = Int(width)
@@ -261,20 +272,6 @@ extension Cell {
 		queue: dispatch_queue_create("\(Config.identifier).\(NSStringFromClass(Cell.self)).queue", DISPATCH_QUEUE_CONCURRENT),
 		group: dispatch_group_create()
 	)
-	private static func refer(let refer:Set<Edge>, let task: Edge->()) {
-		dispatch_apply(refer.count, dispatch.queue) {
-			let edge: Edge = refer[refer.startIndex.advancedBy($0)]
-			task(edge)
-		}
-	}
-	private func iEnum(let task: Edge -> () ) {
-		Cell.refer(input, task: task)
-		//input.forEach { task($0) }
-	}
-	private func oEnum(let task: Edge -> () ) {
-		Cell.refer(output, task: task)
-		//output.forEach { task($0) }
-	}
 }
 extension Context {
 	public func train( let pair: [([String:[Bool]], [String:[Bool]])], let count: Int, let eps: Float) {
