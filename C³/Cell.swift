@@ -8,7 +8,7 @@
 //
 
 import Accelerate
-import NLA
+import CoreData
 
 public class Cell: NSManagedObject {
 	private enum Ready {
