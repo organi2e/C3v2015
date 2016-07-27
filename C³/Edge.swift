@@ -7,7 +7,7 @@
 //
 
 import Accelerate
-import NLA
+import CoreData
 
 internal class Edge: NSManagedObject {
 	private class Probably {

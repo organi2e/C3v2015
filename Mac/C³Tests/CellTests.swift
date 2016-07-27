@@ -54,7 +54,7 @@ class CellTests: XCTestCase {
 				I: Cell = context.searchCell(label: "I").last,
 				O: Cell = context.searchCell(label: "O").last
 			{
-				(0..<16384).forEach {
+				(0..<65536).forEach {
 					
 					I.oClear()
 					O.iClear()
