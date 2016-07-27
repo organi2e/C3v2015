@@ -10,13 +10,14 @@ import Accelerate
 import NLA
 
 internal class Edge: NSManagedObject {
-	private var weight = (
-		value: la_splat_from_float(0, Config.ATTR),
-		mean: la_splat_from_float(0, Config.ATTR),
-		deviation: la_splat_from_float(0, Config.ATTR),
-		variance: la_splat_from_float(0, Config.ATTR),
-		logvariance: la_splat_from_float(0, Config.ATTR)
-	)
+	private class Probably {
+		var value: la_object_t = la_splat_from_float(0, Config.ATTR)
+		var mean: la_object_t = la_splat_from_float(0, Config.ATTR)
+		var deviation: la_object_t = la_splat_from_float(0, Config.ATTR)
+		var variance: la_object_t = la_splat_from_float(0, Config.ATTR)
+		var logvariance: la_object_t = la_splat_from_float(0, Config.ATTR)
+	}
+	private var weight: Probably = Probably()
 }
 extension Edge {
 	@NSManaged private var mean: NSData
@@ -32,30 +33,27 @@ extension Edge {
 }
 extension Edge {
 	internal func setup() {
-		managedObjectContext?.performBlockAndWait {
-			if let data: NSData = self.primitiveValueForKey("mean")as?NSData {
-				self.setPrimitiveValue(NSData(data: data), forKey: "mean")
-			}
-			if let data: NSData = self.primitiveValueForKey("logvariance")as?NSData {
-				self.setPrimitiveValue(NSData(data: data), forKey: "logvariance")
-			}
-		}
-		weight.mean = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(mean.bytes), output.width, input.width, input.width, Config.HINT, nil, Config.ATTR)
-		weight.logvariance = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logvariance.bytes), output.width, input.width, input.width, Config.HINT, nil, Config.ATTR)
+		
+		weight.mean = la_matrix_from_float_buffer(UnsafePointer<Float>(mean.bytes), output.width, input.width, input.width, Config.HINT, Config.ATTR)
+		weight.logvariance = la_matrix_from_float_buffer(UnsafePointer<Float>(logvariance.bytes), output.width, input.width, input.width, Config.HINT, Config.ATTR)
+		
 		refresh()
 	}
 	internal func commit() {
-		managedObjectContext?.performBlockAndWait {
-			self.willChangeValueForKey("mean")
-			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(self.mean.bytes), self.input.width, self.weight.mean)
-			self.didChangeValueForKey("mean")
+		
+		if let mean: NSMutableData = NSMutableData(length: sizeof(Float)*Int(output.width*input.width)), logvariance: NSMutableData = NSMutableData(length: sizeof(Float)*Int(output.width*input.width)) {
 			
-			self.willChangeValueForKey("logvariance")
-			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(self.logvariance.bytes), self.input.width, self.weight.logvariance)
-			self.didChangeValueForKey("logvariance")
+			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(mean.mutableBytes), input.width, weight.mean)
+			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(logvariance.mutableBytes), input.width, weight.logvariance)
+			
+			weight.mean = la_matrix_from_float_buffer(UnsafeMutablePointer<Float>(mean.mutableBytes), output.width, input.width, input.width, Config.HINT, Config.ATTR)
+			weight.logvariance = la_matrix_from_float_buffer(UnsafeMutablePointer<Float>(logvariance.mutableBytes), output.width, input.width, input.width, Config.HINT, Config.ATTR)
+			
+			managedObjectContext?.performBlockAndWait {
+				self.mean = mean
+				self.logvariance = logvariance
+			}
 		}
-		weight.mean = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(mean.bytes), output.width, input.width, input.width, Config.HINT, nil, Config.ATTR)
-		weight.logvariance = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logvariance.bytes), output.width, input.width, input.width, Config.HINT, nil, Config.ATTR)
 	}
 	private func refresh() {
 		
@@ -89,7 +87,7 @@ extension Edge {
 		let delta: la_object_t = la_matrix_product(la_transpose(weight.value), mean)
 		
 		weight.mean = weight.mean + eps * la_outer_product(mean, state)
-		weight.logvariance = weight.logvariance - eps * 0.5 * weight.variance * la_outer_product(variance, state*state)
+		weight.logvariance = weight.logvariance - eps * 0.5 * weight.variance * la_outer_product(variance, state * state)
 		
 		commit()
 		
