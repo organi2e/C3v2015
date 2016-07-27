@@ -13,7 +13,6 @@
 		873934B31D42FD7800888988 /* Blob.swift in Sources */ = {isa = PBXBuildFile; fileRef = 873934B21D42FD7800888988 /* Blob.swift */; };
 		873BFCAA1D4359BE00F61B4B /* BlobTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 873BFCA91D4359BE00F61B4B /* BlobTests.swift */; };
 		8740E9201D409B880026D1CA /* special.metal in Sources */ = {isa = PBXBuildFile; fileRef = 8740E91F1D409B880026D1CA /* special.metal */; };
-		8740E9211D40A3FC0026D1CA /* NLA.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 87C516AF1D3F687900E3F36B /* NLA.framework */; };
 		874F0BCE1D3FC7AF005A2B62 /* AsyncValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 874F0BCD1D3FC7AF005A2B62 /* AsyncValue.swift */; };
 		87591AEF1D3C45E500BD9248 /* Computer.h in Headers */ = {isa = PBXBuildFile; fileRef = 87591AEE1D3C45E500BD9248 /* Computer.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		87591AF61D3C45E500BD9248 /* Computer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 87591AEC1D3C45E500BD9248 /* Computer.framework */; };
@@ -219,7 +218,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8740E9211D40A3FC0026D1CA /* NLA.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

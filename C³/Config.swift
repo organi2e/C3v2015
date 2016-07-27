@@ -34,6 +34,12 @@ extension dispatch_group_t {
 	func wait(let time: dispatch_time_t = DISPATCH_TIME_FOREVER) {
 		dispatch_group_wait(self, time)
 	}
+	func enter() {
+		dispatch_group_enter(self)
+	}
+	func leave() {
+		dispatch_group_leave(self)
+	}
 }
 extension dispatch_semaphore_t {
 	func lock(let time: dispatch_time_t = DISPATCH_TIME_FOREVER) {

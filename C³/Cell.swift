@@ -16,34 +16,20 @@ public class Cell: NSManagedObject {
 		case Delta
 		case Learn
 	}
-	private let dlock: dispatch_semaphore_t = dispatch_semaphore_create(1)
-	private let slock: dispatch_semaphore_t = dispatch_semaphore_create(1)
+	private class Probably {
+		var value: la_object_t = la_splat_from_float(0, Config.ATTR)
+		var mean: la_object_t = la_splat_from_float(0, Config.ATTR)
+		var deviation: la_object_t = la_splat_from_float(0, Config.ATTR)
+		var variance: la_object_t = la_splat_from_float(0, Config.ATTR)
+		var logvariance: la_object_t = la_splat_from_float(0, Config.ATTR)
+		let lock: NSLock = NSLock()
+	}
 	private var ready: Set<Ready> = Set<Ready>()
-	private var delta = (
-		mean: la_splat_from_float(0, Config.ATTR),
-		variance: la_splat_from_float(0, Config.ATTR)
-	)
-	private var desired = (
-		value: la_splat_from_float(0, Config.ATTR),
-		mean: la_splat_from_float(0, Config.ATTR),
-		variance: la_splat_from_float(1, Config.ATTR)
-	)
-	private var state = (
-		value: la_splat_from_float(0, Config.ATTR),
-		probably: la_splat_from_float(0, Config.ATTR)
-	)
-	private var potential = (
-		value: la_splat_from_float(0, Config.ATTR),
-		mean: la_splat_from_float(0, Config.ATTR),
-		variance: la_splat_from_float(1, Config.ATTR)
-	)
-	private var const = (
-		value: la_splat_from_float(0, Config.ATTR),
-		mean: la_splat_from_float(0, Config.ATTR),
-		deviation: la_splat_from_float(1, Config.ATTR),
-		variance: la_splat_from_float(1, Config.ATTR),
-		logvariance: la_splat_from_float(0, Config.ATTR)
-	)
+	private var delta: Probably = Probably()
+	private var desired: Probably = Probably()
+	private var state: Probably = Probably()
+	private var potential: Probably = Probably()
+	private var const: Probably = Probably()
 }
 extension Cell {
 	@NSManaged public private(set) var label: String
@@ -63,30 +49,28 @@ extension Cell {
 }
 extension Cell {
 	func setup() {
-		managedObjectContext?.performBlockAndWait {
-			if let data: NSData = self.primitiveValueForKey("mean")as?NSData {
-				self.setPrimitiveValue(NSData(data: data), forKey: "mean")
-			}
-			if let data: NSData = self.primitiveValueForKey("logvariance")as?NSData {
-				self.setPrimitiveValue(NSData(data: data), forKey: "logvariance")
-			}
-		}
-		const.mean = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(mean.bytes), width, 1, 1, Config.HINT, nil, Config.ATTR)
-		const.logvariance = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logvariance.bytes), width, 1, 1, Config.HINT, nil, Config.ATTR)
+
+		const.mean = la_matrix_from_float_buffer(UnsafeMutablePointer<Float>(mean.bytes), width, 1, 1, Config.HINT, Config.ATTR)
+		const.logvariance = la_matrix_from_float_buffer(UnsafeMutablePointer<Float>(logvariance.bytes), width, 1, 1, Config.HINT, Config.ATTR)
+		
 		refresh()
 	}
 	func commit() {
-		managedObjectContext?.performBlockAndWait {
-			self.willChangeValueForKey("mean")
-			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(self.mean.bytes), 1, self.const.mean)
-			self.didChangeValueForKey("mean")
+		
+		if let mean: NSMutableData = NSMutableData(length: sizeof(Float)*Int(width)), logvariance: NSMutableData = NSMutableData(length: sizeof(Float)*Int(width)) {
 			
-			self.willChangeValueForKey("logvariance")
-			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(self.logvariance.bytes), 1, self.const.logvariance)
-			self.didChangeValueForKey("logvariance")
+			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(mean.mutableBytes), 1, const.mean)
+			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(logvariance.mutableBytes), 1, const.logvariance)
+			
+			const.mean = la_matrix_from_float_buffer(UnsafePointer<Float>(mean.mutableBytes), width, 1, 1, Config.HINT, Config.ATTR)
+			const.logvariance = la_matrix_from_float_buffer(UnsafePointer<Float>(logvariance.mutableBytes), width, 1, 1, Config.HINT, Config.ATTR)
+			
+			managedObjectContext?.performBlockAndWait {
+				self.mean = mean
+				self.logvariance = logvariance
+			}
+			
 		}
-		const.mean = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(mean.bytes), width, 1, 1, Config.HINT, nil, Config.ATTR)
-		const.logvariance = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logvariance.bytes), width, 1, 1, Config.HINT, nil, Config.ATTR)
 		
 	}
 }
@@ -104,77 +88,87 @@ extension Cell {
 	}
 	private func forget() {
 		
+		delta.value = la_splat_from_float(0, Config.ATTR)
 		delta.mean = la_splat_from_float(0, Config.ATTR)
 		delta.variance = la_splat_from_float(0, Config.ATTR)
 		
+		desired.value = la_splat_from_float(0, Config.ATTR)
+		desired.mean = la_splat_from_float(0, Config.ATTR)
+		desired.variance = la_splat_from_float(0, Config.ATTR)
+		
 	}
 	public func iClear() {
-		slock.lock()
-		if ready.contains(.State) {
-			ready.remove(.State)
-			refresh()
-			dispatch_apply(input.count, Cell.dispatch.parallel) {
-				self.input[self.input.startIndex.advancedBy($0)].iClear()
+		if state.lock.tryLock() {
+			if ready.contains(.State) {
+				ready.remove(.State)
+				refresh()
+				dispatch_apply(input.count, Cell.dispatch.queue) {
+					let edge: Edge = self.input[self.input.startIndex.advancedBy($0)]
+					edge.iClear()
+				}
 			}
+			state.lock.unlock()
 		}
-		slock.unlock()
 	}
 	public func oClear() {
-		dlock.lock()
-		if ready.contains(.Delta) {
-			ready.remove(.Delta)
-			ready.remove(.Learn)
-			forget()
-			dispatch_apply(output.count, Cell.dispatch.parallel) {
-				self.output[self.output.startIndex.advancedBy($0)].oClear()
+		if delta.lock.tryLock() {
+			if ready.contains(.Delta) {
+				ready.remove(.Delta)
+				ready.remove(.Learn)
+				forget()
+				dispatch_apply(output.count, Cell.dispatch.queue) {
+					let edge: Edge = self.output[self.output.startIndex.advancedBy($0)]
+					edge.oClear()
+				}
 			}
+			delta.lock.unlock()
 		}
-		dlock.unlock()
 	}
 	public func collect() -> la_object_t {
-		slock.lock()
+		state.lock.lock()
 		if ready.contains(.State) {
 			
 		} else {
 			ready.insert(.State)
-			let lock: dispatch_semaphore_t = dispatch_semaphore_create(1)
-			dispatch_apply(input.count, Cell.dispatch.parallel) {
+			dispatch_apply(input.count, Cell.dispatch.queue) {
+				
 				let edge: Edge = self.input[self.input.startIndex.advancedBy($0)]
 				let (value, mean, variance) = edge.collect()
-
-				lock.lock()
+				
+				self.potential.lock.lock()
 				self.potential.value = self.potential.value + value
 				self.potential.mean = self.potential.mean + mean
 				self.potential.variance = self.potential.variance + variance
-				lock.unlock()
+				self.potential.lock.unlock()
+				
 			}
 			state.value = step(potential.value)
 		}
-		slock.unlock()
+		state.lock.unlock()
 		return state.value
 	}
 	public func correct(let eps eps: Float) -> (la_object_t, la_object_t) {
-		dlock.lock()
+		delta.lock.lock()
 		if ready.contains(.Delta) {
 		
 		} else if ready.contains(.State) {
 			ready.insert(.Delta)
-			var error: la_object_t = la_splat_from_float(0, Config.ATTR)
 			if ready.contains(.Learn) {
-				error = desired.value - state.value
+				desired.mean = desired.value - state.value
 				
 			} else {
-				let lock: dispatch_semaphore_t = dispatch_semaphore_create(1)
-				dispatch_apply(output.count, Cell.dispatch.parallel) {
+				dispatch_apply(output.count, Cell.dispatch.queue) {
+					
 					let edge: Edge = self.output[self.output.startIndex.advancedBy($0)]
 					let delta: la_object_t = edge.correct(eps: eps)
 					
-					lock.lock()
-					error = error + delta
-					lock.unlock()
+					self.desired.lock.lock()
+					self.desired.mean = self.desired.mean + delta
+					self.desired.lock.unlock()
+					
 				}
 			}
-			delta.mean = pdf(x: la_splat_from_float(0, Config.ATTR), mu: potential.value, sigma: sqrt(potential.variance)) * sign(error)
+			delta.mean = pdf(x: la_splat_from_float(0, Config.ATTR), mu: potential.value, sigma: sqrt(potential.variance)) * sign(desired.mean)
 			delta.variance = delta.mean * potential.mean / potential.variance
 			
 			const.mean = const.mean + eps * delta.mean
@@ -182,7 +176,7 @@ extension Cell {
 			
 			commit()
 		}
-		dlock.unlock()
+		delta.lock.unlock()
 		return (delta.mean, delta.variance)
 	}
 }
@@ -212,6 +206,9 @@ extension Cell {
 			return desired.value.eval.map{Bool($0)}
 		}
 	}
+	static func commit(let task: ()->()) {
+		dispatch_barrier_sync(Cell.dispatch.queue, task)
+	}
 }
 extension Context {
 	public func newCell ( let width width: UInt, let label: String = "", let recur: Bool = false, let input: [Cell] = [] ) -> Cell? {
@@ -221,9 +218,9 @@ extension Context {
 			cell.width = width
 			cell.label = label
 			cell.attribute = [:]
-			cell.mean = NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count)
-			cell.logvariance = NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count)
-			cell.lambda = NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count)
+			cell.setValue(NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count), forKey: "mean")
+			cell.setValue(NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count), forKey: "logvariance")
+			cell.setValue(NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count), forKey: "lambda")
 			cell.setup()
 			input.forEach { ( let input: Cell ) in
 				if let edge: Edge = new() {
@@ -252,7 +249,7 @@ extension Context {
 }
 extension Cell {
 	private static let dispatch = (
-		parallel: dispatch_queue_create("\(Config.identifier).\(NSStringFromClass(Cell.self)).queue", DISPATCH_QUEUE_CONCURRENT),
+		queue: dispatch_queue_create("\(Config.identifier).\(NSStringFromClass(Cell.self)).queue", DISPATCH_QUEUE_CONCURRENT),
 		group: dispatch_group_create()
 	)
 }

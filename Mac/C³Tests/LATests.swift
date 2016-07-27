@@ -155,8 +155,24 @@ class LATests: XCTestCase {
 		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer1), cols, step(N))
 		
 		(0..<count).forEach {
-			print(buffer0[$0], buffer1[$0])
 			XCTAssert(( 0 < buffer0[$0] ? 1 : 0 ) == buffer1[$0])
+		}
+	}
+	func testSign() {
+		let rows: UInt = 4
+		let cols: UInt = 4
+		
+		let count: Int = Int(rows*cols)
+		
+		let N: la_object_t = 4 + 4 * normal(rows: rows, cols: cols)
+		let buffer0: [Float] = [Float](count: count, repeatedValue: 0)
+		let buffer1: [Float] = [Float](count: count, repeatedValue: 0)
+		
+		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer0), cols, N)
+		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer1), cols, sign(N))
+		
+		(0..<count).forEach {
+			XCTAssert(( 0 < buffer0[$0] ? 1 : 0 > buffer0[$0] ? -1 : 0 ) == buffer1[$0])
 		}
 	}
 }
