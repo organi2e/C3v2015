@@ -206,9 +206,6 @@ extension Cell {
 			return desired.value.eval.map{Bool($0)}
 		}
 	}
-	static func commit(let task: ()->()) {
-		dispatch_barrier_sync(Cell.dispatch.queue, task)
-	}
 }
 extension Context {
 	public func newCell ( let width width: UInt, let label: String = "", let recur: Bool = false, let input: [Cell] = [] ) -> Cell? {
