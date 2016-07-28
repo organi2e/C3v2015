@@ -63,7 +63,7 @@ class CellTests: XCTestCase {
 					O.answer = OS[$0%4]
 					
 					O.collect()
-					I.correct(eps: 1/4.0)
+					I.correct(eps: 1/2.0)
 				}
 				context.store() {(_)in
 					XCTFail()
