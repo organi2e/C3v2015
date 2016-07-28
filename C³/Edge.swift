@@ -10,14 +10,17 @@ import Accelerate
 import NLA
 
 internal class Edge: NSManagedObject {
-	private class Probably {
-		var value: la_object_t = la_splat_from_float(0, Config.ATTR)
-		var mean: la_object_t = la_splat_from_float(0, Config.ATTR)
-		var deviation: la_object_t = la_splat_from_float(0, Config.ATTR)
-		var variance: la_object_t = la_splat_from_float(0, Config.ATTR)
-		var logvariance: la_object_t = la_splat_from_float(0, Config.ATTR)
-	}
-	private var weight: Probably = Probably()
+	private var weight = (
+		value: la_splat_from_float(0, Config.ATTR),
+		mean: la_splat_from_float(0, Config.ATTR),
+		deviation: la_splat_from_float(0, Config.ATTR),
+		variance: la_splat_from_float(0, Config.ATTR),
+		logvariance: la_splat_from_float(0, Config.ATTR)
+	)
+	private var normal = (
+		future: la_splat_from_float(0, Config.ATTR),
+		ready: dispatch_group_create()
+	)
 }
 extension Edge {
 	@NSManaged private var mean: NSData
