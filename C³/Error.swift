@@ -11,6 +11,7 @@ enum Error: ErrorType {
 	enum System: String, ErrorType, CustomStringConvertible {
 		case FailObjectDecode = "Object is not correctly decoded"
 		case InvalidOperation = "Invalid operation"
+		case InvalidContext = "Invalid context"
 		var description: String {
 			return rawValue
 		}
