@@ -17,10 +17,6 @@ internal class Edge: NSManagedObject {
 		variance: la_splat_from_float(0, Config.ATTR),
 		logvariance: la_splat_from_float(0, Config.ATTR)
 	)
-	private var normal = (
-		future: la_splat_from_float(0, Config.ATTR),
-		ready: dispatch_group_create()
-	)
 }
 extension Edge {
 	@NSManaged private var mean: NSData
@@ -52,10 +48,10 @@ extension Edge {
 			weight.mean = la_matrix_from_float_buffer(UnsafeMutablePointer<Float>(mean.mutableBytes), output.width, input.width, input.width, Config.HINT, Config.ATTR)
 			weight.logvariance = la_matrix_from_float_buffer(UnsafeMutablePointer<Float>(logvariance.mutableBytes), output.width, input.width, input.width, Config.HINT, Config.ATTR)
 			
-			//managedObjectContext?.performBlockAndWait {
+			managedObjectContext?.performBlockAndWait {
 				self.mean = mean
 				self.logvariance = logvariance
-			//}
+			}
 		}
 	}
 	private func refresh() {
