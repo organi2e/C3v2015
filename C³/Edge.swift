@@ -57,7 +57,7 @@ extension Edge {
 		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(mean.bytes), input.width, weight.mean)
 		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(logvariance.bytes), input.width, weight.logvariance)
 
-		managedObjectContext?.performBlock {
+		managedObjectContext?.performBlockAndWait {
 			self.didChangeValueForKey("mean")
 			self.didChangeValueForKey("logvariance")
 		}
