@@ -10,7 +10,9 @@ import XCTest
 @testable import C3
 
 class LATests: XCTestCase {
-	
+	static let count: Int = 2 << 18
+	static let original: [Float] = (0..<LATests.count).map { (_)in Float(arc4random_uniform(256)) - 128.0 }
+	static let ideal: [Float] = LATests.original.map{Float( 0 < $0 ? 1 : 0 > $0 ? -1 : 0 )}
 	func testDiv() {
 		let x: Float = Float(arc4random())
 		let y: Float = Float(arc4random())
@@ -175,64 +177,85 @@ class LATests: XCTestCase {
 			XCTAssert(( 0 < buffer0[$0] ? 1 : 0 > buffer0[$0] ? -1 : 0 ) == buffer1[$0])
 		}
 	}
-}
+	func testSignRaw() {
+		let res: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>.alloc(LATests.count)
+		let data: NSData = NSData(bytes: LATests.original, length: sizeof(Float)*LATests.original.count)
+		data.getBytes(res, length: sizeof(Float)*LATests.count)
+		measureBlock {
+			(0..<LATests.count).forEach {
+				let mem: Float = res.advancedBy($0).memory
+				res.advancedBy($0).memory = 0 < mem ? 1 : 0 > mem ? -1 : 0
+			}
+		}
+		(0..<LATests.count).forEach {
+			let a: Float = res.advancedBy($0).memory
+			let b: Float = LATests.ideal[$0]
+			XCTAssert(a==b)
+		}
+		res.dealloc(LATests.count)
+	}
+	func testSignThrcs() {
+		let ref: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>.alloc(LATests.count)
+		let data: NSData = NSData(bytes: LATests.original, length: sizeof(Float)*LATests.original.count)
+		data.getBytes(ref, length: sizeof(Float)*LATests.count)
+		measureBlock {
+			let cache: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>.alloc(LATests.count)
+			vDSP_vthrsc(ref, 1, [Float(0.0)], [Float(0.5)], cache, 1, vDSP_Length(LATests.count))
+			vDSP_vneg(ref, 1, ref, 1, vDSP_Length(LATests.count))
+			vDSP_vthrsc(ref, 1, [Float(0.0)], [-Float(0.5)], ref, 1, vDSP_Length(LATests.count))
+			vDSP_vadd(cache, 1, ref, 1, ref, 1, vDSP_Length(LATests.count))
+			cache.dealloc(LATests.count)
+		}
+		(0..<LATests.count).forEach {
+			let a: Float = ref.advancedBy($0).memory
+			let b: Float = LATests.ideal[$0]
+			XCTAssert(a==b)
+		}
+		ref.dealloc(LATests.count)
+	}
+	func testSignLim() {
+		let ref: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>.alloc(LATests.count)
+		let data: NSData = NSData(bytes: LATests.original, length: sizeof(Float)*LATests.original.count)
+		data.getBytes(ref, length: sizeof(Float)*LATests.count)
+		measureBlock {
+			let cache: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>.alloc(LATests.count)
+			vDSP_vlim(ref, 1, [Float(0.0)], [Float(0.5)], cache, 1, vDSP_Length(LATests.count))
+			vDSP_vneg(ref, 1, ref, 1, vDSP_Length(LATests.count))
+			vDSP_vlim(ref, 1, [Float(0.0)], [-Float(0.5)], ref, 1, vDSP_Length(LATests.count))
+			vDSP_vadd(cache, 1, ref, 1, ref, 1, vDSP_Length(LATests.count))
+			cache.dealloc(LATests.count)
+		}
+		(0..<LATests.count).forEach {
+			let a: Float = ref.advancedBy($0).memory
+			let b: Float = LATests.ideal[$0]
+			XCTAssert(a==b)
+		}
+		ref.dealloc(LATests.count)
+	}
 /*
-class ContextTests: XCTestCase {
-    override func setUp() {
-        super.setUp()
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-		do {
-			let url: NSURL = try NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true).URLByAppendingPathComponent("test.sqlite")
-			let context: Context = try Context(storage: url)
-			print(context.searchCell(label: "O").isEmpty)
-			if context.searchCell(label: "O").isEmpty {
-				if let
-					I: Cell = context.newCell(width: 4, label: "I"),
-					_: Cell = context.newCell(width: 4, label: "O", input: [I]) {
-					print("created", context.insertedObjects.count, context.updatedObjects.count, context.deletedObjects.count)
-				}
-			}
-			context.store(async: false)
-		} catch let e {
-			XCTFail(String(e))
+	func testSignSpd() {
+		let len: Int = 1024
+		let org: [Float] = (0..<len).map{(_)in Float(arc4random_uniform(256))-128.0}
+		let idl: [Float] = org.map{Float( 0 < $0 ? 1 : 0 > $0 ? -1 : 0 )}
+		
+		var ref: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>.alloc(len)
+		var fer: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>.alloc(len)
+		var res: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>.alloc(len)
+		
+		NSData(bytes: org, length: sizeof(Float)*org.count).getBytes(ref, length: sizeof(Float)*len)
+		
+		NSData(bytes: org, length: sizeof(Float)*org.count).getBytes(ref, length: sizeof(Float)*len)
+		measureBlock {
+			let result: [Float] = [Float](count: len, repeatedValue: 0)
+			vDSP_vlim(ref, 1, [Float(0.0)], [Float(0.5)], fer, 1, vDSP_Length(len))
+			vDSP_vneg(ref, 1, ref, 1, vDSP_Length(len))
 		}
-    }
-	
-    func testExample() {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-		do {
-			let url: NSURL = try NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true).URLByAppendingPathComponent("test.sqlite")
-			let context: Context = try Context(storage: url)
-			if let _: Cell = context.newCell(width: 4) {
-				print("created")
-			}
-			print("study")
-			context.train([
-				(
-					["I":[true , false, false, false ]],
-					["O":[false, false, false, true ]]
-				),(
-					["I":[false, true, false , false]],
-					["O":[false, false, true , false]]
-				),(
-					["I":[false, false , true, false]],
-					["O":[false, true , false, false]]
-				),(
-					["I":[false ,false, false, true ]],
-					["O":[true , false, false, false]]
-				)],
-				count: 256,
-				eps: 1/4.0
-			)
-			context.checkpoint(async: false)
-			print(context.updatedObjects.count)
-			context.store(async: false) {
-				print($0)
-			}
-		} catch let e {
-			XCTFail(String(e))
-		}
-    }
-}
+		
+		
+		fer.dealloc(len)
+		ref.dealloc(len)
+		res.dealloc(len)
+		
+	}
 */
+}

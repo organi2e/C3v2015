@@ -7,7 +7,7 @@
 //
 
 import Accelerate
-import NLA
+import CoreData
 
 internal class Edge: NSManagedObject {
 	private var weight = (
@@ -52,10 +52,10 @@ extension Edge {
 			weight.mean = la_matrix_from_float_buffer(UnsafeMutablePointer<Float>(mean.mutableBytes), output.width, input.width, input.width, Config.HINT, Config.ATTR)
 			weight.logvariance = la_matrix_from_float_buffer(UnsafeMutablePointer<Float>(logvariance.mutableBytes), output.width, input.width, input.width, Config.HINT, Config.ATTR)
 			
-			managedObjectContext?.performBlockAndWait {
+			//managedObjectContext?.performBlockAndWait {
 				self.mean = mean
 				self.logvariance = logvariance
-			}
+			//}
 		}
 	}
 	private func refresh() {

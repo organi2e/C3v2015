@@ -8,7 +8,7 @@
 //
 
 import Accelerate
-import NLA
+import CoreData
 
 public class Cell: NSManagedObject {
 	private enum Ready {
@@ -65,10 +65,10 @@ extension Cell {
 			const.mean = la_matrix_from_float_buffer(UnsafePointer<Float>(mean.mutableBytes), width, 1, 1, Config.HINT, Config.ATTR)
 			const.logvariance = la_matrix_from_float_buffer(UnsafePointer<Float>(logvariance.mutableBytes), width, 1, 1, Config.HINT, Config.ATTR)
 			
-			managedObjectContext?.performBlockAndWait {
+			//managedObjectContext?.performBlockAndWait {
 				self.mean = mean
 				self.logvariance = logvariance
-			}
+			//}
 			
 		}
 		
