@@ -33,6 +33,10 @@ public class Cell: NSManagedObject {
 		state: NSLock(),
 		delta: NSLock()
 	)
+	private let group = (
+		state: dispatch_group_create(),
+		delta: dispatch_group_create()
+	)
 }
 extension Cell {
 	@NSManaged public private(set) var label: String
@@ -64,6 +68,7 @@ extension Cell {
 		
 		refresh()
 		forget()
+		
 	}
 	internal func commit() {
 		
@@ -171,25 +176,16 @@ extension Cell {
 					return state.value
 				}
 				let refer: Set<Edge> = input
-				
-				var value: [la_object_t] = [la_object_t](count: refer.count, repeatedValue: la_splat_from_float(0, Config.ATTR))
-				var mean: [la_object_t] = [la_object_t](count: refer.count, repeatedValue: la_splat_from_float(0, Config.ATTR))
-				var variance: [la_object_t] = [la_object_t](count: refer.count, repeatedValue: la_splat_from_float(0, Config.ATTR))
-				
 				dispatch_apply(refer.count, context.dispatch.parallel) {
-					
 					let edge: Edge = refer[refer.startIndex.advancedBy($0)]
-					let potential = edge.collect(visit.union([self]))
-					
-					value[$0] = potential.0
-					mean[$0] = potential.1
-					variance[$0] = potential.2
-					
+					let(value,mean,variance) = edge.collect(visit.union([self]))
+					dispatch_group_async(self.group.state, context.dispatch.serial) {
+						self.potential.value = self.potential.value + value
+						self.potential.mean = self.potential.mean + mean
+						self.potential.variance = self.potential.variance + variance
+					}
 				}
-				
-				potential.value = value.reduce(potential.value){$0+$1}
-				potential.mean = mean.reduce(potential.mean){$0+$1}
-				potential.variance = variance.reduce(potential.variance){$0+$1}
+				dispatch_group_wait(group.state, DISPATCH_TIME_FOREVER)
 				
 				state.value = step(potential.value)
 				ready.insert(.State)
@@ -216,15 +212,14 @@ extension Cell {
 						return(delta.mean, delta.variance)
 					}
 					let refer: Set<Edge> = output
-					var value: [la_object_t] = [la_object_t](count: refer.count, repeatedValue: la_splat_from_float(0, Config.ATTR))
 					dispatch_apply(refer.count, context.dispatch.parallel) {
-						
 						let edge: Edge = refer[refer.startIndex.advancedBy($0)]
 						let delta = edge.correct(eps: eps, visit: visit.union([self]))
-
-						value[$0] = delta
+						dispatch_group_async(self.group.delta, context.dispatch.serial) {
+							self.delta.value = self.delta.value + delta
+						}
 					}
-					delta.value = value.reduce(delta.value){$0 + $1}
+					dispatch_group_wait(group.delta, DISPATCH_TIME_FOREVER)
 				}
 				
 				delta.mean = pdf(x: la_splat_from_float(0, Config.ATTR), mu: potential.value, sigma: sqrt(potential.variance)) * sign(delta.value)

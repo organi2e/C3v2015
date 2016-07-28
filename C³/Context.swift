@@ -53,13 +53,13 @@ public class Context: NSManagedObjectContext {
 }
 extension Context {
 	public func store ( let async async: Bool = false, let handle: (ErrorType -> Void)? = nil ) {
-		( async ? performBlock : performBlockAndWait ) {
+	//	( async ? performBlock : performBlockAndWait ) {
 			do {
 				try self.save()
 			} catch let e {
 				handle?(e)
 			}
-		}
+	//	}
 	}
 	public func purge ( let async async: Bool = false, let object: NSManagedObject ) {
 		( async ? performBlock : performBlockAndWait ) {
@@ -104,11 +104,11 @@ extension Context {
 }
 extension Context {
 	public func join() {
+		/*
 		dispatch_barrier_sync(dispatch.parallel) {
 			self.performBlockAndWait {
 				self.registeredObjects.forEach {
 					switch $0 {
-						/*
 					case let cell as Cell:
 						if let mean: NSData = cell.valueForKey("mean")as?NSData {
 							cell.setValue(NSData(data: mean), forKey: "mean")
@@ -125,12 +125,12 @@ extension Context {
 							edge.setValue(NSData(data: logvariance), forKey: "logvariance")
 						}
 						print("join edge")
-*/
 					default:
 						break
 					}
 				}
 			}
 		}
+		*/
 	}
 }
