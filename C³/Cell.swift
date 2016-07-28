@@ -81,7 +81,7 @@ extension Cell {
 		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(mean.bytes), 1, const.mean)
 		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(logvariance.bytes), 1, const.logvariance)
 		
-		managedObjectContext?.performBlock {
+		managedObjectContext?.performBlockAndWait {
 			self.didChangeValueForKey("mean")
 			self.didChangeValueForKey("logvariance")
 		}
