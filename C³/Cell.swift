@@ -17,19 +17,22 @@ public class Cell: NSManagedObject {
 		case Train
 	}
 	private class Probably {
-		var train: la_object_t = la_splat_from_float(0, Config.ATTR)
 		var value: la_object_t = la_splat_from_float(0, Config.ATTR)
 		var mean: la_object_t = la_splat_from_float(0, Config.ATTR)
 		var deviation: la_object_t = la_splat_from_float(0, Config.ATTR)
 		var variance: la_object_t = la_splat_from_float(0, Config.ATTR)
 		var logvariance: la_object_t = la_splat_from_float(0, Config.ATTR)
-		let lock: NSLock = NSLock()
 	}
 	private var ready: Set<Ready> = Set<Ready>()
 	private var delta: Probably = Probably()
 	private var state: Probably = Probably()
+	private var train: Probably = Probably()
 	private var potential: Probably = Probably()
 	private var const: Probably = Probably()
+	private let mutex = (
+		state: NSLock(),
+		delta: NSLock()
+	)
 }
 extension Cell {
 	@NSManaged public private(set) var label: String
@@ -48,29 +51,35 @@ extension Cell {
 	}
 }
 extension Cell {
-	func setup() {
+	internal func setup() {
 
-		const.mean = la_matrix_from_float_buffer(UnsafeMutablePointer<Float>(mean.bytes), width, 1, 1, Config.HINT, Config.ATTR)
-		const.logvariance = la_matrix_from_float_buffer(UnsafeMutablePointer<Float>(logvariance.bytes), width, 1, 1, Config.HINT, Config.ATTR)
+		setPrimitiveValue(NSData(data: mean), forKey: "mean")
+		setPrimitiveValue(NSData(data: logvariance), forKey: "logvariance")
+		
+		const.mean = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(mean.bytes), width, 1, 1, Config.HINT, nil, Config.ATTR)
+		const.logvariance = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logvariance.bytes), width, 1, 1, Config.HINT, nil, Config.ATTR)
+		
+		assert(const.mean.status==LA_SUCCESS)
+		assert(const.logvariance.status==LA_SUCCESS)
 		
 		refresh()
+		forget()
 	}
-	func commit() {
+	internal func commit() {
 		
-		if let mean: NSMutableData = NSMutableData(length: sizeof(Float)*Int(width)), logvariance: NSMutableData = NSMutableData(length: sizeof(Float)*Int(width)) {
-			
-			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(mean.mutableBytes), 1, const.mean)
-			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(logvariance.mutableBytes), 1, const.logvariance)
-			
-			const.mean = la_matrix_from_float_buffer(UnsafePointer<Float>(mean.mutableBytes), width, 1, 1, Config.HINT, Config.ATTR)
-			const.logvariance = la_matrix_from_float_buffer(UnsafePointer<Float>(logvariance.mutableBytes), width, 1, 1, Config.HINT, Config.ATTR)
-			
-			managedObjectContext?.performBlockAndWait {
-				self.mean = mean
-				self.logvariance = logvariance
-			}
-			
-		}
+		willChangeValueForKey("mean")
+		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(mean.bytes), 1, const.mean)
+		didChangeValueForKey("mean")
+		
+		willChangeValueForKey("logvariance")
+		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(logvariance.bytes), 1, const.logvariance)
+		didChangeValueForKey("logvariance")
+		
+		const.mean = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(mean.bytes), width, 1, 1, Config.HINT, nil, Config.ATTR)
+		const.logvariance = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logvariance.bytes), width, 1, 1, Config.HINT, nil, Config.ATTR)
+		
+		assert(const.mean.status==LA_SUCCESS)
+		assert(const.logvariance.status==LA_SUCCESS)
 		
 	}
 }
@@ -81,9 +90,17 @@ extension Cell {
 		const.variance = const.deviation * const.deviation
 		const.value = const.mean + const.deviation * normal(rows: width, cols: 1)
 		
+		assert(const.deviation.status==LA_SUCCESS)
+		assert(const.variance.status==LA_SUCCESS)
+		assert(const.value.status==LA_SUCCESS)
+		
 		potential.mean = const.mean
 		potential.variance = const.variance
 		potential.value = const.value
+		
+		assert(potential.mean.status==LA_SUCCESS)
+		assert(potential.variance.status==LA_SUCCESS)
+		assert(potential.value.status==LA_SUCCESS)
 		
 	}
 	private func forget() {
@@ -92,89 +109,143 @@ extension Cell {
 		delta.mean = la_splat_from_float(0, Config.ATTR)
 		delta.variance = la_splat_from_float(0, Config.ATTR)
 		
+		assert(delta.value.status==LA_SUCCESS)
+		assert(delta.mean.status==LA_SUCCESS)
+		assert(delta.variance.status==LA_SUCCESS)
+		
 	}
-	public func iClear() {
-		if state.lock.tryLock() {
+	public func iClear(let visit: Set<Cell> = []) {
+		if visit.contains(self) {
+		
+		} else {
+			mutex.state.lock()
 			if ready.contains(.State) {
-				ready.remove(.State)
+				guard let context: Context = managedObjectContext as? Context else {
+					assertionFailure(Error.System.InvalidContext.description)
+					return
+				}
+				let refer: Set<Edge> = input
+				dispatch_apply(refer.count, context.dispatch.parallel) {
+					let edge: Edge = refer[refer.startIndex.advancedBy($0)]
+					edge.iClear(visit.union([self]))
+				}
 				refresh()
-				dispatch_apply(input.count, Cell.dispatch.queue) {
-					let edge: Edge = self.input[self.input.startIndex.advancedBy($0)]
-					edge.iClear()
-				}
+				ready.remove(.State)
 			}
-			state.lock.unlock()
+			mutex.state.unlock()
 		}
 	}
-	public func oClear() {
-		if delta.lock.tryLock() {
+	public func oClear(let visit: Set<Cell> = []) {
+		if visit.contains(self) {
+		
+		} else {
+			mutex.delta.lock()
 			if ready.contains(.Delta) {
-				ready.remove(.Delta)
-				ready.remove(.Train)
-				forget()
-				dispatch_apply(output.count, Cell.dispatch.queue) {
-					let edge: Edge = self.output[self.output.startIndex.advancedBy($0)]
-					edge.oClear()
+				guard let context: Context = managedObjectContext as? Context else {
+					assertionFailure(Error.System.InvalidContext.description)
+					return
 				}
+				let refer: Set<Edge> = output
+				dispatch_apply(refer.count, context.dispatch.parallel) {
+					let edge: Edge = refer[refer.startIndex.advancedBy($0)]
+					edge.oClear(visit.union([self]))
+				}
+				forget()
+				ready.remove(.Train)
+				ready.remove(.Delta)
 			}
-			delta.lock.unlock()
+			mutex.delta.unlock()
 		}
 	}
-	public func collect() -> la_object_t {
-		state.lock.lock()
-		if ready.contains(.State) {
+	public func collect(let visit: Set<Cell> = []) -> la_object_t {
+		if visit.contains(self) {
+			return state.value
 			
 		} else {
-			dispatch_apply(input.count, Cell.dispatch.queue) {
-				
-				let edge: Edge = self.input[self.input.startIndex.advancedBy($0)]
-				let (value, mean, variance) = edge.collect()
-				
-				self.potential.lock.lock()
-				self.potential.value = self.potential.value + value
-				self.potential.mean = self.potential.mean + mean
-				self.potential.variance = self.potential.variance + variance
-				self.potential.lock.unlock()
-				
-			}
-			state.value = step(potential.value)
-			ready.insert(.State)
-		}
-		state.lock.unlock()
-		return state.value
-	}
-	public func correct(let eps eps: Float) -> (la_object_t, la_object_t) {
-		delta.lock.lock()
-		if ready.contains(.Delta) {
-		
-		} else if ready.contains(.State) {
-			if ready.contains(.Train) {
-				delta.value = delta.value + state.train - state.value
+			mutex.state.lock()
+			if ready.contains(.State) {
 				
 			} else {
-				let refer: Set<Edge> = output
-				dispatch_apply(refer.count, Cell.dispatch.queue) {
+				guard let context: Context = managedObjectContext as? Context else {
+					assertionFailure(Error.System.InvalidContext.description)
+					return state.value
+				}
+				let refer: Set<Edge> = input
+				
+				var value: [la_object_t] = [la_object_t](count: refer.count, repeatedValue: la_splat_from_float(0, Config.ATTR))
+				var mean: [la_object_t] = [la_object_t](count: refer.count, repeatedValue: la_splat_from_float(0, Config.ATTR))
+				var variance: [la_object_t] = [la_object_t](count: refer.count, repeatedValue: la_splat_from_float(0, Config.ATTR))
+				
+				dispatch_apply(refer.count, context.dispatch.parallel) {
 					
 					let edge: Edge = refer[refer.startIndex.advancedBy($0)]
-					let delta: la_object_t = edge.correct(eps: eps)
+					let potential = edge.collect(visit.union([self]))
 					
-					self.delta.lock.lock()
-					self.delta.value = self.delta.value + delta
-					self.delta.lock.unlock()
+					value[$0] = potential.0
+					mean[$0] = potential.1
+					variance[$0] = potential.2
 					
 				}
+				
+				potential.value = value.reduce(potential.value){$0+$1}
+				potential.mean = mean.reduce(potential.mean){$0+$1}
+				potential.variance = variance.reduce(potential.variance){$0+$1}
+				
+				state.value = step(potential.value)
+				ready.insert(.State)
 			}
-			delta.mean = pdf(x: la_splat_from_float(0, Config.ATTR), mu: potential.value, sigma: sqrt(potential.variance)) * sign(delta.value)
-			delta.variance = delta.mean * potential.mean / potential.variance
-			
-			const.mean = const.mean + eps * delta.mean
-			const.logvariance = const.logvariance - eps * 0.5 * const.variance * delta.variance
-			
-			commit()
-			ready.insert(.Delta)
+			mutex.state.unlock()
 		}
-		delta.lock.unlock()
-		return (delta.mean, delta.variance)
+		return state.value
+	}
+	public func correct(let eps eps: Float, let visit: Set<Cell> = []) -> (la_object_t, la_object_t) {
+		if visit.contains(self) {
+			return(delta.mean, delta.variance)
+			
+		} else {
+			mutex.delta.lock()
+			if ready.contains(.Delta) {
+				
+			} else if ready.contains(.State) {
+				if ready.contains(.Train) {
+					delta.value = delta.value + train.value - state.value
+					
+				} else {
+					guard let context: Context = managedObjectContext as? Context else {
+						assertionFailure(Error.System.InvalidContext.description)
+						return(delta.mean, delta.variance)
+					}
+					let refer: Set<Edge> = output
+					var value: [la_object_t] = [la_object_t](count: refer.count, repeatedValue: la_splat_from_float(0, Config.ATTR))
+					dispatch_apply(refer.count, context.dispatch.parallel) {
+						
+						let edge: Edge = refer[refer.startIndex.advancedBy($0)]
+						let delta = edge.correct(eps: eps, visit: visit.union([self]))
+
+						value[$0] = delta
+					}
+					delta.value = value.reduce(delta.value){$0 + $1}
+				}
+				
+				delta.mean = pdf(x: la_splat_from_float(0, Config.ATTR), mu: potential.value, sigma: sqrt(potential.variance)) * sign(delta.value)
+				delta.variance = delta.mean * potential.mean / potential.variance
+				
+				assert(delta.mean.status==LA_SUCCESS)
+				assert(delta.variance.status==LA_SUCCESS)
+				
+				const.mean = const.mean + eps * delta.mean
+				const.logvariance = const.logvariance - eps * 0.5 * const.variance * delta.variance
+				
+				assert(const.mean.status==LA_SUCCESS)
+				assert(const.variance.status==LA_SUCCESS)
+				
+				commit()
+
+				ready.insert(.Delta)
+			}
+			mutex.delta.unlock()
+		}
+		return(delta.mean, delta.variance)
 	}
 }
 extension Cell {
@@ -194,13 +265,13 @@ extension Cell {
 	var answer: [Bool] {
 		set {
 			assert(width==UInt(newValue.count))
-			state.train = la_matrix_from_float_buffer(newValue.map{Float($0)}, width, 1, 1, Config.HINT, Config.ATTR)
-			assert(state.train.status==LA_SUCCESS)
+			train.value = la_matrix_from_float_buffer(newValue.map{Float($0)}, width, 1, 1, Config.HINT, Config.ATTR)
+			assert(train.value.status==LA_SUCCESS)
 			ready.insert(.Train)
 		}
 		get {
-			assert(state.train.width==width)
-			return state.train.eval.map{Bool($0)}
+			assert(train.value.width==width)
+			return train.value.eval.map{Bool($0)}
 		}
 	}
 }
@@ -240,12 +311,6 @@ extension Context {
 		let cell: [Cell] = fetch ( attribute )
 		return cell
 	}
-}
-extension Cell {
-	private static let dispatch = (
-		queue: dispatch_queue_create("\(Config.identifier).\(NSStringFromClass(Cell.self)).queue", DISPATCH_QUEUE_CONCURRENT),
-		group: dispatch_group_create()
-	)
 }
 extension Context {
 	public func train( let pair: [([String:[Bool]], [String:[Bool]])], let count: Int, let eps: Float) {

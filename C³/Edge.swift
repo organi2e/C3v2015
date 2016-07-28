@@ -33,26 +33,33 @@ extension Edge {
 extension Edge {
 	internal func setup() {
 		
-		weight.mean = la_matrix_from_float_buffer(UnsafePointer<Float>(mean.bytes), output.width, input.width, input.width, Config.HINT, Config.ATTR)
-		weight.logvariance = la_matrix_from_float_buffer(UnsafePointer<Float>(logvariance.bytes), output.width, input.width, input.width, Config.HINT, Config.ATTR)
+		setPrimitiveValue(NSData(data: mean), forKey: "mean")
+		setPrimitiveValue(NSData(data: logvariance), forKey: "logvariance")
+		
+		weight.mean = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(mean.bytes), output.width, input.width, input.width, Config.HINT, nil, Config.ATTR)
+		weight.logvariance = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logvariance.bytes), output.width, input.width, input.width, Config.HINT, nil, Config.ATTR)
+		
+		assert(weight.mean.status==LA_SUCCESS)
+		assert(weight.logvariance.status==LA_SUCCESS)
 		
 		refresh()
+		forget()
 	}
 	internal func commit() {
 		
-		if let mean: NSMutableData = NSMutableData(length: sizeof(Float)*Int(output.width*input.width)), logvariance: NSMutableData = NSMutableData(length: sizeof(Float)*Int(output.width*input.width)) {
-			
-			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(mean.mutableBytes), input.width, weight.mean)
-			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(logvariance.mutableBytes), input.width, weight.logvariance)
-			
-			weight.mean = la_matrix_from_float_buffer(UnsafeMutablePointer<Float>(mean.mutableBytes), output.width, input.width, input.width, Config.HINT, Config.ATTR)
-			weight.logvariance = la_matrix_from_float_buffer(UnsafeMutablePointer<Float>(logvariance.mutableBytes), output.width, input.width, input.width, Config.HINT, Config.ATTR)
-			
-			managedObjectContext?.performBlockAndWait {
-				self.mean = mean
-				self.logvariance = logvariance
-			}
-		}
+		willChangeValueForKey("mean")
+		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(mean.bytes), input.width, weight.mean)
+		didChangeValueForKey("mean")
+
+		willChangeValueForKey("logvariance")
+		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(logvariance.bytes), input.width, weight.logvariance)
+		didChangeValueForKey("logvariance")
+		
+		weight.mean = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(mean.bytes), output.width, input.width, input.width, Config.HINT, nil, Config.ATTR)
+		weight.logvariance = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logvariance.bytes), output.width, input.width, input.width, Config.HINT, nil, Config.ATTR)
+		
+		assert(weight.mean.status==LA_SUCCESS)
+		assert(weight.logvariance.status==LA_SUCCESS)
 	}
 	private func refresh() {
 		
@@ -60,33 +67,52 @@ extension Edge {
 		weight.variance = weight.deviation * weight.deviation
 		weight.value = weight.mean + weight.deviation * normal(rows: output.width, cols: input.width)
 		
+		assert(weight.deviation.status==LA_SUCCESS)
+		assert(weight.variance.status==LA_SUCCESS)
+		assert(weight.value.status==LA_SUCCESS)
+		
 	}
 	private func forget() {
 	
 	}
-	internal func iClear() {
+	internal func iClear(let visit: Set<Cell>) {
 		refresh()
-		input.iClear()
+		input.iClear(visit)
 	}
-	internal func oClear() {
+	internal func oClear(let visit: Set<Cell>) {
 		forget()
-		output.oClear()
+		output.oClear(visit)
 	}
-	internal func collect() -> (la_object_t, la_object_t, la_object_t) {
-		let state: la_object_t = input.collect()
+	internal func collect(let visit: Set<Cell>) -> (la_object_t, la_object_t, la_object_t) {
+		let state: la_object_t = input.collect(visit)
 		let value: la_object_t = la_matrix_product(weight.value, state)
 		let mean: la_object_t = la_matrix_product(weight.mean, state)
 		let variance: la_object_t = la_matrix_product(weight.variance, state * state)
+		
+		assert(state.status==LA_SUCCESS)
+		assert(value.status==LA_SUCCESS)
+		assert(mean.status==LA_SUCCESS)
+		assert(variance.status==LA_SUCCESS)
+		
 		return (value, mean, variance)
 	}
-	internal func correct(let eps eps: Float) -> la_object_t {
-		let(mean, variance) = output.correct(eps: eps)
+	internal func correct(let eps eps: Float, let visit: Set<Cell>) -> la_object_t {
+		let(mean, variance) = output.correct(eps: eps, visit: visit)
+		
+		assert(mean.status==LA_SUCCESS && mean.rows==output.width)
+		assert(variance.status==LA_SUCCESS && variance.rows==output.width)
 		
 		let state: la_object_t = input.collect()
 		let delta: la_object_t = la_matrix_product(la_transpose(weight.value), mean)
 		
+		assert(state.status==LA_SUCCESS && state.rows==input.width)
+		assert(delta.status==LA_SUCCESS && delta.rows==input.width)
+		
 		weight.mean = weight.mean + eps * la_outer_product(mean, state)
 		weight.logvariance = weight.logvariance - eps * 0.5 * weight.variance * la_outer_product(variance, state * state)
+		
+		assert(weight.mean.status==LA_SUCCESS)
+		assert(weight.logvariance.status==LA_SUCCESS)
 		
 		commit()
 		

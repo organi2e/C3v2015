@@ -54,7 +54,7 @@ class CellTests: XCTestCase {
 				I: Cell = context.searchCell(label: "I").last,
 				O: Cell = context.searchCell(label: "O").last
 			{
-				(0..<16384).forEach {
+				(0..<32768).forEach {
 					
 					I.oClear()
 					O.iClear()
@@ -63,8 +63,9 @@ class CellTests: XCTestCase {
 					O.answer = OS[$0%4]
 					
 					O.collect()
-					I.correct(eps: 1/2.0)
+					I.correct(eps: 1/4.0)
 				}
+				context.join()
 				context.store() {(_)in
 					XCTFail()
 				}
