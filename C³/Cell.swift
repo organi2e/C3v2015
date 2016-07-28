@@ -75,11 +75,14 @@ extension Cell {
 		
 		managedObjectContext?.performBlockAndWait {
 			self.willChangeValueForKey("mean")
-			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(self.mean.bytes), 1, self.const.mean)
-			self.didChangeValueForKey("mean")
-		
 			self.willChangeValueForKey("logvariance")
-			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(self.logvariance.bytes), 1, self.const.logvariance)
+		}
+		
+		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(mean.bytes), 1, const.mean)
+		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(logvariance.bytes), 1, const.logvariance)
+		
+		managedObjectContext?.performBlock {
+			self.didChangeValueForKey("mean")
 			self.didChangeValueForKey("logvariance")
 		}
 		
@@ -126,43 +129,45 @@ extension Cell {
 		if visit.contains(self) {
 		
 		} else {
-			mutex.state.lock()
-			if ready.contains(.State) {
-				guard let context: Context = managedObjectContext as? Context else {
-					assertionFailure(Error.System.InvalidContext.description)
-					return
+			if mutex.state.tryLock() {
+				if ready.contains(.State) {
+					guard let context: Context = managedObjectContext as? Context else {
+						assertionFailure(Error.System.InvalidContext.description)
+						return
+					}
+					let refer: Set<Edge> = input
+					dispatch_apply(refer.count, context.dispatch.parallel) {
+						let edge: Edge = refer[refer.startIndex.advancedBy($0)]
+						edge.iClear(visit.union([self]))
+					}
+					refresh()
+					ready.remove(.State)
 				}
-				let refer: Set<Edge> = input
-				dispatch_apply(refer.count, context.dispatch.parallel) {
-					let edge: Edge = refer[refer.startIndex.advancedBy($0)]
-					edge.iClear(visit.union([self]))
-				}
-				refresh()
-				ready.remove(.State)
+				mutex.state.unlock()
 			}
-			mutex.state.unlock()
 		}
 	}
 	public func oClear(let visit: Set<Cell> = []) {
 		if visit.contains(self) {
 		
 		} else {
-			mutex.delta.lock()
-			if ready.contains(.Delta) {
-				guard let context: Context = managedObjectContext as? Context else {
-					assertionFailure(Error.System.InvalidContext.description)
-					return
+			if mutex.delta.tryLock() {
+				if ready.contains(.Delta) {
+					guard let context: Context = managedObjectContext as? Context else {
+						assertionFailure(Error.System.InvalidContext.description)
+						return
+					}
+					let refer: Set<Edge> = output
+					dispatch_apply(refer.count, context.dispatch.parallel) {
+						let edge: Edge = refer[refer.startIndex.advancedBy($0)]
+						edge.oClear(visit.union([self]))
+					}
+					forget()
+					ready.remove(.Train)
+					ready.remove(.Delta)
 				}
-				let refer: Set<Edge> = output
-				dispatch_apply(refer.count, context.dispatch.parallel) {
-					let edge: Edge = refer[refer.startIndex.advancedBy($0)]
-					edge.oClear(visit.union([self]))
-				}
-				forget()
-				ready.remove(.Train)
-				ready.remove(.Delta)
+				mutex.delta.unlock()
 			}
-			mutex.delta.unlock()
 		}
 	}
 	public func collect(let visit: Set<Cell> = []) -> la_object_t {
