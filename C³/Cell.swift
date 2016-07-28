@@ -230,7 +230,8 @@ extension Cell {
 					dispatch_group_wait(group.delta, DISPATCH_TIME_FOREVER)
 				}
 				
-				delta.mean = pdf(x: la_splat_from_float(0, Config.ATTR), mu: potential.value, sigma: sqrt(potential.variance)) * sign(delta.value)
+				delta.mean = pdf(x: la_splat_from_float(0, Config.ATTR), mu: potential.value, sigma: sqrt(potential.variance)) *
+					sign(delta.value)
 				delta.variance = delta.mean * potential.mean / potential.variance
 				
 				assert(delta.mean.status==LA_SUCCESS)

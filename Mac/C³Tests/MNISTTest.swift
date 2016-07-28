@@ -20,17 +20,9 @@ class MNISTTests: XCTestCase {
 				context.searchCell(width: 784, label: "I").isEmpty,
 			let
 				H0: Cell = context.newCell(width: 784, label: "I"),
-				H10: Cell = context.newCell(width: 128, label: "H10", input: [H0]),
-				H11: Cell = context.newCell(width: 128, label: "H11", input: [H0]),
-				H12: Cell = context.newCell(width: 128, label: "H12", input: [H0]),
-				H13: Cell = context.newCell(width: 128, label: "H13", input: [H0]),
-			/*
-				H20: Cell = context.newCell(width: 32, label: "H20", input: [H10, H11, H12, H13]),
-				H21: Cell = context.newCell(width: 32, label: "H21", input: [H10, H11, H12, H13]),
-				H22: Cell = context.newCell(width: 32, label: "H22", input: [H10, H11, H12, H13]),
-				H23: Cell = context.newCell(width: 32, label: "H23", input: [H10, H11, H12, H13]),
-				*/
-				 _: Cell = context.newCell(width:  10, label: "O", input: [H10, H11, H12, H13])
+				H1: Cell = context.newCell(width: 500, label: "H0", input: [H0]),
+				H2: Cell = context.newCell(width: 150, label: "H1", input: [H1]),
+				 _: Cell = context.newCell(width:  10, label: "O", input: [H2])
 			{
 				print("new")
 				context.store() {(_)in
@@ -52,38 +44,35 @@ class MNISTTests: XCTestCase {
 				O: Cell = context.searchCell(label: "O").last
 			{
 				(0..<256).forEach {
-					var suc: Int = 0
-					var fal: Int = 0
-					Image.train.enumerate().forEach { (let idx: Int, let image: Image)in
-						print("img. \(idx)")
-						let ID: [Bool] = image.pixel.map{ 0.5 < $0 }
-						let OD: [Bool] = (0..<10).map{ $0 == image.label }
+					let image: Image = Image.train[Int(arc4random_uniform(UInt32(Image.train.count)))]
+					let ID: [Bool] = image.pixel.map{ 0.5 < $0 }
+					let OD: [Bool] = (0..<10).map{ $0 == image.label }
+					var cnt: [Int] = [Int](count: 10, repeatedValue: 0)
+					(0..<64).forEach {(_)in
+						O.iClear()
+						I.oClear()
 						
-						(0..<64).forEach {
-							O.iClear()
-							I.oClear()
-						
-							I.active = ID
-							O.answer = OD
+						I.active = ID
+						O.answer = OD
 							
-							O.collect()
-							I.correct(eps: 1.0/4.0)
+						O.collect()
+						I.correct(eps: 1/64.0)
 							
-							if $0 == 0 {
-								if O.active == OD {
-									suc = suc + 1
-								} else {
-									fal = fal + 1
-								}
+						O.active.enumerate().forEach {
+							cnt[$0.0] = cnt[$0.0] + Int($0.1)
+						}
+						/*
+						if $0 == 0 {
+							if O.active == OD {
+								suc = suc + 1
+							} else {
+								fal = fal + 1
 							}
 						}
+						*/
 					}
-					print("epoch", $0, "presicion", Double(suc)/Double(suc+fal))
-					context.store() {(_)in
-						XCTFail()
-					}
+					print("\($0)) \(OD) \(cnt)")
 				}
-				
 			} else {
 				XCTFail()
 			}
