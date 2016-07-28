@@ -33,8 +33,10 @@ extension Edge {
 extension Edge {
 	internal func setup() {
 		
-		setPrimitiveValue(NSData(data: mean), forKey: "mean")
-		setPrimitiveValue(NSData(data: logvariance), forKey: "logvariance")
+		managedObjectContext?.performBlockAndWait {
+			self.setPrimitiveValue(NSData(data: self.mean), forKey: "mean")
+			self.setPrimitiveValue(NSData(data: self.logvariance), forKey: "logvariance")
+		}
 		
 		weight.mean = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(mean.bytes), output.width, input.width, input.width, Config.HINT, nil, Config.ATTR)
 		weight.logvariance = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logvariance.bytes), output.width, input.width, input.width, Config.HINT, nil, Config.ATTR)
@@ -47,14 +49,15 @@ extension Edge {
 	}
 	internal func commit() {
 		
-		willChangeValueForKey("mean")
-		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(mean.bytes), input.width, weight.mean)
-		didChangeValueForKey("mean")
-
-		willChangeValueForKey("logvariance")
-		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(logvariance.bytes), input.width, weight.logvariance)
-		didChangeValueForKey("logvariance")
+		managedObjectContext?.performBlockAndWait {
+			self.willChangeValueForKey("mean")
+			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(self.mean.bytes), self.input.width, self.weight.mean)
+			self.didChangeValueForKey("mean")
 		
+			self.willChangeValueForKey("logvariance")
+			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(self.logvariance.bytes), self.input.width, self.weight.logvariance)
+			self.didChangeValueForKey("logvariance")
+		}
 		weight.mean = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(mean.bytes), output.width, input.width, input.width, Config.HINT, nil, Config.ATTR)
 		weight.logvariance = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logvariance.bytes), output.width, input.width, input.width, Config.HINT, nil, Config.ATTR)
 		
@@ -67,9 +70,9 @@ extension Edge {
 		weight.variance = weight.deviation * weight.deviation
 		weight.value = weight.mean + weight.deviation * normal(rows: output.width, cols: input.width)
 		
-		assert(weight.deviation.status==LA_SUCCESS)
-		assert(weight.variance.status==LA_SUCCESS)
-		assert(weight.value.status==LA_SUCCESS)
+		assert(weight.deviation.status==LA_SUCCESS && weight.deviation.rows == output.width && weight.deviation.cols == input.width)
+		assert(weight.variance.status==LA_SUCCESS && weight.variance.rows == output.width && weight.variance.cols == input.width)
+		assert(weight.value.status==LA_SUCCESS && weight.value.rows == output.width && weight.value.cols == input.width)
 		
 	}
 	private func forget() {
@@ -89,7 +92,7 @@ extension Edge {
 		let mean: la_object_t = la_matrix_product(weight.mean, state)
 		let variance: la_object_t = la_matrix_product(weight.variance, state * state)
 		
-		assert(state.status==LA_SUCCESS)
+		assert(state.status==LA_SUCCESS && state.width == input.width)
 		assert(value.status==LA_SUCCESS)
 		assert(mean.status==LA_SUCCESS)
 		assert(variance.status==LA_SUCCESS)

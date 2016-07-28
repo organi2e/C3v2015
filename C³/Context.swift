@@ -53,13 +53,13 @@ public class Context: NSManagedObjectContext {
 }
 extension Context {
 	public func store ( let async async: Bool = false, let handle: (ErrorType -> Void)? = nil ) {
-	//	( async ? performBlock : performBlockAndWait ) {
+		( async ? performBlock : performBlockAndWait ) {
 			do {
 				try self.save()
 			} catch let e {
 				handle?(e)
 			}
-	//	}
+		}
 	}
 	public func purge ( let async async: Bool = false, let object: NSManagedObject ) {
 		( async ? performBlock : performBlockAndWait ) {
