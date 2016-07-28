@@ -56,10 +56,11 @@ extension Cell {
 }
 extension Cell {
 	internal func setup() {
-
-		setPrimitiveValue(NSData(data: mean), forKey: "mean")
-		setPrimitiveValue(NSData(data: logvariance), forKey: "logvariance")
 		
+		managedObjectContext?.performBlockAndWait {
+			self.setPrimitiveValue(NSData(data: self.mean), forKey: "mean")
+			self.setPrimitiveValue(NSData(data: self.logvariance), forKey: "logvariance")
+		}
 		const.mean = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(mean.bytes), width, 1, 1, Config.HINT, nil, Config.ATTR)
 		const.logvariance = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logvariance.bytes), width, 1, 1, Config.HINT, nil, Config.ATTR)
 		
@@ -72,13 +73,15 @@ extension Cell {
 	}
 	internal func commit() {
 		
-		willChangeValueForKey("mean")
-		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(mean.bytes), 1, const.mean)
-		didChangeValueForKey("mean")
+		managedObjectContext?.performBlockAndWait {
+			self.willChangeValueForKey("mean")
+			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(self.mean.bytes), 1, self.const.mean)
+			self.didChangeValueForKey("mean")
 		
-		willChangeValueForKey("logvariance")
-		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(logvariance.bytes), 1, const.logvariance)
-		didChangeValueForKey("logvariance")
+			self.willChangeValueForKey("logvariance")
+			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(self.logvariance.bytes), 1, self.const.logvariance)
+			self.didChangeValueForKey("logvariance")
+		}
 		
 		const.mean = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(mean.bytes), width, 1, 1, Config.HINT, nil, Config.ATTR)
 		const.logvariance = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logvariance.bytes), width, 1, 1, Config.HINT, nil, Config.ATTR)
@@ -244,7 +247,7 @@ extension Cell {
 	}
 }
 extension Cell {
-	var active: [Bool] {
+	public var active: [Bool] {
 		set {
 			assert(width==UInt(newValue.count))
 			state.value = la_matrix_from_float_buffer(newValue.map{Float($0)}, width, 1, 1, Config.HINT, Config.ATTR)
@@ -257,7 +260,7 @@ extension Cell {
 			return state.value.eval.map{Bool($0)}
 		}
 	}
-	var answer: [Bool] {
+	public var answer: [Bool] {
 		set {
 			assert(width==UInt(newValue.count))
 			train.value = la_matrix_from_float_buffer(newValue.map{Float($0)}, width, 1, 1, Config.HINT, Config.ATTR)
