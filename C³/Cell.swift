@@ -14,9 +14,10 @@ public class Cell: NSManagedObject {
 	private enum Ready {
 		case State
 		case Delta
-		case Learn
+		case Train
 	}
 	private class Probably {
+		var train: la_object_t = la_splat_from_float(0, Config.ATTR)
 		var value: la_object_t = la_splat_from_float(0, Config.ATTR)
 		var mean: la_object_t = la_splat_from_float(0, Config.ATTR)
 		var deviation: la_object_t = la_splat_from_float(0, Config.ATTR)
@@ -26,7 +27,6 @@ public class Cell: NSManagedObject {
 	}
 	private var ready: Set<Ready> = Set<Ready>()
 	private var delta: Probably = Probably()
-	private var desired: Probably = Probably()
 	private var state: Probably = Probably()
 	private var potential: Probably = Probably()
 	private var const: Probably = Probably()
@@ -65,10 +65,10 @@ extension Cell {
 			const.mean = la_matrix_from_float_buffer(UnsafePointer<Float>(mean.mutableBytes), width, 1, 1, Config.HINT, Config.ATTR)
 			const.logvariance = la_matrix_from_float_buffer(UnsafePointer<Float>(logvariance.mutableBytes), width, 1, 1, Config.HINT, Config.ATTR)
 			
-			//managedObjectContext?.performBlockAndWait {
+			managedObjectContext?.performBlockAndWait {
 				self.mean = mean
 				self.logvariance = logvariance
-			//}
+			}
 			
 		}
 		
@@ -92,10 +92,6 @@ extension Cell {
 		delta.mean = la_splat_from_float(0, Config.ATTR)
 		delta.variance = la_splat_from_float(0, Config.ATTR)
 		
-		desired.value = la_splat_from_float(0, Config.ATTR)
-		desired.mean = la_splat_from_float(0, Config.ATTR)
-		desired.variance = la_splat_from_float(0, Config.ATTR)
-		
 	}
 	public func iClear() {
 		if state.lock.tryLock() {
@@ -114,7 +110,7 @@ extension Cell {
 		if delta.lock.tryLock() {
 			if ready.contains(.Delta) {
 				ready.remove(.Delta)
-				ready.remove(.Learn)
+				ready.remove(.Train)
 				forget()
 				dispatch_apply(output.count, Cell.dispatch.queue) {
 					let edge: Edge = self.output[self.output.startIndex.advancedBy($0)]
@@ -129,7 +125,6 @@ extension Cell {
 		if ready.contains(.State) {
 			
 		} else {
-			ready.insert(.State)
 			dispatch_apply(input.count, Cell.dispatch.queue) {
 				
 				let edge: Edge = self.input[self.input.startIndex.advancedBy($0)]
@@ -143,6 +138,7 @@ extension Cell {
 				
 			}
 			state.value = step(potential.value)
+			ready.insert(.State)
 		}
 		state.lock.unlock()
 		return state.value
@@ -152,29 +148,30 @@ extension Cell {
 		if ready.contains(.Delta) {
 		
 		} else if ready.contains(.State) {
-			ready.insert(.Delta)
-			if ready.contains(.Learn) {
-				desired.mean = desired.value - state.value
+			if ready.contains(.Train) {
+				delta.value = delta.value + state.train - state.value
 				
 			} else {
-				dispatch_apply(output.count, Cell.dispatch.queue) {
+				let refer: Set<Edge> = output
+				dispatch_apply(refer.count, Cell.dispatch.queue) {
 					
-					let edge: Edge = self.output[self.output.startIndex.advancedBy($0)]
+					let edge: Edge = refer[refer.startIndex.advancedBy($0)]
 					let delta: la_object_t = edge.correct(eps: eps)
 					
-					self.desired.lock.lock()
-					self.desired.mean = self.desired.mean + delta
-					self.desired.lock.unlock()
+					self.delta.lock.lock()
+					self.delta.value = self.delta.value + delta
+					self.delta.lock.unlock()
 					
 				}
 			}
-			delta.mean = pdf(x: la_splat_from_float(0, Config.ATTR), mu: potential.value, sigma: sqrt(potential.variance)) * sign(desired.mean)
+			delta.mean = pdf(x: la_splat_from_float(0, Config.ATTR), mu: potential.value, sigma: sqrt(potential.variance)) * sign(delta.value)
 			delta.variance = delta.mean * potential.mean / potential.variance
 			
 			const.mean = const.mean + eps * delta.mean
 			const.logvariance = const.logvariance - eps * 0.5 * const.variance * delta.variance
 			
 			commit()
+			ready.insert(.Delta)
 		}
 		delta.lock.unlock()
 		return (delta.mean, delta.variance)
@@ -197,13 +194,13 @@ extension Cell {
 	var answer: [Bool] {
 		set {
 			assert(width==UInt(newValue.count))
-			desired.value = la_matrix_from_float_buffer(newValue.map{Float($0)}, width, 1, 1, Config.HINT, Config.ATTR)
-			assert(desired.value.status==LA_SUCCESS)
-			ready.insert(.Learn)
+			state.train = la_matrix_from_float_buffer(newValue.map{Float($0)}, width, 1, 1, Config.HINT, Config.ATTR)
+			assert(state.train.status==LA_SUCCESS)
+			ready.insert(.Train)
 		}
 		get {
-			assert(desired.value.width==width)
-			return desired.value.eval.map{Bool($0)}
+			assert(state.train.width==width)
+			return state.train.eval.map{Bool($0)}
 		}
 	}
 }
