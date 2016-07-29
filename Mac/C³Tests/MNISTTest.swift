@@ -43,7 +43,7 @@ class MNISTTests: XCTestCase {
 				I: Cell = context.searchCell(label: "I").last,
 				O: Cell = context.searchCell(label: "O").last
 			{
-				(0..<256).forEach {
+				(0..<1024).forEach {
 					let image: Image = Image.train[Int(arc4random_uniform(UInt32(Image.train.count)))]
 					let ID: [Bool] = image.pixel.map{ 0.5 < $0 }
 					let OD: [Bool] = (0..<10).map{ $0 == image.label }
