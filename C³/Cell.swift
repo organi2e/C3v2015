@@ -296,7 +296,7 @@ extension Context {
 					edge.setValue(input, forKey: "input")
 					edge.setValue(cell, forKey: "output")
 					edge.setValue(NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count), forKey: "mean")
-					edge.setValue(NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count), forKey: "logvariance")
+					edge.setValue(NSData(bytes: [Float](count: count, repeatedValue: Float(-2.0*log(Double(input.width)))), length: sizeof(Float)*count), forKey: "logvariance")
 					edge.setup()
 				}
 			}
