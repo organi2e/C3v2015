@@ -56,7 +56,7 @@ class MNISTTests: XCTestCase {
 						O.answer = OD
 							
 						O.collect()
-						I.correct(eps: 1/64.0)
+						I.correct(eps: 1/16.0)
 							
 						O.active.enumerate().forEach {
 							cnt[$0.0] = cnt[$0.0] + Int($0.1)
@@ -71,7 +71,7 @@ class MNISTTests: XCTestCase {
 						}
 						*/
 					}
-					print("\($0)) \(OD) \(cnt)")
+					print($0, zip(OD, cnt).map{ $0.0 ? "[\($0.1)]" : "\($0.1)"})
 				}
 			} else {
 				XCTFail()
