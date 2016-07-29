@@ -88,23 +88,29 @@ class MNISTTests: XCTestCase {
 				I: Cell = context.searchCell(label: "I").last,
 				O: Cell = context.searchCell(label: "O").last
 			{
-				var suc: Int = 0
-				var fal: Int = 0
-				Image.t10k[0..<100].forEach { (let image: Image)in
+				(0..<16).forEach {
+					let image: Image = Image.t10k[Int(arc4random_uniform(UInt32(Image.t10k.count)))]
 					let ID: [Bool] = image.pixel.map{ 0.5 < $0 }
 					let OD: [Bool] = (0..<10).map{ $0 == image.label }
+					var cnt: [Int] = [Int](count: 10, repeatedValue: 0)
+					(0..<64).forEach {(_)in
+						O.iClear()
+						I.oClear()
 						
-					I.oClear()
-					O.iClear()
-						
-					I.active = ID
-					if O.active == OD {
-						suc = suc + 1
-					} else {
-						fal = fal + 1
+						I.active = ID
+						O.active.enumerate().forEach {
+							cnt[$0.0] = cnt[$0.0] + Int($0.1)
+						}
 					}
+					let e: [Double] = cnt.map{exp(Double($0))}
+					let E: Double = e.reduce(0){$0+$1}
+					let M: [Double] = e.map { $0 / E }
+					let ce: Double = zip(M, OD).reduce(1) { (let e: Double, let p: (Double, Bool)) -> Double in
+						return e * pow(p.0, Double(p.1)) * pow(1.0 - p.0, 1.0 - Double(p.1))
+					}
+					print($0, zip(OD, M).map{ $0.0 ? "[\($0.1)]" : "\($0.1)"}, ce)
+					XCTAssert(0.5 < ce)
 				}
-				print("t10k presicion", Double(suc)/Double(suc+fal))
 			}
 		} catch let e {
 			XCTFail(String(e))
