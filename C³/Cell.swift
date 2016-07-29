@@ -91,6 +91,18 @@ extension Cell {
 		assert(const.mean.status==LA_SUCCESS)
 		assert(const.logvariance.status==LA_SUCCESS)
 		
+		state.value = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
+		state.mean = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
+		state.variance = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
+		
+		assert(state.value.status==LA_SUCCESS && state.value.width==width)
+		assert(state.value.status==LA_SUCCESS && delta.value.width==width)
+		assert(state.value.status==LA_SUCCESS && state.value.width==width)
+		
+		delta.value = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
+		delta.mean = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
+		delta.variance = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
+		
 		refresh()
 		forget()
 		
