@@ -57,10 +57,9 @@ extension Cell {
 extension Cell {
 	internal func setup() {
 		
-		managedObjectContext?.performBlockAndWait {
-			self.setPrimitiveValue(NSData(data: self.mean), forKey: "mean")
-			self.setPrimitiveValue(NSData(data: self.logvariance), forKey: "logvariance")
-		}
+		setPrimitiveValue(NSData(data: mean), forKey: "mean")
+		setPrimitiveValue(NSData(data: logvariance), forKey: "logvariance")
+
 		const.mean = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(mean.bytes), width, 1, 1, Config.HINT, nil, Config.ATTR)
 		const.logvariance = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logvariance.bytes), width, 1, 1, Config.HINT, nil, Config.ATTR)
 		
@@ -238,7 +237,7 @@ extension Cell {
 				assert(delta.variance.status==LA_SUCCESS)
 				
 				const.mean = const.mean + eps * delta.mean
-				const.logvariance = const.logvariance - eps * 0.5 * const.variance * delta.variance
+				const.logvariance = const.logvariance - ( 0.5 * eps ) * const.variance * delta.variance
 				
 				assert(const.mean.status==LA_SUCCESS)
 				assert(const.variance.status==LA_SUCCESS)
