@@ -102,35 +102,3 @@ extension Context {
 		return result
 	}
 }
-extension Context {
-	public func join() {
-		/*
-		dispatch_barrier_sync(dispatch.parallel) {
-			self.performBlockAndWait {
-				self.registeredObjects.forEach {
-					switch $0 {
-					case let cell as Cell:
-						if let mean: NSData = cell.valueForKey("mean")as?NSData {
-							cell.setValue(NSData(data: mean), forKey: "mean")
-						}
-						if let logvariance: NSData = cell.valueForKey("logvariance")as?NSData {
-							cell.setValue(NSData(data: logvariance), forKey: "logvariance")
-						}
-						print("join cell")
-					case let edge as Edge:
-						if let mean: NSData = edge.valueForKey("mean")as?NSData {
-							edge.setValue(NSData(data: mean), forKey: "mean")
-						}
-						if let logvariance: NSData = edge.valueForKey("logvariance")as?NSData {
-							edge.setValue(NSData(data: logvariance), forKey: "logvariance")
-						}
-						print("join edge")
-					default:
-						break
-					}
-				}
-			}
-		}
-		*/
-	}
-}

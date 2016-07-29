@@ -65,6 +65,7 @@ extension Edge {
 		
 		assert(weight.mean.status==LA_SUCCESS)
 		assert(weight.logvariance.status==LA_SUCCESS)
+		
 	}
 	private func refresh() {
 		
@@ -88,8 +89,8 @@ extension Edge {
 		forget()
 		output.oClear(visit)
 	}
-	internal func collect(let visit: Set<Cell>) -> (la_object_t, la_object_t, la_object_t) {
-		let state: la_object_t = input.collect(visit)
+	internal func collect(let visit visit: Set<Cell>) -> (la_object_t, la_object_t, la_object_t) {
+		let state: la_object_t = input.collect(visit: visit)
 		let value: la_object_t = la_matrix_product(weight.value, state)
 		let mean: la_object_t = la_matrix_product(weight.mean, state)
 		let variance: la_object_t = la_matrix_product(weight.variance, state * state)
@@ -107,7 +108,7 @@ extension Edge {
 		assert(mean.status==LA_SUCCESS && mean.rows==output.width)
 		assert(variance.status==LA_SUCCESS && variance.rows==output.width)
 		
-		let state: la_object_t = input.collect()
+		let state: la_object_t = input.collect(visit: [])
 		let delta: la_object_t = la_matrix_product(la_transpose(weight.value), mean)
 		
 		assert(state.status==LA_SUCCESS && state.rows==input.width)
@@ -122,5 +123,16 @@ extension Edge {
 		commit()
 		
 		return delta
+	}
+}
+extension Edge {
+	internal func isChained(let cell: Cell)->Bool {
+		return cell === input
+	}
+	internal func iTrace(let task:(Cell)->()) {
+		input.iTrace(task)
+	}
+	internal func oTrace(let task:(Cell)->()) {
+		output.oTrace(task)
 	}
 }

@@ -11,8 +11,8 @@
         <attribute name="logvariance" attributeType="Binary" syncable="YES"/>
         <attribute name="mean" attributeType="Binary" syncable="YES"/>
         <attribute name="width" attributeType="Integer 64" syncable="YES"/>
-        <relationship name="input" toMany="YES" deletionRule="Nullify" destinationEntity="Edge" inverseName="output" inverseEntity="Edge" syncable="YES"/>
-        <relationship name="output" toMany="YES" deletionRule="Nullify" destinationEntity="Edge" inverseName="input" inverseEntity="Edge" syncable="YES"/>
+        <relationship name="input" toMany="YES" deletionRule="Cascade" destinationEntity="Edge" inverseName="output" inverseEntity="Edge" syncable="YES"/>
+        <relationship name="output" toMany="YES" deletionRule="Cascade" destinationEntity="Edge" inverseName="input" inverseEntity="Edge" syncable="YES"/>
     </entity>
     <entity name="Dict" representedClassName="C3.Dict" syncable="YES">
         <attribute name="key" attributeType="Transformable" indexed="YES" syncable="YES"/>
@@ -21,8 +21,8 @@
     <entity name="Edge" representedClassName="C3.Edge" syncable="YES">
         <attribute name="logvariance" optional="YES" attributeType="Binary" syncable="YES"/>
         <attribute name="mean" attributeType="Binary" syncable="YES"/>
-        <relationship name="input" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Cell" inverseName="output" inverseEntity="Cell" syncable="YES"/>
-        <relationship name="output" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Cell" inverseName="input" inverseEntity="Cell" syncable="YES"/>
+        <relationship name="input" maxCount="1" deletionRule="Nullify" destinationEntity="Cell" inverseName="output" inverseEntity="Cell" syncable="YES"/>
+        <relationship name="output" maxCount="1" deletionRule="Nullify" destinationEntity="Cell" inverseName="input" inverseEntity="Cell" syncable="YES"/>
     </entity>
     <elements>
         <element name="Blob" positionX="36" positionY="171" width="128" height="75"/>
