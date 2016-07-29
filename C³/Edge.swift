@@ -33,10 +33,8 @@ extension Edge {
 extension Edge {
 	internal func setup() {
 		
-		managedObjectContext?.performBlockAndWait {
-			self.setPrimitiveValue(NSData(data: self.mean), forKey: "mean")
-			self.setPrimitiveValue(NSData(data: self.logvariance), forKey: "logvariance")
-		}
+		setPrimitiveValue(NSData(data: mean), forKey: "mean")
+		setPrimitiveValue(NSData(data: logvariance), forKey: "logvariance")
 		
 		weight.mean = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(mean.bytes), output.width, input.width, input.width, Config.HINT, nil, Config.ATTR)
 		weight.logvariance = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logvariance.bytes), output.width, input.width, input.width, Config.HINT, nil, Config.ATTR)
@@ -116,7 +114,7 @@ extension Edge {
 		assert(delta.status==LA_SUCCESS && delta.rows==input.width)
 		
 		weight.mean = weight.mean + eps * la_outer_product(mean, state)
-		weight.logvariance = weight.logvariance - eps * 0.5 * weight.variance * la_outer_product(variance, state * state)
+		weight.logvariance = weight.logvariance - ( 0.5 * eps ) * weight.variance * la_outer_product(variance, state * state)
 		
 		assert(weight.mean.status==LA_SUCCESS)
 		assert(weight.logvariance.status==LA_SUCCESS)
