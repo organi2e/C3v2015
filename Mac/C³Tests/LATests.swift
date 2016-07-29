@@ -177,6 +177,30 @@ class LATests: XCTestCase {
 			XCTAssert(( 0 < buffer0[$0] ? 1 : 0 > buffer0[$0] ? -1 : 0 ) == buffer1[$0])
 		}
 	}
+	func testSigmoid() {
+		let rows: UInt = 4
+		let cols: UInt = 4
+		
+		let count: Int = Int(rows*cols)
+		
+		let N: la_object_t = 4 + 4 * normal(rows: rows, cols: cols)
+		let train: [Float] = [Float](count: count, repeatedValue: 0)
+		let value: [Float] = [Float](count: count, repeatedValue: 0)
+		
+		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(train), cols, N)
+		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(value), cols, sigmoid(N))
+		
+		train.enumerate().forEach {
+			UnsafeMutablePointer<Float>(train).advancedBy($0.index).memory = 1.0/(1.0+exp(-$0.element))
+		}
+		
+		func lce(let y y: Float, let t: Float)->Float {
+			return -t * log(y) - ( 1 - t ) * log( 1 - y )
+		}
+		
+		let rmse: Float = zip(value, train).map{lce(y: $0.0, t: $0.1)}.reduce(0){ $0 + $1 }
+		XCTAssert( 1.0 < rmse )
+	}
 	func testSignRaw() {
 		let res: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>.alloc(LATests.count)
 		let data: NSData = NSData(bytes: LATests.original, length: sizeof(Float)*LATests.original.count)

@@ -16,19 +16,44 @@ public class Cell: NSManagedObject {
 		case Delta
 		case Train
 	}
-	private class Probably {
-		var value: la_object_t = la_splat_from_float(0, Config.ATTR)
-		var mean: la_object_t = la_splat_from_float(0, Config.ATTR)
-		var deviation: la_object_t = la_splat_from_float(0, Config.ATTR)
-		var variance: la_object_t = la_splat_from_float(0, Config.ATTR)
-		var logvariance: la_object_t = la_splat_from_float(0, Config.ATTR)
-	}
 	private var ready: Set<Ready> = Set<Ready>()
-	private var delta: Probably = Probably()
-	private var state: Probably = Probably()
-	private var train: Probably = Probably()
-	private var potential: Probably = Probably()
-	private var const: Probably = Probably()
+	private var delta = (
+		value: la_splat_from_float(0, Config.ATTR),
+		mean: la_splat_from_float(0, Config.ATTR),
+		variance: la_splat_from_float(0, Config.ATTR),
+		past: (
+			value: la_splat_from_float(0, Config.ATTR),
+			mean: la_splat_from_float(0, Config.ATTR),
+			variance: la_splat_from_float(0, Config.ATTR)
+		)
+	)
+	private var state = (
+		value: la_splat_from_float(0, Config.ATTR),
+		mean: la_splat_from_float(0, Config.ATTR),
+		variance: la_splat_from_float(0, Config.ATTR),
+		past: (
+			value: la_splat_from_float(0, Config.ATTR),
+			mean: la_splat_from_float(0, Config.ATTR),
+			variance: la_splat_from_float(0, Config.ATTR)
+		)
+	)
+	private var train = (
+		value: la_splat_from_float(0, Config.ATTR),
+		mean: la_splat_from_float(0, Config.ATTR),
+		variance: la_splat_from_float(0, Config.ATTR)
+	)
+	private var potential = (
+		value: la_splat_from_float(0, Config.ATTR),
+		mean: la_splat_from_float(0, Config.ATTR),
+		variance: la_splat_from_float(0, Config.ATTR)
+	)
+	private var const = (
+		value: la_splat_from_float(0, Config.ATTR),
+		mean: la_splat_from_float(0, Config.ATTR),
+		deviation: la_splat_from_float(0, Config.ATTR),
+		variance: la_splat_from_float(0, Config.ATTR),
+		logvariance: la_splat_from_float(0, Config.ATTR)
+	)
 	private let mutex = (
 		state: NSLock(),
 		delta: NSLock()
@@ -112,8 +137,24 @@ extension Cell {
 		assert(potential.variance.status==LA_SUCCESS)
 		assert(potential.value.status==LA_SUCCESS)
 		
+		state.past.value = state.value
+		state.past.mean = state.mean
+		state.past.variance = state.past.variance
+		
+		assert(state.past.mean.status==LA_SUCCESS)
+		assert(state.past.variance.status==LA_SUCCESS)
+		assert(state.past.value.status==LA_SUCCESS)
+		
 	}
 	private func forget() {
+		
+		delta.past.value = delta.value
+		delta.past.mean = delta.mean
+		delta.past.variance = delta.variance
+		
+		assert(delta.past.value.status==LA_SUCCESS)
+		assert(delta.past.mean.status==LA_SUCCESS)
+		assert(delta.past.variance.status==LA_SUCCESS)
 		
 		delta.value = la_splat_from_float(0, Config.ATTR)
 		delta.mean = la_splat_from_float(0, Config.ATTR)
@@ -169,9 +210,13 @@ extension Cell {
 			}
 		}
 	}
-	public func collect(let visit: Set<Cell> = []) -> la_object_t {
+	
+	public func collect() {
+		collect(visit: [])
+	}
+	internal func collect(let visit visit: Set<Cell>) -> (la_object_t) {
 		if visit.contains(self) {
-			return state.value
+			return state.past.value
 			
 		} else {
 			mutex.state.lock()
@@ -180,12 +225,12 @@ extension Cell {
 			} else {
 				guard let context: Context = managedObjectContext as? Context else {
 					assertionFailure(Error.System.InvalidContext.description)
-					return state.value
+					return state.past.value
 				}
 				let refer: Set<Edge> = input
 				dispatch_apply(refer.count, context.dispatch.parallel) {
 					let edge: Edge = refer[refer.startIndex.advancedBy($0)]
-					let(value,mean,variance) = edge.collect(visit.union([self]))
+					let(value,mean,variance) = edge.collect(visit: visit.union([self]))
 					dispatch_group_async(self.group.state, context.dispatch.serial) {
 						self.potential.value = self.potential.value + value
 						self.potential.mean = self.potential.mean + mean
@@ -201,9 +246,12 @@ extension Cell {
 		}
 		return state.value
 	}
-	public func correct(let eps eps: Float, let visit: Set<Cell> = []) -> (la_object_t, la_object_t) {
+	public func correct(let eps eps: Float) {
+		correct(eps: eps, visit: [])
+	}
+	internal func correct(let eps eps: Float, let visit: Set<Cell>) -> (la_object_t, la_object_t) {
 		if visit.contains(self) {
-			return(delta.mean, delta.variance)
+			return(delta.past.mean, delta.past.variance)
 			
 		} else {
 			mutex.delta.lock()
@@ -216,7 +264,7 @@ extension Cell {
 				} else {
 					guard let context: Context = managedObjectContext as? Context else {
 						assertionFailure(Error.System.InvalidContext.description)
-						return(delta.mean, delta.variance)
+						return(delta.past.mean, delta.past.variance)
 					}
 					let refer: Set<Edge> = output
 					dispatch_apply(refer.count, context.dispatch.parallel) {
@@ -229,8 +277,7 @@ extension Cell {
 					dispatch_group_wait(group.delta, DISPATCH_TIME_FOREVER)
 				}
 				
-				delta.mean = pdf(x: la_splat_from_float(0, Config.ATTR), mu: potential.value, sigma: sqrt(potential.variance)) *
-					sign(delta.value)
+				delta.mean = pdf(x: la_splat_from_float(0, Config.ATTR), mu: potential.value, sigma: sqrt(potential.variance)) * sign(delta.value)
 				delta.variance = delta.mean * potential.mean / potential.variance
 				
 				assert(delta.mean.status==LA_SUCCESS)
@@ -278,6 +325,27 @@ extension Cell {
 		}
 	}
 }
+extension Cell {
+	public func isChained(let cell: Cell) -> Bool {
+		return input.map {
+			$0.isChained(cell)
+		}.reduce(false) {
+			$0.0 || $0.1
+		}
+	}
+	internal func iTrace(let task:(Cell)->()) {
+		task(self)
+		input.forEach {
+			$0.iTrace(task)
+		}
+	}
+	internal func oTrace(let task:(Cell)->()) {
+		task(self)
+		output.forEach {
+			$0.oTrace(task)
+		}
+	}
+}
 extension Context {
 	public func newCell ( let width width: UInt, let label: String = "", let recur: Bool = false, let input: [Cell] = [] ) -> Cell? {
 		let cell: Cell? = new()
@@ -290,15 +358,8 @@ extension Context {
 			cell.setValue(NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count), forKey: "logvariance")
 			cell.setValue(NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count), forKey: "lambda")
 			cell.setup()
-			input.forEach { ( let input: Cell ) in
-				if let edge: Edge = new() {
-					let count: Int = Int(cell.width * input.width)
-					edge.setValue(input, forKey: "input")
-					edge.setValue(cell, forKey: "output")
-					edge.setValue(NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count), forKey: "mean")
-					edge.setValue(NSData(bytes: [Float](count: count, repeatedValue: Float(-2.0*log(Double(input.width)))), length: sizeof(Float)*count), forKey: "logvariance")
-					edge.setup()
-				}
+			input.forEach {
+				chainCell(output: cell, input: $0)
 			}
 		}
 		return cell
@@ -314,34 +375,29 @@ extension Context {
 		let cell: [Cell] = fetch ( attribute )
 		return cell
 	}
-}
-extension Context {
-	public func train( let pair: [([String:[Bool]], [String:[Bool]])], let count: Int, let eps: Float) {
-		(0..<count).forEach {(_)in
-			pair.forEach {
-				$0.0.forEach {
-					if let cell: Cell = searchCell(label: $0.0).first {
-						cell.oClear()
-						cell.active = $0.1
-					}
-				}
-				$0.1.forEach {
-					if let cell: Cell = searchCell(label: $0.0).first {
-						cell.iClear()
-						cell.answer = $0.1
-					}
-				}
-				$0.0.forEach {
-					if let cell: Cell = searchCell(label: $0.0).first {
-						cell.correct(eps: eps)
-					}
-				}
-				$0.1.forEach {
-					if let cell: Cell = searchCell(label: $0.0).first {
-						print(cell.active)
-					}
-				}
+	public func chainCell(let output output: Cell, let input: Cell) -> Bool {
+		var result: Bool = false
+		if output.isChained(input) {
+			
+		} else if let edge: Edge = new() {
+			let count: Int = Int(input.width * output.width)
+			edge.setValue(input, forKey: "input")
+			edge.setValue(output, forKey: "output")
+			edge.setValue(NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count), forKey: "mean")
+			edge.setValue(NSData(bytes: [Float](count: count, repeatedValue: Float(-2.0*log(Double(input.width)))), length: sizeof(Float)*count), forKey: "logvariance")
+			edge.setup()
+			result = true
+		}
+		return result
+	}
+	public func unchainCell(let output output: Cell, let input: Cell) -> Bool {
+		var result: Bool = false
+		output.input.forEach {
+			if $0.isChained(input) {
+				purge(object: $0)
+				result = true
 			}
 		}
+		return result
 	}
 }

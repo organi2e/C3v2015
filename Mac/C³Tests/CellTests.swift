@@ -65,7 +65,6 @@ class CellTests: XCTestCase {
 					O.collect()
 					I.correct(eps: 1/4.0)
 				}
-				context.join()
 				context.store() {(_)in
 					XCTFail()
 				}

@@ -222,6 +222,21 @@ func sign(let x: la_object_t) -> la_object_t {
 		return la_matrix_from_float_buffer(buffer, x.rows, x.cols, x.cols, Config.HINT, Config.ATTR)
 	}
 }
+func sigmoid(let x: la_object_t) -> la_object_t {
+	if x.count == 0 {
+		var value: Float = 0
+		la_vector_to_float_buffer(&value, 1, la_vector_from_splat(x, 1))
+		return la_splat_from_float(0.5+0.5*tanh(0.5*value), Config.ATTR)
+	} else {
+		var half: Float = 0.5
+		let buffer: [Float] = [Float](count: x.count, repeatedValue: 0)
+		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), x.cols, x)
+		vDSP_vsmul(UnsafePointer<Float>(buffer), 1, &half, UnsafeMutablePointer<Float>(buffer), 1, vDSP_Length(x.count))
+		vvtanhf(UnsafeMutablePointer<Float>(buffer), UnsafePointer<Float>(buffer), [Int32(x.count)])
+		vDSP_vsmsa(UnsafePointer<Float>(buffer), 1, &half, &half, UnsafeMutablePointer<Float>(buffer), 1, vDSP_Length(x.count))
+		return la_matrix_from_float_buffer(buffer, x.rows, x.cols, x.cols, Config.HINT, Config.ATTR)
+	}
+}
 func normal(let rows rows: UInt, let cols: UInt) -> la_object_t {
 	
 	let count: Int = Int(rows*cols)
