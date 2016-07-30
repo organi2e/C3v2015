@@ -85,7 +85,7 @@ class CellTests: XCTestCase {
 				I: Cell = context.searchCell(label: "I").last,
 				O: Cell = context.searchCell(label: "O").last
 			{
-				(0..<16384).forEach {
+				(0..<1024).forEach {
 					let ID: [Bool] = IS[$0%4]
 					let OD: [Bool] = OS[$0%4]
 					(0..<16).forEach {(_)in
@@ -98,7 +98,7 @@ class CellTests: XCTestCase {
 						O.answer = OD
 					
 						O.collect()
-						I.correct(eps: 1/16.0)
+						I.correct(eps: 1/4.0)
 					}
 				}
 				context.store() {(_)in
