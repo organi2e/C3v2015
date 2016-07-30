@@ -96,12 +96,32 @@ extension Cell {
 		state.variance = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
 		
 		assert(state.value.status==LA_SUCCESS && state.value.width==width)
-		assert(state.value.status==LA_SUCCESS && delta.value.width==width)
-		assert(state.value.status==LA_SUCCESS && state.value.width==width)
+		assert(state.mean.status==LA_SUCCESS && state.mean.width==width)
+		assert(state.variance.status==LA_SUCCESS && state.variance.width==width)
+		
+		state.past.value = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
+		state.past.mean = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
+		state.past.variance = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
+		
+		assert(state.past.value.status==LA_SUCCESS && state.past.value.width==width)
+		assert(state.past.mean.status==LA_SUCCESS && state.past.mean.width==width)
+		assert(state.past.variance.status==LA_SUCCESS && state.past.variance.width==width)
 		
 		delta.value = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
 		delta.mean = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
 		delta.variance = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
+		
+		assert(delta.value.status==LA_SUCCESS && delta.value.width==width)
+		assert(delta.mean.status==LA_SUCCESS && delta.mean.width==width)
+		assert(delta.variance.status==LA_SUCCESS && delta.variance.width==width)
+		
+		delta.past.value = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
+		delta.past.mean = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
+		delta.past.variance = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
+		
+		assert(delta.past.value.status==LA_SUCCESS && delta.past.value.width==width)
+		assert(delta.past.mean.status==LA_SUCCESS && delta.past.mean.width==width)
+		assert(delta.past.variance.status==LA_SUCCESS && delta.past.variance.width==width)
 		
 		refresh()
 		forget()
@@ -149,9 +169,9 @@ extension Cell {
 		assert(potential.variance.status==LA_SUCCESS)
 		assert(potential.value.status==LA_SUCCESS)
 		
-		state.past.value = state.value
-		state.past.mean = state.mean
-		state.past.variance = state.past.variance
+		state.past.value = state.value.dup
+		state.past.mean = state.mean.dup
+		state.past.variance = state.variance.dup
 		
 		assert(state.past.mean.status==LA_SUCCESS)
 		assert(state.past.variance.status==LA_SUCCESS)
@@ -160,13 +180,13 @@ extension Cell {
 	}
 	private func forget() {
 		
-		delta.past.value = delta.value
-		delta.past.mean = delta.mean
-		delta.past.variance = delta.variance
+		delta.past.value = delta.value.dup
+		delta.past.mean = delta.mean.dup
+		delta.past.variance = delta.variance.dup
 		
-		assert(delta.past.value.status==LA_SUCCESS)
-		assert(delta.past.mean.status==LA_SUCCESS)
-		assert(delta.past.variance.status==LA_SUCCESS)
+		assert(delta.past.value.status==LA_SUCCESS && delta.past.value.width == width)
+		assert(delta.past.mean.status==LA_SUCCESS && delta.past.mean.width == width)
+		assert(delta.past.variance.status==LA_SUCCESS && delta.past.variance.width == width)
 		
 		delta.value = la_splat_from_float(0, Config.ATTR)
 		delta.mean = la_splat_from_float(0, Config.ATTR)
@@ -181,7 +201,7 @@ extension Cell {
 		if visit.contains(self) {
 		
 		} else {
-			if mutex.state.tryLock() {
+			mutex.state.lock()
 				if ready.contains(.State) {
 					guard let context: Context = managedObjectContext as? Context else {
 						assertionFailure(Error.System.InvalidContext.description)
@@ -196,14 +216,14 @@ extension Cell {
 					ready.remove(.State)
 				}
 				mutex.state.unlock()
-			}
+			
 		}
 	}
 	public func oClear(let visit: Set<Cell> = []) {
 		if visit.contains(self) {
 		
 		} else {
-			if mutex.delta.tryLock() {
+			mutex.delta.lock()
 				if ready.contains(.Delta) {
 					guard let context: Context = managedObjectContext as? Context else {
 						assertionFailure(Error.System.InvalidContext.description)
@@ -219,7 +239,7 @@ extension Cell {
 					ready.remove(.Delta)
 				}
 				mutex.delta.unlock()
-			}
+			
 		}
 	}
 	
@@ -240,16 +260,17 @@ extension Cell {
 					return state.past.value
 				}
 				let refer: Set<Edge> = input
-				dispatch_apply(refer.count, context.dispatch.parallel) {
-					let edge: Edge = refer[refer.startIndex.advancedBy($0)]
+//				dispatch_apply(refer.count, context.dispatch.parallel) {
+//					let edge: Edge = refer[refer.startIndex.advancedBy($0)]
+				refer.forEach { (let edge: Edge)in
 					let(value,mean,variance) = edge.collect(visit: visit.union([self]))
-					dispatch_group_async(self.group.state, context.dispatch.serial) {
+//					dispatch_group_async(self.group.state, context.dispatch.serial) {
 						self.potential.value = self.potential.value + value
 						self.potential.mean = self.potential.mean + mean
 						self.potential.variance = self.potential.variance + variance
-					}
+//					}
 				}
-				dispatch_group_wait(group.state, DISPATCH_TIME_FOREVER)
+//				dispatch_group_wait(group.state, DISPATCH_TIME_FOREVER)
 				
 				state.value = step(potential.value)
 				ready.insert(.State)
@@ -279,14 +300,15 @@ extension Cell {
 						return(delta.past.mean, delta.past.variance)
 					}
 					let refer: Set<Edge> = output
-					dispatch_apply(refer.count, context.dispatch.parallel) {
-						let edge: Edge = refer[refer.startIndex.advancedBy($0)]
+//					dispatch_apply(refer.count, context.dispatch.parallel) {
+//						let edge: Edge = refer[refer.startIndex.advancedBy($0)]
+					refer.forEach { (let edge: Edge)in
 						let delta = edge.correct(eps: eps, visit: visit.union([self]))
-						dispatch_group_async(self.group.delta, context.dispatch.serial) {
+//						dispatch_group_async(self.group.delta, context.dispatch.serial) {
 							self.delta.value = self.delta.value + delta
-						}
+//						}
 					}
-					dispatch_group_wait(group.delta, DISPATCH_TIME_FOREVER)
+//					dispatch_group_wait(group.delta, DISPATCH_TIME_FOREVER)
 				}
 				
 				delta.mean = pdf(x: la_splat_from_float(0, Config.ATTR), mu: potential.value, sigma: sqrt(potential.variance)) * sign(delta.value)
