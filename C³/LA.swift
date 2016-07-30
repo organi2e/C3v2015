@@ -28,6 +28,12 @@ extension la_object_t {
 		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), cols, self)
 		return buffer
 	}
+	var dup: la_object_t {
+		let count: Int = Int(rows*cols)
+		let buffer: [Float] = [Float](count: count, repeatedValue: 0)
+		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), cols, self)
+		return la_matrix_from_float_buffer(buffer, rows, cols, cols, Config.HINT, Config.ATTR)
+	}
 	static var zeros: la_object_t {
 		return la_splat_from_float(0, la_attribute_t(LA_DEFAULT_ATTRIBUTES))
 	}

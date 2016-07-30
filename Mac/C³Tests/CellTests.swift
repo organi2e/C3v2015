@@ -14,10 +14,10 @@ class CellTests: XCTestCase {
 	static let value: [Float] = [arc4random(), arc4random(), arc4random(), arc4random()].map{Float($0)/Float(UInt32.max)}
 	
 	static let f: Bool = false
-	static let t: Bool = true
+	static let T: Bool = true
 	
-	let IS: [[Bool]] = [[f,t,f,f], [f,f,t,t], [f,f,t,f], [f,f,f,t]]
-	let OS: [[Bool]] = [[t,f,f,f], [f,t,f,f], [f,f,t,f], [f,f,f,t]]
+	let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [f,f,T,f]]
+	let OS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f]]
 	
 	func test0Insert() {
 		do {
@@ -25,12 +25,46 @@ class CellTests: XCTestCase {
 			let context: Context = try Context(storage: url)
 			if let
 				I: Cell = context.newCell(width: 4, label: "I"),
-				H: Cell = context.newCell(width: 64, label: "H"),
+				H: Cell = context.newCell(width: 16, label: "H"),
+				G: Cell = context.newCell(width: 16, label: "G"),
+				F: Cell = context.newCell(width: 16, label: "F"),
+				E: Cell = context.newCell(width: 16, label: "E"),
+				D: Cell = context.newCell(width: 16, label: "D"),
+				C: Cell = context.newCell(width: 16, label: "C"),
+				B: Cell = context.newCell(width: 16, label: "B"),
+				A: Cell = context.newCell(width: 16, label: "A"),
 				O: Cell = context.newCell(width: 4, label: "O")
 			{
+				context.chainCell(output: O, input: F)
+				context.chainCell(output: O, input: D)
+				context.chainCell(output: O, input: A)
+				
 				context.chainCell(output: H, input: I)
-				context.chainCell(output: H, input: H)
-				context.chainCell(output: O, input: H)
+				context.chainCell(output: H, input: G)
+				
+				context.chainCell(output: G, input: F)
+				
+				context.chainCell(output: F, input: E)
+				
+				context.chainCell(output: E, input: H)
+				context.chainCell(output: E, input: C)
+				
+				context.chainCell(output: G, input: F)
+				
+				context.chainCell(output: F, input: E)
+				
+				context.chainCell(output: E, input: C)
+				context.chainCell(output: E, input: H)
+				
+				context.chainCell(output: D, input: I)
+				
+				context.chainCell(output: C, input: B)
+				
+				context.chainCell(output: B, input: E)
+				
+				context.chainCell(output: A, input: I)
+				context.chainCell(output: A, input: A)
+				
 				
 				context.store() {(_)in
 					XCTFail()
@@ -51,16 +85,21 @@ class CellTests: XCTestCase {
 				I: Cell = context.searchCell(label: "I").last,
 				O: Cell = context.searchCell(label: "O").last
 			{
-				(0..<32768).forEach {
+				(0..<16384).forEach {
+					let ID: [Bool] = IS[$0%4]
+					let OD: [Bool] = OS[$0%4]
+					(0..<16).forEach {(_)in
+						I.oClear()
+						O.iClear()
+			
+						context.join()
+						
+						I.active = ID
+						O.answer = OD
 					
-					I.oClear()
-					O.iClear()
-					
-					I.active = IS[$0%4]
-					O.answer = OS[$0%4]
-					
-					O.collect()
-					I.correct(eps: 1/4.0)
+						O.collect()
+						I.correct(eps: 1/16.0)
+					}
 				}
 				context.store() {(_)in
 					XCTFail()
@@ -82,14 +121,20 @@ class CellTests: XCTestCase {
 				O: Cell = context.searchCell(label: "O").last
 			{
 				(0..<4).forEach {
-					//print("epoch \($0)")
-					I.oClear()
-					O.iClear()
-					
-					I.active = IS[$0%4]
-					print("validate: \(O.active)")
-					
-					XCTAssert(O.active==OS[$0%4])
+					let ID: [Bool] = IS[$0%4]
+					let OD: [Bool] = OS[$0%4]
+					var DC: [Int] = [Int](count: 10, repeatedValue: 0)
+					(0..<64).forEach {(_)in
+						I.oClear()
+						O.iClear()
+						I.active = ID
+						O.active.enumerate().forEach {
+							if $0.element {
+								DC[$0.index] = DC[$0.index] + 1
+							}
+						}
+					}
+					print(zip(OD, DC).map{ $0.0 ? "[\($0.1)]" : "\($0.1)" })
 				}
 				context.store() {(_)in
 					XCTFail()

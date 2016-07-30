@@ -101,4 +101,11 @@ extension Context {
 		}
 		return result
 	}
+	public func join () {
+		dispatch_barrier_sync(self.dispatch.parallel) {
+			dispatch_barrier_sync(self.dispatch.serial) {
+			
+			}
+		}
+	}
 }
