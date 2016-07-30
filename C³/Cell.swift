@@ -69,7 +69,7 @@ extension Cell {
 	@NSManaged public var attribute: [String: AnyObject]
 	@NSManaged private var mean: NSData
 	@NSManaged private var logvariance: NSData
-	@NSManaged private var lambda: NSData
+	@NSManaged private var siglambda: NSData
 	@NSManaged private var input: Set<Edge>
 	@NSManaged private var output: Set<Edge>
 }
@@ -90,6 +90,14 @@ extension Cell {
 		
 		assert(const.mean.status==LA_SUCCESS)
 		assert(const.logvariance.status==LA_SUCCESS)
+		
+		potential.mean = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
+		potential.value = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
+		potential.variance = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
+		
+		assert(potential.value.status==LA_SUCCESS && potential.value.width==width)
+		assert(potential.mean.status==LA_SUCCESS && potential.mean.width==width)
+		assert(potential.variance.status==LA_SUCCESS && potential.variance.width==width)
 		
 		state.value = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
 		state.mean = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
@@ -152,7 +160,6 @@ extension Cell {
 }
 extension Cell {
 	private func refresh() {
-		
 		const.deviation = exp(0.5*const.logvariance)
 		const.variance = const.deviation * const.deviation
 		const.value = const.mean + const.deviation * normal(rows: width, cols: 1)
@@ -161,9 +168,9 @@ extension Cell {
 		assert(const.variance.status==LA_SUCCESS)
 		assert(const.value.status==LA_SUCCESS)
 		
-		potential.mean = const.mean
-		potential.variance = const.variance
-		potential.value = const.value
+		potential.mean = 0.5 * potential.mean.dup + const.mean
+		potential.variance = 0.25 * potential.variance.dup + const.variance
+		potential.value = 0.5 * potential.value.dup + const.value
 		
 		assert(potential.mean.status==LA_SUCCESS)
 		assert(potential.variance.status==LA_SUCCESS)
@@ -390,7 +397,7 @@ extension Context {
 			cell.attribute = [:]
 			cell.setValue(NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count), forKey: "mean")
 			cell.setValue(NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count), forKey: "logvariance")
-			cell.setValue(NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count), forKey: "lambda")
+			cell.setValue(NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count), forKey: "siglambda")
 			cell.setup()
 			input.forEach {
 				chainCell(output: cell, input: $0)
