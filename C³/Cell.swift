@@ -168,9 +168,9 @@ extension Cell {
 		assert(const.variance.status==LA_SUCCESS)
 		assert(const.value.status==LA_SUCCESS)
 		
-		potential.mean = 0.5 * potential.mean.dup + const.mean
-		potential.variance = 0.25 * potential.variance.dup + const.variance
-		potential.value = 0.5 * potential.value.dup + const.value
+		potential.mean = 0.95 * potential.mean.dup + const.mean
+		potential.variance = 0.95 * 0.95 * potential.variance.dup + const.variance
+		potential.value = 0.95 * potential.value.dup + const.value
 		
 		assert(potential.mean.status==LA_SUCCESS)
 		assert(potential.variance.status==LA_SUCCESS)
@@ -397,7 +397,7 @@ extension Context {
 			cell.attribute = [:]
 			cell.setValue(NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count), forKey: "mean")
 			cell.setValue(NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count), forKey: "logvariance")
-			cell.setValue(NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count), forKey: "siglambda")
+			cell.setValue(NSData(bytes: [Float](count: count, repeatedValue: 0.0), length: sizeof(Float)*count), forKey: "lambda")
 			cell.setup()
 			input.forEach {
 				chainCell(output: cell, input: $0)

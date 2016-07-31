@@ -98,7 +98,7 @@ class CellTests: XCTestCase {
 						O.answer = OD
 					
 						O.collect()
-						I.correct(eps: 1/4.0)
+						I.correct(eps: 1/8.0)
 					}
 				}
 				context.store() {(_)in

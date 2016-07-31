@@ -26,6 +26,7 @@ enum Error: ErrorType {
 	enum CoreData: String, ErrorType, CustomStringConvertible {
 		case ModelNotFound = "Core Data Model Not Found"
 		case ModelNotAvailable = "Core Data Model Not Available"
+		case Model(model: String) = "desc"
 		enum AnyError: ErrorType {
 			case error(message: String)
 		}
