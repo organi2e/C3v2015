@@ -6,7 +6,7 @@
 //
 //
 import CoreData
-internal class Alter: NSManagedObject {
+public class Alter: NSManagedObject {
 
 }
 extension Alter {

@@ -95,6 +95,7 @@
 		878C7AC31D01AF60002CDFD1 /* t10k-labels.idx1-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "t10k-labels.idx1-ubyte"; path = "MNIST/t10k-labels.idx1-ubyte"; sourceTree = "<group>"; };
 		878C7AC41D01AF60002CDFD1 /* train-images.idx3-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "train-images.idx3-ubyte"; path = "MNIST/train-images.idx3-ubyte"; sourceTree = "<group>"; };
 		878C7AC51D01AF60002CDFD1 /* train-labels.idx1-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "train-labels.idx1-ubyte"; path = "MNIST/train-labels.idx1-ubyte"; sourceTree = "<group>"; };
+		87A42CBC1D4F5CD5008D9708 /* Feedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Feedback.swift; path = "C³/Feedback.swift"; sourceTree = "<group>"; };
 		87BCEBF01D4D745900FC3099 /* Alter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Alter.swift; path = "C³/Alter.swift"; sourceTree = "<group>"; };
 		87BCEBF91D4D746400FC3099 /* Gauss.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Gauss.swift; path = "C³/Gauss.swift"; sourceTree = "<group>"; };
 		87BCEBFA1D4D75A500FC3099 /* Bias.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Bias.swift; path = "C³/Bias.swift"; sourceTree = "<group>"; };
@@ -173,6 +174,7 @@
 				87BCEBF01D4D745900FC3099 /* Alter.swift */,
 				87BCEBF91D4D746400FC3099 /* Gauss.swift */,
 				87BCEBFA1D4D75A500FC3099 /* Bias.swift */,
+				87A42CBC1D4F5CD5008D9708 /* Feedback.swift */,
 			);
 			name = "C³";
 			sourceTree = "<group>";

@@ -8,6 +8,7 @@
 import Foundation
 import XCTest
 @testable import C3
+/*
 class TraceTests: XCTestCase {
 	static let file: String = "test.sqlite"
 	static let label: [String] = (0..<6).map {(_)in "\(arc4random())"}
@@ -87,3 +88,4 @@ class TraceTests: XCTestCase {
 		}
 	}
 }
+*/

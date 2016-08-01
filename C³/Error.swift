@@ -23,6 +23,9 @@ enum Error: ErrorType {
 			return rawValue
 		}
 	}
+	enum EntityError: ErrorType {
+		case InsertionFails(entity: String)
+	}
 	enum CoreData: String, ErrorType, CustomStringConvertible {
 		case ModelNotFound = "Core Data Model Not Found"
 		case ModelNotAvailable = "Core Data Model Not Available"

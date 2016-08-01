@@ -10,15 +10,86 @@ import XCTest
 @testable import C3
 
 class CellTests: XCTestCase {
+	static let file: String = "test.sqlite"
 	static let keys: [Int] = [Int(arc4random()), Int(arc4random())]
 	static let value: [Float] = [arc4random(), arc4random(), arc4random(), arc4random()].map{Float($0)/Float(UInt32.max)}
 	
 	static let f: Bool = false
 	static let T: Bool = true
 	
+	//let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,f,T,T], [f,T,f,f]]
+	//let OS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f]]
+	
 	let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [f,f,T,f]]
 	let OS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f]]
 	
+	func test0Insert() {
+		do {
+			let url: NSURL = try NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true).URLByAppendingPathComponent(CellTests.file)
+			let context: Context = try Context(storage: url)
+			
+			let I: Cell = try context.newCell(width: 4, recur: false, label: "I")
+			let H: Cell = try context.newCell(width: 64, recur: false, label: "H")
+			let G: Cell = try context.newCell(width: 64, recur: false, label: "G")
+			let O: Cell = try context.newCell(width: 4, recur: false, label: "O")
+			
+			try context.chainCell(output: O, input: H)
+			try context.chainCell(output: G, input: H)
+			try context.chainCell(output: H, input: G)
+			try context.chainCell(output: H, input: I)
+			
+			try context.save()
+			
+		} catch let e {
+			XCTFail(String(e))
+		}
+	}
+	func test1Update() {
+		do {
+			let url: NSURL = try NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true).URLByAppendingPathComponent(CellTests.file)
+			let context: Context = try Context(storage: url)
+			if let I: Cell = context.searchCell(label: "I").last, O: Cell = context.searchCell(label: "O").last {
+				(0..<4096).forEach {(let idx:Int)in
+					
+					(0..<16).forEach {(let iter: Int)in
+						O.iClear()
+						I.oClear()
+					
+						O.answer = OS[idx%4]
+						I.active = IS[idx%4]
+
+						O.collect()
+						I.correct(eps: 1/16.0)
+					}
+					
+				}
+			}
+			try context.save()
+		} catch let e {
+			XCTFail(String(e))
+		}
+	}
+	
+	func test2Validation() {
+		do {
+			let url: NSURL = try NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true).URLByAppendingPathComponent(CellTests.file)
+			let context: Context = try Context(storage: url)
+			if let I: Cell = context.searchCell(label: "I").last, O: Cell = context.searchCell(label: "O").last {
+				(0..<4).forEach {(let idx:Int)in
+					
+					I.oClear()
+					O.iClear()
+					
+					I.active = IS[idx%4]
+					print("\(idx): \(O.active)")
+					
+				}
+			}
+		} catch let e {
+			XCTFail(String(e))
+		}
+	}
+	/*
 	func test0Insert() {
 		do {
 			let url: NSURL = try NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true).URLByAppendingPathComponent("test.sqlite")
@@ -147,6 +218,7 @@ class CellTests: XCTestCase {
 			XCTFail(String(e))
 		}
 	}
+	*/
 }
 
 /*
