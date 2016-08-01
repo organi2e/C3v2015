@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model userDefinedModelVersionIdentifier="" type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="10174" systemVersion="15F34" minimumToolsVersion="Xcode 7.0">
-    <entity name="Alter" representedClassName="C3.Alter" isAbstract="YES" syncable="YES">
-        <relationship name="gauss" maxCount="1" deletionRule="Cascade" destinationEntity="Gauss" inverseName="alter" inverseEntity="Gauss" syncable="YES"/>
-    </entity>
-    <entity name="Bias" representedClassName="C3.Bias" parentEntity="Alter" syncable="YES">
+<model userDefinedModelVersionIdentifier="" type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="10174" systemVersion="15G31" minimumToolsVersion="Xcode 7.0">
+    <entity name="Bias" representedClassName="C3.Bias" parentEntity="Gauss" syncable="YES">
         <relationship name="cell" maxCount="1" deletionRule="Cascade" destinationEntity="Cell" inverseName="bias" inverseEntity="Cell" syncable="YES"/>
     </entity>
     <entity name="Blob" representedClassName="C3.Blob" syncable="YES">
@@ -13,9 +10,10 @@
     <entity name="Cell" representedClassName="C3.Cell" syncable="YES">
         <attribute name="attribute" attributeType="Transformable" syncable="YES"/>
         <attribute name="label" attributeType="String" indexed="YES" syncable="YES"/>
-        <attribute name="lambda" attributeType="Binary" syncable="YES"/>
+        <attribute name="lambdadata" attributeType="Binary" syncable="YES"/>
         <attribute name="width" attributeType="Integer 64" syncable="YES"/>
         <relationship name="bias" maxCount="1" deletionRule="Cascade" destinationEntity="Bias" inverseName="cell" inverseEntity="Bias" syncable="YES"/>
+        <relationship name="feedback" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="Feedback" inverseName="cell" inverseEntity="Feedback" syncable="YES"/>
         <relationship name="input" toMany="YES" deletionRule="Cascade" destinationEntity="Edge" inverseName="output" inverseEntity="Edge" syncable="YES"/>
         <relationship name="output" toMany="YES" deletionRule="Cascade" destinationEntity="Edge" inverseName="input" inverseEntity="Edge" syncable="YES"/>
     </entity>
@@ -23,26 +21,26 @@
         <attribute name="key" attributeType="Transformable" indexed="YES" syncable="YES"/>
         <attribute name="value" attributeType="Transformable" syncable="YES"/>
     </entity>
-    <entity name="Edge" representedClassName="C3.Edge" syncable="YES">
-        <attribute name="logvariance" optional="YES" attributeType="Binary" syncable="YES"/>
-        <attribute name="mean" attributeType="Binary" syncable="YES"/>
+    <entity name="Edge" representedClassName="C3.Edge" parentEntity="Gauss" syncable="YES">
         <relationship name="input" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Cell" inverseName="output" inverseEntity="Cell" syncable="YES"/>
         <relationship name="output" maxCount="1" deletionRule="Nullify" destinationEntity="Cell" inverseName="input" inverseEntity="Cell" syncable="YES"/>
     </entity>
-    <entity name="Gauss" representedClassName="C3.Gauss" isAbstract="YES" syncable="YES">
+    <entity name="Feedback" representedClassName="C3.Feedback" parentEntity="Gauss" syncable="YES">
+        <relationship name="cell" maxCount="1" deletionRule="Cascade" destinationEntity="Cell" inverseName="feedback" inverseEntity="Cell" syncable="YES"/>
+    </entity>
+    <entity name="Gauss" representedClassName="C3.Gauss" syncable="YES">
         <attribute name="cols" attributeType="Integer 64" minValueString="1" syncable="YES"/>
         <attribute name="logvariancedata" attributeType="Binary" allowsExternalBinaryDataStorage="YES" syncable="YES"/>
         <attribute name="meandata" attributeType="Binary" allowsExternalBinaryDataStorage="YES" syncable="YES"/>
         <attribute name="rows" attributeType="Integer 64" minValueString="1" syncable="YES"/>
-        <relationship name="alter" maxCount="1" deletionRule="Cascade" destinationEntity="Alter" inverseName="gauss" inverseEntity="Alter" syncable="YES"/>
     </entity>
     <elements>
-        <element name="Alter" positionX="45" positionY="180" width="128" height="60"/>
         <element name="Bias" positionX="54" positionY="189" width="128" height="60"/>
         <element name="Blob" positionX="36" positionY="171" width="128" height="75"/>
-        <element name="Cell" positionX="36" positionY="117" width="128" height="150"/>
+        <element name="Cell" positionX="36" positionY="117" width="128" height="165"/>
         <element name="Dict" positionX="18" positionY="81" width="128" height="75"/>
-        <element name="Edge" positionX="54" positionY="108" width="128" height="105"/>
-        <element name="Gauss" positionX="36" positionY="171" width="128" height="120"/>
+        <element name="Edge" positionX="54" positionY="108" width="128" height="75"/>
+        <element name="Gauss" positionX="36" positionY="171" width="128" height="105"/>
+        <element name="Feedback" positionX="36" positionY="171" width="128" height="60"/>
     </elements>
 </model>
