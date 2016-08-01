@@ -72,6 +72,7 @@ extension Cell {
 	@NSManaged private var siglambda: NSData
 	@NSManaged private var input: Set<Edge>
 	@NSManaged private var output: Set<Edge>
+	@NSManaged private var bias: Bias
 }
 extension Cell {
 	public override func awakeFromFetch() {
