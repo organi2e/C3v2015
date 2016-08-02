@@ -39,6 +39,11 @@ public class Cell: NSManagedObject {
 		mean: la_splat_from_float(0, Config.ATTR),
 		variance: la_splat_from_float(0, Config.ATTR)
 	)
+	private var lambda = (
+		value: la_splat_from_float(0, Config.ATTR),
+		sigma: la_splat_from_float(0, Config.ATTR),
+		delta: la_splat_from_float(0, Config.ATTR)
+	)
 	private let mutex = (
 		state: NSLock(),
 		delta: NSLock()
@@ -67,8 +72,20 @@ extension Cell {
 extension Cell {
 	internal func setup() {
 		
+		setPrimitiveValue(NSData(data: lambdadata), forKey: "lambdadata")
+		
+		lambda.sigma = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(lambdadata.bytes), width, 1, 1, Config.HINT, nil, Config.ATTR)
+		assert(lambda.sigma.status==LA_SUCCESS && lambda.sigma.rows == width && lambda.sigma.cols == 1)
+		
+		lambda.value = sigmoid(lambda.sigma)
+		assert(lambda.value.status==LA_SUCCESS && lambda.value.rows == width && lambda.value.cols == 1)
+		
+		lambda.delta = la_matrix_from_splat(la_splat_from_float(0, Config.ATTR), width, width)
+		assert(lambda.delta.status==LA_SUCCESS && lambda.delta.rows == width && lambda.delta.cols == width)
+		
 		potential.train = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
 		potential.value = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
+		
 		potential.mean = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
 		potential.variance = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
 		
@@ -103,6 +120,11 @@ extension Cell {
 		refresh()
 		forget()
 		
+	}
+	internal func commit() {
+		willChangeValueForKey("lambdadata")
+		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(lambdadata.bytes), width, lambda.sigma)
+		didChangeValueForKey("lambdadata")
 	}
 }
 extension Cell {
@@ -271,33 +293,39 @@ extension Cell {
 					dispatch_group_wait(group.delta, DISPATCH_TIME_FOREVER)
 				}
 				
-				delta.mean = sign(potential.train) * pdf(x: la_splat_from_float(0, Config.ATTR), mu: potential.value, sigma: sqrt(potential.variance))
+				delta.mean = potential.train * pdf(x: la_splat_from_float(0, Config.ATTR), mu: potential.value, sigma: sqrt(potential.variance))
 				delta.variance = delta.mean * potential.mean / potential.variance
 				
 				assert(delta.mean.status==LA_SUCCESS)
 				assert(delta.variance.status==LA_SUCCESS)
 				
+				if let feedback: Feedback = feedback {
+					lambda.delta = (la_matrix_product(la_diagonal_matrix_from_vector(lambda.value, 0), lambda.delta) + la_matrix_product(feedback.value, la_matrix_product(la_diagonal_matrix_from_vector(delta.past.mean, 0), lambda.delta)) + la_diagonal_matrix_from_vector(lambda.value, 0)).dup
+				} else {
+					lambda.delta = (la_matrix_product(la_diagonal_matrix_from_vector(lambda.value, 0), lambda.delta) + la_diagonal_matrix_from_vector(lambda.value, 0)).dup
+				}
+				
 				dispatch_apply(input.count, context.dispatch.parallel) {
 					let edge: Edge = self.input[self.input.startIndex.advancedBy($0)]
 					if let feedback: Feedback = self.feedback {
-						edge.gradient = la_matrix_product(feedback.value, self.delta.past.mean.toExpand(self.width*edge.input.width) * edge.gradient).dup + la_transpose(edge.input.state.value).toIdentity(self.width)
+						edge.gradient = (la_matrix_product(feedback.value, la_matrix_product(la_diagonal_matrix_from_vector(self.delta.past.mean, 0), edge.gradient)) + la_transpose(edge.input.state.value).toIdentity(self.width)).dup
 					} else {
-						edge.gradient = la_transpose(edge.input.state.value).toIdentity(self.width)
+						edge.gradient = (la_transpose(edge.input.state.value).toIdentity(self.width))
 					}
 					edge.correct(eps: eps, mean: self.delta.mean, variance: self.delta.variance)
 					edge.commit()
 				}
 				
 				if let feedback: Feedback = feedback {
-					feedback.gradient = la_matrix_product(feedback.value, self.delta.past.mean.toExpand(self.width*self.width) * feedback.gradient).dup + la_transpose(state.past.value).toIdentity(width)
+					feedback.gradient = (la_matrix_product(feedback.value, la_matrix_product(la_diagonal_matrix_from_vector(delta.past.mean, 0), feedback.gradient)) + la_transpose(state.past.value).toIdentity(width)).dup
 					feedback.correct(eps: eps, mean: delta.mean, variance: delta.variance)
 					feedback.commit()
 				}
 
 				if let feedback: Feedback = feedback {
-					bias.gradient = la_matrix_product(feedback.value, self.delta.past.mean.toExpand(self.width) * bias.gradient).dup + la_identity_matrix(width, la_scalar_type_t(LA_SCALAR_TYPE_FLOAT), Config.ATTR)
+					bias.gradient = (la_matrix_product(feedback.value, la_matrix_product(la_diagonal_matrix_from_vector(delta.past.mean, 0), bias.gradient)) + la_identity_matrix(width, la_scalar_type_t(LA_SCALAR_TYPE_FLOAT), Config.ATTR)).dup
 				} else {
-					bias.gradient = la_identity_matrix(width, la_scalar_type_t(LA_SCALAR_TYPE_FLOAT), Config.ATTR)
+					bias.gradient = (la_identity_matrix(width, la_scalar_type_t(LA_SCALAR_TYPE_FLOAT), Config.ATTR))
 				}
 				bias.correct(eps: eps, mean: delta.mean, variance: delta.variance)
 				bias.commit()
