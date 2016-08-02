@@ -28,14 +28,11 @@ class CellTests: XCTestCase {
 			let url: NSURL = try NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true).URLByAppendingPathComponent(CellTests.file)
 			let context: Context = try Context(storage: url)
 			
-			let I: Cell = try context.newCell(width: 4, recur: false, label: "I")
-			let H: Cell = try context.newCell(width: 64, recur: false, label: "H")
-			let G: Cell = try context.newCell(width: 64, recur: false, label: "G")
-			let O: Cell = try context.newCell(width: 4, recur: false, label: "O")
+			let I: Cell = try context.newCell(width: 4, recur: CellTests.f, label: "I")
+			let H: Cell = try context.newCell(width: 64, recur: CellTests.T, label: "H")
+			let O: Cell = try context.newCell(width: 4, recur: CellTests.f, label: "O")
 			
 			try context.chainCell(output: O, input: H)
-			try context.chainCell(output: G, input: H)
-			try context.chainCell(output: H, input: G)
 			try context.chainCell(output: H, input: I)
 			
 			try context.save()
@@ -48,18 +45,28 @@ class CellTests: XCTestCase {
 		do {
 			let url: NSURL = try NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true).URLByAppendingPathComponent(CellTests.file)
 			let context: Context = try Context(storage: url)
-			if let I: Cell = context.searchCell(label: "I").last, O: Cell = context.searchCell(label: "O").last {
-				(0..<4096).forEach {(let idx:Int)in
+			if let
+				I: Cell = context.searchCell(label: "I").last,
+				O: Cell = context.searchCell(label: "O").last
+			{
+				(0..<1024).forEach {
+					
+					let ID: [Bool] = IS[$0%4]
+					let OD: [Bool] = OS[$0%4]
+					
+					print("epoch: \($0)")
 					
 					(0..<16).forEach {(let iter: Int)in
+						
 						O.iClear()
 						I.oClear()
 					
-						O.answer = OS[idx%4]
-						I.active = IS[idx%4]
+						O.answer = OD
+						I.active = ID
 
 						O.collect()
-						I.correct(eps: 1/16.0)
+						I.correct(eps: 1/8.0)
+						
 					}
 					
 				}
@@ -74,17 +81,31 @@ class CellTests: XCTestCase {
 		do {
 			let url: NSURL = try NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true).URLByAppendingPathComponent(CellTests.file)
 			let context: Context = try Context(storage: url)
-			if let I: Cell = context.searchCell(label: "I").last, O: Cell = context.searchCell(label: "O").last {
-				(0..<4).forEach {(let idx:Int)in
-					
-					I.oClear()
-					O.iClear()
-					
-					I.active = IS[idx%4]
-					print("\(idx): \(O.active)")
-					
+			if let
+				I: Cell = context.searchCell(label: "I").last,
+				O: Cell = context.searchCell(label: "O").last
+			{
+				(0..<4).forEach {
+					let ID: [Bool] = IS[$0%4]
+					let OD: [Bool] = OS[$0%4]
+					var DC: [Int] = [Int](count: 10, repeatedValue: 0)
+					(0..<64).forEach {(_)in
+						
+						I.oClear()
+						O.iClear()
+						
+						I.active = ID
+						O.active.enumerate().forEach {
+							DC[$0.index] = DC[$0.index] + Int($0.element)
+						}
+					}
+					print(zip(OD, DC).map{ $0.0 ? "[\($0.1)]" : "\($0.1)" })
 				}
+				
+			} else {
+				XCTFail()
 			}
+
 		} catch let e {
 			XCTFail(String(e))
 		}
