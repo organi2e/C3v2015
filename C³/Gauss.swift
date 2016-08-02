@@ -15,8 +15,8 @@ internal class Gauss: NSManagedObject {
 	var logvariance: la_object_t = la_splat_from_float(0, Config.ATTR)
 }
 extension Gauss {
-	@NSManaged private var rows: UInt
-	@NSManaged private var cols: UInt
+	@NSManaged internal private(set) var rows: UInt
+	@NSManaged internal private(set) var cols: UInt
 	@NSManaged private var meandata: NSData
 	@NSManaged private var logvariancedata: NSData
 }

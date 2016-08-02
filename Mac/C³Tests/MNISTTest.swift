@@ -9,34 +9,31 @@
 import XCTest
 import MNIST
 import C3
-/*
 class MNISTTests: XCTestCase {
 	static let file: String = "test.sqlite"
 	func test0Insert() {
 		do {
 			let url: NSURL = try NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true).URLByAppendingPathComponent(MNISTTests.file)
 			let context: Context = try Context(storage: url)
-			if
-				context.searchCell(width: 784, label: "I").isEmpty,
-			let
-				H0: Cell = context.newCell(width: 784, label: "I"),
-				H1: Cell = context.newCell(width: 500, label: "H0", input: [H0]),
-				H2: Cell = context.newCell(width: 150, label: "H1", input: [H1]),
-				 _: Cell = context.newCell(width:  10, label: "O", input: [H2])
-			{
-				print("new")
-				context.store() {(_)in
-					XCTFail()
-				}
+			if context.searchCell(width: 784, label: "I").isEmpty {
+				let I: Cell = try context.newCell(width: 784, label: "I")
+				let H: Cell = try context.newCell(width: 512, label: "H")
+				let G: Cell = try context.newCell(width: 512, label: "G")
+				let O: Cell = try context.newCell(width:  10, label: "O")
+				
+				try context.chainCell(output: H, input: I)
+				try context.chainCell(output: G, input: H)
+				try context.chainCell(output: O, input: G)
+				
+				try context.save()
 			} else {
-				print("will load")
+				
 			}
 		} catch let e {
 			XCTFail(String(e))
 		}
 	}
 	func test1Update() {
-		return
 		do {
 			let url: NSURL = try NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true).URLByAppendingPathComponent(MNISTTests.file)
 			let context: Context = try Context(storage: url)
@@ -53,24 +50,49 @@ class MNISTTests: XCTestCase {
 						O.iClear()
 						I.oClear()
 						
-						I.active = ID
 						O.answer = OD
+						I.active = ID
 							
 						O.collect()
-						I.correct(eps: 1/16.0)
+						I.correct(eps: 1/256.0)
 							
 						O.active.enumerate().forEach {
 							cnt[$0.0] = cnt[$0.0] + Int($0.1)
 						}
-						/*
-						if $0 == 0 {
-							if O.active == OD {
-								suc = suc + 1
-							} else {
-								fal = fal + 1
-							}
+					}
+					print($0, zip(OD, cnt).map{ $0.0 ? "[\($0.1)]" : "\($0.1)"})
+				}
+				try context.save()
+			} else {
+				XCTFail()
+			}
+		} catch let e {
+			XCTFail(String(e))
+		}
+	}
+	func test2Check() {
+		do {
+			let url: NSURL = try NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true).URLByAppendingPathComponent(MNISTTests.file)
+			let context: Context = try Context(storage: url)
+			if let
+				I: Cell = context.searchCell(label: "I").last,
+				O: Cell = context.searchCell(label: "O").last
+			{
+				(0..<64).forEach {
+					let image: Image = Image.t10k[Int(arc4random_uniform(UInt32(Image.t10k.count)))]
+					let ID: [Bool] = image.pixel.map{ 0.5 < $0 }
+					let OD: [Bool] = (0..<10).map{ $0 == image.label }
+					var cnt: [Int] = [Int](count: 10, repeatedValue: 0)
+					(0..<64).forEach {(_)in
+						
+						I.oClear()
+						O.iClear()
+						
+						I.active = ID
+						O.active.enumerate().forEach {
+							cnt[$0.0] = cnt[$0.0] + Int($0.1)
 						}
-						*/
+						
 					}
 					print($0, zip(OD, cnt).map{ $0.0 ? "[\($0.1)]" : "\($0.1)"})
 				}
@@ -81,7 +103,8 @@ class MNISTTests: XCTestCase {
 			XCTFail(String(e))
 		}
 	}
-	func test2Validate() {
+	/*
+	func test3Validate() {
 		do {
 			let url: NSURL = try NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true).URLByAppendingPathComponent("test.sqlite")
 			let context: Context = try Context(storage: url)
@@ -90,7 +113,7 @@ class MNISTTests: XCTestCase {
 				O: Cell = context.searchCell(label: "O").last
 			{
 				(0..<16).forEach {
-					let image: Image = Image.t10k[Int(arc4random_uniform(UInt32(Image.t10k.count)))]
+					let image: Image = Image.train[Int(arc4random_uniform(UInt32(Image.train.count)))]
 					let ID: [Bool] = image.pixel.map{ 0.5 < $0 }
 					let OD: [Bool] = (0..<10).map{ $0 == image.label }
 					var cnt: [Int] = [Int](count: 10, repeatedValue: 0)
@@ -100,7 +123,7 @@ class MNISTTests: XCTestCase {
 						
 						I.active = ID
 						O.active.enumerate().forEach {
-							cnt[$0.0] = cnt[$0.0] + Int($0.1)
+							cnt[$0.index] = cnt[$0.index] + Int($0.element)
 						}
 					}
 					let e: [Double] = cnt.map{exp(Double($0))}
@@ -117,6 +140,7 @@ class MNISTTests: XCTestCase {
 			XCTFail(String(e))
 		}
 	}
+*/
 	/*
 	func test2Validation() {
 		do {
@@ -149,4 +173,3 @@ class MNISTTests: XCTestCase {
 	}
 */
 }
-*/
