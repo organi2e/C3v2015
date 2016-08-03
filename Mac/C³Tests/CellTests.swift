@@ -56,7 +56,7 @@ class CellTests: XCTestCase {
 					
 					print("epoch: \($0)")
 					
-					(0..<16).forEach {(let iter: Int)in
+					(0..<64).forEach {(let iter: Int)in
 						
 						O.iClear()
 						I.oClear()
@@ -65,7 +65,7 @@ class CellTests: XCTestCase {
 						I.active = ID
 
 						O.collect()
-						I.correct(eps: 1/4.0)
+						I.correct(eps: 1/64.0)
 						
 					}
 					
@@ -89,7 +89,7 @@ class CellTests: XCTestCase {
 					let ID: [Bool] = IS[$0%4]
 					let OD: [Bool] = OS[$0%4]
 					var DC: [Int] = [Int](count: 10, repeatedValue: 0)
-					(0..<16).forEach {(_)in
+					(0..<32).forEach {(_)in
 						
 						I.oClear()
 						O.iClear()
