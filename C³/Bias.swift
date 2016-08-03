@@ -17,9 +17,6 @@ extension Bias {
 		super.setup()
 		gradient = la_matrix_from_splat(la_splat_from_float(0, Config.ATTR), rows, rows * cols)
 	}
-	func forget() {
-		
-	}
 }
 extension Bias {
 	func collect() -> (la_object_t, la_object_t, la_object_t) {
