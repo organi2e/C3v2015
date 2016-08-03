@@ -33,8 +33,16 @@ public class Cell: NSManagedObject {
 			value: la_splat_from_float(0, Config.ATTR)
 		)
 	)
+	private var gradient = (
+		mean: la_splat_from_float(0, Config.ATTR),
+		variance: la_splat_from_float(0, Config.ATTR),
+		past: (
+			mean: la_splat_from_float(0, Config.ATTR),
+			variance: la_splat_from_float(0, Config.ATTR)
+		)
+	)
 	private var potential = (
-		train: la_splat_from_float(0, Config.ATTR),
+		error: la_splat_from_float(0, Config.ATTR),
 		value: la_splat_from_float(0, Config.ATTR),
 		mean: la_splat_from_float(0, Config.ATTR),
 		variance: la_splat_from_float(0, Config.ATTR)
@@ -67,7 +75,7 @@ extension Cell {
 extension Cell {
 	internal func setup() {
 		
-		potential.train = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
+		potential.error = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
 		potential.value = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
 		
 		potential.mean = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
@@ -101,6 +109,12 @@ extension Cell {
 		assert(delta.past.mean.status==LA_SUCCESS && delta.past.mean.width==width)
 		assert(delta.past.variance.status==LA_SUCCESS && delta.past.variance.width==width)
 		
+		gradient.mean = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
+		gradient.variance = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
+		
+		assert(gradient.mean.status==LA_SUCCESS&&gradient.mean.width==width)
+		assert(gradient.variance.status==LA_SUCCESS&&gradient.variance.width==width)
+		
 		refresh()
 		forget()
 		
@@ -115,26 +129,34 @@ extension Cell {
 		state.past.value = state.value
 		assert(state.past.value.status==LA_SUCCESS)
 		
-		//potential.value = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
-		//potential.mean = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
-		//potential.variance = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
-		
-		potential.train = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
+		potential.error = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
 		potential.value = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
 		potential.mean = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
 		potential.variance = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
 		
-		assert(potential.train.status==LA_SUCCESS)
+		assert(potential.error.status==LA_SUCCESS)
 		assert(potential.value.status==LA_SUCCESS)
 		assert(potential.mean.status==LA_SUCCESS)
 		assert(potential.variance.status==LA_SUCCESS)
-		
+
+		decay.refresh()
 		bias.shuffle()
 		feedback?.shuffle()
-		decay.refresh()
 		
 	}
 	private func forget() {
+		
+		gradient.past.mean = gradient.mean
+		gradient.past.variance = gradient.variance
+		
+		assert(gradient.past.mean.status==LA_SUCCESS&&gradient.past.mean.width==width)
+		assert(gradient.past.variance.status==LA_SUCCESS&&gradient.past.variance.width==width)
+		
+		gradient.mean = la_splat_from_float(0, Config.ATTR)
+		gradient.variance = la_splat_from_float(0, Config.ATTR)
+		
+		assert(gradient.mean.status==LA_SUCCESS)
+		assert(gradient.variance.status==LA_SUCCESS)
 		
 		delta.past.mean = delta.mean.dup
 		delta.past.variance = delta.variance.dup
@@ -257,21 +279,25 @@ extension Cell {
 					return delta.past.mean
 				}
 				if ready.contains(.Train) {
-					potential.train = potential.train + state.train - state.value
+					potential.error = potential.error + state.train - state.value
 					
 				} else {
-					dispatch_apply(output.count, context.dispatch.parallel) {
-						let edge: Edge = self.output[self.output.startIndex.advancedBy($0)]
+					let refer: Set<Edge> = output
+					dispatch_apply(refer.count, context.dispatch.parallel) {
+						let edge: Edge = refer[refer.startIndex.advancedBy($0)]
 						let delta: la_object_t = la_matrix_product(la_transpose(edge.value), edge.output.correct(eps: eps, visit: visit.union([self])))
 						dispatch_group_async(self.group.delta, context.dispatch.serial) {
-							self.potential.train = self.potential.train + delta
+							self.potential.error = self.potential.error + delta
 						}
 					}
 					dispatch_group_wait(group.delta, DISPATCH_TIME_FOREVER)
 				}
 				
-				delta.mean = potential.train * pdf(x: la_splat_from_float(0, Config.ATTR), mu: potential.value, sigma: sqrt(potential.variance))
-				delta.variance = delta.mean * potential.mean / potential.variance
+				gradient.mean = pdf(x: la_splat_from_float(0, Config.ATTR), mu: potential.value, sigma: sqrt(potential.variance))
+				gradient.variance = gradient.mean * potential.mean / potential.variance
+				
+				delta.mean = sign(potential.error) * gradient.mean
+				delta.variance = sign(potential.error) * gradient.variance
 				
 				assert(delta.mean.status==LA_SUCCESS)
 				assert(delta.variance.status==LA_SUCCESS)
@@ -288,43 +314,49 @@ extension Cell {
 				decay.correct(eps: eps, delta: delta.mean)
 				decay.commit()
 				*/
-
+				
+				let count: UInt = width
+				let eye: la_object_t = la_identity_matrix(count, la_scalar_type_t(LA_SCALAR_TYPE_FLOAT), Config.ATTR)
+				let deltamean: la_object_t = delta.mean
+				let deltavariance: la_object_t = delta.variance
+				let refer: Set<Edge> = input
+				
 				if let feedback: Feedback = feedback {
-					let dydv: la_object_t = la_diagonal_matrix_from_vector(delta.past.mean, 0)
 					
-					dispatch_apply(input.count, context.dispatch.parallel) {
-						let edge: Edge = self.input[self.input.startIndex.advancedBy($0)]
-						edge.gradient = la_matrix_product(feedback.value, la_matrix_product(dydv, edge.gradient)) + la_transpose(edge.input.state.value).toIdentity(self.width)
-						edge.correct(eps: eps, mean: self.delta.mean, variance: self.delta.variance)
+					let dydv: la_object_t = la_diagonal_matrix_from_vector(gradient.past.mean, 0)
+					
+					dispatch_apply(refer.count, context.dispatch.parallel) {
+						let edge: Edge = refer[refer.startIndex.advancedBy($0)]
+						edge.gradient = la_transpose(edge.input.state.value).toIdentity(count) +
+							la_matrix_product(feedback.value, la_matrix_product(dydv, edge.gradient))
+						edge.correct(eps: eps, mean: deltamean, variance: deltavariance)
 						edge.commit()
 					}
 
-					bias.gradient = la_identity_matrix(width, la_scalar_type_t(LA_SCALAR_TYPE_FLOAT), Config.ATTR) +
-						la_matrix_product(feedback.value, la_matrix_product(la_diagonal_matrix_from_vector(delta.past.mean, 0), bias.gradient))
-					bias.correct(eps: eps, mean: delta.mean, variance: delta.variance)
+					bias.gradient = eye +
+						la_matrix_product(feedback.value, la_matrix_product(dydv, bias.gradient))
+					bias.correct(eps: eps, mean: deltamean, variance: deltavariance)
 					bias.commit()
 			
 					feedback.gradient = la_transpose(state.past.value).toIdentity(width) +
 						la_matrix_product(feedback.value, la_matrix_product(dydv, feedback.gradient))
-					feedback.correct(eps: eps, mean: delta.mean, variance: delta.variance)
+					feedback.correct(eps: eps, mean: deltamean, variance: deltavariance)
 					feedback.commit()
 					
 				} else {
-					let eye: la_object_t = la_identity_matrix(width, la_scalar_type_t(LA_SCALAR_TYPE_FLOAT), Config.ATTR)
 					
-					dispatch_apply(input.count, context.dispatch.parallel) {
-						let edge: Edge = self.input[self.input.startIndex.advancedBy($0)]
-						edge.gradient = la_transpose(edge.input.state.value).toIdentity(self.width)
-						edge.correct(eps: eps, mean: self.delta.mean, variance: self.delta.variance)
+					dispatch_apply(refer.count, context.dispatch.parallel) {
+						let edge: Edge = refer[refer.startIndex.advancedBy($0)]
+						edge.gradient = la_transpose(edge.input.state.value).toIdentity(count)
+						edge.correct(eps: eps, mean: deltamean, variance: deltavariance)
 						edge.commit()
 					}
 					
 					bias.gradient = eye
-					bias.correct(eps: eps, mean: delta.mean, variance: delta.variance)
+					bias.correct(eps: eps, mean: deltamean, variance: deltavariance)
 					bias.commit()
+					
 				}
-				
-				
 				
 				ready.insert(.Delta)
 			}
