@@ -18,6 +18,7 @@ extension Feedback {
 		super.setup()
 		assert(rows==cols)
 		gradient = la_matrix_from_splat(la_splat_from_float(0, Config.ATTR), rows, rows * cols)
+		assert(gradient.status==LA_SUCCESS&&gradient.rows==rows&&gradient.cols==rows*cols)
 	}
 }
 extension Feedback {
@@ -35,6 +36,11 @@ extension Feedback {
 		
 		logvariance = logvariance - ( 0.5 * eps ) * variance * la_matrix_product(la_transpose(deltavariance), gradient).reshape(rows: rows, cols: cols)
 		assert(logvariance.status==LA_SUCCESS&&logvariance.rows==rows&&logvariance.cols==cols)
+	}
+	override func commit() {
+		super.commit()
+		gradient = gradient.dup
+		assert(gradient.status==LA_SUCCESS&&gradient.rows==rows&&gradient.cols==rows*cols)
 	}
 }
 extension Context {

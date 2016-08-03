@@ -276,38 +276,55 @@ extension Cell {
 				assert(delta.mean.status==LA_SUCCESS)
 				assert(delta.variance.status==LA_SUCCESS)
 				
-				decay.gradient = la_matrix_product(la_diagonal_matrix_from_vector(decay.lambda, 0), decay.gradient) + la_diagonal_matrix_from_vector(decay.lambda, 0)
+				/*
 				if let feedback: Feedback = feedback {
-					decay.gradient = decay.gradient +
-					la_matrix_product(feedback.value, la_matrix_product(la_diagonal_matrix_from_vector(delta.past.mean, 0), feedback.gradient))
+					decay.gradient =
+						la_matrix_product(la_diagonal_matrix_from_vector(decay.lambda, 0), decay.gradient) + la_diagonal_matrix_from_vector(decay.lambda, 0) +
+						la_matrix_product(feedback.value, la_matrix_product(la_diagonal_matrix_from_vector(delta.past.mean, 0), decay.gradient))
+				} else {
+					decay.gradient =
+						la_matrix_product(la_diagonal_matrix_from_vector(decay.lambda, 0), decay.gradient) + la_diagonal_matrix_from_vector(decay.lambda, 0)
 				}
 				decay.correct(eps: eps, delta: delta.mean)
 				decay.commit()
-				
-				dispatch_apply(input.count, context.dispatch.parallel) {
-					let edge: Edge = self.input[self.input.startIndex.advancedBy($0)]
-					if let feedback: Feedback = self.feedback {
-						edge.gradient = (la_matrix_product(feedback.value, la_matrix_product(la_diagonal_matrix_from_vector(self.delta.past.mean, 0), edge.gradient)) + la_transpose(edge.input.state.value).toIdentity(self.width)).dup
-					} else {
-						edge.gradient = (la_transpose(edge.input.state.value).toIdentity(self.width))
-					}
-					edge.correct(eps: eps, mean: self.delta.mean, variance: self.delta.variance)
-					edge.commit()
-				}
-				
-				if let feedback: Feedback = feedback {
-					feedback.gradient = (la_matrix_product(feedback.value, la_matrix_product(la_diagonal_matrix_from_vector(delta.past.mean, 0), feedback.gradient)) + la_transpose(state.past.value).toIdentity(width)).dup
-					feedback.correct(eps: eps, mean: delta.mean, variance: delta.variance)
-					feedback.commit()
-				}
+				*/
 
 				if let feedback: Feedback = feedback {
-					bias.gradient = (la_matrix_product(feedback.value, la_matrix_product(la_diagonal_matrix_from_vector(delta.past.mean, 0), bias.gradient)) + la_identity_matrix(width, la_scalar_type_t(LA_SCALAR_TYPE_FLOAT), Config.ATTR)).dup
+					let dydv: la_object_t = la_diagonal_matrix_from_vector(delta.past.mean, 0)
+					
+					dispatch_apply(input.count, context.dispatch.parallel) {
+						let edge: Edge = self.input[self.input.startIndex.advancedBy($0)]
+						edge.gradient = la_matrix_product(feedback.value, la_matrix_product(dydv, edge.gradient)) + la_transpose(edge.input.state.value).toIdentity(self.width)
+						edge.correct(eps: eps, mean: self.delta.mean, variance: self.delta.variance)
+						edge.commit()
+					}
+
+					bias.gradient = la_identity_matrix(width, la_scalar_type_t(LA_SCALAR_TYPE_FLOAT), Config.ATTR) +
+						la_matrix_product(feedback.value, la_matrix_product(la_diagonal_matrix_from_vector(delta.past.mean, 0), bias.gradient))
+					bias.correct(eps: eps, mean: delta.mean, variance: delta.variance)
+					bias.commit()
+			
+					feedback.gradient = la_transpose(state.past.value).toIdentity(width) +
+						la_matrix_product(feedback.value, la_matrix_product(dydv, feedback.gradient))
+					feedback.correct(eps: eps, mean: delta.mean, variance: delta.variance)
+					feedback.commit()
+					
 				} else {
-					bias.gradient = (la_identity_matrix(width, la_scalar_type_t(LA_SCALAR_TYPE_FLOAT), Config.ATTR))
+					let eye: la_object_t = la_identity_matrix(width, la_scalar_type_t(LA_SCALAR_TYPE_FLOAT), Config.ATTR)
+					
+					dispatch_apply(input.count, context.dispatch.parallel) {
+						let edge: Edge = self.input[self.input.startIndex.advancedBy($0)]
+						edge.gradient = la_transpose(edge.input.state.value).toIdentity(self.width)
+						edge.correct(eps: eps, mean: self.delta.mean, variance: self.delta.variance)
+						edge.commit()
+					}
+					
+					bias.gradient = eye
+					bias.correct(eps: eps, mean: delta.mean, variance: delta.variance)
+					bias.commit()
 				}
-				bias.correct(eps: eps, mean: delta.mean, variance: delta.variance)
-				bias.commit()
+				
+				
 				
 				ready.insert(.Delta)
 			}
