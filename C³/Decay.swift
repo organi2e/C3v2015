@@ -46,8 +46,19 @@ extension Decay {
 		
 	}
 	
-	internal func correct(let eps eps: Float, let delta error: la_object_t) {
-		siglambda = siglambda + eps * ( lambda ) * ( 1.0 - lambda ) * la_matrix_product(la_transpose(error), gradient).reshape(rows: rows, cols: cols)
+	internal func correct(let eps eps: Float, let delta: la_object_t, let value: la_object_t, let dydv: la_object_t, let feedback: la_object_t? = nil) {
+		
+		var gradientmean: la_object_t = la_diagonal_matrix_from_vector(value, 0)
+		
+		gradientmean = gradientmean + la_matrix_product(la_diagonal_matrix_from_vector(lambda, 0), gradient)
+		
+		if let feedback: la_object_t = feedback {
+			gradientmean = gradientmean + la_matrix_product(feedback, la_matrix_product(la_diagonal_matrix_from_vector(dydv, 0), gradient))
+		}
+		
+		gradient = gradientmean.dup
+		
+		siglambda = siglambda + eps * ( lambda ) * ( 1.0 - lambda ) * la_matrix_product(la_transpose(delta), gradient).reshape(rows: rows, cols: cols)
 		assert(siglambda.status==LA_SUCCESS&&siglambda.rows==rows&&siglambda.cols==cols)
 	}
 	
@@ -63,9 +74,6 @@ extension Decay {
 		
 		siglambda = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(siglambdadata.bytes), rows, cols, cols, Config.HINT, nil, Config.ATTR)
 		assert(siglambda.status==LA_SUCCESS&&siglambda.rows==rows&&siglambda.cols==cols)
-		
-		gradient = gradient.dup
-		assert(gradient.status==LA_SUCCESS&&gradient.rows==rows&&gradient.cols==rows*cols)
 		
 	}
 	

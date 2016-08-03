@@ -54,7 +54,7 @@ extension Gauss {
 		value = la_matrix_from_splat(la_splat_from_float(0, Config.ATTR), rows, cols)
 		assert(value.status==LA_SUCCESS&&value.rows==rows&&value.cols==cols)
 		
-		shuffle()
+		refresh()
 
 	}
 	
@@ -76,7 +76,7 @@ extension Gauss {
 		
 	}
 	
-	internal func shuffle() {
+	internal func refresh() {
 		
 		let gauss: la_object_t = normal(rows: rows, cols: cols)
 		
