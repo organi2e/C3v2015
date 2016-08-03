@@ -63,6 +63,9 @@ extension Decay {
 		siglambda = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(siglambdadata.bytes), rows, cols, cols, Config.HINT, nil, Config.ATTR)
 		assert(siglambda.status==LA_SUCCESS&&siglambda.rows==rows&&siglambda.cols==cols)
 		
+		gradient = gradient.dup
+		assert(gradient.status==LA_SUCCESS&&gradient.rows==rows&&gradient.cols==rows*cols)
+		
 	}
 	
 	internal func resize(let rows r: UInt, let cols c: UInt ) {
