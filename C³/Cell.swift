@@ -39,11 +39,6 @@ public class Cell: NSManagedObject {
 		mean: la_splat_from_float(0, Config.ATTR),
 		variance: la_splat_from_float(0, Config.ATTR)
 	)
-	private var lambda = (
-		value: la_splat_from_float(0, Config.ATTR),
-		sigma: la_splat_from_float(0, Config.ATTR),
-		delta: la_splat_from_float(0, Config.ATTR)
-	)
 	private let mutex = (
 		state: NSLock(),
 		delta: NSLock()
@@ -57,11 +52,11 @@ extension Cell {
 	@NSManaged public private(set) var label: String
 	@NSManaged public private(set) var width: UInt
 	@NSManaged public var attribute: [String: AnyObject]
-	@NSManaged internal var lambdadata: NSData
 	@NSManaged private var input: Set<Edge>
 	@NSManaged private var output: Set<Edge>
 	@NSManaged private var bias: Bias
 	@NSManaged private var feedback: Feedback?
+	@NSManaged private var decay: Decay
 }
 extension Cell {
 	public override func awakeFromFetch() {
@@ -71,17 +66,6 @@ extension Cell {
 }
 extension Cell {
 	internal func setup() {
-		
-		setPrimitiveValue(NSData(data: lambdadata), forKey: "lambdadata")
-		
-		lambda.sigma = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(lambdadata.bytes), width, 1, 1, Config.HINT, nil, Config.ATTR)
-		assert(lambda.sigma.status==LA_SUCCESS && lambda.sigma.rows == width && lambda.sigma.cols == 1)
-		
-		lambda.value = sigmoid(lambda.sigma)
-		assert(lambda.value.status==LA_SUCCESS && lambda.value.rows == width && lambda.value.cols == 1)
-		
-		lambda.delta = la_matrix_from_splat(la_splat_from_float(0, Config.ATTR), width, width)
-		assert(lambda.delta.status==LA_SUCCESS && lambda.delta.rows == width && lambda.delta.cols == width)
 		
 		potential.train = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
 		potential.value = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
@@ -121,11 +105,6 @@ extension Cell {
 		forget()
 		
 	}
-	internal func commit() {
-		willChangeValueForKey("lambdadata")
-		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(lambdadata.bytes), width, lambda.sigma)
-		didChangeValueForKey("lambdadata")
-	}
 }
 extension Cell {
 	private func refresh() {
@@ -152,6 +131,7 @@ extension Cell {
 		
 		bias.shuffle()
 		feedback?.shuffle()
+		decay.refresh()
 		
 	}
 	private func forget() {
@@ -167,9 +147,6 @@ extension Cell {
 		
 		assert(delta.mean.status==LA_SUCCESS)
 		assert(delta.variance.status==LA_SUCCESS)
-		
-		bias.forget()
-		feedback?.forget()
 		
 	}
 	public func iClear(let visit: Set<Cell>=[]) {
@@ -299,11 +276,13 @@ extension Cell {
 				assert(delta.mean.status==LA_SUCCESS)
 				assert(delta.variance.status==LA_SUCCESS)
 				
+				decay.gradient = la_matrix_product(la_diagonal_matrix_from_vector(decay.lambda, 0), decay.gradient) + la_diagonal_matrix_from_vector(decay.lambda, 0)
 				if let feedback: Feedback = feedback {
-					lambda.delta = (la_matrix_product(la_diagonal_matrix_from_vector(lambda.value, 0), lambda.delta) + la_matrix_product(feedback.value, la_matrix_product(la_diagonal_matrix_from_vector(delta.past.mean, 0), lambda.delta)) + la_diagonal_matrix_from_vector(lambda.value, 0)).dup
-				} else {
-					lambda.delta = (la_matrix_product(la_diagonal_matrix_from_vector(lambda.value, 0), lambda.delta) + la_diagonal_matrix_from_vector(lambda.value, 0)).dup
+					decay.gradient = decay.gradient +
+					la_matrix_product(feedback.value, la_matrix_product(la_diagonal_matrix_from_vector(delta.past.mean, 0), feedback.gradient))
 				}
+				decay.correct(eps: eps, delta: delta.mean)
+				decay.commit()
 				
 				dispatch_apply(input.count, context.dispatch.parallel) {
 					let edge: Edge = self.input[self.input.startIndex.advancedBy($0)]
@@ -372,7 +351,6 @@ extension Context {
 		cell.label = label
 		cell.width = width
 		cell.attribute = [:]
-		cell.lambdadata = NSData(bytes: [Float](count: Int(width), repeatedValue: 0), length: sizeof(Float)*Int(width))
 		cell.input = Set<Edge>()
 		cell.output = Set<Edge>()
 		try input.forEach {
@@ -382,6 +360,7 @@ extension Context {
 			cell.feedback = try newFeedback(width: width)
 		}
 		cell.bias = try newBias(width: width)
+		cell.decay = try newDecay(width: width)
 		return cell
 	}
 	public func searchCell( let width width: Int? = nil, let label: String? = nil ) -> [Cell] {

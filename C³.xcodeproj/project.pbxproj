@@ -96,7 +96,7 @@
 		878C7AC41D01AF60002CDFD1 /* train-images.idx3-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "train-images.idx3-ubyte"; path = "MNIST/train-images.idx3-ubyte"; sourceTree = "<group>"; };
 		878C7AC51D01AF60002CDFD1 /* train-labels.idx1-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "train-labels.idx1-ubyte"; path = "MNIST/train-labels.idx1-ubyte"; sourceTree = "<group>"; };
 		87A42CBC1D4F5CD5008D9708 /* Feedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Feedback.swift; path = "C³/Feedback.swift"; sourceTree = "<group>"; };
-		87BCEBF01D4D745900FC3099 /* Alter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Alter.swift; path = "C³/Alter.swift"; sourceTree = "<group>"; };
+		87BCEBF01D4D745900FC3099 /* Decay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Decay.swift; path = "C³/Decay.swift"; sourceTree = "<group>"; };
 		87BCEBF91D4D746400FC3099 /* Gauss.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Gauss.swift; path = "C³/Gauss.swift"; sourceTree = "<group>"; };
 		87BCEBFA1D4D75A500FC3099 /* Bias.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Bias.swift; path = "C³/Bias.swift"; sourceTree = "<group>"; };
 		87C516CE1D3F72B400E3F36B /* statistics.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = statistics.metal; path = NLA/statistics.metal; sourceTree = "<group>"; };
@@ -171,7 +171,7 @@
 				878985BC1D050D42002C2A8D /* Edge.swift */,
 				878985BD1D050D42002C2A8D /* Error.swift */,
 				87D18E341D3F18BB00982020 /* LA.swift */,
-				87BCEBF01D4D745900FC3099 /* Alter.swift */,
+				87BCEBF01D4D745900FC3099 /* Decay.swift */,
 				87BCEBF91D4D746400FC3099 /* Gauss.swift */,
 				87BCEBFA1D4D75A500FC3099 /* Bias.swift */,
 				87A42CBC1D4F5CD5008D9708 /* Feedback.swift */,

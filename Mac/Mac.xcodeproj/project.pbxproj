@@ -53,7 +53,7 @@
 		87B1FD3C1D0546FC00981CF4 /* LATests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87B1FD2D1D05468600981CF4 /* LATests.swift */; };
 		87B9C0271D49249900534528 /* MNISTTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87B9C0261D49249900534528 /* MNISTTest.swift */; };
 		87BCEBFC1D4D763D00FC3099 /* Bias.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87BCEBFB1D4D763D00FC3099 /* Bias.swift */; };
-		87BCEBFE1D4D764100FC3099 /* Alter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87BCEBFD1D4D764100FC3099 /* Alter.swift */; };
+		87BCEBFE1D4D764100FC3099 /* Decay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87BCEBFD1D4D764100FC3099 /* Decay.swift */; };
 		87BCEC001D4D765000FC3099 /* Gauss.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87BCEBFF1D4D765000FC3099 /* Gauss.swift */; };
 		87C516B21D3F687900E3F36B /* NLA.h in Headers */ = {isa = PBXBuildFile; fileRef = 87C516B11D3F687900E3F36B /* NLA.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		87C516B91D3F687900E3F36B /* NLA.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 87C516AF1D3F687900E3F36B /* NLA.framework */; };
@@ -179,7 +179,7 @@
 		87B1FD391D0546BF00981CF4 /* C3.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = C3.xcdatamodel; sourceTree = "<group>"; };
 		87B9C0261D49249900534528 /* MNISTTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MNISTTest.swift; sourceTree = "<group>"; };
 		87BCEBFB1D4D763D00FC3099 /* Bias.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Bias.swift; path = "../../C³/Bias.swift"; sourceTree = "<group>"; };
-		87BCEBFD1D4D764100FC3099 /* Alter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Alter.swift; path = "../../C³/Alter.swift"; sourceTree = "<group>"; };
+		87BCEBFD1D4D764100FC3099 /* Decay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Decay.swift; path = "../../C³/Decay.swift"; sourceTree = "<group>"; };
 		87BCEBFF1D4D765000FC3099 /* Gauss.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Gauss.swift; path = "../../C³/Gauss.swift"; sourceTree = "<group>"; };
 		87C516AF1D3F687900E3F36B /* NLA.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = NLA.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		87C516B11D3F687900E3F36B /* NLA.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NLA.h; sourceTree = "<group>"; };
@@ -348,7 +348,7 @@
 			children = (
 				87B1FD381D0546BF00981CF4 /* C³.xcdatamodeld */,
 				87B1FD2C1D05467800981CF4 /* C³.h */,
-				87BCEBFD1D4D764100FC3099 /* Alter.swift */,
+				87BCEBFD1D4D764100FC3099 /* Decay.swift */,
 				87BCEBFB1D4D763D00FC3099 /* Bias.swift */,
 				873934B21D42FD7800888988 /* Blob.swift */,
 				87B1FD1E1D05466D00981CF4 /* Cell.swift */,
@@ -760,7 +760,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				87B1FD3B1D0546C700981CF4 /* C³.xcdatamodeld in Sources */,
-				87BCEBFE1D4D764100FC3099 /* Alter.swift in Sources */,
+				87BCEBFE1D4D764100FC3099 /* Decay.swift in Sources */,
 				87BCEBFC1D4D763D00FC3099 /* Bias.swift in Sources */,
 				873934B31D42FD7800888988 /* Blob.swift in Sources */,
 				87B1FD311D0546B500981CF4 /* Cell.swift in Sources */,
