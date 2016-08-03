@@ -16,6 +16,7 @@ extension Decay {
 	@NSManaged internal private(set) var rows: UInt
 	@NSManaged internal private(set) var cols: UInt
 	@NSManaged private var siglambdadata: NSData
+	@NSManaged private var cell: Cell
 }
 extension Decay {
 	override func awakeFromFetch() {
@@ -46,7 +47,7 @@ extension Decay {
 	}
 	
 	internal func correct(let eps eps: Float, let delta error: la_object_t) {
-		siglambda = siglambda + eps * la_matrix_product(la_transpose(error), gradient).reshape(rows: rows, cols: cols)
+		siglambda = siglambda + eps * ( lambda ) * ( 1.0 - lambda ) * la_matrix_product(la_transpose(error), gradient).reshape(rows: rows, cols: cols)
 		assert(siglambda.status==LA_SUCCESS&&siglambda.rows==rows&&siglambda.cols==cols)
 	}
 	
@@ -76,7 +77,7 @@ extension Decay {
 		rows = r
 		cols = c
 		
-		siglambdadata = NSData(bytes: UnsafePointer<Void>(siglambdabuffer), length: sizeof(Float)*count)
+		siglambdadata = NSData(bytes: siglambdabuffer, length: sizeof(Float)*count)
 		assert(siglambdadata.length==sizeof(Float)*Int(r*c))
 		
 		setup()

@@ -12,7 +12,7 @@
         <attribute name="label" attributeType="String" indexed="YES" syncable="YES"/>
         <attribute name="width" attributeType="Integer 64" syncable="YES"/>
         <relationship name="bias" maxCount="1" deletionRule="Cascade" destinationEntity="Bias" inverseName="cell" inverseEntity="Bias" syncable="YES"/>
-        <relationship name="decay" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Decay" inverseName="cell" inverseEntity="Decay" syncable="YES"/>
+        <relationship name="decay" maxCount="1" deletionRule="Cascade" destinationEntity="Decay" inverseName="cell" inverseEntity="Decay" syncable="YES"/>
         <relationship name="feedback" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="Feedback" inverseName="cell" inverseEntity="Feedback" syncable="YES"/>
         <relationship name="input" toMany="YES" deletionRule="Cascade" destinationEntity="Edge" inverseName="output" inverseEntity="Edge" syncable="YES"/>
         <relationship name="output" toMany="YES" deletionRule="Cascade" destinationEntity="Edge" inverseName="input" inverseEntity="Edge" syncable="YES"/>
@@ -21,18 +21,18 @@
         <attribute name="cols" attributeType="Integer 64" minValueString="1" syncable="YES"/>
         <attribute name="rows" attributeType="Integer 64" minValueString="1" syncable="YES"/>
         <attribute name="siglambdadata" attributeType="Binary" allowsExternalBinaryDataStorage="YES" syncable="YES"/>
-        <relationship name="cell" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Cell" inverseName="decay" inverseEntity="Cell" syncable="YES"/>
+        <relationship name="cell" maxCount="1" deletionRule="Nullify" destinationEntity="Cell" inverseName="decay" inverseEntity="Cell" syncable="YES"/>
     </entity>
     <entity name="Dict" representedClassName="C3.Dict" syncable="YES">
         <attribute name="key" attributeType="Transformable" indexed="YES" syncable="YES"/>
         <attribute name="value" attributeType="Transformable" syncable="YES"/>
     </entity>
     <entity name="Edge" representedClassName="C3.Edge" parentEntity="Gauss" syncable="YES">
-        <relationship name="input" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Cell" inverseName="output" inverseEntity="Cell" syncable="YES"/>
+        <relationship name="input" maxCount="1" deletionRule="Nullify" destinationEntity="Cell" inverseName="output" inverseEntity="Cell" syncable="YES"/>
         <relationship name="output" maxCount="1" deletionRule="Nullify" destinationEntity="Cell" inverseName="input" inverseEntity="Cell" syncable="YES"/>
     </entity>
     <entity name="Feedback" representedClassName="C3.Feedback" parentEntity="Gauss" syncable="YES">
-        <relationship name="cell" maxCount="1" deletionRule="Cascade" destinationEntity="Cell" inverseName="feedback" inverseEntity="Cell" syncable="YES"/>
+        <relationship name="cell" maxCount="1" deletionRule="Nullify" destinationEntity="Cell" inverseName="feedback" inverseEntity="Cell" syncable="YES"/>
     </entity>
     <entity name="Gauss" representedClassName="C3.Gauss" syncable="YES">
         <attribute name="cols" attributeType="Integer 64" minValueString="1" syncable="YES"/>
@@ -44,10 +44,10 @@
         <element name="Bias" positionX="54" positionY="189" width="128" height="60"/>
         <element name="Blob" positionX="36" positionY="171" width="128" height="75"/>
         <element name="Cell" positionX="36" positionY="117" width="128" height="165"/>
+        <element name="Decay" positionX="36" positionY="171" width="128" height="105"/>
         <element name="Dict" positionX="18" positionY="81" width="128" height="75"/>
         <element name="Edge" positionX="54" positionY="108" width="128" height="75"/>
         <element name="Feedback" positionX="36" positionY="171" width="128" height="60"/>
         <element name="Gauss" positionX="36" positionY="171" width="128" height="105"/>
-        <element name="Decay" positionX="36" positionY="171" width="128" height="105"/>
     </elements>
 </model>

@@ -78,10 +78,12 @@ extension Cell {
 		potential.error = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
 		potential.value = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
 		
+		assert(potential.error.status==LA_SUCCESS && potential.error.width==width)
+		assert(potential.value.status==LA_SUCCESS && potential.value.width==width)
+		
 		potential.mean = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
 		potential.variance = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
 		
-		assert(potential.value.status==LA_SUCCESS && potential.value.width==width)
 		assert(potential.mean.status==LA_SUCCESS && potential.mean.width==width)
 		assert(potential.variance.status==LA_SUCCESS && potential.variance.width==width)
 		
@@ -115,9 +117,12 @@ extension Cell {
 		assert(gradient.mean.status==LA_SUCCESS&&gradient.mean.width==width)
 		assert(gradient.variance.status==LA_SUCCESS&&gradient.variance.width==width)
 		
+		bias.setup()
+		decay.setup()
+		feedback?.setup()
+		
 		refresh()
 		forget()
-		
 	}
 }
 extension Cell {
@@ -129,17 +134,21 @@ extension Cell {
 		state.past.value = state.value
 		assert(state.past.value.status==LA_SUCCESS)
 		
+		decay.refresh()
+		
 		potential.error = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
-		potential.value = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
-		potential.mean = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
-		potential.variance = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
+		potential.value = decay.lambda * potential.value.dup
+			//la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
+		potential.mean = decay.lambda * potential.mean.dup
+			//la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
+		potential.variance = decay.lambda * decay.lambda * potential.variance.dup
+			//la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
 		
 		assert(potential.error.status==LA_SUCCESS)
 		assert(potential.value.status==LA_SUCCESS)
 		assert(potential.mean.status==LA_SUCCESS)
 		assert(potential.variance.status==LA_SUCCESS)
 
-		decay.refresh()
 		bias.shuffle()
 		feedback?.shuffle()
 		
@@ -181,8 +190,9 @@ extension Cell {
 						assertionFailure(Error.System.InvalidContext.description)
 						return
 					}
-					dispatch_apply(input.count, context.dispatch.parallel) {
-						let edge: Edge = self.input[self.input.startIndex.advancedBy($0)]
+					let refer: Set<Edge> = input
+					dispatch_apply(refer.count, context.dispatch.parallel) {
+						let edge: Edge = refer[refer.startIndex.advancedBy($0)]
 						edge.shuffle()
 						edge.input.iClear(visit.union([self]))
 					}
@@ -203,8 +213,9 @@ extension Cell {
 						assertionFailure(Error.System.InvalidContext.description)
 						return
 					}
-					dispatch_apply(output.count, context.dispatch.parallel) {
-						let edge: Edge = self.output[self.output.startIndex.advancedBy($0)]
+					let refer: Set<Edge> = output
+					dispatch_apply(refer.count, context.dispatch.parallel) {
+						let edge: Edge = refer[refer.startIndex.advancedBy($0)]
 						edge.output.oClear(visit.union([self]))
 					}
 					forget()
@@ -296,27 +307,18 @@ extension Cell {
 				gradient.mean = pdf(x: la_splat_from_float(0, Config.ATTR), mu: potential.value, sigma: sqrt(potential.variance))
 				gradient.variance = gradient.mean * potential.mean / potential.variance
 				
+				assert(gradient.mean.status==LA_SUCCESS)
+				assert(gradient.variance.status==LA_SUCCESS)
+				
 				delta.mean = sign(potential.error) * gradient.mean
 				delta.variance = sign(potential.error) * gradient.variance
 				
 				assert(delta.mean.status==LA_SUCCESS)
 				assert(delta.variance.status==LA_SUCCESS)
 				
-				/*
-				if let feedback: Feedback = feedback {
-					decay.gradient =
-						la_matrix_product(la_diagonal_matrix_from_vector(decay.lambda, 0), decay.gradient) + la_diagonal_matrix_from_vector(decay.lambda, 0) +
-						la_matrix_product(feedback.value, la_matrix_product(la_diagonal_matrix_from_vector(delta.past.mean, 0), decay.gradient))
-				} else {
-					decay.gradient =
-						la_matrix_product(la_diagonal_matrix_from_vector(decay.lambda, 0), decay.gradient) + la_diagonal_matrix_from_vector(decay.lambda, 0)
-				}
-				decay.correct(eps: eps, delta: delta.mean)
-				decay.commit()
-				*/
-				
 				let count: UInt = width
 				let eye: la_object_t = la_identity_matrix(count, la_scalar_type_t(LA_SCALAR_TYPE_FLOAT), Config.ATTR)
+				let lambda: la_object_t = la_diagonal_matrix_from_vector(decay.lambda, 0)
 				let deltamean: la_object_t = delta.mean
 				let deltavariance: la_object_t = delta.variance
 				let refer: Set<Edge> = input
@@ -328,33 +330,54 @@ extension Cell {
 					dispatch_apply(refer.count, context.dispatch.parallel) {
 						let edge: Edge = refer[refer.startIndex.advancedBy($0)]
 						edge.gradient = la_transpose(edge.input.state.value).toIdentity(count) +
+							la_matrix_product(lambda, edge.gradient) +
 							la_matrix_product(feedback.value, la_matrix_product(dydv, edge.gradient))
 						edge.correct(eps: eps, mean: deltamean, variance: deltavariance)
 						edge.commit()
 					}
 
 					bias.gradient = eye +
+						la_matrix_product(lambda, bias.gradient) +
 						la_matrix_product(feedback.value, la_matrix_product(dydv, bias.gradient))
+					
+					feedback.gradient = la_transpose(state.past.value).toIdentity(width) +
+						la_matrix_product(lambda, feedback.gradient) +
+						la_matrix_product(feedback.value, la_matrix_product(dydv, feedback.gradient))
+					
+					decay.gradient = lambda +
+						la_matrix_product(lambda, decay.gradient) +
+						la_matrix_product(feedback.value, la_matrix_product(dydv, decay.gradient))
+			
 					bias.correct(eps: eps, mean: deltamean, variance: deltavariance)
 					bias.commit()
-			
-					feedback.gradient = la_transpose(state.past.value).toIdentity(width) +
-						la_matrix_product(feedback.value, la_matrix_product(dydv, feedback.gradient))
+					
 					feedback.correct(eps: eps, mean: deltamean, variance: deltavariance)
 					feedback.commit()
+					
+					decay.correct(eps: eps, delta: deltamean)
+					decay.commit()
 					
 				} else {
 					
 					dispatch_apply(refer.count, context.dispatch.parallel) {
 						let edge: Edge = refer[refer.startIndex.advancedBy($0)]
-						edge.gradient = la_transpose(edge.input.state.value).toIdentity(count)
+						edge.gradient = la_transpose(edge.input.state.value).toIdentity(count) +
+							la_matrix_product(lambda, edge.gradient)
 						edge.correct(eps: eps, mean: deltamean, variance: deltavariance)
 						edge.commit()
 					}
 					
-					bias.gradient = eye
+					bias.gradient = eye +
+						la_matrix_product(lambda, bias.gradient)
+					
+					decay.gradient = lambda +
+						la_matrix_product(lambda, decay.gradient)
+					
 					bias.correct(eps: eps, mean: deltamean, variance: deltavariance)
 					bias.commit()
+					
+					decay.correct(eps: eps, delta: deltamean)
+					decay.commit()
 					
 				}
 				
