@@ -39,6 +39,7 @@ protocol Computer {
 	func sum ( let x: Buffer ) -> Float
 	func dot ( let a: Buffer, let _: Buffer ) -> Float
 	func gemv ( let y: Buffer, let a: Buffer, let x: Buffer, let alpha: Float, let beta: Float, let transpose: Bool, let sync: Bool )
+	func gemm ( let y: Buffer, let a: Buffer, let x: Buffer, let alpha: Float, let beta: Float, let dim: (Int, Int, Int), let transpose: (Bool, Bool), let sync: Bool )
 	
 	func pdf ( let y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer, let sync: Bool )
 	func cdf ( let y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer, let sync: Bool  )
