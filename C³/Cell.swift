@@ -79,7 +79,7 @@ extension Cell {
 	}
 }
 extension Cell {
-	internal func setup() {
+	private func setup() {
 		
 		potential.error = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
 		potential.value = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
@@ -146,9 +146,9 @@ extension Cell {
 extension Cell {
 	private func refresh() {
 		
-		state.past.train = state.train.dup
-		state.past.value = state.value.dup
-
+		state.past.train = state.train
+		state.past.value = state.value
+		
 		assert(state.past.train.status==LA_SUCCESS)
 		assert(state.past.value.status==LA_SUCCESS)
 		
@@ -160,11 +160,13 @@ extension Cell {
 		
 		potential.past.error = potential.error
 		potential.past.value = potential.value
-		assert(potential.past.error.status==LA_SUCCESS && potential.past.error.width==width)
-		assert(potential.past.value.status==LA_SUCCESS && potential.past.value.width==width)
+		
+		assert(potential.past.error.status==LA_SUCCESS)
+		assert(potential.past.value.status==LA_SUCCESS)
 		
 		potential.past.mean = potential.mean
 		potential.past.variance = potential.variance
+		
 		assert(potential.past.mean.status==LA_SUCCESS && potential.past.mean.width==width)
 		assert(potential.past.variance.status==LA_SUCCESS && potential.past.variance.width==width)
 		
@@ -174,14 +176,14 @@ extension Cell {
 		
 		if let decay: Decay = decay {
 			potential.error = la_splat_from_float(0, Config.ATTR)
-			potential.value = decay.lambda * potential.value.dup
-			potential.mean = decay.lambda * potential.mean.dup
-			potential.variance = decay.lambda * decay.lambda * potential.variance.dup
+			potential.value = decay.lambda * potential.value.dup + bias.value
+			potential.mean = decay.lambda * potential.mean.dup + bias.mean
+			potential.variance = decay.lambda * decay.lambda * potential.variance.dup + bias.variance
 		} else {
 			potential.error = la_splat_from_float(0, Config.ATTR)
-			potential.value = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
-			potential.mean = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
-			potential.variance = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
+			potential.value = bias.value
+			potential.mean = bias.mean
+			potential.variance = bias.variance
 		}
 		
 		assert(potential.error.status==LA_SUCCESS)
@@ -204,8 +206,8 @@ extension Cell {
 		assert(gradient.mean.status==LA_SUCCESS)
 		assert(gradient.variance.status==LA_SUCCESS)
 		
-		delta.past.mean = delta.mean.dup
-		delta.past.variance = delta.variance.dup
+		delta.past.mean = delta.mean
+		delta.past.variance = delta.variance
 		
 		assert(delta.past.mean.status==LA_SUCCESS && delta.past.mean.width == width)
 		assert(delta.past.variance.status==LA_SUCCESS && delta.past.variance.width == width)
@@ -296,11 +298,6 @@ extension Cell {
 					potential.variance = potential.variance + variance
 				}
 				
-				let(value, mean, variance) = bias.collect()
-				potential.value = potential.value + value
-				potential.mean = potential.mean + mean
-				potential.variance = potential.variance + variance
-				
 				state.value = step(potential.value)
 				
 				ready.insert(.State)
@@ -341,7 +338,7 @@ extension Cell {
 					dispatch_group_wait(group.delta, DISPATCH_TIME_FOREVER)
 				}
 				
-				gradient.mean = pdf(x: la_splat_from_float(0, Config.ATTR), mu: potential.value, sigma: sqrt(potential.variance))
+				gradient.mean = pdf(x: la_splat_from_float(0, Config.ATTR), mu: potential.mean, sigma: sqrt(potential.variance))
 				gradient.variance = gradient.mean * potential.mean / potential.variance
 				
 				assert(gradient.mean.status==LA_SUCCESS)
@@ -357,12 +354,12 @@ extension Cell {
 				
 				feedback?.correct(eps: eps, mean: delta.mean, variance: delta.variance, state: state.past.value, dydv: gradient.past.mean, lambda: decay?.lambda)
 				feedback?.commit()
-
-				decay?.correct(eps: eps, delta: delta.mean, value: potential.past.value, dydv: gradient.past.mean, feedback: feedback?.value)
-				decay?.commit()
 				
 				bias.correct(eps: eps, mean: delta.mean, variance: delta.variance, lambda: decay?.lambda, dydv: gradient.past.mean, feedback: feedback?.value)
 				bias.commit()
+				
+				decay?.correct(eps: eps, delta: delta.mean, value: potential.past.value, dydv: gradient.past.mean, feedback: feedback?.value)
+				decay?.commit()
 				
 				ready.insert(.Delta)
 			}

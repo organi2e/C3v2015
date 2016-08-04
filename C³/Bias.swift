@@ -41,8 +41,8 @@ extension Bias {
 		}
 		
 		if let dydv: la_object_t = dydv, feedback: la_object_t = feedback {
-			gradientmean = gradientmean + la_matrix_product(la_matrix_product(la_diagonal_matrix_from_vector(dydv, 0), feedback), gradient.mean)
-			gradientvariance = gradientvariance + la_matrix_product(la_matrix_product(la_diagonal_matrix_from_vector(dydv, 0), feedback), gradient.variance)
+			gradientmean = gradientmean + la_matrix_product(feedback, la_matrix_product(la_diagonal_matrix_from_vector(dydv, 0), gradient.mean))
+			gradientvariance = gradientvariance + la_matrix_product(feedback, la_matrix_product(la_diagonal_matrix_from_vector(dydv, 0), gradient.variance))
 		}
 		
 		gradient.mean = gradientmean.dup
