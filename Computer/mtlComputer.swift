@@ -160,8 +160,9 @@ public class mtlComputer: cpuComputer {
 			encoder.setBuffer(y.mtl, offset: 0, atIndex: 0)
 			encoder.setBuffer(a.mtl, offset: 0, atIndex: 1)
 			encoder.setBuffer(x.mtl, offset: 0, atIndex: 2)
-			encoder.setBytes([alpha], length: sizeof(Float), atIndex: 3)
-			encoder.setBytes([beta], length: sizeof(Float), atIndex: 4)
+			encoder.setBytes([UInt32(dim.0)], length: sizeof(UInt32), atIndex: 3)
+			encoder.setBytes([UInt32(dim.1)], length: sizeof(UInt32), atIndex: 4)
+			encoder.setBytes([UInt32(dim.2)], length: sizeof(UInt32), atIndex: 5)
 			
 			/*
 			encoder.setBytes([UInt32(Int(dim.1/4))], length: sizeof(UInt32), atIndex: 5)
@@ -169,8 +170,11 @@ public class mtlComputer: cpuComputer {
 			encoder.dispatchThreadgroups(MTLSize(width: dim.2/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: dim.0/4, height: 1, depth: 1))
 			*/
 			
-			encoder.setThreadgroupMemoryLength(sizeof(Float)*4*dim.1, atIndex: 0)
-			encoder.dispatchThreadgroups(MTLSize(width: dim.0/4, height: dim.2/4, depth: 1), threadsPerThreadgroup: MTLSize(width: dim.1/4, height: 1, depth: 1))
+			let bx = 8
+			let by = 8
+			encoder.setThreadgroupMemoryLength(sizeof(Float)*bx*by, atIndex: 0)
+			encoder.setThreadgroupMemoryLength(sizeof(Float)*bx*by, atIndex: 1)
+			encoder.dispatchThreadgroups(MTLSize(width: dim.0/bx, height: dim.1/by, depth: 1), threadsPerThreadgroup: MTLSize(width: bx, height: by, depth: 1))
 			
 			encoder.endEncoding()
 			command.commit()
