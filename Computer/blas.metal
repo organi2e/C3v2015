@@ -122,52 +122,36 @@ kernel void gemm(device float4 * const y [[ buffer(0) ]],
  Test Case '-[ComputerTests.mtlComputerTests testGEMM]' passed (79.675 seconds).
  */
 
-kernel void gemm(device float4 * const y [[ buffer(0) ]],
-				 device const float4 * const w [[ buffer(1) ]],
-				 device const float4 * const x [[ buffer(2) ]],
-				 constant const float & alpha [[ buffer(3) ]],
-				 constant const float & beta [[ buffer(4) ]],
+kernel void gemm(device float * const C [[ buffer(0) ]],
+				 device const float * const A [[ buffer(1) ]],
+				 device const float * const B [[ buffer(2) ]],
+				 constant const uint & N [[ buffer(3) ]],
+				 constant const uint & K [[ buffer(4) ]],
+				 constant const uint & M [[ buffer(5) ]],
 				 uint2 const g [[ threadgroup_position_in_grid ]],
 				 uint2 const G [[ threadgroups_per_grid ]],
 				 uint2 const t [[ thread_position_in_threadgroup ]],
 				 uint2 const T [[ threads_per_threadgroup ]],
-				 threadgroup float4x4 * const accumulator [[ threadgroup(0) ]]
+				 threadgroup float * a [[ threadgroup(0) ]],
+				 threadgroup float * b [[ threadgroup(1) ]]
 				 ){
-	uint const m = g.x;
-	uint const n = g.y, N = G.y;
-	uint const k = t.x, K = T.x;
 	
-	float4x4 W = float4x4(w[(4*m+0)*K+k],
-						  w[(4*m+1)*K+k],
-						  w[(4*m+2)*K+k],
-						  w[(4*m+3)*K+k]);
+	uint const bx = T.x, by = T.y;
+	uint const tx = t.x, ty = t.y;
+	uint const col = g.x * bx + tx;
+	uint const row = g.y * by + ty;
 	
-	float4x4 X = float4x4(x[(4*k+0)*N+n],
-						  x[(4*k+1)*N+n],
-						  x[(4*k+2)*N+n],
-						  x[(4*k+3)*N+n]);
+	float c = 0.0;
 	
-	accumulator[k] = X * W;
-	
-	uint offset = 1 << ( clz ( uint( 1 ) ) - clz ( K ) );
-	
-	threadgroup_barrier ( mem_flags::mem_threadgroup );
-	if ( k < ( K % offset ) ) {
-		accumulator [ k ] += accumulator [ offset + k ];
+	for(uint m = 0 ; m < K ; ++ m ) {
+		a[ty*bx+tx] = A[row*K+m*8+tx];
+		b[ty*bx+tx] = B[(m*8+ty)*M+col];
+		threadgroup_barrier( mem_flags::mem_threadgroup );
+		for(uint k=0;k<8;++k)
+			c += a[ty*bx+k] * b[k*bx+tx];
+		//threadgroup_barrier( mem_flags::mem_threadgroup );
 	}
-	
-	while ( offset >>= 1 ) {
-		threadgroup_barrier ( mem_flags::mem_threadgroup );
-		if ( k < offset ) {
-			accumulator [ k ] += accumulator [ offset + k ];
-		}
-	}
-	if ( k==0 ) {
-		y[(4*m+0)*N+n] = alpha * accumulator[0][0] + beta * y[(4*m+0)*N+n];
-		y[(4*m+1)*N+n] = alpha * accumulator[0][1] + beta * y[(4*m+1)*N+n];
-		y[(4*m+2)*N+n] = alpha * accumulator[0][2] + beta * y[(4*m+2)*N+n];
-		y[(4*m+3)*N+n] = alpha * accumulator[0][3] + beta * y[(4*m+3)*N+n];
-	}
+	C[row*M+col] = c;
 }
 /*
 kernel void gemm2(device float4x4 * y [[ buffer(0) ]],

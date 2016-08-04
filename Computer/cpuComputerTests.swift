@@ -88,9 +88,9 @@ class cpuComputerTests: XCTestCase {
 	}
 	*/
 	func testGEMM() {
-		let M: Int = 64
-		let K: Int = 64
-		let N: Int = 4096
+		let M: Int = 256
+		let K: Int = 256
+		let N: Int = 65536
 		
 		let y: Buffer = computer.newBuffer(length: sizeof(Float)*M*N)
 		let a: Buffer = computer.newBuffer(length: sizeof(Float)*M*K)
@@ -108,6 +108,8 @@ class cpuComputerTests: XCTestCase {
 				x.scalar[col*N+row] = Float(arc4random())/Float(UInt32.max)
 			}
 		}
+		computer.clear(d, sync: false)
+		computer.clear(y, sync: false)
 		
 		measureBlock {
 			self.computer.gemm(y, a: a, x: x, alpha: 1.0, beta: 0.0, dim: (M, K, N), transpose: (false, false), sync: false)
