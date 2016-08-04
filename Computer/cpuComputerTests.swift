@@ -11,94 +11,128 @@ import XCTest
 @testable import Computer
 
 class cpuComputerTests: XCTestCase {
+	/*
 	func testLA() {
 		let M: Int = 1024
-		let N: Int = 1024
 		let K: Int = 1024
+		let N: Int = 1024
 		
-		let y: Buffer = computer.newBuffer(length: sizeof(Float)*M)
-		let a: Buffer = computer.newBuffer(length: sizeof(Float)*M*N)
-		let x: Buffer = computer.newBuffer(length: sizeof(Float)*N)
+		let y: Buffer = computer.newBuffer(length: sizeof(Float)*M*N)
+		let a: Buffer = computer.newBuffer(length: sizeof(Float)*M*K)
+		let x: Buffer = computer.newBuffer(length: sizeof(Float)*K*N)
 		
-		for col in 0..<N {
-			for row in 0..<M {
-				a.scalar[col*M+row] = Float(arc4random())/Float(UInt32.max)
+		for col in 0..<M {
+			for row in 0..<K {
+				a.scalar[col*K+row] = Float(arc4random())/Float(UInt32.max)
 			}
-			x.scalar[col] = Float(arc4random())/Float(UInt32.max)
 		}
 		
-		let X: la_object_t = la_matrix_from_float_buffer_nocopy(x.scalar.baseAddress, la_count_t(N), la_count_t(1), la_count_t(1), la_hint_t(LA_NO_HINT), nil, la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING))
-		let A: la_object_t = la_matrix_from_float_buffer_nocopy(a.scalar.baseAddress, la_count_t(M), la_count_t(N), la_count_t(M), la_hint_t(LA_NO_HINT), nil, la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING))
+		for col in 0..<K {
+			for row in 0..<N {
+				x.scalar[col*N+row] = Float(arc4random())/Float(UInt32.max)
+			}
+		}
+		
+		let X: la_object_t = la_matrix_from_float_buffer_nocopy(x.scalar.baseAddress, la_count_t(N), la_count_t(K), la_count_t(K), la_hint_t(LA_NO_HINT), nil, la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING))
+		let A: la_object_t = la_matrix_from_float_buffer_nocopy(a.scalar.baseAddress, la_count_t(K), la_count_t(N), la_count_t(N), la_hint_t(LA_NO_HINT), nil, la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING))
 		
 		measureBlock {
-			let Y: la_object_t = la_matrix_product(A, X)
-			la_vector_to_float_buffer(y.scalar.baseAddress, la_index_t(1), la_sum(X, Y))
+			la_matrix_to_float_buffer(y.scalar.baseAddress, la_count_t(N), la_matrix_product(A, X))
+			la_matrix_to_float_buffer(y.scalar.baseAddress, la_count_t(N), la_matrix_product(A, X))
+			la_matrix_to_float_buffer(y.scalar.baseAddress, la_count_t(N), la_matrix_product(A, X))
+			la_matrix_to_float_buffer(y.scalar.baseAddress, la_count_t(N), la_matrix_product(A, X))
+			la_matrix_to_float_buffer(y.scalar.baseAddress, la_count_t(N), la_matrix_product(A, X))
+			la_matrix_to_float_buffer(y.scalar.baseAddress, la_count_t(N), la_matrix_product(A, X))
+			la_matrix_to_float_buffer(y.scalar.baseAddress, la_count_t(N), la_matrix_product(A, X))
+			la_matrix_to_float_buffer(y.scalar.baseAddress, la_count_t(N), la_matrix_product(A, X))
+			la_matrix_to_float_buffer(y.scalar.baseAddress, la_count_t(N), la_matrix_product(A, X))
+			la_matrix_to_float_buffer(y.scalar.baseAddress, la_count_t(N), la_matrix_product(A, X))
 		}
 		
 	}
+*/
+	/*
 	func testBlas() {
-		let M: Int = 1024
-		let N: Int = 1024
-		let K: Int = 1024
+		let M: Int = 24
+		let K: Int = 24
+		let N: Int = 24
 		
-		let y: Buffer = computer.newBuffer(length: sizeof(Float)*M)
-		let a: Buffer = computer.newBuffer(length: sizeof(Float)*M*N)
-		let x: Buffer = computer.newBuffer(length: sizeof(Float)*N)
+		let y: Buffer = computer.newBuffer(length: sizeof(Float)*M*N)
+		let a: Buffer = computer.newBuffer(length: sizeof(Float)*M*K)
+		let x: Buffer = computer.newBuffer(length: sizeof(Float)*K*N)
 		
-		for col in 0..<N {
-			for row in 0..<M {
-				a.scalar[col*M+row] = Float(arc4random())/Float(UInt32.max)
+		for col in 0..<M {
+			for row in 0..<K {
+				a.scalar[col*K+row] = Float(arc4random())/Float(UInt32.max)
 			}
-			x.scalar[col] = Float(arc4random())/Float(UInt32.max)
+		}
+		
+		for col in 0..<K {
+			for row in 0..<N {
+				x.scalar[col*N+row] = Float(arc4random())/Float(UInt32.max)
+			}
 		}
 		
 		measureBlock {
-			cblas_sgemv(CblasColMajor, CblasNoTrans, Int32(M), Int32(N), 1.0, a.scalar.baseAddress, Int32(M), x.scalar.baseAddress, 1, 0.0, y.scalar.baseAddress, 1)
+			cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, Int32(M), Int32(N), Int32(K), 1.0, a.scalar.baseAddress, Int32(K), x.scalar.baseAddress, Int32(N), 0.0, y.scalar.baseAddress, Int32(N))
+			cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, Int32(M), Int32(N), Int32(K), 1.0, a.scalar.baseAddress, Int32(K), x.scalar.baseAddress, Int32(N), 0.0, y.scalar.baseAddress, Int32(N))
+			cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, Int32(M), Int32(N), Int32(K), 1.0, a.scalar.baseAddress, Int32(K), x.scalar.baseAddress, Int32(N), 0.0, y.scalar.baseAddress, Int32(N))
+			cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, Int32(M), Int32(N), Int32(K), 1.0, a.scalar.baseAddress, Int32(K), x.scalar.baseAddress, Int32(N), 0.0, y.scalar.baseAddress, Int32(N))
+			cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, Int32(M), Int32(N), Int32(K), 1.0, a.scalar.baseAddress, Int32(K), x.scalar.baseAddress, Int32(N), 0.0, y.scalar.baseAddress, Int32(N))
+			cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, Int32(M), Int32(N), Int32(K), 1.0, a.scalar.baseAddress, Int32(K), x.scalar.baseAddress, Int32(N), 0.0, y.scalar.baseAddress, Int32(N))
+			cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, Int32(M), Int32(N), Int32(K), 1.0, a.scalar.baseAddress, Int32(K), x.scalar.baseAddress, Int32(N), 0.0, y.scalar.baseAddress, Int32(N))
+			cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, Int32(M), Int32(N), Int32(K), 1.0, a.scalar.baseAddress, Int32(K), x.scalar.baseAddress, Int32(N), 0.0, y.scalar.baseAddress, Int32(N))
+			cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, Int32(M), Int32(N), Int32(K), 1.0, a.scalar.baseAddress, Int32(K), x.scalar.baseAddress, Int32(N), 0.0, y.scalar.baseAddress, Int32(N))
+			cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, Int32(M), Int32(N), Int32(K), 1.0, a.scalar.baseAddress, Int32(K), x.scalar.baseAddress, Int32(N), 0.0, y.scalar.baseAddress, Int32(N))
 		}
 	}
-	func testGEMV() {
-		let M: Int = 1024
-		let N: Int = 1024
+	*/
+	func testGEMM() {
+		let M: Int = 64
+		let K: Int = 64
+		let N: Int = 4096
 		
-		let d: Buffer = computer.newBuffer(length: sizeof(Float)*M)
-		let y: Buffer = computer.newBuffer(length: sizeof(Float)*M)
-		let a: Buffer = computer.newBuffer(length: sizeof(Float)*M*N)
-		let x: Buffer = computer.newBuffer(length: sizeof(Float)*N)
+		let y: Buffer = computer.newBuffer(length: sizeof(Float)*M*N)
+		let a: Buffer = computer.newBuffer(length: sizeof(Float)*M*K)
+		let x: Buffer = computer.newBuffer(length: sizeof(Float)*K*N)
+		let d: Buffer = computer.newBuffer(length: sizeof(Float)*M*N)
 		
-		for col in 0..<N {
-			for row in 0..<M {
-				a.scalar[col*M+row] = Float(arc4random())/Float(UInt32.max)
+		for col in 0..<M {
+			for row in 0..<K {
+				a.scalar[col*K+row] = Float(arc4random())/Float(UInt32.max)
 			}
-			x.scalar[col] = Float(arc4random())/Float(UInt32.max)
 		}
 		
-		computer.clear(d, sync: false)
+		for col in 0..<K {
+			for row in 0..<N {
+				x.scalar[col*N+row] = Float(arc4random())/Float(UInt32.max)
+			}
+		}
+		
 		measureBlock {
-			self.computer.gemv(y, a: a, x: x, alpha: 1.0, beta: 0.0, transpose: false, sync: false)
+			self.computer.gemm(y, a: a, x: x, alpha: 1.0, beta: 0.0, dim: (M, K, N), transpose: (false, false), sync: false)
+			self.computer.gemm(y, a: a, x: x, alpha: 1.0, beta: 0.0, dim: (M, K, N), transpose: (false, false), sync: false)
+			self.computer.gemm(y, a: a, x: x, alpha: 1.0, beta: 0.0, dim: (M, K, N), transpose: (false, false), sync: false)
+			self.computer.gemm(y, a: a, x: x, alpha: 1.0, beta: 0.0, dim: (M, K, N), transpose: (false, false), sync: false)
+			self.computer.gemm(y, a: a, x: x, alpha: 1.0, beta: 0.0, dim: (M, K, N), transpose: (false, false), sync: false)
+			self.computer.gemm(y, a: a, x: x, alpha: 1.0, beta: 0.0, dim: (M, K, N), transpose: (false, false), sync: false)
+			self.computer.gemm(y, a: a, x: x, alpha: 1.0, beta: 0.0, dim: (M, K, N), transpose: (false, false), sync: false)
+			self.computer.gemm(y, a: a, x: x, alpha: 1.0, beta: 0.0, dim: (M, K, N), transpose: (false, false), sync: false)
+			self.computer.gemm(y, a: a, x: x, alpha: 1.0, beta: 0.0, dim: (M, K, N), transpose: (false, false), sync: false)
+			self.computer.gemm(y, a: a, x: x, alpha: 1.0, beta: 0.0, dim: (M, K, N), transpose: (false, false), sync: false)
 			self.computer.join()
 		}
-		
-		for row in 0..<M {
-			let rowmajor: Int = row / 4
-			let rowminor: Int = row % 4
-			for col in 0..<N {
-				let colmajor: Int = col / 4
-				let colminor: Int = col % 4
-				let major: Int = colmajor * (M/4) + rowmajor
-				let minor: Int = colminor * 4 + rowminor
-				d.scalar[row] += a.scalar[major*16+minor] * x.scalar[col]
-			}
-		}
+		let A: la_object_t = la_matrix_from_float_buffer_nocopy(a.scalar.baseAddress, la_count_t(M), la_count_t(K), la_count_t(K), la_hint_t(LA_NO_HINT), nil, la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING))
+		let X: la_object_t = la_matrix_from_float_buffer_nocopy(x.scalar.baseAddress, la_count_t(K), la_count_t(N), la_count_t(N), la_hint_t(LA_NO_HINT), nil, la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING))
+		la_matrix_to_float_buffer(d.scalar.baseAddress, la_count_t(N), la_matrix_product(A, X))
 		
 		if 1e-3 < rmse(d: d, y: y) {
-			if M < 64 {
-				print(Array(d.scalar))
-				print(Array(y.scalar))
-			}
+			print("D: \(Array(d.scalar)), Y: \(Array(y.scalar))")
 			XCTFail()
 		}
 		
 	}
+	/*
 	func testSQ() {
 		let n: Int = 1 << order
 		
@@ -285,6 +319,7 @@ class cpuComputerTests: XCTestCase {
 			XCTFail()
 		}
 	}
+*/
 	lazy var computer: Computer = self.implementation()
 	let order: Int = 24
 	func rmse(let d d: Buffer, let y: Buffer) -> Float {

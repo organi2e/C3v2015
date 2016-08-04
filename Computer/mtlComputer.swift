@@ -29,6 +29,7 @@ public class mtlComputer: cpuComputer {
 		let pdf: MTLComputePipelineState
 		let cdf: MTLComputePipelineState
 		let gemv: MTLComputePipelineState
+		let gemm: MTLComputePipelineState
 		let normal: MTLComputePipelineState
 		let sigmoid: MTLComputePipelineState
 	};
@@ -59,6 +60,7 @@ public class mtlComputer: cpuComputer {
 		                           pdf: try pipeline("pdf"),
 		                           cdf: try pipeline("cdf"),
 		                           gemv: try pipeline("gemv"),
+		                           gemm: try pipeline("gemm"),
 		                           normal: try pipeline("normal"),
 		                           sigmoid: try pipeline("sigmoid")
 		)
@@ -139,6 +141,42 @@ public class mtlComputer: cpuComputer {
 			async {
 				super.gemv(y, a: a, x: x, alpha: alpha, beta: beta, transpose: transpose, sync: true)
 			}
+		}
+	}
+	override func gemm ( let y: Buffer, let a: Buffer, let x: Buffer, let alpha: Float, let beta: Float, let dim: (Int, Int, Int), let transpose: (Bool, Bool), let sync: Bool ) {
+		
+		assert(y.scalar.count==dim.0*dim.2)
+		assert(a.scalar.count==dim.0*dim.1)
+		assert(x.scalar.count==dim.1*dim.2)
+		
+		if	let x: mtlBuffer = x as? mtlBuffer where x.mtl.device === device,
+			let y: mtlBuffer = y as? mtlBuffer where y.mtl.device === device,
+			let a: mtlBuffer = a as? mtlBuffer where a.mtl.device === device {
+			
+			let command: MTLCommandBuffer = queue.commandBuffer()
+			let encoder: MTLComputeCommandEncoder = command.computeCommandEncoder()
+			
+			encoder.setComputePipelineState(pipelines.gemm)
+			encoder.setBuffer(y.mtl, offset: 0, atIndex: 0)
+			encoder.setBuffer(a.mtl, offset: 0, atIndex: 1)
+			encoder.setBuffer(x.mtl, offset: 0, atIndex: 2)
+			encoder.setBytes([alpha], length: sizeof(Float), atIndex: 3)
+			encoder.setBytes([beta], length: sizeof(Float), atIndex: 4)
+			
+			/*
+			encoder.setBytes([UInt32(Int(dim.1/4))], length: sizeof(UInt32), atIndex: 5)
+			encoder.setThreadgroupMemoryLength(sizeof(Float)*4*dim.1, atIndex: 0)
+			encoder.dispatchThreadgroups(MTLSize(width: dim.2/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: dim.0/4, height: 1, depth: 1))
+			*/
+			
+			encoder.setThreadgroupMemoryLength(sizeof(Float)*4*dim.1, atIndex: 0)
+			encoder.dispatchThreadgroups(MTLSize(width: dim.0/4, height: dim.2/4, depth: 1), threadsPerThreadgroup: MTLSize(width: dim.1/4, height: 1, depth: 1))
+			
+			encoder.endEncoding()
+			command.commit()
+			
+		} else {
+			assertionFailure()
 		}
 	}
 	override func normal ( let y: Buffer, let u: Buffer, let s: Buffer, let sync flag: Bool = false ) {

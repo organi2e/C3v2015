@@ -151,6 +151,10 @@ public class cpuComputer: Computer {
 			}
 		}
 	}
+	func gemm ( let y: Buffer, let a: Buffer, let x: Buffer, let alpha: Float, let beta: Float, let dim: (Int, Int, Int), let transpose: (Bool, Bool), let sync: Bool ) {
+		cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Int32(dim.0), Int32(dim.2), Int32(dim.1), alpha, a.scalar.baseAddress, Int32(dim.1), x.scalar.baseAddress, Int32(dim.2), beta, y.scalar.baseAddress, Int32(dim.2))
+		
+	}
 	func normal ( let y: Buffer, let u: Buffer, let s: Buffer, let sync flag: Bool = false ) {
 		assert(y.scalar.count==u.scalar.count)
 		assert(y.scalar.count==s.scalar.count)
