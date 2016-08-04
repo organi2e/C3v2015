@@ -29,8 +29,8 @@ class CellTests: XCTestCase {
 			let context: Context = try Context(storage: url)
 			
 			let I: Cell = try context.newCell(width: 4, label: "I")
-			let H: Cell = try context.newCell(width: 64, recur: true, buffer: true, label: "H")
-			let G: Cell = try context.newCell(width: 64, recur: true, buffer: true, label: "H")
+			let H: Cell = try context.newCell(width: 100, recur: true, buffer: true, label: "H")
+			let G: Cell = try context.newCell(width: 100, recur: true, buffer: true, label: "G")
 			let O: Cell = try context.newCell(width: 4, label: "O")
 			
 			try context.chainCell(output: O, input: G)
@@ -51,14 +51,14 @@ class CellTests: XCTestCase {
 				I: Cell = context.searchCell(label: "I").last,
 				O: Cell = context.searchCell(label: "O").last
 			{
-				(0..<1024).forEach {
+				(0..<4000).forEach {
 					
 					let ID: [Bool] = IS[$0%4]
 					let OD: [Bool] = OS[$0%4]
 					
 					print("epoch: \($0)")
 					
-					(0..<16).forEach {(let iter: Int)in
+					(0..<64).forEach {(let iter: Int)in
 						
 						O.iClear()
 						I.oClear()
@@ -67,7 +67,7 @@ class CellTests: XCTestCase {
 						I.active = ID
 
 						O.collect()
-						I.correct(eps: 1/4.0)
+						I.correct(eps: 1/64.0)
 						
 					}
 					
