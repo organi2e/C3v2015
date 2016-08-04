@@ -36,13 +36,13 @@ extension Gauss {
 		setPrimitiveValue(NSData(data: meandata), forKey: Gauss.meankey)
 		assert(meandata.length==sizeof(Float)*Int(rows*cols))
 		
-		mean = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(meandata.bytes), rows, cols, cols, Config.HINT, nil, Config.ATTR)
+		mean = la_matrix_from_float_buffer(UnsafeMutablePointer<Float>(meandata.bytes), rows, cols, cols, Config.HINT, Config.ATTR)
 		assert(mean.status==LA_SUCCESS&&mean.rows==rows&&mean.cols==cols)
 		
 		setPrimitiveValue(NSData(data: logvariancedata), forKey: Gauss.logvariancekey)
 		assert(logvariancedata.length==sizeof(Float)*Int(rows*cols))
 		
-		logvariance = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logvariancedata.bytes), rows, cols, cols, Config.HINT, nil, Config.ATTR)
+		logvariance = la_matrix_from_float_buffer(UnsafeMutablePointer<Float>(logvariancedata.bytes), rows, cols, cols, Config.HINT, Config.ATTR)
 		assert(logvariance.status==LA_SUCCESS&&logvariance.rows==rows&&logvariance.cols==cols)
 	
 		variance = la_matrix_from_splat(la_splat_from_float(0, Config.ATTR), rows, cols)
@@ -64,14 +64,14 @@ extension Gauss {
 		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(meandata.bytes), cols, mean)
 		didChangeValueForKey(Gauss.meankey)
 		
-		mean = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(meandata.bytes), rows, cols, cols, Config.HINT, nil, Config.ATTR)
+		mean = la_matrix_from_float_buffer(UnsafeMutablePointer<Float>(meandata.bytes), rows, cols, cols, Config.HINT, Config.ATTR)
 		assert(mean.status==LA_SUCCESS&&mean.rows==rows&&mean.cols==cols)
 		
 		willChangeValueForKey(Gauss.logvariancekey)
 		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(logvariancedata.bytes), cols, logvariance)
 		didChangeValueForKey(Gauss.logvariancekey)
 		
-		logvariance = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logvariancedata.bytes), rows, cols, cols, Config.HINT, nil, Config.ATTR)
+		logvariance = la_matrix_from_float_buffer(UnsafeMutablePointer<Float>(logvariancedata.bytes), rows, cols, cols, Config.HINT, Config.ATTR)
 		assert(logvariance.status==LA_SUCCESS&&logvariance.rows==rows&&logvariance.cols==cols)
 		
 	}

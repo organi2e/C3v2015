@@ -30,17 +30,18 @@ extension Bias {
 	func collect() -> (la_object_t, la_object_t, la_object_t) {
 		return(value, mean, variance)
 	}
-	func correct(let eps eps: Float, let mean deltamean: la_object_t, let variance deltavariance: la_object_t, let lambda: la_object_t? = nil, let dydv: la_object_t? = nil, let feedback: la_object_t? = nil ) {
+	func correct(let eps eps: Float, let mean deltamean: la_object_t, let variance deltavariance: la_object_t, let lambda: la_object_t? = nil, let dydv: la_object_t, let feedback: la_object_t? = nil ) {
 		
 		var gradientmean: la_object_t = la_identity_matrix(rows, la_scalar_type_t(LA_SCALAR_TYPE_FLOAT), Config.ATTR)
 		var gradientvariance: la_object_t = la_identity_matrix(rows, la_scalar_type_t(LA_SCALAR_TYPE_FLOAT), Config.ATTR)
+		
 		
 		if let lambda: la_object_t = lambda {
 			gradientmean = gradientmean + la_matrix_product(la_diagonal_matrix_from_vector(lambda, 0), gradient.mean)
 			gradientvariance = gradientvariance + la_matrix_product(la_diagonal_matrix_from_vector(lambda*lambda, 0), gradient.variance)
 		}
 		
-		if let dydv: la_object_t = dydv, feedback: la_object_t = feedback {
+		if let feedback: la_object_t = feedback {
 			gradientmean = gradientmean + la_matrix_product(feedback, la_matrix_product(la_diagonal_matrix_from_vector(dydv, 0), gradient.mean))
 			gradientvariance = gradientvariance + la_matrix_product(feedback, la_matrix_product(la_diagonal_matrix_from_vector(dydv, 0), gradient.variance))
 		}

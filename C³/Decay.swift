@@ -33,7 +33,7 @@ extension Decay {
 		setPrimitiveValue(NSData(data: siglambdadata), forKey: Decay.siglambdadatakey)
 		assert(siglambdadata.length==sizeof(Float)*Int(rows*cols))
 		
-		siglambda = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(siglambdadata.bytes), rows, cols, cols, Config.HINT, nil, Config.ATTR)
+		siglambda = la_matrix_from_float_buffer(UnsafeMutablePointer<Float>(siglambdadata.bytes), rows, cols, cols, Config.HINT, Config.ATTR)
 		assert(siglambda.status==LA_SUCCESS&&siglambda.rows==rows&&siglambda.cols==cols)
 		
 		lambda = la_matrix_from_splat(la_splat_from_float(0, Config.ATTR), rows, cols)
@@ -72,7 +72,7 @@ extension Decay {
 		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(siglambdadata.bytes), cols, siglambda)
 		didChangeValueForKey(Decay.siglambdadatakey)
 		
-		siglambda = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(siglambdadata.bytes), rows, cols, cols, Config.HINT, nil, Config.ATTR)
+		siglambda = la_matrix_from_float_buffer(UnsafeMutablePointer<Float>(siglambdadata.bytes), rows, cols, cols, Config.HINT, Config.ATTR)
 		assert(siglambda.status==LA_SUCCESS&&siglambda.rows==rows&&siglambda.cols==cols)
 		
 	}

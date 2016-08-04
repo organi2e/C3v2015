@@ -311,7 +311,7 @@ extension Cell {
 	}
 	internal func correct(let eps eps: Float, let visit: Set<Cell>) -> (la_object_t, la_object_t, la_object_t?, la_object_t, la_object_t?) {
 		if visit.contains(self) {
-			return(delta.past.mean, delta.past.variance, decay?.lambda, gradient.past.mean, nil)
+			return(delta.past.mean, delta.past.variance, decay?.lambda, gradient.past.mean, feedback?.value)
 			
 		} else {
 			mutex.delta.lock()
@@ -321,7 +321,7 @@ extension Cell {
 				
 				guard let context: Context = managedObjectContext as? Context else {
 					assertionFailure(Error.System.InvalidContext.description)
-					return(delta.past.mean, delta.past.variance, decay?.lambda, gradient.past.mean, nil)
+					return(delta.past.mean, delta.past.variance, decay?.lambda, gradient.past.mean, feedback?.value)
 				}
 				if ready.contains(.Train) {
 					potential.error = potential.error + state.train - state.value
