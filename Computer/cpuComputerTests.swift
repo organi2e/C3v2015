@@ -14,6 +14,7 @@ class cpuComputerTests: XCTestCase {
 	func testLA() {
 		let M: Int = 1024
 		let N: Int = 1024
+		let K: Int = 1024
 		
 		let y: Buffer = computer.newBuffer(length: sizeof(Float)*M)
 		let a: Buffer = computer.newBuffer(length: sizeof(Float)*M*N)
@@ -38,6 +39,7 @@ class cpuComputerTests: XCTestCase {
 	func testBlas() {
 		let M: Int = 1024
 		let N: Int = 1024
+		let K: Int = 1024
 		
 		let y: Buffer = computer.newBuffer(length: sizeof(Float)*M)
 		let a: Buffer = computer.newBuffer(length: sizeof(Float)*M*N)

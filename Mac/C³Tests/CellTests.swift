@@ -20,8 +20,8 @@ class CellTests: XCTestCase {
 	//let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,f,T,T], [f,T,f,f]]
 	//let OS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f]]
 	
-	let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [f,f,T,f]]
-	let OS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f]]
+	let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [f,f,T,f],[f,f,f,T], [f,f,T,f], [f,T,f,f], [f,f,T,f]]
+	let OS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f],[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,T,T,T]]
 	
 	func test0Insert() {
 		do {
@@ -29,11 +29,12 @@ class CellTests: XCTestCase {
 			let context: Context = try Context(storage: url)
 			
 			let I: Cell = try context.newCell(width: 4, label: "I")
-			let H: Cell = try context.newCell(width: 100, recur: true, buffer: true, label: "H")
-			let G: Cell = try context.newCell(width: 100, recur: true, buffer: true, label: "G")
+			let H: Cell = try context.newCell(width: 64, recur: true, buffer: true, label: "H")
+			let G: Cell = try context.newCell(width: 64, recur: true, buffer: true, label: "G")
 			let O: Cell = try context.newCell(width: 4, label: "O")
 			
 			try context.chainCell(output: O, input: G)
+			try context.chainCell(output: H, input: G)
 			try context.chainCell(output: G, input: H)
 			try context.chainCell(output: H, input: I)
 			
@@ -51,10 +52,10 @@ class CellTests: XCTestCase {
 				I: Cell = context.searchCell(label: "I").last,
 				O: Cell = context.searchCell(label: "O").last
 			{
-				(0..<4000).forEach {
+				(0..<4096).forEach {
 					
-					let ID: [Bool] = IS[$0%4]
-					let OD: [Bool] = OS[$0%4]
+					let ID: [Bool] = IS[$0%8]
+					let OD: [Bool] = OS[$0%8]
 					
 					print("epoch: \($0)")
 					
@@ -87,9 +88,9 @@ class CellTests: XCTestCase {
 				I: Cell = context.searchCell(label: "I").last,
 				O: Cell = context.searchCell(label: "O").last
 			{
-				(0..<4).forEach {
-					let ID: [Bool] = IS[$0%4]
-					let OD: [Bool] = OS[$0%4]
+				(0..<8).forEach {
+					let ID: [Bool] = IS[$0%8]
+					let OD: [Bool] = OS[$0%8]
 					var DC: [Int] = [Int](count: 10, repeatedValue: 0)
 					(0..<32).forEach {(_)in
 						
