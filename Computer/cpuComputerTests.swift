@@ -88,9 +88,10 @@ class cpuComputerTests: XCTestCase {
 	}
 	*/
 	func testGEMM() {
-		let M: Int = 256
-		let K: Int = 256
-		let N: Int = 65536
+		let O: Int = 32 * 12
+		let M: Int = O
+		let K: Int = O
+		let N: Int = O * O
 		
 		let y: Buffer = computer.newBuffer(length: sizeof(Float)*M*N)
 		let a: Buffer = computer.newBuffer(length: sizeof(Float)*M*K)
@@ -129,7 +130,7 @@ class cpuComputerTests: XCTestCase {
 		la_matrix_to_float_buffer(d.scalar.baseAddress, la_count_t(N), la_matrix_product(A, X))
 		
 		if 1e-3 < rmse(d: d, y: y) {
-			print("D: \(Array(d.scalar)), Y: \(Array(y.scalar))")
+			//print("D: \(Array(d.scalar)), Y: \(Array(y.scalar))")
 			XCTFail()
 		}
 		
