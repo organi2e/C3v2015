@@ -39,10 +39,11 @@ kernel void div(device float4 * y [[ buffer(0) ]],
 }
 //Y = alphaAX + betaY
 
-kernel void gemv4(device float4 * y [[ buffer(0) ]],
+kernel void gemv4(device float4 * Y [[ buffer(0) ]],
 				  device const float4 * const A [[ buffer(1) ]],
 				  device const float4 * const X [[ buffer(2) ]],
-				  constant const uint & N [[ buffer(3) ]],
+				  constant const uint & M [[ buffer(3) ]],
+				  constant const uint & N [[ buffer(4) ]],
 				  uint const g [[ threadgroup_position_in_grid ]],
 				  uint const G [[ threadgroups_per_grid ]],
 				  uint const t [[ thread_position_in_threadgroup ]],
@@ -51,22 +52,30 @@ kernel void gemv4(device float4 * y [[ buffer(0) ]],
 				  threadgroup float4 * const x [[ threadgroup(1) ]]
 				  )
 {
-	float4 c = float4(0.0);
-	for( uint n = 0 ; n < N / T ; ++ n ) {
-		uint4 const idx_A = (uint4(0,1,2,3)+4*g)*N+n*T+t;
-		x[t] = X[n*T+t];
-		a[t] = float4x4(A[idx_A[0]],
-						A[idx_A[1]],
-						A[idx_A[2]],
-						A[idx_A[3]]
-						);
+	uint const row = g * T + t;
+	float4 y = float4(0.0);
+	for( uint i = 0, I = (N-1)/T+1 ; i < I ; ++ i ) {
+		
+		x[t] = i * T + t < N ? X [ i * T + t ] : 0.0;
+		
 		threadgroup_barrier( mem_flags::mem_threadgroup );
-		for( uint k = 0 ; k < T ; ++ k ) {
-			c += x[k] * a[k];
+		for( uint k = 0, K = T ; k < K ; ++ k ) {
+			
+			uint4 const rows_A = row;
+			uint4 const cols_A = i * T + k;
+			bool4 const mask_A = rows_A < M && cols_A < N;
+			uint4 const indx_A = (4 * rows_A + uint4(0,1,2,3)) * N + cols_A;
+			
+			y += x[k] * float4x4(mask_A[0] ? A[indx_A[0]] : 0.0,
+								 mask_A[1] ? A[indx_A[1]] : 0.0,
+								 mask_A[2] ? A[indx_A[2]] : 0.0,
+								 mask_A[3] ? A[indx_A[3]] : 0.0
+								 );
+			
 		}
 		threadgroup_barrier( mem_flags::mem_threadgroup );
 	}
-	y[ g ] = c;
+	if ( row < M ) Y[row] = y;
 }
 kernel void gemv(device float4 * y [[ buffer(0) ]],
 				  device const float4 * const A [[ buffer(1) ]],
@@ -369,46 +378,62 @@ kernel void gemm8(device float4 * const C [[ buffer(0) ]],
 	C[(8*row+7)*N+2*col+1] = c[1][1][3];
 }
 kernel void gemm4(device float4 * const C [[ buffer(0) ]],
-				 device const float4 * const A [[ buffer(1) ]],
-				 device const float4 * const B [[ buffer(2) ]],
-				 constant const uint & K [[ buffer(3) ]],
-				 uint2 const g [[ threadgroup_position_in_grid ]],
-				 uint2 const G [[ threadgroups_per_grid ]],
-				 uint2 const t [[ thread_position_in_threadgroup ]],
-				 uint2 const T [[ threads_per_threadgroup ]],
-				 threadgroup float4x4 * a [[ threadgroup(0) ]],
-				 threadgroup float4x4 * b [[ threadgroup(1) ]]
-				 ){
+				  device const float4 * const A [[ buffer(1) ]],
+				  device const float4 * const B [[ buffer(2) ]],
+				  constant const uint & M [[ buffer(3) ]],
+				  constant const uint & K [[ buffer(4) ]],
+				  constant const uint & N [[ buffer(5) ]],
+				  uint2 const g [[ threadgroup_position_in_grid ]],
+				  uint2 const G [[ threadgroups_per_grid ]],
+				  uint2 const t [[ thread_position_in_threadgroup ]],
+				  uint2 const T [[ threads_per_threadgroup ]],
+				  threadgroup float4x4 * a [[ threadgroup(0) ]],
+				  threadgroup float4x4 * b [[ threadgroup(1) ]]
+				  ){
 	
 	uint const col = g.x * T.x + t.x;
 	uint const row = g.y * T.y + t.y;
 	
 	float4x4 c = float4x4(0.0);
 	
-	for(uint i = 0 ; i < K/T.x ; ++ i ) {
-		uint4 idx_A = (4*row+uint4(0,1,2,3))*K+i*T.x+t.x;
-		uint4 idx_B = (4*(i*T.y+t.y)+uint4(0,1,2,3))*(G.x*T.x)+col;
+	for ( uint i = 0, I = ( K - 1 ) / T.x + 1 ; i < I ; ++ i ) {
 		
-		a[t.y*T.x+t.x] = float4x4(A[idx_A[0]],
-								  A[idx_A[1]],
-								  A[idx_A[2]],
-								  A[idx_A[3]]);
+		uint4 const rows_A = row;
+		uint4 const cols_A = i*T.x+t.x;
+		bool4 const mask_A = rows_A < M && cols_A < K;
+		uint4 const indx_A = (4 * rows_A + uint4(0,1,2,3)) * K + cols_A;
 		
-		b[t.y*T.x+t.x] = float4x4(B[idx_B[0]],
-								  B[idx_B[1]],
-								  B[idx_B[2]],
-								  B[idx_B[3]]);
+		uint4 const rows_B = i*T.y+t.y;
+		uint4 const cols_B = col;
+		bool4 const mask_B = rows_B < K && cols_B < N;
+		uint4 const indx_B = (4 * rows_B + uint4(0,1,2,3)) * N + cols_B;
+		
+		a[t.y*T.x+t.x] = float4x4(mask_A[0] ? A[indx_A[0]] : 0.0,
+								  mask_A[1] ? A[indx_A[1]] : 0.0,
+								  mask_A[2] ? A[indx_A[2]] : 0.0,
+								  mask_A[3] ? A[indx_A[3]] : 0.0);
+		
+		b[t.y*T.x+t.x] = float4x4(mask_B[0] ? B[indx_B[0]] : 0.0,
+								  mask_B[0] ? B[indx_B[1]] : 0.0,
+								  mask_B[0] ? B[indx_B[2]] : 0.0,
+								  mask_B[0] ? B[indx_B[3]] : 0.0);
 		
 		threadgroup_barrier( mem_flags::mem_threadgroup );
-		for(uint k=0;k<T.x;++k)
-			c += b[k*T.x+t.x] * a[t.y*T.x+k];
+		
+		for ( uint k = 0, K = T.x ; k < K ; ++ k )
+			c += b[ k * T.x + t.x ] * a[ t.y * T.x + k ];
+		
 		threadgroup_barrier( mem_flags::mem_threadgroup );
 	}
-	uint4 idx_C = (4*row+uint4(0,1,2,3))*(G.x*T.x)+col;
-	C[idx_C[0]] = c[0];
-	C[idx_C[1]] = c[1];
-	C[idx_C[2]] = c[2];
-	C[idx_C[3]] = c[3];
+	uint4 const rows_C = row;
+	uint4 const cols_C = col;
+	bool4 const mask_C = rows_C < K && cols_C < N;
+	uint4 const indx_C = ( 4 * rows_C + uint4(0,1,2,3) ) * N + cols_C;
+	
+	if ( mask_C[0] ) C[indx_C[0]] = c[0];
+	if ( mask_C[1] ) C[indx_C[1]] = c[1];
+	if ( mask_C[2] ) C[indx_C[2]] = c[2];
+	if ( mask_C[3] ) C[indx_C[3]] = c[3];
 }
 kernel void gemm1(device float * const C [[ buffer(0) ]],
 				 device const float * const A [[ buffer(1) ]],
