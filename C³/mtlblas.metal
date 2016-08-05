@@ -8,13 +8,21 @@
 
 #include <metal_stdlib>
 using namespace metal;
-kernel void axpy(device float4 * y [[ buffer(0) ]],
+kernel void vsma(device float4 * y [[ buffer(0) ]],
 				 device const float4 * const x [[ buffer(1) ]],
 				 constant const float & alpha [[ buffer(2) ]],
 				 uint const n [[ threads_position_in_grid ]],
 				 uint const N [[ threads_per_grid ]]
 				 ) {
 	y[n] = y[n] + alpha * x[n];
+}
+kernel void smvmv(device float4 * y [[ buffer(0) ]],
+				  constant float & alpha [[ buffer(1) ]],
+				  device float4 * b [[ buffer(2) ]],
+				  device float4 * c [[ buffer(3) ]],
+				  uint const n [[ threads_position_in_grid ]],
+				  uint const N [[ threads_per_grid ]]) {
+	y[n] = y[n] + alpha * b[n] * c[n];
 }
 kernel void gemv(device float4 * Y [[ buffer(0) ]],
 				  device const float4 * const A [[ buffer(1) ]],

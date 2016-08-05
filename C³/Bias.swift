@@ -25,16 +25,13 @@ extension Bias {
 		guard let context: Context = managedObjectContext as? Context else {
 			fatalError(Context.Error.InvalidContext.description)
 		}
-		context.axpy(mean, deltamean, eps)
-		context.
-
-		logvariance = logvariance - ( 0.5 * eps ) * variance * la_matrix_product(la_transpose(deltavariance), gradient.variance).reshape(rows: rows, cols: cols)
-		assert(logvariance.status==LA_SUCCESS&&logvariance.rows==rows&&logvariance.cols==cols)
+		context.axpy(mean, x: deltamean, alpha: eps)
+		context.smvmv(logvariance, alpha: (-0.5*eps), a: deltavariance, b: variance)
 
 	}
 }
 extension Context {
-	internal func newBias(let width width: UInt) throws -> Bias {
+	internal func newBias(let width width: Int) throws -> Bias {
 		guard let bias: Bias = new() else {
 			throw Error.CoreData.InsertionFails(entity: Bias.className())
 		}
