@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		870EA92C1D54ADD3008C3380 /* mtlblas.metal in Sources */ = {isa = PBXBuildFile; fileRef = 870EA9261D54ADBF008C3380 /* mtlblas.metal */; };
+		870EA92D1D54ADD3008C3380 /* mtlmath.metal in Sources */ = {isa = PBXBuildFile; fileRef = 870EA9271D54ADBF008C3380 /* mtlmath.metal */; };
+		870EA92E1D54ADD3008C3380 /* mtlrand.metal in Sources */ = {isa = PBXBuildFile; fileRef = 870EA9281D54ADBF008C3380 /* mtlrand.metal */; };
 		8719AE4D1D38BBE500F8DCA4 /* CellTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8719AE4B1D38BB9800F8DCA4 /* CellTests.swift */; };
 		8719AE581D3DE0A700F8DCA4 /* cpuComputerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8719AE571D3DE0A700F8DCA4 /* cpuComputerTests.swift */; };
 		8719AE5B1D3DE0CB00F8DCA4 /* mtlComputerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8719AE5A1D3DE0CB00F8DCA4 /* mtlComputerTests.swift */; };
@@ -126,6 +129,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		870EA9261D54ADBF008C3380 /* mtlblas.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = mtlblas.metal; path = "../../C³/mtlblas.metal"; sourceTree = "<group>"; };
+		870EA9271D54ADBF008C3380 /* mtlmath.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = mtlmath.metal; path = "../../C³/mtlmath.metal"; sourceTree = "<group>"; };
+		870EA9281D54ADBF008C3380 /* mtlrand.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = mtlrand.metal; path = "../../C³/mtlrand.metal"; sourceTree = "<group>"; };
 		8719AE4B1D38BB9800F8DCA4 /* CellTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CellTests.swift; sourceTree = "<group>"; };
 		8719AE571D3DE0A700F8DCA4 /* cpuComputerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = cpuComputerTests.swift; path = ../../Computer/cpuComputerTests.swift; sourceTree = "<group>"; };
 		8719AE5A1D3DE0CB00F8DCA4 /* mtlComputerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = mtlComputerTests.swift; path = ../../Computer/mtlComputerTests.swift; sourceTree = "<group>"; };
@@ -346,6 +352,9 @@
 		87B1FD021D05461100981CF4 /* C³ */ = {
 			isa = PBXGroup;
 			children = (
+				870EA9261D54ADBF008C3380 /* mtlblas.metal */,
+				870EA9271D54ADBF008C3380 /* mtlmath.metal */,
+				870EA9281D54ADBF008C3380 /* mtlrand.metal */,
 				87B1FD381D0546BF00981CF4 /* C³.xcdatamodeld */,
 				87B1FD2C1D05467800981CF4 /* C³.h */,
 				87BCEBFB1D4D763D00FC3099 /* Bias.swift */,
@@ -759,6 +768,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				870EA92C1D54ADD3008C3380 /* mtlblas.metal in Sources */,
+				870EA92D1D54ADD3008C3380 /* mtlmath.metal in Sources */,
+				870EA92E1D54ADD3008C3380 /* mtlrand.metal in Sources */,
 				87B1FD3B1D0546C700981CF4 /* C³.xcdatamodeld in Sources */,
 				87BCEBFE1D4D764100FC3099 /* Decay.swift in Sources */,
 				87BCEBFC1D4D763D00FC3099 /* Bias.swift in Sources */,

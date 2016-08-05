@@ -84,7 +84,7 @@ extension Edge {
 extension Context {
 	internal func newEdge(let output output: Cell, let input: Cell) throws -> Edge {
 		guard let edge: Edge = new() else {
-			throw Error.EntityError.InsertionFails(entity: className)
+			throw Error.CoreData.InsertionFails(entity: Cell.className())
 		}
 		edge.resize(rows: output.width, cols: input.width)
 		edge.output = output

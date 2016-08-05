@@ -226,7 +226,7 @@ extension Cell {
 			if mutex.state.tryLock() {
 				if ready.contains(.State) {
 					guard let context: Context = managedObjectContext as? Context else {
-						assertionFailure(Error.System.InvalidContext.description)
+						assertionFailure(Context.Error.InvalidContext.description)
 						return
 					}
 					let refer: Set<Edge> = input
@@ -249,7 +249,7 @@ extension Cell {
 			if mutex.delta.tryLock() {
 				if ready.contains(.Delta) {
 					guard let context: Context = managedObjectContext as? Context else {
-						assertionFailure(Error.System.InvalidContext.description)
+						assertionFailure(Context.Error.InvalidContext.description)
 						return
 					}
 					let refer: Set<Edge> = output
@@ -278,7 +278,7 @@ extension Cell {
 				
 			} else {
 				guard let context: Context = managedObjectContext as? Context else {
-					assertionFailure(Error.System.InvalidContext.description)
+					assertionFailure(Context.Error.InvalidContext.description)
 					return state.past.value
 				}
 				dispatch_apply(input.count, context.dispatch.parallel) {
@@ -320,7 +320,7 @@ extension Cell {
 			} else if ready.contains(.State) {
 				
 				guard let context: Context = managedObjectContext as? Context else {
-					assertionFailure(Error.System.InvalidContext.description)
+					assertionFailure(Context.Error.InvalidContext.description)
 					return(delta.past.mean, delta.past.variance, decay?.lambda, gradient.past.mean, feedback?.value)
 				}
 				if ready.contains(.Train) {
@@ -398,7 +398,7 @@ extension Cell {
 extension Context {
 	public func newCell ( let width width: UInt, let label: String = "", let recur: Bool = false, let buffer: Bool = false, let input: [Cell] = [] ) throws -> Cell {
 		guard let cell: Cell = new() else {
-			throw Error.EntityError.InsertionFails(entity: NSStringFromClass(Cell.self))
+			throw Error.CoreData.InsertionFails(entity: Cell.className())
 		}
 		cell.label = label
 		cell.width = width
