@@ -132,16 +132,16 @@ public class mtlComputer: cpuComputer {
 			let a: mtlBuffer = a as? mtlBuffer where a.mtl.device === device {
 			let command: MTLCommandBuffer = queue.commandBuffer()
 			let encoder: MTLComputeCommandEncoder = command.computeCommandEncoder()
-			encoder.setComputePipelineState(pipelines.gemv4)
+			encoder.setComputePipelineState(pipelines.gemv)
 			
-			let blk = 8
+			let blk = 256
 			encoder.setBuffer(y.mtl, offset: 0, atIndex: 0)
 			encoder.setBuffer(a.mtl, offset: 0, atIndex: 1)
 			encoder.setBuffer(x.mtl, offset: 0, atIndex: 2)
-			encoder.setBytes([UInt32(n/4)], length: sizeof(UInt32), atIndex: 3)
-			encoder.setThreadgroupMemoryLength(sizeof(Float)*16*blk, atIndex: 0)
-			encoder.setThreadgroupMemoryLength(sizeof(Float)*4*blk, atIndex: 1)
-			encoder.dispatchThreadgroups(MTLSize(width: m/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: blk, height: 1, depth: 1))
+			//encoder.setBytes([UInt32(n/4)], length: sizeof(UInt32), atIndex: 3)
+			encoder.setThreadgroupMemoryLength(sizeof(Float)*4*n, atIndex: 0)
+			//encoder.setThreadgroupMemoryLength(sizeof(Float)*4*blk, atIndex: 1)
+			encoder.dispatchThreadgroups(MTLSize(width: m/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: n/4, height: 1, depth: 1))
 			encoder.endEncoding()
 			command.commit()
 			
