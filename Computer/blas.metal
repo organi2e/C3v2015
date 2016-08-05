@@ -38,6 +38,65 @@ kernel void div(device float4 * y [[ buffer(0) ]],
 	y [ id ] = a [ id ] / b [ id ];
 }
 //Y = alphaAX + betaY
+
+kernel void gemv4(device float4 * y [[ buffer(0) ]],
+				 device const float4 * const A [[ buffer(1) ]],
+				 device const float4 * const X [[ buffer(2) ]],
+				  constant const uint & N [[ buffer(3) ]],
+				 uint const g [[ threadgroup_position_in_grid ]],
+				 uint const G [[ threadgroups_per_grid ]],
+				 uint const t [[ thread_position_in_threadgroup ]],
+				  uint const T [[ threads_per_threadgroup ]],
+				  threadgroup float4x4 * const a [[ threadgroup(0) ]],
+				  threadgroup float4 * const x [[ threadgroup(1) ]]
+				  )
+{
+	float4 c = float4(0.0);
+	for( uint n = 0 ; n < N / T ; ++ n ) {
+		x[t] = X[n*T+t];
+		a[t] =
+		float4x4(A[(4*g+0)*N+n*T+t],
+				 A[(4*g+1)*N+n*T+t],
+				 A[(4*g+2)*N+n*T+t],
+				 A[(4*g+3)*N+n*T+t]
+				 );
+		threadgroup_barrier( mem_flags::mem_threadgroup );
+		for( uint k = 0 ; k < T ; ++ k ) {
+			c += x[k] * a[k];
+		}
+		threadgroup_barrier( mem_flags::mem_threadgroup );
+	}
+	y[ g ] = c;
+}
+kernel void gemv(device float4 * y [[ buffer(0) ]],
+				  device const float4 * const A [[ buffer(1) ]],
+				  device const float4 * const x [[ buffer(2) ]],
+				  uint const m [[ threadgroup_position_in_grid ]],
+				  uint const M [[ threadgroups_per_grid ]],
+				  uint const n [[ thread_position_in_threadgroup ]],
+				  uint const N [[ threads_per_threadgroup ]],
+				  threadgroup float4 * const accumulator [[ threadgroup(0) ]] )
+{
+	float4x4 a = float4x4(A[(4*m+0)*N+n],
+						  A[(4*m+1)*N+n],
+						  A[(4*m+2)*N+n],
+						  A[(4*m+3)*N+n]);
+	accumulator [ n ] =  x [ n ] * a;
+	uint offset = 1 << ( clz ( uint( 1 ) ) - clz ( N ) );
+	threadgroup_barrier ( mem_flags::mem_threadgroup );
+	if ( n < ( N % offset ) ) {
+		accumulator [ n ] += accumulator [ offset + n ];
+	}
+	while ( offset >>= 1 ) {
+		threadgroup_barrier ( mem_flags::mem_threadgroup );
+		if ( n < offset ) {
+			accumulator [ n ] += accumulator [ offset + n ];
+		};
+	}
+	if( !n )
+		y[ m ] = accumulator [ n ];
+}
+/*
 kernel void gemv(device float4 * y [[ buffer(0) ]],
 				 device const float4x4 * const A [[ buffer(1) ]],
 				 device const float4 * const x [[ buffer(2) ]],
@@ -65,6 +124,7 @@ kernel void gemv(device float4 * y [[ buffer(0) ]],
 	if( !n )
 		y[ m ] = alpha * accumulator [ n ] + beta * y[ m ];
 }
+ */
 //Y = alphaAX + betaY
 /*
  <unknown>:0: Test Case '-[ComputerTests.mtlComputerTests testGEMM]' measured [Time, seconds] average: 3.406, relative standard deviation: 8.578%, values: [3.096253, 3.121881, 3.561484, 3.097569, 3.135809, 3.737424, 3.566952, 3.360777, 3.994759, 3.388189], performanceMetricID:com.apple.XCTPerformanceMetric_WallClockTime, baselineName: "", baselineAverage: , maxPercentRegression: 10.000%, maxPercentRelativeStandardDeviation: 10.000%, maxRegression: 0.100, maxStandardDeviation: 0.100
@@ -310,9 +370,7 @@ kernel void gemm8(device float4 * const C [[ buffer(0) ]],
 kernel void gemm4(device float4 * const C [[ buffer(0) ]],
 				 device const float4 * const A [[ buffer(1) ]],
 				 device const float4 * const B [[ buffer(2) ]],
-				 constant const uint & M [[ buffer(3) ]],
-				 constant const uint & K [[ buffer(4) ]],
-				 constant const uint & N [[ buffer(5) ]],
+				 constant const uint & K [[ buffer(3) ]],
 				 uint2 const g [[ threadgroup_position_in_grid ]],
 				 uint2 const G [[ threadgroups_per_grid ]],
 				 uint2 const t [[ thread_position_in_threadgroup ]],
@@ -327,25 +385,29 @@ kernel void gemm4(device float4 * const C [[ buffer(0) ]],
 	float4x4 c = float4x4(0.0);
 	
 	for(uint i = 0 ; i < K/T.x ; ++ i ) {
-		a[t.y*T.x+t.x] = float4x4(A[(4*row+0)*K+i*T.x+t.x],
-								  A[(4*row+1)*K+i*T.x+t.x],
-								  A[(4*row+2)*K+i*T.x+t.x],
-								  A[(4*row+3)*K+i*T.x+t.x]);
+		uint4 idx_A = (4*row+uint4(0,1,2,3))*K+i*T.x+t.x;
+		uint4 idx_B = (4*(i*T.y+t.y)+uint4(0,1,2,3))*(G.x*T.x)+col;
 		
-		b[t.y*T.x+t.x] = float4x4(B[(4*(i*T.y+t.y)+0)*N+col],
-								  B[(4*(i*T.y+t.y)+1)*N+col],
-								  B[(4*(i*T.y+t.y)+2)*N+col],
-								  B[(4*(i*T.y+t.y)+3)*N+col]);
+		a[t.y*T.x+t.x] = float4x4(A[idx_A[0]],
+								  A[idx_A[1]],
+								  A[idx_A[2]],
+								  A[idx_A[3]]);
+		
+		b[t.y*T.x+t.x] = float4x4(B[idx_B[0]],
+								  B[idx_B[1]],
+								  B[idx_B[2]],
+								  B[idx_B[3]]);
 		
 		threadgroup_barrier( mem_flags::mem_threadgroup );
 		for(uint k=0;k<T.x;++k)
 			c += b[k*T.x+t.x] * a[t.y*T.x+k];
 		threadgroup_barrier( mem_flags::mem_threadgroup );
 	}
-	C[(4*row+0)*N+col] = c[0];
-	C[(4*row+1)*N+col] = c[1];
-	C[(4*row+2)*N+col] = c[2];
-	C[(4*row+3)*N+col] = c[3];
+	uint4 idx_C = (4*row+uint4(0,1,2,3))*(G.x*T.x)+col;
+	C[idx_C[0]] = c[0];
+	C[idx_C[1]] = c[1];
+	C[idx_C[2]] = c[2];
+	C[idx_C[3]] = c[3];
 }
 kernel void gemm1(device float * const C [[ buffer(0) ]],
 				 device const float * const A [[ buffer(1) ]],
@@ -450,11 +512,20 @@ kernel void gemm1(device float4x4 * y [[ buffer(0) ]],
  */
 kernel void transpose(device float4x4 * y [[ buffer(0) ]],
 					  device const float4x4 * x [[ buffer(1) ]],
-					  uint const m [[ threadgroup_position_in_grid ]],
-					  uint const M [[ threadgroups_per_grid ]],
-					  uint const n [[ thread_position_in_threadgroup ]],
-					  uint const N [[ threads_per_threadgroup ]]
+					  uint2 const m [[ threadgroup_position_in_grid ]],
+					  uint2 const M [[ threadgroups_per_grid ]]
 					  ) {
-	float4x4 v = transpose(y[0]);
+	uint const src = m.y * M.x + m.x;
+	uint const dst = m.x * M.y + m.y;
+	y[dst] = transpose(x[src]);
+}
+kernel void transpose_inplace(device float4x4 * y [[ buffer(0) ]],
+							  uint2 const m [[ threadgroup_position_in_grid ]],
+							  uint2 const M [[ threadgroups_per_grid ]]
+							  ) {
+	uint const src = m.y * M.x + m.x;
+	uint const dst = m.x * M.y + m.y;
+	float4x4 v = transpose(y[src]);
 	threadgroup_barrier( mem_flags :: mem_device_and_threadgroup );
+	y[dst] = v;
 }
