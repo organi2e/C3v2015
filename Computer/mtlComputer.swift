@@ -29,7 +29,9 @@ public class mtlComputer: cpuComputer {
 		let pdf: MTLComputePipelineState
 		let cdf: MTLComputePipelineState
 		let gemv: MTLComputePipelineState
-		let gemm: MTLComputePipelineState
+		let gemm1: MTLComputePipelineState
+		let gemm4: MTLComputePipelineState
+		let gemm8: MTLComputePipelineState
 		let normal: MTLComputePipelineState
 		let sigmoid: MTLComputePipelineState
 	};
@@ -60,7 +62,9 @@ public class mtlComputer: cpuComputer {
 		                           pdf: try pipeline("pdf"),
 		                           cdf: try pipeline("cdf"),
 		                           gemv: try pipeline("gemv"),
-		                           gemm: try pipeline("gemm"),
+		                           gemm1: try pipeline("gemm1"),
+		                           gemm4: try pipeline("gemm4"),
+		                           gemm8: try pipeline("gemm8"),
 		                           normal: try pipeline("normal"),
 		                           sigmoid: try pipeline("sigmoid")
 		)
@@ -156,17 +160,17 @@ public class mtlComputer: cpuComputer {
 			let command: MTLCommandBuffer = queue.commandBuffer()
 			let encoder: MTLComputeCommandEncoder = command.computeCommandEncoder()
 			
-			let bx = 32
-			let by = 32
-			let u = 4
-			encoder.setComputePipelineState(pipelines.gemm)
+			let bx = 16
+			let by = 16
+
+			encoder.setComputePipelineState(pipelines.gemm4)
 			encoder.setBuffer(y.mtl, offset: 0, atIndex: 0)
 			encoder.setBuffer(a.mtl, offset: 0, atIndex: 1)
 			encoder.setBuffer(x.mtl, offset: 0, atIndex: 2)
-			encoder.setBytes([UInt32(dim.0/u)], length: sizeof(UInt32), atIndex: 3)
-			encoder.setBytes([UInt32(dim.1/u)], length: sizeof(UInt32), atIndex: 4)
-			encoder.setBytes([UInt32(dim.2/u)], length: sizeof(UInt32), atIndex: 5)
-			encoder.setBytes([UInt32(bx)], length: sizeof(UInt32), atIndex: 6)
+			encoder.setBytes([UInt32(dim.0)/4], length: sizeof(UInt32), atIndex: 3)
+			encoder.setBytes([UInt32(dim.1)/4], length: sizeof(UInt32), atIndex: 4)
+			encoder.setBytes([UInt32(dim.2)/4], length: sizeof(UInt32), atIndex: 5)
+			//encoder.setBytes([UInt32(bx)], length: sizeof(UInt32), atIndex: 6)
 			
 			/*
 			encoder.setBytes([UInt32(Int(dim.1/4))], length: sizeof(UInt32), atIndex: 5)
@@ -174,9 +178,9 @@ public class mtlComputer: cpuComputer {
 			encoder.dispatchThreadgroups(MTLSize(width: dim.2/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: dim.0/4, height: 1, depth: 1))
 			*/
 			
-			encoder.setThreadgroupMemoryLength(sizeof(Float)*u*u*bx*by, atIndex: 0)
-			encoder.setThreadgroupMemoryLength(sizeof(Float)*u*u*bx*by, atIndex: 1)
-			encoder.dispatchThreadgroups(MTLSize(width: dim.0/bx/u, height: dim.1/by/u, depth: 1), threadsPerThreadgroup: MTLSize(width: bx, height: by, depth: 1))
+			encoder.setThreadgroupMemoryLength(sizeof(Float)*16*bx*by, atIndex: 0)
+			encoder.setThreadgroupMemoryLength(sizeof(Float)*16*bx*by, atIndex: 1)
+			encoder.dispatchThreadgroups(MTLSize(width: dim.2/bx/4, height: dim.0/by/4, depth: 1), threadsPerThreadgroup: MTLSize(width: bx, height: by, depth: 1))
 			
 			encoder.endEncoding()
 			command.commit()

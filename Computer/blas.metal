@@ -217,13 +217,102 @@ kernel void gemm(device float4 * const C [[ buffer(0) ]],
 	C[((8*g.y+t.y)*8+7)*M+(8*g.x+t.x)*2+1] = c[1][1][3];
 }
 */
-kernel void gemm(device float4 * const C [[ buffer(0) ]],
+kernel void gemm8(device float4 * const C [[ buffer(0) ]],
+				  device const float4 * const A [[ buffer(1) ]],
+				  device const float4 * const B [[ buffer(2) ]],
+				  constant const uint & M [[ buffer(3) ]],
+				  constant const uint & K [[ buffer(4) ]],
+				  constant const uint & N [[ buffer(5) ]],
+				  uint2 const g [[ threadgroup_position_in_grid ]],
+				  uint2 const G [[ threadgroups_per_grid ]],
+				  uint2 const t [[ thread_position_in_threadgroup ]],
+				  uint2 const T [[ threads_per_threadgroup ]],
+				  threadgroup float4x4 * a [[ threadgroup(0) ]],
+				  threadgroup float4x4 * b [[ threadgroup(1) ]]
+				  ){
+	
+	uint const col = g.x * T.x + t.x;
+	uint const row = g.y * T.y + t.y;
+	
+	float4x4 c[2][2] = {{float4x4(0.0),float4x4(0.0)},{float4x4(0.0),float4x4(0.0)}};
+	
+	for(uint i = 0 ; i < K/T.x ; ++ i ) {
+		a[4*(t.y*T.x+t.x)+0] = float4x4(A[(8*row+0)*K+2*(i*T.x+t.x)+0],
+										A[(8*row+1)*K+2*(i*T.x+t.x)+0],
+										A[(8*row+2)*K+2*(i*T.x+t.x)+0],
+										A[(8*row+3)*K+2*(i*T.x+t.x)+0]);
+		
+		a[4*(t.y*T.x+t.x)+1] = float4x4(A[(8*row+0)*K+2*(i*T.x+t.x)+1],
+										A[(8*row+1)*K+2*(i*T.x+t.x)+1],
+										A[(8*row+2)*K+2*(i*T.x+t.x)+1],
+										A[(8*row+3)*K+2*(i*T.x+t.x)+1]);
+		
+		a[4*(t.y*T.x+t.x)+2] = float4x4(A[(8*row+4)*K+2*(i*T.x+t.x)+0],
+										A[(8*row+5)*K+2*(i*T.x+t.x)+0],
+										A[(8*row+6)*K+2*(i*T.x+t.x)+0],
+										A[(8*row+7)*K+2*(i*T.x+t.x)+0]);
+		
+		a[4*(t.y*T.x+t.x)+3] = float4x4(A[(8*row+4)*K+2*(i*T.x+t.x)+1],
+										A[(8*row+5)*K+2*(i*T.x+t.x)+1],
+										A[(8*row+6)*K+2*(i*T.x+t.x)+1],
+										A[(8*row+7)*K+2*(i*T.x+t.x)+1]);
+		
+		b[4*(t.y*T.x+t.x)+0] = float4x4(B[(8*(i*T.y+t.y)+0)*N+2*col+0],
+										B[(8*(i*T.y+t.y)+1)*N+2*col+0],
+										B[(8*(i*T.y+t.y)+2)*N+2*col+0],
+										B[(8*(i*T.y+t.y)+3)*N+2*col+0]);
+		
+		b[4*(t.y*T.x+t.x)+1] = float4x4(B[(8*(i*T.y+t.y)+0)*N+2*col+1],
+										B[(8*(i*T.y+t.y)+1)*N+2*col+1],
+										B[(8*(i*T.y+t.y)+2)*N+2*col+1],
+										B[(8*(i*T.y+t.y)+3)*N+2*col+1]);
+		
+		b[4*(t.y*T.x+t.x)+2] = float4x4(B[(8*(i*T.y+t.y)+4)*N+2*col+0],
+										B[(8*(i*T.y+t.y)+5)*N+2*col+0],
+										B[(8*(i*T.y+t.y)+6)*N+2*col+0],
+										B[(8*(i*T.y+t.y)+7)*N+2*col+0]);
+		
+		b[4*(t.y*T.x+t.x)+3] = float4x4(B[(8*(i*T.y+t.y)+4)*N+2*col+1],
+										B[(8*(i*T.y+t.y)+5)*N+2*col+1],
+										B[(8*(i*T.y+t.y)+6)*N+2*col+1],
+										B[(8*(i*T.y+t.y)+7)*N+2*col+1]);
+		
+		threadgroup_barrier( mem_flags::mem_threadgroup );
+		for(uint k=0;k<T.x;++k) {
+			c[0][0] += b[4*(k*T.x+t.x)+0] * a[4*(t.y*T.x+k)+0] + b[4*(k*T.x+t.x)+2] * a[4*(t.y*T.x+k)+1];
+			c[0][1] += b[4*(k*T.x+t.x)+1] * a[4*(t.y*T.x+k)+0] + b[4*(k*T.x+t.x)+3] * a[4*(t.y*T.x+k)+1];
+			c[1][0] += b[4*(k*T.x+t.x)+0] * a[4*(t.y*T.x+k)+2] + b[4*(k*T.x+t.x)+2] * a[4*(t.y*T.x+k)+3];
+			c[1][1] += b[4*(k*T.x+t.x)+1] * a[4*(t.y*T.x+k)+2] + b[4*(k*T.x+t.x)+3] * a[4*(t.y*T.x+k)+3];
+		}
+		threadgroup_barrier( mem_flags::mem_threadgroup );
+	}
+	
+	C[(8*row+0)*N+2*col+0] = c[0][0][0];
+	C[(8*row+1)*N+2*col+0] = c[0][0][1];
+	C[(8*row+2)*N+2*col+0] = c[0][0][2];
+	C[(8*row+3)*N+2*col+0] = c[0][0][3];
+	
+	C[(8*row+0)*N+2*col+1] = c[0][1][0];
+	C[(8*row+1)*N+2*col+1] = c[0][1][1];
+	C[(8*row+2)*N+2*col+1] = c[0][1][2];
+	C[(8*row+3)*N+2*col+1] = c[0][1][3];
+	
+	C[(8*row+4)*N+2*col+0] = c[1][0][0];
+	C[(8*row+5)*N+2*col+0] = c[1][0][1];
+	C[(8*row+6)*N+2*col+0] = c[1][0][2];
+	C[(8*row+7)*N+2*col+0] = c[1][0][3];
+	
+	C[(8*row+4)*N+2*col+1] = c[1][1][0];
+	C[(8*row+5)*N+2*col+1] = c[1][1][1];
+	C[(8*row+6)*N+2*col+1] = c[1][1][2];
+	C[(8*row+7)*N+2*col+1] = c[1][1][3];
+}
+kernel void gemm4(device float4 * const C [[ buffer(0) ]],
 				 device const float4 * const A [[ buffer(1) ]],
 				 device const float4 * const B [[ buffer(2) ]],
-				 constant const uint & N [[ buffer(3) ]],
+				 constant const uint & M [[ buffer(3) ]],
 				 constant const uint & K [[ buffer(4) ]],
-				 constant const uint & M [[ buffer(5) ]],
-				 constant const uint & L [[ buffer(6) ]],
+				 constant const uint & N [[ buffer(5) ]],
 				 uint2 const g [[ threadgroup_position_in_grid ]],
 				 uint2 const G [[ threadgroups_per_grid ]],
 				 uint2 const t [[ thread_position_in_threadgroup ]],
@@ -232,41 +321,38 @@ kernel void gemm(device float4 * const C [[ buffer(0) ]],
 				 threadgroup float4x4 * b [[ threadgroup(1) ]]
 				 ){
 	
-	uint const bx = T.x, by = T.y;
-	uint const tx = t.x, ty = t.y;
-	uint const col = g.x * bx + tx;
-	uint const row = g.y * by + ty;
+	uint const col = g.x * T.x + t.x;
+	uint const row = g.y * T.y + t.y;
 	
 	float4x4 c = float4x4(0.0);
 	
-	for(uint i = 0 ; i < K ; ++ i ) {
-		a[t.y*L+t.x] = float4x4(A[(4*row+0)*K+i*L+tx],
-								A[(4*row+1)*K+i*L+tx],
-								A[(4*row+2)*K+i*L+tx],
-								A[(4*row+3)*K+i*L+tx]
-								);
-		b[t.y*L+t.x] = float4x4(B[(4*(i*L+ty)+0)*M+col],
-								B[(4*(i*L+ty)+1)*M+col],
-								B[(4*(i*L+ty)+2)*M+col],
-								B[(4*(i*L+ty)+3)*M+col]
-								);
+	for(uint i = 0 ; i < K/T.x ; ++ i ) {
+		a[t.y*T.x+t.x] = float4x4(A[(4*row+0)*K+i*T.x+t.x],
+								  A[(4*row+1)*K+i*T.x+t.x],
+								  A[(4*row+2)*K+i*T.x+t.x],
+								  A[(4*row+3)*K+i*T.x+t.x]);
+		
+		b[t.y*T.x+t.x] = float4x4(B[(4*(i*T.y+t.y)+0)*N+col],
+								  B[(4*(i*T.y+t.y)+1)*N+col],
+								  B[(4*(i*T.y+t.y)+2)*N+col],
+								  B[(4*(i*T.y+t.y)+3)*N+col]);
+		
 		threadgroup_barrier( mem_flags::mem_threadgroup );
-		for(uint k=0;k<L;++k)
-			c += b[k*L+t.x] * a[t.y*L+k];
+		for(uint k=0;k<T.x;++k)
+			c += b[k*T.x+t.x] * a[t.y*T.x+k];
 		threadgroup_barrier( mem_flags::mem_threadgroup );
 	}
-	C[((L*g.y+t.y)*4+0)*M+(L*g.x+t.x)] = c[0];
-	C[((L*g.y+t.y)*4+1)*M+(L*g.x+t.x)] = c[1];
-	C[((L*g.y+t.y)*4+2)*M+(L*g.x+t.x)] = c[2];
-	C[((L*g.y+t.y)*4+3)*M+(L*g.x+t.x)] = c[3];
+	C[(4*row+0)*N+col] = c[0];
+	C[(4*row+1)*N+col] = c[1];
+	C[(4*row+2)*N+col] = c[2];
+	C[(4*row+3)*N+col] = c[3];
 }
-/*
-kernel void gemm(device float * const C [[ buffer(0) ]],
+kernel void gemm1(device float * const C [[ buffer(0) ]],
 				 device const float * const A [[ buffer(1) ]],
 				 device const float * const B [[ buffer(2) ]],
-				 constant const uint & N [[ buffer(3) ]],
+				 constant const uint & M [[ buffer(3) ]],
 				 constant const uint & K [[ buffer(4) ]],
-				 constant const uint & M [[ buffer(5) ]],
+				 constant const uint & N [[ buffer(5) ]],
 				 uint2 const g [[ threadgroup_position_in_grid ]],
 				 uint2 const G [[ threadgroups_per_grid ]],
 				 uint2 const t [[ thread_position_in_threadgroup ]],
@@ -275,24 +361,21 @@ kernel void gemm(device float * const C [[ buffer(0) ]],
 				 threadgroup float * b [[ threadgroup(1) ]]
 				 ){
 	
-	uint const bx = T.x, by = T.y;
-	uint const tx = t.x, ty = t.y;
-	uint const col = g.x * bx + tx;
-	uint const row = g.y * by + ty;
+	uint const col = g.x * T.x + t.x;
+	uint const row = g.y * T.y + t.y;
 	
 	float c = 0.0;
 	
-	for(uint m = 0 ; m < K ; ++ m ) {
-		a[ty*bx+tx] = A[row*K+m*8+tx];
-		b[ty*bx+tx] = B[(m*8+ty)*M+col];
+	for(uint m = 0 ; m < K/T.x ; ++ m ) {
+		a[t.y*T.x+t.x] = A[row*K+m*T.x+t.x];
+		b[t.y*T.x+t.x] = B[(m*T.x+t.y)*N+col];
 		threadgroup_barrier( mem_flags::mem_threadgroup );
-		for(uint k=0;k<8;++k)
-			c += a[ty*bx+k] * b[k*bx+tx];
-		//threadgroup_barrier( mem_flags::mem_threadgroup );
+		for(uint k=0;k<T.x;++k)
+			c += a[t.y*T.x+k] * b[k*T.x+t.x];
+		threadgroup_barrier( mem_flags::mem_threadgroup );
 	}
-	C[row*M+col] = c;
+	C[row*N+col] = c;
 }
-*/
 /*
 kernel void gemm2(device float4x4 * y [[ buffer(0) ]],
 				 device const float4x4 * const A [[ buffer(1) ]],

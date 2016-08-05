@@ -88,25 +88,24 @@ class cpuComputerTests: XCTestCase {
 	}
 	*/
 	func testGEMM() {
-		let O: Int = 32 * 12
-		let M: Int = O
-		let K: Int = O
-		let N: Int = O * O
+		let M: Int = 1024
+		let K: Int = 1024
+		let N: Int = 1024
 		
+		let d: Buffer = computer.newBuffer(length: sizeof(Float)*M*N)
 		let y: Buffer = computer.newBuffer(length: sizeof(Float)*M*N)
 		let a: Buffer = computer.newBuffer(length: sizeof(Float)*M*K)
 		let x: Buffer = computer.newBuffer(length: sizeof(Float)*K*N)
-		let d: Buffer = computer.newBuffer(length: sizeof(Float)*M*N)
 		
 		for col in 0..<M {
 			for row in 0..<K {
-				a.scalar[col*K+row] = Float(arc4random())/Float(UInt32.max)
+				a.scalar[row*M+col] = Float(arc4random())/Float(UInt32.max)
 			}
 		}
 		
 		for col in 0..<K {
 			for row in 0..<N {
-				x.scalar[col*N+row] = Float(arc4random())/Float(UInt32.max)
+				x.scalar[row*K+col] = Float(arc4random())/Float(UInt32.max)
 			}
 		}
 		computer.clear(d, sync: false)
@@ -123,15 +122,19 @@ class cpuComputerTests: XCTestCase {
 			self.computer.gemm(y, a: a, x: x, alpha: 1.0, beta: 0.0, dim: (M, K, N), transpose: (false, false), sync: false)
 			self.computer.gemm(y, a: a, x: x, alpha: 1.0, beta: 0.0, dim: (M, K, N), transpose: (false, false), sync: false)
 			self.computer.gemm(y, a: a, x: x, alpha: 1.0, beta: 0.0, dim: (M, K, N), transpose: (false, false), sync: false)
+			self.computer.gemm(y, a: a, x: x, alpha: 1.0, beta: 0.0, dim: (M, K, N), transpose: (false, false), sync: false)
+			self.computer.gemm(y, a: a, x: x, alpha: 1.0, beta: 0.0, dim: (M, K, N), transpose: (false, false), sync: false)
 			self.computer.join()
 		}
+		self.computer.join()
 		let A: la_object_t = la_matrix_from_float_buffer_nocopy(a.scalar.baseAddress, la_count_t(M), la_count_t(K), la_count_t(K), la_hint_t(LA_NO_HINT), nil, la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING))
 		let X: la_object_t = la_matrix_from_float_buffer_nocopy(x.scalar.baseAddress, la_count_t(K), la_count_t(N), la_count_t(N), la_hint_t(LA_NO_HINT), nil, la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING))
 		la_matrix_to_float_buffer(d.scalar.baseAddress, la_count_t(N), la_matrix_product(A, X))
-		
-		if 1e-3 < rmse(d: d, y: y) {
-			//print("D: \(Array(d.scalar)), Y: \(Array(y.scalar))")
-			XCTFail()
+		let e = rmse(d: d, y: y)
+		if 1e-3 < e {
+			print("D: \(Array(d.scalar)[0..<16])")
+			print("Y: \(Array(y.scalar)[0..<16])")
+			XCTFail("RMSE: \(e)")
 		}
 		
 	}
