@@ -87,10 +87,47 @@ class cpuComputerTests: XCTestCase {
 		}
 	}
 	*/
+	func testGEMV() {
+		let M: Int = 4096
+		let N: Int = 4096
+		
+		let d: Buffer = computer.newBuffer(length: sizeof(Float)*M)
+		let y: Buffer = computer.newBuffer(length: sizeof(Float)*M)
+		let a: Buffer = computer.newBuffer(length: sizeof(Float)*M*N)
+		let x: Buffer = computer.newBuffer(length: sizeof(Float)*N)
+		
+		for col in 0..<M {
+			for row in 0..<N {
+				a.scalar[row*M+col] = Float(arc4random())/Float(UInt32.max)
+			}
+		}
+		for row in 0..<N {
+			x.scalar[row] = Float(arc4random())/Float(UInt32.max)
+		}
+		
+		measureBlock {
+			self.computer.gemv(y, a: a, x: x, alpha: 1.0, beta: 0.0, transpose: false, sync: false)
+			self.computer.gemv(y, a: a, x: x, alpha: 1.0, beta: 0.0, transpose: false, sync: false)
+			self.computer.join()
+		}
+		
+		let A: la_object_t = la_matrix_from_float_buffer_nocopy(a.scalar.baseAddress, la_count_t(M), la_count_t(N), la_count_t(N), la_hint_t(LA_NO_HINT), nil, la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING))
+		let X: la_object_t = la_matrix_from_float_buffer_nocopy(x.scalar.baseAddress, la_count_t(N), la_count_t(1), la_count_t(1), la_hint_t(LA_NO_HINT), nil, la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING))
+		la_matrix_to_float_buffer(d.scalar.baseAddress, la_count_t(1), la_matrix_product(A, X))
+		computer.join()
+		
+		let e = rmse(d: d, y: y)
+		if 1e-3 < e {
+			print("D: \(Array(d.scalar))")
+			print("Y: \(Array(y.scalar))")
+			XCTFail("RMSE: \(e)")
+		}
+	}
+	/*
 	func testGEMM() {
-		let M: Int = 1024
-		let K: Int = 1024
-		let N: Int = 1024
+		let M: Int = 64
+		let K: Int = 64
+		let N: Int = 64
 		
 		let d: Buffer = computer.newBuffer(length: sizeof(Float)*M*N)
 		let y: Buffer = computer.newBuffer(length: sizeof(Float)*M*N)
@@ -138,6 +175,7 @@ class cpuComputerTests: XCTestCase {
 		}
 		
 	}
+*/
 	/*
 	func testSQ() {
 		let n: Int = 1 << order

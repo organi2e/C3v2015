@@ -135,21 +135,7 @@ public class cpuComputer: Computer {
 		let m: Int = y.scalar.count
 		let n: Int = x.scalar.count
 		assert(m*n==a.scalar.count)
-		( flag ? sync : async ) {
-			dispatch_apply(m/4, cpuComputer.dispatch.queue) { ( let r: Int ) in
-				var accumulator: float4 = float4(0)
-				if transpose {
-					(0..<n/4).forEach { ( let c: Int ) in
-						accumulator += a.matrix [ r * n/4 + c ].transpose * x.vector[ c ]
-					}
-				} else {
-					(0..<n/4).forEach { ( let c: Int ) in
-						accumulator += a.matrix [ c * m/4 + r ] * x.vector[c]
-					}
-				}
-				y.vector[ r ] = alpha * accumulator + beta * y.vector[ r ]
-			}
-		}
+		cblas_sgemv(CblasRowMajor, CblasNoTrans, Int32(m), Int32(n), alpha, a.scalar.baseAddress, Int32(n), x.scalar.baseAddress, 1, beta, y.scalar.baseAddress, 1)
 	}
 	func gemm ( let y: Buffer, let a: Buffer, let x: Buffer, let alpha: Float, let beta: Float, let dim: (Int, Int, Int), let transpose: (Bool, Bool), let sync: Bool ) {
 		cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Int32(dim.0), Int32(dim.2), Int32(dim.1), alpha, a.scalar.baseAddress, Int32(dim.1), x.scalar.baseAddress, Int32(dim.2), beta, y.scalar.baseAddress, Int32(dim.2))

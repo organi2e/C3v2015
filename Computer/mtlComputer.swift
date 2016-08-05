@@ -29,6 +29,7 @@ public class mtlComputer: cpuComputer {
 		let pdf: MTLComputePipelineState
 		let cdf: MTLComputePipelineState
 		let gemv: MTLComputePipelineState
+		let gemv4: MTLComputePipelineState
 		let gemm1: MTLComputePipelineState
 		let gemm4: MTLComputePipelineState
 		let gemm8: MTLComputePipelineState
@@ -62,6 +63,7 @@ public class mtlComputer: cpuComputer {
 		                           pdf: try pipeline("pdf"),
 		                           cdf: try pipeline("cdf"),
 		                           gemv: try pipeline("gemv"),
+		                           gemv4: try pipeline("gemv4"),
 		                           gemm1: try pipeline("gemm1"),
 		                           gemm4: try pipeline("gemm4"),
 		                           gemm8: try pipeline("gemm8"),
@@ -130,18 +132,21 @@ public class mtlComputer: cpuComputer {
 			let a: mtlBuffer = a as? mtlBuffer where a.mtl.device === device {
 			let command: MTLCommandBuffer = queue.commandBuffer()
 			let encoder: MTLComputeCommandEncoder = command.computeCommandEncoder()
-			encoder.setComputePipelineState(pipelines.gemv)
+			encoder.setComputePipelineState(pipelines.gemv4)
+			
+			let blk = 8
 			encoder.setBuffer(y.mtl, offset: 0, atIndex: 0)
 			encoder.setBuffer(a.mtl, offset: 0, atIndex: 1)
 			encoder.setBuffer(x.mtl, offset: 0, atIndex: 2)
-			encoder.setBytes([alpha], length: sizeof(Float), atIndex: 3)
-			encoder.setBytes([beta], length: sizeof(Float), atIndex: 4)
-			encoder.setBytes([UInt(transpose)], length: sizeof(UInt), atIndex: 5)
-			encoder.setThreadgroupMemoryLength(sizeof(Float)*n, atIndex: 0)
-			encoder.dispatchThreadgroups(MTLSize(width: m/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: n/4, height: 1, depth: 1))
+			encoder.setBytes([UInt32(n/4)], length: sizeof(UInt32), atIndex: 3)
+			encoder.setThreadgroupMemoryLength(sizeof(Float)*16*blk, atIndex: 0)
+			encoder.setThreadgroupMemoryLength(sizeof(Float)*4*blk, atIndex: 1)
+			encoder.dispatchThreadgroups(MTLSize(width: m/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: blk, height: 1, depth: 1))
 			encoder.endEncoding()
 			command.commit()
+			
 		} else {
+			assertionFailure()
 			async {
 				super.gemv(y, a: a, x: x, alpha: alpha, beta: beta, transpose: transpose, sync: true)
 			}
@@ -167,9 +172,7 @@ public class mtlComputer: cpuComputer {
 			encoder.setBuffer(y.mtl, offset: 0, atIndex: 0)
 			encoder.setBuffer(a.mtl, offset: 0, atIndex: 1)
 			encoder.setBuffer(x.mtl, offset: 0, atIndex: 2)
-			encoder.setBytes([UInt32(dim.0)/4], length: sizeof(UInt32), atIndex: 3)
-			encoder.setBytes([UInt32(dim.1)/4], length: sizeof(UInt32), atIndex: 4)
-			encoder.setBytes([UInt32(dim.2)/4], length: sizeof(UInt32), atIndex: 5)
+			encoder.setBytes([UInt32(dim.1)/4], length: sizeof(UInt32), atIndex: 3)
 			//encoder.setBytes([UInt32(bx)], length: sizeof(UInt32), atIndex: 6)
 			
 			/*
