@@ -121,6 +121,7 @@ kernel void gemm(device float4 * const y [[ buffer(0) ]],
  <unknown>:0: Test Case '-[ComputerTests.mtlComputerTests testGEMM]' measured [Time, seconds] average: 6.327, relative standard deviation: 6.309%, values: [5.247520, 6.326768, 6.209370, 6.342950, 6.291725, 6.479529, 6.345767, 6.765200, 6.543246, 6.714444], performanceMetricID:com.apple.XCTPerformanceMetric_WallClockTime, baselineName: "", baselineAverage: , maxPercentRegression: 10.000%, maxPercentRelativeStandardDeviation: 10.000%, maxRegression: 0.100, maxStandardDeviation: 0.100
  Test Case '-[ComputerTests.mtlComputerTests testGEMM]' passed (79.675 seconds).
  */
+/*
 kernel void gemm(device float4 * const C [[ buffer(0) ]],
 				 device const float4 * const A [[ buffer(1) ]],
 				 device const float4 * const B [[ buffer(2) ]],
@@ -140,30 +141,125 @@ kernel void gemm(device float4 * const C [[ buffer(0) ]],
 	uint const col = g.x * bx + tx;
 	uint const row = g.y * by + ty;
 	
+	float4x4 c[2][2] = {{float4x4(0.0),float4x4(0.0)},{float4x4(0.0),float4x4(0.0)}};
+	
+	for(uint i = 0 ; i < K ; ++ i ) {
+		
+		a[(2*t.y+0)*8+(2*t.x+0)] = float4x4(A[(8*row+0)*K+(i*8+tx)*2+0],
+											A[(8*row+1)*K+(i*8+tx)*2+0],
+											A[(8*row+2)*K+(i*8+tx)*2+0],
+											A[(8*row+3)*K+(i*8+tx)*2+0]
+											);
+		
+		a[(2*t.y+0)*8+(2*t.x+1)] = float4x4(A[(8*row+0)*K+(i*8+tx)*2+1],
+											A[(8*row+1)*K+(i*8+tx)*2+1],
+											A[(8*row+2)*K+(i*8+tx)*2+1],
+											A[(8*row+3)*K+(i*8+tx)*2+1]);
+		
+		a[(2*t.y+1)*8+(2*t.x+0)] = float4x4(A[(8*row+4)*K+(i*8+tx)*2+0],
+											A[(8*row+5)*K+(i*8+tx)*2+0],
+											A[(8*row+6)*K+(i*8+tx)*2+0],
+											A[(8*row+7)*K+(i*8+tx)*2+0]);
+		
+		a[(2*t.y+1)*8+(2*t.x+1)] = float4x4(A[(8*row+4)*K+(i*8+tx)*2+1],
+											A[(8*row+5)*K+(i*8+tx)*2+1],
+											A[(8*row+6)*K+(i*8+tx)*2+1],
+											A[(8*row+7)*K+(i*8+tx)*2+1]);
+		
+		b[(2*t.y+0)*8+(2*t.x+0)] = float4x4(B[(4*(i*8+(2*ty+0))+0)*M+(2*col+0)],
+											B[(4*(i*8+(2*ty+0))+1)*M+(2*col+0)],
+											B[(4*(i*8+(2*ty+0))+2)*M+(2*col+0)],
+											B[(4*(i*8+(2*ty+0))+3)*M+(2*col+0)]);
+		
+		b[(2*t.y+0)*8+(2*t.x+1)] = float4x4(B[(4*(i*8+(2*ty+0))+0)*M+(2*col+1)],
+											B[(4*(i*8+(2*ty+0))+1)*M+(2*col+1)],
+											B[(4*(i*8+(2*ty+0))+2)*M+(2*col+1)],
+											B[(4*(i*8+(2*ty+0))+3)*M+(2*col+1)]);
+		
+		b[(2*t.y+1)*8+(2*t.x+0)] = float4x4(B[(4*(i*8+(2*ty+1))+0)*M+(2*col+0)],
+											B[(4*(i*8+(2*ty+1))+1)*M+(2*col+0)],
+											B[(4*(i*8+(2*ty+1))+2)*M+(2*col+0)],
+											B[(4*(i*8+(2*ty+0))+3)*M+(2*col+0)]);
+		
+		b[(2*t.y+1)*8+(2*t.x+1)] = float4x4(B[(4*(i*8+(2*ty+1))+0)*M+(2*col+1)],
+											B[(4*(i*8+(2*ty+1))+1)*M+(2*col+1)],
+											B[(4*(i*8+(2*ty+1))+2)*M+(2*col+1)],
+											B[(4*(i*8+(2*ty+0))+3)*M+(2*col+1)]);
+		
+		threadgroup_barrier( mem_flags::mem_threadgroup );
+		for(uint k=0;k<8;++k) {
+			c[0][0] += b[(2*k+0)*8+(2*t.x+0)] * a[(2*t.y+0)*8+2*k+0];
+			c[0][1] += b[(2*k+0)*8+(2*t.x+1)] * a[(2*t.y+0)*8+2*k+1];
+			c[1][0] += b[(2*k+1)*8+(2*t.x+0)] * a[(2*t.y+1)*8+2*k+0];
+			c[1][1] += b[(2*k+1)*8+(2*t.x+1)] * a[(2*t.y+1)*8+2*k+1];
+		}
+		threadgroup_barrier( mem_flags::mem_threadgroup );
+	}
+	
+	C[((8*g.y+t.y)*8+0)*M+(8*g.x+t.x)*2+0] = c[0][0][0];
+	C[((8*g.y+t.y)*8+1)*M+(8*g.x+t.x)*2+0] = c[0][0][1];
+	C[((8*g.y+t.y)*8+2)*M+(8*g.x+t.x)*2+0] = c[0][0][2];
+	C[((8*g.y+t.y)*8+3)*M+(8*g.x+t.x)*2+0] = c[0][0][3];
+	
+	C[((8*g.y+t.y)*8+0)*M+(8*g.x+t.x)*2+1] = c[0][1][0];
+	C[((8*g.y+t.y)*8+1)*M+(8*g.x+t.x)*2+1] = c[0][1][1];
+	C[((8*g.y+t.y)*8+2)*M+(8*g.x+t.x)*2+1] = c[0][1][2];
+	C[((8*g.y+t.y)*8+3)*M+(8*g.x+t.x)*2+1] = c[0][1][3];
+	
+	C[((8*g.y+t.y)*8+4)*M+(8*g.x+t.x)*2+0] = c[1][0][0];
+	C[((8*g.y+t.y)*8+5)*M+(8*g.x+t.x)*2+0] = c[1][0][1];
+	C[((8*g.y+t.y)*8+6)*M+(8*g.x+t.x)*2+0] = c[1][0][2];
+	C[((8*g.y+t.y)*8+7)*M+(8*g.x+t.x)*2+0] = c[1][0][3];
+	
+	C[((8*g.y+t.y)*8+4)*M+(8*g.x+t.x)*2+1] = c[1][1][0];
+	C[((8*g.y+t.y)*8+5)*M+(8*g.x+t.x)*2+1] = c[1][1][1];
+	C[((8*g.y+t.y)*8+6)*M+(8*g.x+t.x)*2+1] = c[1][1][2];
+	C[((8*g.y+t.y)*8+7)*M+(8*g.x+t.x)*2+1] = c[1][1][3];
+}
+*/
+kernel void gemm(device float4 * const C [[ buffer(0) ]],
+				 device const float4 * const A [[ buffer(1) ]],
+				 device const float4 * const B [[ buffer(2) ]],
+				 constant const uint & N [[ buffer(3) ]],
+				 constant const uint & K [[ buffer(4) ]],
+				 constant const uint & M [[ buffer(5) ]],
+				 constant const uint & L [[ buffer(6) ]],
+				 uint2 const g [[ threadgroup_position_in_grid ]],
+				 uint2 const G [[ threadgroups_per_grid ]],
+				 uint2 const t [[ thread_position_in_threadgroup ]],
+				 uint2 const T [[ threads_per_threadgroup ]],
+				 threadgroup float4x4 * a [[ threadgroup(0) ]],
+				 threadgroup float4x4 * b [[ threadgroup(1) ]]
+				 ){
+	
+	uint const bx = T.x, by = T.y;
+	uint const tx = t.x, ty = t.y;
+	uint const col = g.x * bx + tx;
+	uint const row = g.y * by + ty;
+	
 	float4x4 c = float4x4(0.0);
 	
 	for(uint i = 0 ; i < K ; ++ i ) {
-		a[t.y*8+t.x] = float4x4(A[(4*row+0)*K+i*8+tx],
-								A[(4*row+1)*K+i*8+tx],
-								A[(4*row+2)*K+i*8+tx],
-								A[(4*row+3)*K+i*8+tx]
+		a[t.y*L+t.x] = float4x4(A[(4*row+0)*K+i*L+tx],
+								A[(4*row+1)*K+i*L+tx],
+								A[(4*row+2)*K+i*L+tx],
+								A[(4*row+3)*K+i*L+tx]
 								);
-		b[t.y*8+t.x] = float4x4(B[(4*(i*8+ty)+0)*M+col],
-								B[(4*(i*8+ty)+1)*M+col],
-								B[(4*(i*8+ty)+2)*M+col],
-								B[(4*(i*8+ty)+3)*M+col]
+		b[t.y*L+t.x] = float4x4(B[(4*(i*L+ty)+0)*M+col],
+								B[(4*(i*L+ty)+1)*M+col],
+								B[(4*(i*L+ty)+2)*M+col],
+								B[(4*(i*L+ty)+3)*M+col]
 								);
 		threadgroup_barrier( mem_flags::mem_threadgroup );
-		for(uint k=0;k<8;++k)
-			c += b[k*8+t.x] * a[t.y*8+k];
+		for(uint k=0;k<L;++k)
+			c += b[k*L+t.x] * a[t.y*L+k];
 		threadgroup_barrier( mem_flags::mem_threadgroup );
 	}
-	C[((8*g.y+t.y)*4+0)*M+(8*g.x+t.x)] = c[0];
-	C[((8*g.y+t.y)*4+1)*M+(8*g.x+t.x)] = c[1];
-	C[((8*g.y+t.y)*4+2)*M+(8*g.x+t.x)] = c[2];
-	C[((8*g.y+t.y)*4+3)*M+(8*g.x+t.x)] = c[3];
+	C[((L*g.y+t.y)*4+0)*M+(L*g.x+t.x)] = c[0];
+	C[((L*g.y+t.y)*4+1)*M+(L*g.x+t.x)] = c[1];
+	C[((L*g.y+t.y)*4+2)*M+(L*g.x+t.x)] = c[2];
+	C[((L*g.y+t.y)*4+3)*M+(L*g.x+t.x)] = c[3];
 }
-
 /*
 kernel void gemm(device float * const C [[ buffer(0) ]],
 				 device const float * const A [[ buffer(1) ]],
