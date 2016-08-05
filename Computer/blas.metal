@@ -40,12 +40,12 @@ kernel void div(device float4 * y [[ buffer(0) ]],
 //Y = alphaAX + betaY
 
 kernel void gemv4(device float4 * y [[ buffer(0) ]],
-				 device const float4 * const A [[ buffer(1) ]],
-				 device const float4 * const X [[ buffer(2) ]],
+				  device const float4 * const A [[ buffer(1) ]],
+				  device const float4 * const X [[ buffer(2) ]],
 				  constant const uint & N [[ buffer(3) ]],
-				 uint const g [[ threadgroup_position_in_grid ]],
-				 uint const G [[ threadgroups_per_grid ]],
-				 uint const t [[ thread_position_in_threadgroup ]],
+				  uint const g [[ threadgroup_position_in_grid ]],
+				  uint const G [[ threadgroups_per_grid ]],
+				  uint const t [[ thread_position_in_threadgroup ]],
 				  uint const T [[ threads_per_threadgroup ]],
 				  threadgroup float4x4 * const a [[ threadgroup(0) ]],
 				  threadgroup float4 * const x [[ threadgroup(1) ]]
@@ -53,13 +53,13 @@ kernel void gemv4(device float4 * y [[ buffer(0) ]],
 {
 	float4 c = float4(0.0);
 	for( uint n = 0 ; n < N / T ; ++ n ) {
+		uint4 const idx_A = (uint4(0,1,2,3)+4*g)*N+n*T+t;
 		x[t] = X[n*T+t];
-		a[t] =
-		float4x4(A[(4*g+0)*N+n*T+t],
-				 A[(4*g+1)*N+n*T+t],
-				 A[(4*g+2)*N+n*T+t],
-				 A[(4*g+3)*N+n*T+t]
-				 );
+		a[t] = float4x4(A[idx_A[0]],
+						A[idx_A[1]],
+						A[idx_A[2]],
+						A[idx_A[3]]
+						);
 		threadgroup_barrier( mem_flags::mem_threadgroup );
 		for( uint k = 0 ; k < T ; ++ k ) {
 			c += x[k] * a[k];
@@ -77,10 +77,11 @@ kernel void gemv(device float4 * y [[ buffer(0) ]],
 				  uint const N [[ threads_per_threadgroup ]],
 				  threadgroup float4 * const accumulator [[ threadgroup(0) ]] )
 {
-	float4x4 a = float4x4(A[(4*m+0)*N+n],
-						  A[(4*m+1)*N+n],
-						  A[(4*m+2)*N+n],
-						  A[(4*m+3)*N+n]);
+	uint4 const idx_A = (uint4(0,1,2,3)+4*m)*N+n;
+	float4x4 a = float4x4(A[idx_A[0]],
+						  A[idx_A[1]],
+						  A[idx_A[2]],
+						  A[idx_A[3]]);
 	accumulator [ n ] =  x [ n ] * a;
 	uint offset = 1 << ( clz ( uint( 1 ) ) - clz ( N ) );
 	threadgroup_barrier ( mem_flags::mem_threadgroup );
