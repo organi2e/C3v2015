@@ -5,18 +5,18 @@
 //  Created by Kota Nakano on 7/31/16.
 //
 //
-import Accelerate
+import Metal
 import CoreData
 internal class Gauss: NSManagedObject {
-	var value: la_object_t = la_splat_from_float(0, Config.ATTR)
-	var mean: la_object_t = la_splat_from_float(0, Config.ATTR)
-	var deviation: la_object_t = la_splat_from_float(0, Config.ATTR)
-	var variance: la_object_t = la_splat_from_float(0, Config.ATTR)
-	var logvariance: la_object_t = la_splat_from_float(0, Config.ATTR)
+	var value: MTLBuffer!
+	var mean: MTLBuffer!
+	var deviation: MTLBuffer!
+	var variance: MTLBuffer!
+	var logvariance: MTLBuffer!
 }
 extension Gauss {
-	@NSManaged internal private(set) var rows: UInt
-	@NSManaged internal private(set) var cols: UInt
+	@NSManaged internal private(set) var rows: Int
+	@NSManaged internal private(set) var cols: Int
 	@NSManaged private var meandata: NSData
 	@NSManaged private var logvariancedata: NSData
 }
@@ -33,78 +33,43 @@ extension Gauss {
 	
 	internal func setup() {
 	
-		setPrimitiveValue(NSData(data: meandata), forKey: Gauss.meankey)
-		assert(meandata.length==sizeof(Float)*Int(rows*cols))
+		guard let context: Context = managedObjectContext as? Context else {
+			fatalError(Context.Error.InvalidContext.description)
+		}
 		
-		mean = la_matrix_from_float_buffer(UnsafeMutablePointer<Float>(meandata.bytes), rows, cols, cols, Config.HINT, Config.ATTR)
-		assert(mean.status==LA_SUCCESS&&mean.rows==rows&&mean.cols==cols)
-		
-		setPrimitiveValue(NSData(data: logvariancedata), forKey: Gauss.logvariancekey)
-		assert(logvariancedata.length==sizeof(Float)*Int(rows*cols))
-		
-		logvariance = la_matrix_from_float_buffer(UnsafeMutablePointer<Float>(logvariancedata.bytes), rows, cols, cols, Config.HINT, Config.ATTR)
-		assert(logvariance.status==LA_SUCCESS&&logvariance.rows==rows&&logvariance.cols==cols)
-	
-		variance = la_matrix_from_splat(la_splat_from_float(0, Config.ATTR), rows, cols)
-		assert(variance.status==LA_SUCCESS&&variance.rows==rows&&variance.cols==cols)
-		
-		deviation = la_matrix_from_splat(la_splat_from_float(0, Config.ATTR), rows, cols)
-		assert(deviation.status==LA_SUCCESS&&deviation.rows==rows&&deviation.cols==cols)
-		
-		value = la_matrix_from_splat(la_splat_from_float(0, Config.ATTR), rows, cols)
-		assert(value.status==LA_SUCCESS&&value.rows==rows&&value.cols==cols)
-		
-		refresh()
+		value = context.newBuffer(length: sizeof(Float)*rows*cols)
+		deviation = context.newBuffer(length: sizeof(Float)*rows*cols)
+		variance = context.newBuffer(length: sizeof(Float)*rows*cols)
+		mean = context.newBuffer(data: meandata)
+		logvariance = context.newBuffer(data: logvariancedata)
 
-	}
-	
-	internal func commit() {
-		
-		willChangeValueForKey(Gauss.meankey)
-		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(meandata.bytes), cols, mean)
-		didChangeValueForKey(Gauss.meankey)
-		
-		mean = la_matrix_from_float_buffer(UnsafeMutablePointer<Float>(meandata.bytes), rows, cols, cols, Config.HINT, Config.ATTR)
-		assert(mean.status==LA_SUCCESS&&mean.rows==rows&&mean.cols==cols)
-		
-		willChangeValueForKey(Gauss.logvariancekey)
-		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(logvariancedata.bytes), cols, logvariance)
-		didChangeValueForKey(Gauss.logvariancekey)
-		
-		logvariance = la_matrix_from_float_buffer(UnsafeMutablePointer<Float>(logvariancedata.bytes), rows, cols, cols, Config.HINT, Config.ATTR)
-		assert(logvariance.status==LA_SUCCESS&&logvariance.rows==rows&&logvariance.cols==cols)
+		if let mean: MTLBuffer = mean {
+			setPrimitiveValue(NSData(bytesNoCopy: mean.contents(), length: mean.length, freeWhenDone: false), forKey: Gauss.meankey)
+		}
+		if let logvariance: MTLBuffer = logvariance {
+			setPrimitiveValue(NSData(bytesNoCopy: logvariance.contents(), length: logvariance.length, freeWhenDone: false), forKey: Gauss.logvariancekey)
+		}
 		
 	}
 	
 	internal func refresh() {
-		
-		let gauss: la_object_t = normal(rows: rows, cols: cols)
-		
-		deviation = exp(0.5*logvariance)
-		assert(deviation.status==LA_SUCCESS&&deviation.rows==rows&&deviation.cols==cols)
-		
-		variance = deviation * deviation
-		assert(variance.status==LA_SUCCESS&&variance.rows==rows&&variance.cols==cols)
-		
-		value = mean + deviation * gauss
-		assert(value.status==LA_SUCCESS&&value.rows==rows&&value.cols==cols)
-		
+		guard let context: Context = managedObjectContext as? Context else {
+			fatalError(Context.Error.InvalidContext.description)
+		}
+		context.shuffle(value, deviation: deviation, variance: variance, mean: mean, logvariance: logvariance)
 	}
 	
-	internal func resize(let rows r: UInt, let cols c: UInt ) {
-		
-		let count: Int = Int(r*c)
-		let meanbuffer: [Float] = [Float](count: count, repeatedValue: 0)
-		let logvariancebuffer: [Float] = [Float](count: count, repeatedValue: -log(Float(c)))
+	internal func resize(let rows r: Int, let cols c: Int ) {
 		
 		rows = r
 		cols = c
 		
-		meandata = NSData(bytes: UnsafePointer<Void>(meanbuffer), length: sizeof(Float)*count)
-		assert(meandata.length==sizeof(Float)*Int(r*c))
+		meandata = NSData(bytes: [Float](count: rows*cols, repeatedValue: 0), length: sizeof(Float)*rows*cols)
+		assert(meandata.length==sizeof(Float)*Int(rows*cols))
 		
-		logvariancedata = NSData(bytes: UnsafePointer<Void>(logvariancebuffer), length: sizeof(Float)*count)
-		assert(logvariancedata.length==sizeof(Float)*Int(r*c))
+		//Xavier's initial value
+		logvariancedata = NSData(bytes: [Float](count: rows*cols, repeatedValue: -log(0.5*Float(cols))), length: sizeof(Float)*rows*cols)
+		assert(logvariancedata.length==sizeof(Float)*Int(rows*cols))
 		
 		setup()
 		

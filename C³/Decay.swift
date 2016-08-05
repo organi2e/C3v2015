@@ -96,7 +96,7 @@ extension Decay {
 extension Context {
 	internal func newDecay(let width width: UInt) throws -> Decay {
 		guard let decay: Decay = new() else {
-			throw Error.EntityError.InsertionFails(entity: Decay.className())
+			throw Error.CoreData.InsertionFails(entity: Decay.className())
 		}
 		decay.resize(rows: width, cols: 1)
 		return decay

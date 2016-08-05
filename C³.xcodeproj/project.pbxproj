@@ -66,6 +66,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		870EA91B1D54AD77008C3380 /* mtlblas.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = mtlblas.metal; path = "C³/mtlblas.metal"; sourceTree = "<group>"; };
+		870EA9241D54AD9A008C3380 /* mtlrand.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = mtlrand.metal; path = "C³/mtlrand.metal"; sourceTree = "<group>"; };
+		870EA9251D54ADB3008C3380 /* mtlmath.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = mtlmath.metal; path = "C³/mtlmath.metal"; sourceTree = "<group>"; };
 		8719AE501D3DE08C00F8DCA4 /* cpuComputerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = cpuComputerTests.swift; path = Computer/cpuComputerTests.swift; sourceTree = "<group>"; };
 		8719AE591D3DE0BB00F8DCA4 /* mtlComputerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = mtlComputerTests.swift; path = Computer/mtlComputerTests.swift; sourceTree = "<group>"; };
 		873934A91D42FCF800888988 /* Blob.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Blob.swift; path = "C³/Blob.swift"; sourceTree = "<group>"; };
@@ -175,6 +178,9 @@
 				87BCEBF91D4D746400FC3099 /* Gauss.swift */,
 				87BCEBFA1D4D75A500FC3099 /* Bias.swift */,
 				87A42CBC1D4F5CD5008D9708 /* Feedback.swift */,
+				870EA91B1D54AD77008C3380 /* mtlblas.metal */,
+				870EA9241D54AD9A008C3380 /* mtlrand.metal */,
+				870EA9251D54ADB3008C3380 /* mtlmath.metal */,
 			);
 			name = "C³";
 			sourceTree = "<group>";

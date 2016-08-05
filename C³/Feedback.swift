@@ -68,7 +68,7 @@ extension Feedback {
 extension Context {
 	internal func newFeedback(let width width: UInt) throws -> Feedback {
 		guard let feedback: Feedback = new() else {
-			throw Error.EntityError.InsertionFails(entity: NSStringFromClass(Feedback.self))
+			throw Error.CoreData.InsertionFails(entity: Feedback.className())
 		}
 		feedback.resize(rows: width, cols: width)
 		return feedback
