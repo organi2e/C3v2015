@@ -44,7 +44,8 @@ public class Context: NSManagedObjectContext {
 		let device: MTLDevice
 		let queue: MTLCommandQueue
 		struct Kernels {
-			let axpy: MTLComputePipelineState
+			let vmsa: MTLComputePipelineState
+			let smvmv: MTLComputePipelineState
 			let gemv: MTLComputePipelineState
 			let gemm: MTLComputePipelineState
 			let gauss: MTLComputePipelineState
@@ -62,7 +63,8 @@ public class Context: NSManagedObjectContext {
 			}
 			device = mtldevice
 			queue = device.newCommandQueue()
-			kernels = Kernels(axpy: try pipeline("axpy"),
+			kernels = Kernels(vmsa: try pipeline("vsma"),
+			                  smvmv: try pipeline("smvmv"),
 			                  gemv: try pipeline("gemv"),
 			                  gemm: try pipeline("gemm"),
 			                  gauss: try pipeline("gauss")
@@ -130,11 +132,29 @@ extension Context {
 		
 		let command: MTLCommandBuffer = mtl.queue.commandBuffer()
 		let encoder: MTLComputeCommandEncoder = command.computeCommandEncoder()
-		encoder.setComputePipelineState(mtl.kernels.axpy)
+		encoder.setComputePipelineState(mtl.kernels.vmsa)
 		encoder.setBuffer(y, offset: 0, atIndex: 0)
 		encoder.setBuffer(x, offset: 0, atIndex: 1)
 		encoder.setBytes([alpha], length: 0, atIndex: 2)
 		encoder.dispatchThreadgroups(MTLSize(width: y.length/sizeof(Float)/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
+		encoder.endEncoding()
+		command.commit()
+		
+	}
+	internal func smvmv(let y: MTLBuffer, let alpha: Float, let a: MTLBuffer, let b: MTLBuffer ) {
+		
+		assert(y.length==a.length)
+		assert(y.length==b.length)
+		
+		let command: MTLCommandBuffer = mtl.queue.commandBuffer()
+		let encoder: MTLComputeCommandEncoder = command.computeCommandEncoder()
+		encoder.setComputePipelineState(mtl.kernels.smvmv)
+		encoder.setBuffer(y, offset: 0, atIndex: 0)
+		encoder.setBytes([alpha], length: 0, atIndex: 1)
+		encoder.setBuffer(a, offset: 0, atIndex: 2)
+		encoder.setBuffer(b, offset: 0, atIndex: 3)
+		encoder.dispatchThreadgroups(MTLSize(width: y.length/sizeof(Float)/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
+		encoder.endEncoding()
 		command.commit()
 		
 	}
@@ -173,6 +193,27 @@ extension Context {
 	}
 	internal func newBuffer(let data data: NSData, let options: MTLResourceOptions = MTLResourceOptions.CPUCacheModeDefaultCache ) -> MTLBuffer {
 		return mtl.device.newBufferWithBytes(data.bytes, length: data.length, options: options)
+	}
+	internal func fill(let buffer buffer: MTLBuffer, let range: NSRange, let value: UInt8 = 0) {
+		let command: MTLCommandBuffer = mtl.queue.commandBuffer()
+		let encoder: MTLBlitCommandEncoder = command.blitCommandEncoder()
+		encoder.fillBuffer(buffer, range: range, value: value)
+		encoder.endEncoding()
+		command.commit()
+	}
+	internal func copy(let destination destination: MTLBuffer, let destinationOffset: Int, let source: MTLBuffer, let sourceOffset: Int, let size: Int ) {
+		let command: MTLCommandBuffer = mtl.queue.commandBuffer()
+		let encoder: MTLBlitCommandEncoder = command.blitCommandEncoder()
+		encoder.copyFromBuffer(source, sourceOffset: sourceOffset, toBuffer: destination, destinationOffset: destinationOffset, size: size)
+		encoder.endEncoding()
+		command.commit()
+	}
+	internal func copy(let destination destination: MTLBuffer, let source: NSData ) {
+		let command: MTLCommandBuffer = mtl.queue.commandBuffer()
+		command.addCompletedHandler {(_)in
+			source.getBytes(destination.contents(), length: destination.length)
+		}
+		command.commit()
 	}
 	internal func join() {
 		let cmd: MTLCommandBuffer = mtl.queue.commandBuffer()
