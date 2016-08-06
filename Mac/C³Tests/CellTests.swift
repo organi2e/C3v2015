@@ -42,6 +42,7 @@ class CellTests: XCTestCase {
 			
 		} catch let e {
 			XCTFail(String(e))
+			
 		}
 	}
 	func test1Update() {
@@ -52,14 +53,14 @@ class CellTests: XCTestCase {
 				I: Cell = context.searchCell(label: "I").last,
 				O: Cell = context.searchCell(label: "O").last
 			{
-				(0..<4096).forEach {
+				(0..<16).forEach {
 					
 					let ID: [Bool] = IS[$0%8]
 					let OD: [Bool] = OS[$0%8]
 					
 					print("epoch: \($0)")
 					
-					(0..<64).forEach {(let iter: Int)in
+					(0..<1).forEach {(let iter: Int)in
 						
 						O.iClear()
 						I.oClear()
@@ -75,11 +76,13 @@ class CellTests: XCTestCase {
 				}
 			}
 			try context.save()
+			
 		} catch let e {
 			XCTFail(String(e))
+			
 		}
 	}
-	
+	/*
 	func test2Validation() {
 		do {
 			let url: NSURL = try NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true).URLByAppendingPathComponent(CellTests.file)
@@ -113,6 +116,7 @@ class CellTests: XCTestCase {
 			XCTFail(String(e))
 		}
 	}
+*/
 	/*
 	func test0Insert() {
 		do {

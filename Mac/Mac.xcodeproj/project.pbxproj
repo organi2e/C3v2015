@@ -55,6 +55,9 @@
 		87B1FD3B1D0546C700981CF4 /* C³.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 87B1FD381D0546BF00981CF4 /* C³.xcdatamodeld */; };
 		87B1FD3C1D0546FC00981CF4 /* LATests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87B1FD2D1D05468600981CF4 /* LATests.swift */; };
 		87B9C0271D49249900534528 /* MNISTTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87B9C0261D49249900534528 /* MNISTTest.swift */; };
+		87BC8D911D55D19D004510EF /* mtlbias.metal in Sources */ = {isa = PBXBuildFile; fileRef = 87BC8D8F1D55D103004510EF /* mtlbias.metal */; };
+		87BC8D941D55E071004510EF /* mtledge.metal in Sources */ = {isa = PBXBuildFile; fileRef = 87BC8D931D55E071004510EF /* mtledge.metal */; };
+		87BC8D971D55E544004510EF /* mtlgauss.metal in Sources */ = {isa = PBXBuildFile; fileRef = 87BC8D961D55E544004510EF /* mtlgauss.metal */; };
 		87BCEBFC1D4D763D00FC3099 /* Bias.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87BCEBFB1D4D763D00FC3099 /* Bias.swift */; };
 		87BCEBFE1D4D764100FC3099 /* Decay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87BCEBFD1D4D764100FC3099 /* Decay.swift */; };
 		87BCEC001D4D765000FC3099 /* Gauss.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87BCEBFF1D4D765000FC3099 /* Gauss.swift */; };
@@ -184,6 +187,9 @@
 		87B1FD2E1D05468600981CF4 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		87B1FD391D0546BF00981CF4 /* C3.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = C3.xcdatamodel; sourceTree = "<group>"; };
 		87B9C0261D49249900534528 /* MNISTTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MNISTTest.swift; sourceTree = "<group>"; };
+		87BC8D8F1D55D103004510EF /* mtlbias.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = mtlbias.metal; path = "../../C³/mtlbias.metal"; sourceTree = "<group>"; };
+		87BC8D931D55E071004510EF /* mtledge.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = mtledge.metal; path = "../../C³/mtledge.metal"; sourceTree = "<group>"; };
+		87BC8D961D55E544004510EF /* mtlgauss.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = mtlgauss.metal; path = "../../C³/mtlgauss.metal"; sourceTree = "<group>"; };
 		87BCEBFB1D4D763D00FC3099 /* Bias.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Bias.swift; path = "../../C³/Bias.swift"; sourceTree = "<group>"; };
 		87BCEBFD1D4D764100FC3099 /* Decay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Decay.swift; path = "../../C³/Decay.swift"; sourceTree = "<group>"; };
 		87BCEBFF1D4D765000FC3099 /* Gauss.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Gauss.swift; path = "../../C³/Gauss.swift"; sourceTree = "<group>"; };
@@ -352,6 +358,9 @@
 		87B1FD021D05461100981CF4 /* C³ */ = {
 			isa = PBXGroup;
 			children = (
+				87BC8D961D55E544004510EF /* mtlgauss.metal */,
+				87BC8D931D55E071004510EF /* mtledge.metal */,
+				87BC8D8F1D55D103004510EF /* mtlbias.metal */,
 				870EA9261D54ADBF008C3380 /* mtlblas.metal */,
 				870EA9271D54ADBF008C3380 /* mtlmath.metal */,
 				870EA9281D54ADBF008C3380 /* mtlrand.metal */,
@@ -768,6 +777,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				87BC8D911D55D19D004510EF /* mtlbias.metal in Sources */,
 				870EA92C1D54ADD3008C3380 /* mtlblas.metal in Sources */,
 				870EA92D1D54ADD3008C3380 /* mtlmath.metal in Sources */,
 				870EA92E1D54ADD3008C3380 /* mtlrand.metal in Sources */,
@@ -779,11 +789,13 @@
 				87B1FD321D0546B500981CF4 /* Config.swift in Sources */,
 				87B1FD331D0546B500981CF4 /* Context.swift in Sources */,
 				87D18E331D3F18B300982020 /* LA.swift in Sources */,
+				87BC8D941D55E071004510EF /* mtledge.metal in Sources */,
 				87B1FD341D0546B500981CF4 /* Dict.swift in Sources */,
 				87B1FD351D0546B500981CF4 /* Edge.swift in Sources */,
 				87B1FD361D0546B500981CF4 /* Error.swift in Sources */,
 				87A42CC71D4F5F58008D9708 /* Feedback.swift in Sources */,
 				87BCEC001D4D765000FC3099 /* Gauss.swift in Sources */,
+				87BC8D971D55E544004510EF /* mtlgauss.metal in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
