@@ -35,6 +35,7 @@ public class mtlComputer: cpuComputer {
 		let gemm8: MTLComputePipelineState
 		let normal: MTLComputePipelineState
 		let sigmoid: MTLComputePipelineState
+		let outerproduct: MTLComputePipelineState
 	};
 	
 	let device: MTLDevice
@@ -68,7 +69,8 @@ public class mtlComputer: cpuComputer {
 		                           gemm4: try pipeline("gemm4"),
 		                           gemm8: try pipeline("gemm8"),
 		                           normal: try pipeline("normal"),
-		                           sigmoid: try pipeline("sigmoid")
+		                           sigmoid: try pipeline("sigmoid"),
+		                           outerproduct: try pipeline("outerproduct")
 		)
 		self.device = device
 		self.queue = device.newCommandQueue()
@@ -191,6 +193,38 @@ public class mtlComputer: cpuComputer {
 			
 		} else {
 			assertionFailure()
+		}
+	}
+	override func outerproduct(let c: Buffer, let a: Buffer, let b: Buffer) {
+		
+		
+		if	let a: mtlBuffer = a as? mtlBuffer where a.mtl.device === device,
+			let b: mtlBuffer = b as? mtlBuffer where b.mtl.device === device,
+			let c: mtlBuffer = c as? mtlBuffer where c.mtl.device === device {
+			
+			let m: Int = a.scalar.count
+			let n: Int = b.scalar.count
+			
+			let bs: Int = 16
+			
+			let group: MTLSize = MTLSize(width: m/4, height: 1, depth: 1)
+			let local: MTLSize = MTLSize(width: bs, height: 1, depth: 1)
+			
+			let command: MTLCommandBuffer = queue.commandBuffer()
+			let encoder: MTLComputeCommandEncoder = command.computeCommandEncoder()
+			
+			encoder.setComputePipelineState(pipelines.outerproduct)
+			
+			encoder.setBuffer(c.mtl, offset: 0, atIndex: 0)
+			encoder.setBuffer(a.mtl, offset: 0, atIndex: 1)
+			encoder.setBuffer(b.mtl, offset: 0, atIndex: 2)
+			encoder.setBytes([UInt32(m/4)], length: sizeof(UInt32), atIndex: 3)
+			encoder.setBytes([UInt32(n/4)], length: sizeof(UInt32), atIndex: 4)
+			encoder.dispatchThreadgroups(group, threadsPerThreadgroup: local)
+			encoder.endEncoding()
+			
+			command.commit()
+	
 		}
 	}
 	override func normal ( let y: Buffer, let u: Buffer, let s: Buffer, let sync flag: Bool = false ) {

@@ -127,6 +127,10 @@ extension Context {
 			}
 			command.commit()
 			if sync { command.waitUntilCompleted() }
+			
+		} else {
+			assertionFailure(function)
+			
 		}
 	}
 	internal func newBlitCommand( let sync sync: Bool = false, let schedule: (()->())? = nil, let complete: (()->())? = nil, let configure: (MTLBlitCommandEncoder->())) {
@@ -162,13 +166,13 @@ extension Context {
 		command.commit()
 		if sync { command.waitUntilCompleted() }
 	}
-	internal func newBuffer(let length length: Int, let options: MTLResourceOptions = MTLResourceOptions.CPUCacheModeDefaultCache ) -> MTLBuffer {
+	internal func newBuffer(let length length: Int, let options: MTLResourceOptions = .CPUCacheModeDefaultCache ) -> MTLBuffer {
 		return mtl.device.newBufferWithLength(length, options: options)
 	}
-	internal func newBuffer(let data data: NSData, let options: MTLResourceOptions = MTLResourceOptions.CPUCacheModeDefaultCache ) -> MTLBuffer {
+	internal func newBuffer(let data data: NSData, let options: MTLResourceOptions = .CPUCacheModeDefaultCache ) -> MTLBuffer {
 		return mtl.device.newBufferWithBytes(data.bytes, length: data.length, options: options)
 	}
-	internal func newBuffer(let buffer: [Float], let options: MTLResourceOptions = MTLResourceOptions.CPUCacheModeDefaultCache ) -> MTLBuffer {
+	internal func newBuffer(let buffer: [Float], let options: MTLResourceOptions = .CPUCacheModeDefaultCache ) -> MTLBuffer {
 		return mtl.device.newBufferWithBytes(buffer, length: sizeof(Float)*buffer.count, options: options)
 	}
 	internal func join() {

@@ -41,6 +41,8 @@ protocol Computer {
 	func gemv ( let y: Buffer, let a: Buffer, let x: Buffer, let alpha: Float, let beta: Float, let transpose: Bool, let sync: Bool )
 	func gemm ( let y: Buffer, let a: Buffer, let x: Buffer, let alpha: Float, let beta: Float, let dim: (Int, Int, Int), let transpose: (Bool, Bool), let sync: Bool )
 	
+	func outerproduct( let c: Buffer, let a: Buffer, let b: Buffer)
+	
 	func pdf ( let y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer, let sync: Bool )
 	func cdf ( let y: Buffer, let x: Buffer, let u: Buffer, let s: Buffer, let sync: Bool  )
 	func normal ( let y: Buffer, let u: Buffer, let s: Buffer, let sync: Bool  )

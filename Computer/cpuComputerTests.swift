@@ -87,6 +87,52 @@ class cpuComputerTests: XCTestCase {
 		}
 	}
 	*/
+	func testOuterProduct() {
+		
+		let M: Int = 4096
+		let N: Int = 4096
+		
+		let d: Buffer = computer.newBuffer(length: sizeof(Float)*M*N)
+		let c: Buffer = computer.newBuffer(length: sizeof(Float)*M*N)
+		let a: Buffer = computer.newBuffer(length: sizeof(Float)*M)
+		let b: Buffer = computer.newBuffer(length: sizeof(Float)*N)
+		
+		for row in 0..<M {
+			a.scalar[row] = Float(arc4random())/Float(UInt32.max)
+		}
+		
+		for col in 0..<N {
+			b.scalar[col] = Float(arc4random())/Float(UInt32.max)
+		}
+		
+		let A: la_object_t = la_matrix_from_float_buffer_nocopy(a.scalar.baseAddress, la_count_t(M), 1, 1, la_hint_t(LA_NO_HINT), nil, la_attribute_t(LA_DEFAULT_ATTRIBUTES))
+		let B: la_object_t = la_matrix_from_float_buffer_nocopy(b.scalar.baseAddress, la_count_t(N), 1, 1, la_hint_t(LA_NO_HINT), nil, la_attribute_t(LA_DEFAULT_ATTRIBUTES))
+		let C: la_object_t = la_outer_product(A, B)
+		la_matrix_to_float_buffer(d.scalar.baseAddress, la_count_t(N), C)
+		
+		measureBlock {
+			self.computer.outerproduct(c, a: a, b: b)
+			self.computer.outerproduct(c, a: a, b: b)
+			self.computer.outerproduct(c, a: a, b: b)
+			self.computer.outerproduct(c, a: a, b: b)
+			self.computer.outerproduct(c, a: a, b: b)
+			self.computer.outerproduct(c, a: a, b: b)
+			self.computer.outerproduct(c, a: a, b: b)
+			self.computer.outerproduct(c, a: a, b: b)
+			self.computer.outerproduct(c, a: a, b: b)
+			self.computer.outerproduct(c, a: a, b: b)
+			self.computer.join()
+		}
+		
+		let e = rmse(d: d, y: c)
+		if 1e-3 < e {
+			print("C: \(Array(c.scalar))")
+			print("D: \(Array(d.scalar))")
+			XCTFail("RMSE: \(e)")
+		}
+		
+	}
+	/*
 	func testGEMV() {
 		let M: Int = 4000
 		let N: Int = 1000
@@ -181,6 +227,7 @@ class cpuComputerTests: XCTestCase {
 		}
 		
 	}
+*/
 	/*
 	func testSQ() {
 		let n: Int = 1 << order

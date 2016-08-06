@@ -40,21 +40,12 @@ public class Cell: NSManagedObject {
 	private var level: [Level] = []
 	private var delta: [Delta] = []
 	
-	override public func awakeFromFetch() {
-		super.awakeFromFetch()
-		print("fetch")
-	}
-	override public func awakeFromSnapshotEvents(flags: NSSnapshotEventType) {
-		super.awakeFromSnapshotEvents(flags)
-		print("snap")
-	}
 }
 
 extension Cell {
 	@NSManaged public private(set) var label: String
 	@NSManaged public private(set) var width: Int
 	@NSManaged public private(set) var attribute: [String: AnyObject]
-	@NSManaged public private(set) var data: NSData
 	@NSManaged private var input: Set<Edge>
 	@NSManaged private var output: Set<Edge>
 	@NSManaged private var bias: Bias
@@ -63,6 +54,10 @@ extension Cell {
 }
 
 extension Cell {
+	override public func awakeFromFetch() {
+		super.awakeFromFetch()
+		setup()
+	}
 }
 
 extension Cell {
@@ -80,7 +75,6 @@ extension Cell {
 					value: context.newBuffer(length: sizeof(Float)*width)
 				)
 			]
-			print(state.count)
 			
 			level = [
 				Level(
@@ -123,7 +117,7 @@ extension Cell {
 extension Cell {
 	internal func refresh() {
 		
-		if let context: Context = managedObjectContext as? Context {
+		if let context: Context = managedObjectContext as? Context where 0 < width {
 			
 			let newState: MTLBuffer = state[0].value
 			let oldState: MTLBuffer = state[1].value
@@ -184,7 +178,7 @@ extension Cell {
 	}
 	private func forget() {
 		
-		if let context: Context = managedObjectContext as? Context {
+		if let context: Context = managedObjectContext as? Context where 0 < width {
 			
 			let newMean: MTLBuffer = delta[0].mean
 			let oldMean: MTLBuffer = delta[1].mean
@@ -237,7 +231,7 @@ extension Cell {
 	
 	public func collect() {
 		collect(visit: [])
-		
+	
 	}
 	internal func collect(let visit visit: Set<Cell>) -> MTLBuffer {
 		
@@ -251,21 +245,24 @@ extension Cell {
 				
 			} else if let context: Context = managedObjectContext as? Context {
 				
-				let level: MTLBuffer = self.level[0].value
-				let mean: MTLBuffer = self.level[0].mean
-				let variance: MTLBuffer = self.level[0].variance
-				let value: MTLBuffer = self.state[0].value
-				let group: MTLSize = MTLSize(width: width/4, height: 1, depth: 1)
+				let group: MTLSize = MTLSize(width: (width-1)/4+1, height: 1, depth: 1)
 				let local: MTLSize = MTLSize(width: 1, height: 1, depth: 1)
 				
-				input.forEach {
-					$0.collect(level: level, mean: mean, variance: variance, visit: visit)
-				}
-				bias.collect(level: level, mean: mean, variance: variance)
+				let state_value: MTLBuffer = state[0].value
 				
-				context.newComputeCommand(function: "sign") {
-					$0.setBuffer(value, offset: 0, atIndex: 0)
-					$0.setBuffer(level, offset: 0, atIndex: 1)
+				let level_value: MTLBuffer = level[0].value
+				let level_mean: MTLBuffer = level[0].mean
+				let level_variance: MTLBuffer = level[0].variance
+				
+				input.forEach {
+					$0.collect(value: level_value, mean: level_mean, variance: level_variance, visit: visit.union([self]))
+				}
+
+				bias.collect(value: level_value, mean: level_mean, variance: level_variance)
+				
+				context.newComputeCommand(function: "step") {
+					$0.setBuffer(state_value, offset: 0, atIndex: 0)
+					$0.setBuffer(level_value, offset: 0, atIndex: 1)
 					$0.dispatchThreadgroups(group, threadsPerThreadgroup: local)
 				}
 				
@@ -287,16 +284,43 @@ extension Cell {
 			
 		} else {
 			if ready.contains(.Delta) {
+				return(delta[0].mean, delta[0].variance)
 				
 			} else if ready.contains(.State) {
-
-				if ready.contains(.Train) {
+				if let context: Context = managedObjectContext as? Context where ready.contains(.State) {
+					if ready.contains(.Train) {
+						
+						let group: MTLSize = MTLSize(width: (width-1)/4+1, height: 1, depth: 1)
+						let local: MTLSize = MTLSize(width: 1, height: 1, depth: 1)
+						
+						let train: MTLBuffer = state[0].train
+						let value: MTLBuffer = state[0].value
+						
+						context.newComputeCommand(function: "sub") {
+							$0.setBuffer(train, offset: 0, atIndex: 0)
+							$0.setBuffer(value, offset: 0, atIndex: 1)
+							$0.dispatchThreadgroups(group, threadsPerThreadgroup: local)
+						}
+					
+					} else {
+						
+						let group: MTLSize = MTLSize(width: (width-1)/4+1, height: 1, depth: 1)
+						let local: MTLSize = MTLSize(width: 1, height: 1, depth: 1)
+						
+						output.forEach {
+							$0.correct(eps: eps, visit: visit.union([self]))
+						}
+						
+					}
 					
 				} else {
+					assertionFailure(Context.Error.InvalidContext.rawValue)
 					
 				}
 				
-				ready.insert(.Delta)
+			} else {
+				return(delta[1].mean, delta[1].variance)
+				
 			}
 		}
 		return(delta[0].mean, delta[0].variance)
@@ -305,54 +329,60 @@ extension Cell {
 extension Cell {
 	public var active: [Bool] {
 		set {
-			if let context: Context = managedObjectContext as? Context {
-				let cache: MTLBuffer = context.newBuffer(newValue.map{Float($0)})
+			if let context: Context = managedObjectContext as? Context where newValue.count <= width {
+				let cache: MTLBuffer = context.newBuffer(newValue.map{Float($0)}, options: .StorageModePrivate)
 				let value: MTLBuffer = state[0].value
-				context.newBlitCommand(complete: { cache.setPurgeableState(.Empty)}) {
+				context.newBlitCommand(complete: {cache.setPurgeableState(.Empty) }) {
 					$0.copyFromBuffer(cache, sourceOffset: 0, toBuffer: value, destinationOffset: 0, size: min(cache.length, value.length))
 				}
 				ready.insert(.State)
 			} else {
 				assertionFailure(Context.Error.InvalidContext.rawValue)
+				
 			}
 		}
 		get {
-			let cache: [Float] = [Float](count: width, repeatedValue: 0)
-			let value: MTLBuffer = state[0].value
 			if let context: Context = managedObjectContext as? Context {
-				context.newCommand(sync: true, complete: { NSData(bytesNoCopy: value.contents(), length: value.length, freeWhenDone: false).getBytes(UnsafeMutablePointer<Void>(cache), length: sizeof(Float)*cache.count) })
+				let cache: MTLBuffer = context.newBuffer(length: sizeof(Float)*width)
+				let value: MTLBuffer = state[0].value
+				context.newBlitCommand(sync: true) {
+					$0.copyFromBuffer(value, sourceOffset: 0, toBuffer: cache, destinationOffset: 0, size: min(cache.length, value.length))
+				}
+				return UnsafeMutableBufferPointer<Float>(start: UnsafeMutablePointer<Float>(cache.contents()), count: width).map{Bool($0)}
 			} else {
 				assertionFailure(Context.Error.InvalidContext.rawValue)
+				
 			}
-			return cache.map { Bool($0) }
+			return [Bool](count: width, repeatedValue: false)
 		}
 	}
 	public var answer: [Bool] {
 		set {
-			if let context: Context = managedObjectContext as? Context {
-				let cache: MTLBuffer = context.newBuffer(newValue.map{Float($0)})
+			if let context: Context = managedObjectContext as? Context where newValue.count <= width {
+				let cache: MTLBuffer = context.newBuffer(newValue.map{Float($0)}, options: .StorageModePrivate)
 				let train: MTLBuffer = state[0].train
-				context.newBlitCommand(complete: { cache.setPurgeableState(.Empty)}) {
+				context.newBlitCommand(complete: { cache.setPurgeableState(.Empty) }) {
 					$0.copyFromBuffer(cache, sourceOffset: 0, toBuffer: train, destinationOffset: 0, size: min(cache.length, train.length))
 				}
 				ready.insert(.Train)
-				
 			} else {
 				assertionFailure(Context.Error.InvalidContext.rawValue)
 				
 			}
 		}
 		get {
-			let cache: [Float] = [Float](count: width, repeatedValue: 0)
-			let train: MTLBuffer = state[0].train
 			if let context: Context = managedObjectContext as? Context {
-				context.newCommand(sync: true, complete: { NSData(bytesNoCopy: train.contents(), length: train.length, freeWhenDone: false).getBytes(UnsafeMutablePointer<Void>(cache), length: sizeof(Float)*cache.count) })
-				
+				let cache: MTLBuffer = context.newBuffer(length: sizeof(Float)*width)
+				let train: MTLBuffer = state[0].train
+				context.newBlitCommand(sync: true) {
+					$0.copyFromBuffer(train, sourceOffset: 0, toBuffer: cache, destinationOffset: 0, size: min(cache.length, train.length))
+				}
+				return UnsafeMutableBufferPointer<Float>(start: UnsafeMutablePointer<Float>(cache.contents()), count: width).map{Bool($0)}
 			} else {
 				assertionFailure(Context.Error.InvalidContext.rawValue)
 				
 			}
-			return cache.map { Bool($0) }
+			return [Bool](count: width, repeatedValue: false)
 		}
 	}
 }
@@ -366,7 +396,6 @@ extension Context {
 		cell.attribute = [:]
 		cell.input = Set<Edge>()
 		cell.output = Set<Edge>()
-		cell.data = NSData()
 		try input.forEach {
 			try newEdge(output: cell, input: $0)
 		}
