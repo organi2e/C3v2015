@@ -9,17 +9,17 @@
 #include <metal_stdlib>
 using namespace metal;
 kernel void gemv(device float4 * Y [[ buffer(0) ]],
-				  device const float4 * const A [[ buffer(1) ]],
-				  device const float4 * const X [[ buffer(2) ]],
-				  constant const uint & M [[ buffer(3) ]],
-				  constant const uint & N [[ buffer(4) ]],
-				  uint const g [[ threadgroup_position_in_grid ]],
-				  uint const G [[ threadgroups_per_grid ]],
-				  uint const t [[ thread_position_in_threadgroup ]],
-				  uint const T [[ threads_per_threadgroup ]],
-				  threadgroup float4x4 * const a [[ threadgroup(0) ]],
-				  threadgroup float4 * const x [[ threadgroup(1) ]]
-				  )
+				 device const float4 * const A [[ buffer(1) ]],
+				 device const float4 * const X [[ buffer(2) ]],
+				 constant const uint & M [[ buffer(3) ]],
+				 constant const uint & N [[ buffer(4) ]],
+				 uint const g [[ threadgroup_position_in_grid ]],
+				 uint const G [[ threadgroups_per_grid ]],
+				 uint const t [[ thread_position_in_threadgroup ]],
+				 uint const T [[ threads_per_threadgroup ]],
+				 threadgroup float4x4 * const a [[ threadgroup(0) ]],
+				 threadgroup float4 * const x [[ threadgroup(1) ]]
+				 )
 {
 	uint const row = g * T + t;
 	float4 y = float4(0.0);
@@ -60,7 +60,8 @@ kernel void gemm(device float4 * const C [[ buffer(0) ]],
 				 uint2 const T [[ threads_per_threadgroup ]],
 				 threadgroup float4x4 * a [[ threadgroup(0) ]],
 				 threadgroup float4x4 * b [[ threadgroup(1) ]]
-				 ){
+				 )
+{
 	
 	uint const col = g.x * T.x + t.x;
 	uint const row = g.y * T.y + t.y;
@@ -106,4 +107,13 @@ kernel void gemm(device float4 * const C [[ buffer(0) ]],
 	if ( mask_C[2] ) C[indx_C[2]] = alpha * C[indx_C[2]] + beta * c[2];
 	if ( mask_C[3] ) C[indx_C[3]] = alpha * C[indx_C[3]] + beta * c[3];
 	
+}
+kernel void sub(device float4 * c [[ buffer(0) ]],
+				device const float4 * a [[ buffer(1) ]],
+				device const float4 * b [[ buffer(2) ]],
+				uint const n [[ thread_position_in_grid ]],
+				uint const N [[ threads_per_grid ]]
+				)
+{
+	c[n] = a[n] - b[n];
 }

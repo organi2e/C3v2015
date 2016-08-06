@@ -11,22 +11,26 @@ import CoreData
 internal class Edge: Gauss {
 	
 }
+
 extension Edge {
 	@NSManaged internal var input: Cell
 	@NSManaged internal var output: Cell
 }
+
 extension Edge {
-	func collect(let level level_value: MTLBuffer, let mean level_mean: MTLBuffer, let variance level_variance: MTLBuffer, let visit: Set<Cell>) {
+	func collect(let value level_value: MTLBuffer, let mean level_mean: MTLBuffer, let variance level_variance: MTLBuffer, let visit: Set<Cell>) {
+		
 		if let context: Context = managedObjectContext as? Context {
+			
+			let input_state: MTLBuffer = input.collect(visit: visit)
+			
+			let group: MTLSize = MTLSize(width: (rows-1)/4+1, height: 1, depth: 1)
+			let local: MTLSize = MTLSize(width: (cols-1)/4+1, height: 1, depth: 1)
 			
 			let edge_value: MTLBuffer = value
 			let edge_mean: MTLBuffer = mean
 			let edge_variance: MTLBuffer = variance
 			
-			let group: MTLSize = MTLSize(width: (rows-1)/4+1, height: 1, depth: 1)
-			let local: MTLSize = MTLSize(width: (cols-1)/4+1, height: 1, depth: 1)
-			
-			let input_state: MTLBuffer = input.collect(visit: visit)
 			let local_memry: Int = sizeof(Float)*cols
 			
 			context.newComputeCommand(function: "edgeCollect") {
@@ -52,9 +56,25 @@ extension Edge {
 		}
 		
 	}
-	func correct(let eps eps: Float, let visit: Set<Cell>) -> (MTLBuffer) {
+	func correct(let eps eps: Float, let visit: Set<Cell>) {
 		
-		return value
+		if let context: Context = managedObjectContext as? Context {
+			
+			let (delta_mean, delta_variance) = output.correct(eps: eps, visit: visit)
+			let state: MTLBuffer = input.collect(visit: [])
+			
+			context.newComputeCommand(function: "edgeCorrect") {
+				$0.setBytes([eps], length: 0, atIndex: 2)
+				$0.setBuffer(delta_mean, offset: 0, atIndex: 3)
+				$0.setBuffer(delta_variance, offset: 0, atIndex: 4)
+			}
+			
+			
+		} else {
+			assertionFailure(Context.Error.InvalidContext.rawValue)
+		
+		}
+		
 	}
 }
 extension Context {

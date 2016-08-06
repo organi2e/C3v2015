@@ -74,6 +74,21 @@ kernel void edgeCollect(device float4 * level_value [[ buffer(0) ]],
 	}
 	
 }
+kernel void edgeCorrect(device float4 * edge_mean [[ buffer(0) ]],
+						device float4 * edge_logvariance [[ buffer(1) ]],
+						device const float4 * edge_variance [[ buffer(2) ]],
+						constant const float & eps [[ buffer(3) ]],
+						device const float4 * delta_mean [[ buffer(4) ]],
+						device const float4 * delta_variance [[ buffer(5) ]],
+						device const float4 * input_state [[ buffer(6) ]],
+						
+						) {
+	float4x4 s = float4x4(0.0);
+	float4x4 m = float4x4(0.0);
+	float4x4 v = float4x4(0.0);
+	
+
+}
 /*
 kernel void edgeCollect(device float4 * level_value [[ buffer(0) ]],
 						device float4 * level_mean [[ buffer(1) ]],

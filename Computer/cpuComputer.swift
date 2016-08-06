@@ -141,6 +141,12 @@ public class cpuComputer: Computer {
 		cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Int32(dim.0), Int32(dim.2), Int32(dim.1), alpha, a.scalar.baseAddress, Int32(dim.1), x.scalar.baseAddress, Int32(dim.2), beta, y.scalar.baseAddress, Int32(dim.2))
 		
 	}
+	func outerproduct( let c: Buffer, let a: Buffer, let b: Buffer) {
+		let m: Int = a.scalar.count
+		let n: Int = b.scalar.count
+		assert(m*n==c.scalar.count)
+		cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans, Int32(m), Int32(n), Int32(1), 1.0, a.scalar.baseAddress, 1, b.scalar.baseAddress, 1, 0.0, c.scalar.baseAddress, Int32(n))
+	}
 	func normal ( let y: Buffer, let u: Buffer, let s: Buffer, let sync flag: Bool = false ) {
 		assert(y.scalar.count==u.scalar.count)
 		assert(y.scalar.count==s.scalar.count)

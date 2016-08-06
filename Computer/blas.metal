@@ -38,6 +38,60 @@ kernel void div(device float4 * y [[ buffer(0) ]],
 	y [ id ] = a [ id ] / b [ id ];
 }
 //Y = alphaAX + betaY
+/*4096*4096
+ <unknown>:0: Test Case '-[ComputerTests.mtlComputerTests testOuterProduct]' measured [Time, seconds] average: 0.472, relative standard deviation: 3.437%, values: [0.519003, 0.473434, 0.475507, 0.467887, 0.462862, 0.462153, 0.460501, 0.464026, 0.469315, 0.468458], performanceMetricID:com.apple.XCTPerformanceMetric_WallClockTime, baselineName: "", baselineAverage: , maxPercentRegression: 10.000%, maxPercentRelativeStandardDeviation: 10.000%, maxRegression: 0.100, maxStandardDeviation: 0.100
+ Test Case '-[ComputerTests.mtlComputerTests testOuterProduct]' passed (18.019 seconds).
+ */
+/*
+kernel void outerproduct(device float4 * const C [[ buffer(0) ]],
+						 device const float4 * const A [[ buffer(1) ]],
+						 device const float4 * const B [[ buffer(2) ]],
+						 constant const uint & M [[ buffer(3) ]],
+						 constant const uint & N [[ buffer(4) ]],
+						 uint2 const g [[ threadgroup_position_in_grid ]],
+						 uint2 const G [[ threadgroups_per_grid ]],
+						 uint2 const t [[ thread_position_in_threadgroup ]],
+						 uint2 const T [[ threads_per_threadgroup ]]
+						 ){
+	float4x4 a = float4x4(A[g.y],float4(0.0),float4(0.0),float4(0.0));
+	float4x4 b = float4x4(B[g.x],float4(0.0),float4(0.0),float4(0.0));
+	
+	float4x4 c = b * transpose(a);
+	
+	C[(4*g.y+0)*G.x+g.x] = c[0];
+	C[(4*g.y+1)*G.x+g.x] = c[1];
+	C[(4*g.y+2)*G.x+g.x] = c[2];
+	C[(4*g.y+3)*G.x+g.x] = c[3];
+	
+}
+ */
+/*
+ <unknown>:0: Test Case '-[ComputerTests.mtlComputerTests testOuterProduct]' measured [Time, seconds] average: 0.118, relative standard deviation: 11.988%, values: [0.160577, 0.116588, 0.112900, 0.112105, 0.112194, 0.113642, 0.117755, 0.114637, 0.112146, 0.111482], performanceMetricID:com.apple.XCTPerformanceMetric_WallClockTime, baselineName: "", baselineAverage: , maxPercentRegression: 10.000%, maxPercentRelativeStandardDeviation: 10.000%, maxRegression: 0.100, maxStandardDeviation: 0.100
+ Test Case '-[ComputerTests.mtlComputerTests testOuterProduct]' passed (14.604 seconds).
+ */
+kernel void outerproduct(device float4 * const C [[ buffer(0) ]],
+						 device const float4 * const A [[ buffer(1) ]],
+						 device const float4 * const B [[ buffer(2) ]],
+						 constant const uint & M [[ buffer(3) ]],
+						 constant const uint & N [[ buffer(4) ]],
+						 uint const g [[ threadgroup_position_in_grid ]],
+						 uint const G [[ threadgroups_per_grid ]],
+						 uint const t [[ thread_position_in_threadgroup ]],
+						 uint const T [[ threads_per_threadgroup ]]
+						 ){
+	threadgroup float4 a;
+	if (!t) a = A[g];
+	threadgroup_barrier ( mem_flags :: mem_threadgroup );
+	
+	for( uint k = 0, K = N ; k < K ; k += T ) {
+		float4 const b = B[k+t];
+		uint4 const idx = (uint4(0,1,2,3)+4*g)*N+k+t;
+		C[idx[0]] = a.x * b;
+		C[idx[1]] = a.y * b;
+		C[idx[2]] = a.z * b;
+		C[idx[3]] = a.w * b;
+	}
+}
 
 kernel void gemv4(device float4 * Y [[ buffer(0) ]],
 				  device const float4 * const A [[ buffer(1) ]],

@@ -53,7 +53,7 @@ class CellTests: XCTestCase {
 				I: Cell = context.searchCell(label: "I").last,
 				O: Cell = context.searchCell(label: "O").last
 			{
-				(0..<16).forEach {
+				(0..<4).forEach {
 					
 					let ID: [Bool] = IS[$0%8]
 					let OD: [Bool] = OS[$0%8]
@@ -69,12 +69,14 @@ class CellTests: XCTestCase {
 						I.active = ID
 
 						O.collect()
-						I.correct(eps: 1/64.0)
+						print(O.active)
+						//I.correct(eps: 1/64.0)
 						
 					}
 					
 				}
 			}
+			context.join()
 			try context.save()
 			
 		} catch let e {
