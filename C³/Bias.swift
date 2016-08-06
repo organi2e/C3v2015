@@ -12,22 +12,52 @@ extension Bias {
 	@NSManaged internal var cell: Cell
 }
 extension Bias {
-	override func setup() {
-		super.setup()
-		
-	}
-}
-extension Bias {
-	func collect() -> (MTLBuffer, MTLBuffer, MTLBuffer) {
-		return(value, mean, variance)
-	}
-	func correct(let eps eps: Float, let deltamean: MTLBuffer, let deltavariance: MTLBuffer, let lambda: MTLBuffer?, let dydv: MTLBuffer, let feedback: MTLBuffer?) {
-		guard let context: Context = managedObjectContext as? Context else {
-			fatalError(Context.Error.InvalidContext.description)
+	internal func collect(let level level_value: MTLBuffer, let mean level_mean: MTLBuffer, let variance level_variance: MTLBuffer) {
+		if let context: Context = managedObjectContext as? Context  {
+			
+			let bias_value: MTLBuffer = value
+			let bias_mean: MTLBuffer = mean
+			let bias_variance: MTLBuffer = variance
+			
+			let group: MTLSize = MTLSize(width: (rows-1)/4+1, height: 1, depth: 1)
+			let local: MTLSize = MTLSize(width: (cols-1)/4+1, height: 1, depth: 1)
+			
+			context.newComputeCommand(function: "biasCollect") {
+				$0.setBuffer(level_value, offset: 0, atIndex: 0)
+				$0.setBuffer(level_mean, offset: 0, atIndex: 1)
+				$0.setBuffer(level_variance, offset: 0, atIndex: 2)
+				$0.setBuffer(bias_value, offset: 0, atIndex: 3)
+				$0.setBuffer(bias_mean, offset: 0, atIndex: 4)
+				$0.setBuffer(bias_variance, offset: 0, atIndex: 5)
+				$0.dispatchThreadgroups(group, threadsPerThreadgroup: local)
+			}
+		} else {
+			assertionFailure(Context.Error.InvalidContext.rawValue)
 		}
-		context.axpy(mean, x: deltamean, alpha: eps)
-		context.smvmv(logvariance, alpha: (-0.5*eps), a: deltavariance, b: variance)
-
+	}
+	internal func correctFF(let eps eps: Float, let mean delta_mean: MTLBuffer, let variance delta_variance: MTLBuffer) {
+		if let context: Context = managedObjectContext as? Context {
+			
+			let bias_mean: MTLBuffer = mean
+			let bias_logvariance: MTLBuffer = logvariance
+			let bias_variance: MTLBuffer = variance
+			
+			let group: MTLSize = MTLSize(width: (rows-1)/4+1, height: 1, depth: 1)
+			let local: MTLSize = MTLSize(width: (cols-1)/4+1, height: 1, depth: 1)
+			
+			context.newComputeCommand(function: "biasCorrectFF") {
+				$0.setBuffer(bias_mean, offset: 0, atIndex: 0)
+				$0.setBuffer(bias_logvariance, offset: 0, atIndex: 1)
+				$0.setBuffer(bias_variance, offset: 0, atIndex: 2)
+				$0.setBytes([eps], length: 0, atIndex: 3)
+				$0.setBuffer(delta_mean, offset: 0, atIndex: 4)
+				$0.setBuffer(delta_variance, offset: 0, atIndex: 5)
+				$0.dispatchThreadgroups(group, threadsPerThreadgroup: local)
+			}
+			
+		} else {
+			assertionFailure(Context.Error.InvalidContext.rawValue)
+		}
 	}
 }
 extension Context {

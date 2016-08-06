@@ -5,12 +5,9 @@
 //  Created by Kota Nakano on 7/31/16.
 //
 //
-import Accelerate
 import CoreData
 internal class Decay: NSManagedObject {
-	var gradient: la_object_t = la_splat_from_float(0, Config.ATTR)
-	var lambda: la_object_t = la_splat_from_float(0, Config.ATTR)
-	var siglambda: la_object_t = la_splat_from_float(0, Config.ATTR)
+	
 }
 extension Decay {
 	@NSManaged internal private(set) var rows: UInt
@@ -29,7 +26,7 @@ extension Decay {
 	static private let siglambdadatakey: String = "siglambdadata"
 	
 	internal func setup() {
-		
+		/*
 		setPrimitiveValue(NSData(data: siglambdadata), forKey: Decay.siglambdadatakey)
 		assert(siglambdadata.length==sizeof(Float)*Int(rows*cols))
 		
@@ -41,13 +38,13 @@ extension Decay {
 		
 		gradient = la_matrix_from_splat(la_splat_from_float(0, Config.ATTR), rows, rows * cols)
 		assert(gradient.status==LA_SUCCESS&&gradient.rows==rows&&gradient.cols==rows * cols)
-		
+		*/
 		refresh()
 		
 	}
 	
-	internal func correct(let eps eps: Float, let delta: la_object_t, let value: la_object_t, let dydv: la_object_t, let feedback: la_object_t? = nil) {
-		
+	//internal func correct(let eps eps: Float, let delta: la_object_t, let value: la_object_t, let dydv: la_object_t, let feedback: la_object_t? = nil) {
+		/*
 		var gradientmean: la_object_t = la_diagonal_matrix_from_vector(value, 0)
 		
 		gradientmean = gradientmean + la_matrix_product(la_diagonal_matrix_from_vector(lambda, 0), gradient)
@@ -60,25 +57,26 @@ extension Decay {
 		
 		siglambda = siglambda + eps * ( lambda ) * ( 1.0 - lambda ) * la_matrix_product(la_transpose(delta), gradient).reshape(rows: rows, cols: cols)
 		assert(siglambda.status==LA_SUCCESS&&siglambda.rows==rows&&siglambda.cols==cols)
-	}
+*/
+	//}
 	
 	internal func refresh() {
-		lambda = sigmoid(siglambda)
+//		lambda = sigmoid(siglambda)
 	}
 	
 	internal func commit() {
-		
+		/*
 		willChangeValueForKey(Decay.siglambdadatakey)
 		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(siglambdadata.bytes), cols, siglambda)
 		didChangeValueForKey(Decay.siglambdadatakey)
 		
 		siglambda = la_matrix_from_float_buffer(UnsafeMutablePointer<Float>(siglambdadata.bytes), rows, cols, cols, Config.HINT, Config.ATTR)
 		assert(siglambda.status==LA_SUCCESS&&siglambda.rows==rows&&siglambda.cols==cols)
-		
+		*/
 	}
 	
 	internal func resize(let rows r: UInt, let cols c: UInt ) {
-		
+		/*
 		let count: Int = Int(r*c)
 		let siglambdabuffer: [Float] = [Float](count: count, repeatedValue: 0)
 		
@@ -89,7 +87,7 @@ extension Decay {
 		assert(siglambdadata.length==sizeof(Float)*Int(r*c))
 		
 		setup()
-		
+		*/
 	}
 	
 }

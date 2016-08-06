@@ -8,9 +8,10 @@
         <attribute name="name" attributeType="String" indexed="YES" syncable="YES"/>
     </entity>
     <entity name="Cell" representedClassName="C3.Cell" syncable="YES">
-        <attribute name="attribute" attributeType="Transformable" syncable="YES"/>
+        <attribute name="attribute" transient="YES" attributeType="Transformable" syncable="YES"/>
+        <attribute name="data" attributeType="Binary" allowsExternalBinaryDataStorage="YES" syncable="YES"/>
         <attribute name="label" attributeType="String" indexed="YES" syncable="YES"/>
-        <attribute name="width" attributeType="Integer 64" syncable="YES"/>
+        <attribute name="width" attributeType="Integer 64" minValueString="0" syncable="YES"/>
         <relationship name="bias" maxCount="1" deletionRule="Cascade" destinationEntity="Bias" inverseName="cell" inverseEntity="Bias" syncable="YES"/>
         <relationship name="decay" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="Decay" inverseName="cell" inverseEntity="Decay" syncable="YES"/>
         <relationship name="feedback" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="Feedback" inverseName="cell" inverseEntity="Feedback" syncable="YES"/>
@@ -43,7 +44,7 @@
     <elements>
         <element name="Bias" positionX="54" positionY="189" width="128" height="60"/>
         <element name="Blob" positionX="36" positionY="171" width="128" height="75"/>
-        <element name="Cell" positionX="36" positionY="117" width="128" height="165"/>
+        <element name="Cell" positionX="36" positionY="117" width="128" height="180"/>
         <element name="Decay" positionX="36" positionY="171" width="128" height="105"/>
         <element name="Dict" positionX="18" positionY="81" width="128" height="75"/>
         <element name="Edge" positionX="54" positionY="108" width="128" height="75"/>

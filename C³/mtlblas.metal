@@ -8,22 +8,6 @@
 
 #include <metal_stdlib>
 using namespace metal;
-kernel void vsma(device float4 * y [[ buffer(0) ]],
-				 device const float4 * const x [[ buffer(1) ]],
-				 constant const float & alpha [[ buffer(2) ]],
-				 uint const n [[ threads_position_in_grid ]],
-				 uint const N [[ threads_per_grid ]]
-				 ) {
-	y[n] = y[n] + alpha * x[n];
-}
-kernel void smvmv(device float4 * y [[ buffer(0) ]],
-				  constant float & alpha [[ buffer(1) ]],
-				  device float4 * b [[ buffer(2) ]],
-				  device float4 * c [[ buffer(3) ]],
-				  uint const n [[ threads_position_in_grid ]],
-				  uint const N [[ threads_per_grid ]]) {
-	y[n] = y[n] + alpha * b[n] * c[n];
-}
 kernel void gemv(device float4 * Y [[ buffer(0) ]],
 				  device const float4 * const A [[ buffer(1) ]],
 				  device const float4 * const X [[ buffer(2) ]],
@@ -68,6 +52,8 @@ kernel void gemm(device float4 * const C [[ buffer(0) ]],
 				 constant const uint & M [[ buffer(3) ]],
 				 constant const uint & K [[ buffer(4) ]],
 				 constant const uint & N [[ buffer(5) ]],
+				 constant const float & alpha [[ buffer(6) ]],
+				 constant const float & beta [[ buffer(7) ]],
 				 uint2 const g [[ threadgroup_position_in_grid ]],
 				 uint2 const G [[ threadgroups_per_grid ]],
 				 uint2 const t [[ thread_position_in_threadgroup ]],
@@ -115,37 +101,9 @@ kernel void gemm(device float4 * const C [[ buffer(0) ]],
 	bool4 const mask_C = rows_C < K && cols_C < N;
 	uint4 const indx_C = ( 4 * rows_C + uint4(0,1,2,3) ) * N + cols_C;
 	
-	if ( mask_C[0] ) C[indx_C[0]] = c[0];
-	if ( mask_C[1] ) C[indx_C[1]] = c[1];
-	if ( mask_C[2] ) C[indx_C[2]] = c[2];
-	if ( mask_C[3] ) C[indx_C[3]] = c[3];
-}
-kernel void gemva(device float4 * y [[ buffer(0) ]],
-				  device const float4 * const A [[ buffer(1) ]],
-				  device const float4 * const x [[ buffer(2) ]],
-				  uint const m [[ threadgroup_position_in_grid ]],
-				  uint const M [[ threadgroups_per_grid ]],
-				  uint const n [[ thread_position_in_threadgroup ]],
-				  uint const N [[ threads_per_threadgroup ]],
-				  threadgroup float4 * const accumulator [[ threadgroup(0) ]] )
-{
-	uint4 const idx_A = (uint4(0,1,2,3)+4*m)*N+n;
-	float4x4 a = float4x4(A[idx_A[0]],
-						  A[idx_A[1]],
-						  A[idx_A[2]],
-						  A[idx_A[3]]);
-	accumulator [ n ] =  x [ n ] * a;
-	uint offset = 1 << ( clz ( uint( 1 ) ) - clz ( N ) );
-	threadgroup_barrier ( mem_flags::mem_threadgroup );
-	if ( n < ( N % offset ) ) {
-		accumulator [ n ] += accumulator [ offset + n ];
-	}
-	while ( offset >>= 1 ) {
-		threadgroup_barrier ( mem_flags::mem_threadgroup );
-		if ( n < offset ) {
-			accumulator [ n ] += accumulator [ offset + n ];
-		};
-	}
-	if( !n )
-		y[ m ] = accumulator [ n ];
+	if ( mask_C[0] ) C[indx_C[0]] = alpha * C[indx_C[0]] + beta * c[0];
+	if ( mask_C[1] ) C[indx_C[1]] = alpha * C[indx_C[1]] + beta * c[1];
+	if ( mask_C[2] ) C[indx_C[2]] = alpha * C[indx_C[2]] + beta * c[2];
+	if ( mask_C[3] ) C[indx_C[3]] = alpha * C[indx_C[3]] + beta * c[3];
+	
 }

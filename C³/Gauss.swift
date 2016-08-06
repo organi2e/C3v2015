@@ -7,7 +7,7 @@
 //
 import Metal
 import CoreData
-internal class Gauss: NSManagedObject {
+public class Gauss: NSManagedObject {
 	var value: MTLBuffer!
 	var mean: MTLBuffer!
 	var deviation: MTLBuffer!
@@ -21,7 +21,7 @@ extension Gauss {
 	@NSManaged private var logvariancedata: NSData
 }
 extension Gauss {
-	override func awakeFromFetch() {
+	public override func awakeFromFetch() {
 		super.awakeFromFetch()
 		setup()
 	}
@@ -34,12 +34,13 @@ extension Gauss {
 	internal func setup() {
 	
 		guard let context: Context = managedObjectContext as? Context else {
-			fatalError(Context.Error.InvalidContext.description)
+			fatalError(Context.Error.InvalidContext.rawValue)
 		}
 		
 		value = context.newBuffer(length: sizeof(Float)*rows*cols)
 		deviation = context.newBuffer(length: sizeof(Float)*rows*cols)
 		variance = context.newBuffer(length: sizeof(Float)*rows*cols)
+		
 		mean = context.newBuffer(data: meandata)
 		logvariance = context.newBuffer(data: logvariancedata)
 
@@ -53,10 +54,38 @@ extension Gauss {
 	}
 	
 	internal func refresh() {
-		guard let context: Context = managedObjectContext as? Context else {
-			fatalError(Context.Error.InvalidContext.description)
+		if let context: Context = managedObjectContext as? Context {
+			
+			let semaphore: dispatch_semaphore_t = dispatch_semaphore_create(0)
+			let cache: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows*cols)
+			
+			context.performBlock {
+				arc4random_buf(cache.contents(), cache.length)
+				dispatch_semaphore_signal(semaphore)
+			}
+			
+			let gauss_value: MTLBuffer = value
+			let gauss_deviation: MTLBuffer = deviation
+			let gauss_variance: MTLBuffer = variance
+			let gauss_mean: MTLBuffer = mean
+			let gauss_logvariance: MTLBuffer = logvariance
+			
+			let group: MTLSize = MTLSize(width: (rows-1)/4+1, height: 1, depth: 1)
+			let local: MTLSize = MTLSize(width: (cols-1)/4+1, height: 1, depth: 1)
+			
+			context.newComputeCommand(function: "gaussShuffle", schedule: {dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)}, complete: {cache.setPurgeableState(.Empty)}) {
+				$0.setBuffer(gauss_value, offset: 0, atIndex: 0)
+				$0.setBuffer(gauss_deviation, offset: 0, atIndex: 1)
+				$0.setBuffer(gauss_variance, offset: 0, atIndex: 2)
+				$0.setBuffer(gauss_mean, offset: 0, atIndex: 3)
+				$0.setBuffer(gauss_logvariance, offset: 0, atIndex: 4)
+				$0.setBuffer(cache, offset: 0, atIndex: 5)
+				$0.dispatchThreadgroups(group, threadsPerThreadgroup: local)
+			}
+			
+		} else {
+			assertionFailure(Context.Error.InvalidContext.rawValue)
 		}
-		context.shuffle(value, deviation: deviation, variance: variance, mean: mean, logvariance: logvariance)
 	}
 	
 	internal func resize(let rows r: Int, let cols c: Int ) {

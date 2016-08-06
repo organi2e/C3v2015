@@ -7,396 +7,357 @@
 //
 //
 
-import Accelerate
+import Metal
 import CoreData
 
 public class Cell: NSManagedObject {
+	
 	private enum Ready {
 		case State
 		case Delta
 		case Train
 	}
 	private var ready: Set<Ready> = Set<Ready>()
-	internal private(set) var state = (
-		train: la_splat_from_float(0, Config.ATTR),
-		value: la_splat_from_float(0, Config.ATTR),
-		past: (
-			train: la_splat_from_float(0, Config.ATTR),
-			value: la_splat_from_float(0, Config.ATTR)
-		)
-	)
-	private var delta = (
-		mean: la_splat_from_float(0, Config.ATTR),
-		variance: la_splat_from_float(0, Config.ATTR),
-		past: (
-			mean: la_splat_from_float(0, Config.ATTR),
-			variance: la_splat_from_float(0, Config.ATTR)
-		)
-	)
-	private var gradient = (
-		mean: la_splat_from_float(0, Config.ATTR),
-		variance: la_splat_from_float(0, Config.ATTR),
-		past: (
-			mean: la_splat_from_float(0, Config.ATTR),
-			variance: la_splat_from_float(0, Config.ATTR)
-		)
-	)
-	private var potential = (
-		error: la_splat_from_float(0, Config.ATTR),
-		value: la_splat_from_float(0, Config.ATTR),
-		mean: la_splat_from_float(0, Config.ATTR),
-		variance: la_splat_from_float(0, Config.ATTR),
-		past: (
-			error: la_splat_from_float(0, Config.ATTR),
-			value: la_splat_from_float(0, Config.ATTR),
-			mean: la_splat_from_float(0, Config.ATTR),
-			variance: la_splat_from_float(0, Config.ATTR)
-		)
-	)
-	private let mutex = (
-		state: NSLock(),
-		delta: NSLock()
-	)
-	private let group = (
-		state: dispatch_group_create(),
-		delta: dispatch_group_create()
-	)
+	
+	private struct State {
+		let train: MTLBuffer
+		let value: MTLBuffer
+	}
+	
+	private struct Level {
+		let error: MTLBuffer
+		let value: MTLBuffer
+		let mean: MTLBuffer
+		let variance: MTLBuffer
+	}
+	
+	private struct Delta {
+		let mean: MTLBuffer
+		let variance: MTLBuffer
+	}
+	
+	private var state: [State] = []
+	private var level: [Level] = []
+	private var delta: [Delta] = []
+	
+	override public func awakeFromFetch() {
+		super.awakeFromFetch()
+		print("fetch")
+	}
+	override public func awakeFromSnapshotEvents(flags: NSSnapshotEventType) {
+		super.awakeFromSnapshotEvents(flags)
+		print("snap")
+	}
 }
+
 extension Cell {
 	@NSManaged public private(set) var label: String
-	@NSManaged public private(set) var width: UInt
-	@NSManaged public var attribute: [String: AnyObject]
+	@NSManaged public private(set) var width: Int
+	@NSManaged public private(set) var attribute: [String: AnyObject]
+	@NSManaged public private(set) var data: NSData
 	@NSManaged private var input: Set<Edge>
 	@NSManaged private var output: Set<Edge>
 	@NSManaged private var bias: Bias
 	@NSManaged private var feedback: Feedback?
 	@NSManaged private var decay: Decay?
 }
+
 extension Cell {
-	public override func awakeFromFetch() {
-		super.awakeFromFetch()
-		setup()
-	}
 }
+
 extension Cell {
-	private func setup() {
+	internal func setup() {
 		
-		potential.error = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
-		potential.value = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
+		if let context: Context = managedObjectContext as? Context {
+			
+			state = [
+				State(
+					train: context.newBuffer(length: sizeof(Float)*width),
+					value: context.newBuffer(length: sizeof(Float)*width)
+				),
+				State(
+					train: context.newBuffer(length: sizeof(Float)*width),
+					value: context.newBuffer(length: sizeof(Float)*width)
+				)
+			]
+			print(state.count)
+			
+			level = [
+				Level(
+					error: context.newBuffer(length: sizeof(Float)*width),
+					value: context.newBuffer(length: sizeof(Float)*width),
+					mean: context.newBuffer(length: sizeof(Float)*width),
+					variance: context.newBuffer(length: sizeof(Float)*width)
+				),
+				Level(
+					error: context.newBuffer(length: sizeof(Float)*width),
+					value: context.newBuffer(length: sizeof(Float)*width),
+					mean: context.newBuffer(length: sizeof(Float)*width),
+					variance: context.newBuffer(length: sizeof(Float)*width)
+				)
+			]
+			
+			delta = [
+				Delta(
+					mean: context.newBuffer(length: sizeof(Float)*width),
+					variance: context.newBuffer(length: sizeof(Float)*width)
+				),
+				Delta(
+					mean: context.newBuffer(length: sizeof(Float)*width),
+					variance: context.newBuffer(length: sizeof(Float)*width)
+				)
+			]
 		
-		assert(potential.error.status==LA_SUCCESS && potential.error.width==width)
-		assert(potential.value.status==LA_SUCCESS && potential.value.width==width)
+		} else {
+			assertionFailure(Context.Error.InvalidContext.rawValue)
 		
-		potential.mean = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
-		potential.variance = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
-		
-		assert(potential.mean.status==LA_SUCCESS && potential.mean.width==width)
-		assert(potential.variance.status==LA_SUCCESS && potential.variance.width==width)
-		
-		potential.past.error = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
-		potential.past.value = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
-		
-		assert(potential.past.error.status==LA_SUCCESS && potential.past.error.width==width)
-		assert(potential.past.value.status==LA_SUCCESS && potential.past.value.width==width)
-		
-		potential.past.mean = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
-		potential.past.variance = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
-		
-		assert(potential.past.mean.status==LA_SUCCESS && potential.past.mean.width==width)
-		assert(potential.past.variance.status==LA_SUCCESS && potential.past.variance.width==width)
-		
-		state.value = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
-		state.train = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
-		
-		assert(state.value.status==LA_SUCCESS && state.value.width==width)
-		assert(state.train.status==LA_SUCCESS && state.train.width==width)
-		
-		state.past.train = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
-		state.past.value = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
-		
-		assert(state.past.value.status==LA_SUCCESS && state.past.value.width==width)
-		assert(state.past.train.status==LA_SUCCESS && state.past.train.width==width)
-		
-		delta.mean = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
-		delta.variance = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
-		
-		assert(delta.mean.status==LA_SUCCESS && delta.mean.width==width)
-		assert(delta.variance.status==LA_SUCCESS && delta.variance.width==width)
-		
-		delta.past.mean = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
-		delta.past.variance = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
-		
-		assert(delta.past.mean.status==LA_SUCCESS && delta.past.mean.width==width)
-		assert(delta.past.variance.status==LA_SUCCESS && delta.past.variance.width==width)
-		
-		gradient.mean = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
-		gradient.variance = la_vector_from_splat(la_splat_from_float(0, Config.ATTR), width)
-		
-		assert(gradient.mean.status==LA_SUCCESS&&gradient.mean.width==width)
-		assert(gradient.variance.status==LA_SUCCESS&&gradient.variance.width==width)
+		}
 		
 		bias.setup()
-		decay?.setup()
-		feedback?.setup()
 		
 		refresh()
 		forget()
+		
 	}
 }
 extension Cell {
-	private func refresh() {
+	internal func refresh() {
 		
-		state.past.train = state.train
-		state.past.value = state.value
-		
-		assert(state.past.train.status==LA_SUCCESS)
-		assert(state.past.value.status==LA_SUCCESS)
-		
-		state.train = la_splat_from_float(0, Config.ATTR)
-		state.value = la_splat_from_float(0, Config.ATTR)
-		
-		assert(state.train.status==LA_SUCCESS)
-		assert(state.value.status==LA_SUCCESS)
-		
-		potential.past.error = potential.error
-		potential.past.value = potential.value
-		
-		assert(potential.past.error.status==LA_SUCCESS)
-		assert(potential.past.value.status==LA_SUCCESS)
-		
-		potential.past.mean = potential.mean
-		potential.past.variance = potential.variance
-		
-		assert(potential.past.mean.status==LA_SUCCESS && potential.past.mean.width==width)
-		assert(potential.past.variance.status==LA_SUCCESS && potential.past.variance.width==width)
-		
-		bias.refresh()
-		decay?.refresh()
-		feedback?.refresh()
-		
-		if let decay: Decay = decay {
-			potential.error = la_splat_from_float(0, Config.ATTR)
-			potential.value = decay.lambda * potential.value.dup + bias.value
-			potential.mean = decay.lambda * potential.mean.dup + bias.mean
-			potential.variance = decay.lambda * decay.lambda * potential.variance.dup + bias.variance
+		if let context: Context = managedObjectContext as? Context {
+			
+			let newState: MTLBuffer = state[0].value
+			let oldState: MTLBuffer = state[1].value
+			
+			assert(newState.length==oldState.length)
+			
+			let newTrain: MTLBuffer = state[0].train
+			let oldTrain: MTLBuffer = state[1].train
+			
+			assert(newTrain.length==oldTrain.length)
+			
+			let newLevel: MTLBuffer = level[0].value
+			let oldLevel: MTLBuffer = level[1].value
+			
+			assert(newLevel.length==oldLevel.length)
+			
+			let newError: MTLBuffer = level[0].error
+			let oldError: MTLBuffer = level[1].error
+			
+			assert(newError.length==oldError.length)
+			
+			let newMean: MTLBuffer = level[0].mean
+			let oldMean: MTLBuffer = level[1].mean
+			
+			assert(newMean.length==oldMean.length)
+			
+			let newVariance: MTLBuffer = level[0].variance
+			let oldVariance: MTLBuffer = level[1].variance
+			
+			assert(newVariance.length==oldVariance.length)
+			
+			context.newBlitCommand {
+				
+				$0.copyFromBuffer(newState, sourceOffset: 0, toBuffer: oldState, destinationOffset: 0, size: min(newState.length, oldState.length))
+				$0.copyFromBuffer(newTrain, sourceOffset: 0, toBuffer: oldTrain, destinationOffset: 0, size: min(newTrain.length, oldTrain.length))
+				
+				$0.fillBuffer(newState, range: NSRange(location: 0, length: newState.length), value: 0)
+				$0.fillBuffer(newTrain, range: NSRange(location: 0, length: newTrain.length), value: 0)
+				
+				$0.copyFromBuffer(newLevel, sourceOffset: 0, toBuffer: oldLevel, destinationOffset: 0, size: min(newLevel.length, oldLevel.length))
+				$0.copyFromBuffer(newError, sourceOffset: 0, toBuffer: oldError, destinationOffset: 0, size: min(newError.length, oldError.length))
+				
+				$0.fillBuffer(newLevel, range: NSRange(location: 0, length: newLevel.length), value: 0)
+				$0.fillBuffer(newError, range: NSRange(location: 0, length: newError.length), value: 0)
+				
+				$0.copyFromBuffer(newMean, sourceOffset: 0, toBuffer: oldMean, destinationOffset: 0, size: min(newMean.length, oldMean.length))
+				$0.copyFromBuffer(newVariance, sourceOffset: 0, toBuffer: oldVariance, destinationOffset: 0, size: min(newVariance.length, oldVariance.length))
+				
+				$0.fillBuffer(newMean, range: NSRange(location: 0, length: newMean.length), value: 0)
+				$0.fillBuffer(newVariance, range: NSRange(location: 0, length: newVariance.length), value: 0)
+				
+			}
 		} else {
-			potential.error = la_splat_from_float(0, Config.ATTR)
-			potential.value = bias.value
-			potential.mean = bias.mean
-			potential.variance = bias.variance
-		}
+			assertionFailure(Context.Error.InvalidContext.rawValue)
 		
-		assert(potential.error.status==LA_SUCCESS)
-		assert(potential.value.status==LA_SUCCESS)
-		assert(potential.mean.status==LA_SUCCESS)
-		assert(potential.variance.status==LA_SUCCESS)
-
+		}
+		bias.refresh()
 	}
 	private func forget() {
 		
-		gradient.past.mean = gradient.mean
-		gradient.past.variance = gradient.variance
+		if let context: Context = managedObjectContext as? Context {
+			
+			let newMean: MTLBuffer = delta[0].mean
+			let oldMean: MTLBuffer = delta[1].mean
+			
+			assert(newMean.length==oldMean.length)
+			
+			let newVariance: MTLBuffer = delta[0].variance
+			let oldVariance: MTLBuffer = delta[1].variance
+			
+			assert(newVariance.length==oldVariance.length)
+			
+			context.newBlitCommand {
+				
+				$0.copyFromBuffer(newMean, sourceOffset: 0, toBuffer: oldMean, destinationOffset: 0, size: min(newMean.length, oldMean.length))
+				$0.copyFromBuffer(newVariance, sourceOffset: 0, toBuffer: oldVariance, destinationOffset: 0, size: min(newVariance.length, oldVariance.length))
+				
+				$0.fillBuffer(newMean, range: NSRange(location: 0, length: newMean.length), value: 0)
+				$0.fillBuffer(newVariance, range: NSRange(location: 0, length: newVariance.length), value: 0)
+				
+			}
+			
+		} else {
+			assertionFailure(Context.Error.InvalidContext.rawValue)
 		
-		assert(gradient.past.mean.status==LA_SUCCESS&&gradient.past.mean.width==width)
-		assert(gradient.past.variance.status==LA_SUCCESS&&gradient.past.variance.width==width)
-		
-		gradient.mean = la_splat_from_float(0, Config.ATTR)
-		gradient.variance = la_splat_from_float(0, Config.ATTR)
-		
-		assert(gradient.mean.status==LA_SUCCESS)
-		assert(gradient.variance.status==LA_SUCCESS)
-		
-		delta.past.mean = delta.mean
-		delta.past.variance = delta.variance
-		
-		assert(delta.past.mean.status==LA_SUCCESS && delta.past.mean.width == width)
-		assert(delta.past.variance.status==LA_SUCCESS && delta.past.variance.width == width)
-		
-		delta.mean = la_splat_from_float(0, Config.ATTR)
-		delta.variance = la_splat_from_float(0, Config.ATTR)
-		
-		assert(delta.mean.status==LA_SUCCESS)
-		assert(delta.variance.status==LA_SUCCESS)
-		
+		}
 	}
 	public func iClear(let visit: Set<Cell>=[]) {
 		if visit.contains(self) {
 			
-		} else {
-			if mutex.state.tryLock() {
-				if ready.contains(.State) {
-					guard let context: Context = managedObjectContext as? Context else {
-						assertionFailure(Context.Error.InvalidContext.description)
-						return
-					}
-					let refer: Set<Edge> = input
-					dispatch_apply(refer.count, context.dispatch.parallel) {
-						let edge: Edge = refer[refer.startIndex.advancedBy($0)]
-						edge.refresh()
-						edge.input.iClear(visit.union([self]))
-					}
-					refresh()
-					ready.remove(.State)
-				}
-				mutex.state.unlock()
+		} else if ready.contains(.State) {
+			input.forEach {
+				$0.refresh()
+				$0.input.iClear(visit.union([self]))
 			}
+			refresh()
+			ready.remove(.State)
 		}
 	}
 	public func oClear(let visit: Set<Cell> = []) {
 		if visit.contains(self) {
 		
-		} else {
-			if mutex.delta.tryLock() {
-				if ready.contains(.Delta) {
-					guard let context: Context = managedObjectContext as? Context else {
-						assertionFailure(Context.Error.InvalidContext.description)
-						return
-					}
-					let refer: Set<Edge> = output
-					dispatch_apply(refer.count, context.dispatch.parallel) {
-						let edge: Edge = refer[refer.startIndex.advancedBy($0)]
-						edge.output.oClear(visit.union([self]))
-					}
-					forget()
-					ready.remove(.Delta)
-				}
-				mutex.delta.unlock()
+		} else if ready.contains(.Delta) {
+			output.forEach {
+				$0.output.oClear(visit.union([self]))
 			}
+			forget()
+			ready.remove(.Delta)
 		}
 	}
 	
 	public func collect() {
 		collect(visit: [])
+		
 	}
-	internal func collect(let visit visit: Set<Cell>) -> (la_object_t) {
+	internal func collect(let visit visit: Set<Cell>) -> MTLBuffer {
+		
 		if visit.contains(self) {
-			return state.past.value
+			return state[1].value
 			
 		} else {
-			mutex.state.lock()
+			
 			if ready.contains(.State) {
+				return state[0].value
 				
-			} else {
-				guard let context: Context = managedObjectContext as? Context else {
-					assertionFailure(Context.Error.InvalidContext.description)
-					return state.past.value
-				}
-				dispatch_apply(input.count, context.dispatch.parallel) {
-					let edge: Edge = self.input[self.input.startIndex.advancedBy($0)]
-					let(value,mean,variance) = edge.collect(visit.union([self]))
-					dispatch_group_async(self.group.state, context.dispatch.serial) {
-						self.potential.value = self.potential.value + value
-						self.potential.mean = self.potential.mean + mean
-						self.potential.variance = self.potential.variance + variance
-					}
-				}
-				dispatch_group_wait(group.state, DISPATCH_TIME_FOREVER)
+			} else if let context: Context = managedObjectContext as? Context {
 				
-				if let(value, mean, variance) = feedback?.collect() {
-					potential.value = potential.value + value
-					potential.mean = potential.mean + mean
-					potential.variance = potential.variance + variance
-				}
+				let level: MTLBuffer = self.level[0].value
+				let mean: MTLBuffer = self.level[0].mean
+				let variance: MTLBuffer = self.level[0].variance
+				let value: MTLBuffer = self.state[0].value
+				let group: MTLSize = MTLSize(width: width/4, height: 1, depth: 1)
+				let local: MTLSize = MTLSize(width: 1, height: 1, depth: 1)
 				
-				state.value = step(potential.value)
+				input.forEach {
+					$0.collect(level: level, mean: mean, variance: variance, visit: visit)
+				}
+				bias.collect(level: level, mean: mean, variance: variance)
+				
+				context.newComputeCommand(function: "sign") {
+					$0.setBuffer(value, offset: 0, atIndex: 0)
+					$0.setBuffer(level, offset: 0, atIndex: 1)
+					$0.dispatchThreadgroups(group, threadsPerThreadgroup: local)
+				}
 				
 				ready.insert(.State)
+				
+			} else {
+				assertionFailure(Context.Error.InvalidContext.rawValue)
+				
 			}
-			mutex.state.unlock()
 		}
-		return state.value
+		return state[0].value
 	}
 	public func correct(let eps eps: Float) {
 		correct(eps: eps, visit: [])
 	}
-	internal func correct(let eps eps: Float, let visit: Set<Cell>) -> (la_object_t, la_object_t, la_object_t?, la_object_t, la_object_t?) {
+	internal func correct(let eps eps: Float, let visit: Set<Cell>) -> (MTLBuffer, MTLBuffer) {
 		if visit.contains(self) {
-			return(delta.past.mean, delta.past.variance, decay?.lambda, gradient.past.mean, feedback?.value)
+			return(delta[1].mean, delta[1].variance)
 			
 		} else {
-			mutex.delta.lock()
 			if ready.contains(.Delta) {
 				
 			} else if ready.contains(.State) {
-				
-				guard let context: Context = managedObjectContext as? Context else {
-					assertionFailure(Context.Error.InvalidContext.description)
-					return(delta.past.mean, delta.past.variance, decay?.lambda, gradient.past.mean, feedback?.value)
-				}
+
 				if ready.contains(.Train) {
-					potential.error = potential.error + state.train - state.value
 					
 				} else {
-					let refer: Set<Edge> = output
-					dispatch_apply(refer.count, context.dispatch.parallel) {
-						let edge: Edge = refer[refer.startIndex.advancedBy($0)]
-						let delta: la_object_t = edge.correct(eps: eps, visit: visit.union([self]))
-						dispatch_group_async(self.group.delta, context.dispatch.serial) {
-							self.potential.error = self.potential.error + delta
-						}
-					}
-					dispatch_group_wait(group.delta, DISPATCH_TIME_FOREVER)
+					
 				}
-				
-				gradient.mean = pdf(x: la_splat_from_float(0, Config.ATTR), mu: potential.mean, sigma: sqrt(potential.variance))
-				gradient.variance = gradient.mean * potential.mean / potential.variance
-				
-				assert(gradient.mean.status==LA_SUCCESS)
-				assert(gradient.variance.status==LA_SUCCESS)
-				
-				let s: la_object_t = sign(potential.error)
-				
-				delta.mean = s * gradient.mean
-				delta.variance = s * gradient.variance
-				
-				assert(delta.mean.status==LA_SUCCESS)
-				assert(delta.variance.status==LA_SUCCESS)
-				
-				feedback?.correct(eps: eps, mean: delta.mean, variance: delta.variance, state: state.past.value, dydv: gradient.past.mean, lambda: decay?.lambda)
-				feedback?.commit()
-				
-				bias.correct(eps: eps, mean: delta.mean, variance: delta.variance, lambda: decay?.lambda, dydv: gradient.past.mean, feedback: feedback?.value)
-				bias.commit()
-				
-				decay?.correct(eps: eps, delta: delta.mean, value: potential.past.value, dydv: gradient.past.mean, feedback: feedback?.value)
-				decay?.commit()
 				
 				ready.insert(.Delta)
 			}
-			mutex.delta.unlock()
 		}
-		return(delta.mean, delta.variance, decay?.lambda, gradient.past.mean, feedback?.value)
+		return(delta[0].mean, delta[0].variance)
 	}
 }
 extension Cell {
 	public var active: [Bool] {
 		set {
-			assert(width==UInt(newValue.count))
-			state.value = la_matrix_from_float_buffer(newValue.map{Float($0)}, width, 1, 1, Config.HINT, Config.ATTR)
-			assert(state.value.status==LA_SUCCESS)
-			ready.insert(.State)
+			if let context: Context = managedObjectContext as? Context {
+				let cache: MTLBuffer = context.newBuffer(newValue.map{Float($0)})
+				let value: MTLBuffer = state[0].value
+				context.newBlitCommand(complete: { cache.setPurgeableState(.Empty)}) {
+					$0.copyFromBuffer(cache, sourceOffset: 0, toBuffer: value, destinationOffset: 0, size: min(cache.length, value.length))
+				}
+				ready.insert(.State)
+			} else {
+				assertionFailure(Context.Error.InvalidContext.rawValue)
+			}
 		}
 		get {
-			collect()
-			assert(state.value.width==width)
-			return state.value.eval.map{Bool($0)}
+			let cache: [Float] = [Float](count: width, repeatedValue: 0)
+			let value: MTLBuffer = state[0].value
+			if let context: Context = managedObjectContext as? Context {
+				context.newCommand(sync: true, complete: { NSData(bytesNoCopy: value.contents(), length: value.length, freeWhenDone: false).getBytes(UnsafeMutablePointer<Void>(cache), length: sizeof(Float)*cache.count) })
+			} else {
+				assertionFailure(Context.Error.InvalidContext.rawValue)
+			}
+			return cache.map { Bool($0) }
 		}
 	}
 	public var answer: [Bool] {
 		set {
-			assert(width==UInt(newValue.count))
-			state.train = la_matrix_from_float_buffer(newValue.map{Float($0)}, width, 1, 1, Config.HINT, Config.ATTR)
-			assert(state.train.status==LA_SUCCESS)
-			ready.insert(.Train)
+			if let context: Context = managedObjectContext as? Context {
+				let cache: MTLBuffer = context.newBuffer(newValue.map{Float($0)})
+				let train: MTLBuffer = state[0].train
+				context.newBlitCommand(complete: { cache.setPurgeableState(.Empty)}) {
+					$0.copyFromBuffer(cache, sourceOffset: 0, toBuffer: train, destinationOffset: 0, size: min(cache.length, train.length))
+				}
+				ready.insert(.Train)
+				
+			} else {
+				assertionFailure(Context.Error.InvalidContext.rawValue)
+				
+			}
 		}
 		get {
-			assert(state.train.width==width)
-			return state.train.eval.map{Bool($0)}
+			let cache: [Float] = [Float](count: width, repeatedValue: 0)
+			let train: MTLBuffer = state[0].train
+			if let context: Context = managedObjectContext as? Context {
+				context.newCommand(sync: true, complete: { NSData(bytesNoCopy: train.contents(), length: train.length, freeWhenDone: false).getBytes(UnsafeMutablePointer<Void>(cache), length: sizeof(Float)*cache.count) })
+				
+			} else {
+				assertionFailure(Context.Error.InvalidContext.rawValue)
+				
+			}
+			return cache.map { Bool($0) }
 		}
 	}
 }
 extension Context {
-	public func newCell ( let width width: UInt, let label: String = "", let recur: Bool = false, let buffer: Bool = false, let input: [Cell] = [] ) throws -> Cell {
+	public func newCell ( let width width: Int, let label: String = "", let recur: Bool = false, let buffer: Bool = false, let input: [Cell] = [] ) throws -> Cell {
 		guard let cell: Cell = new() else {
 			throw Error.CoreData.InsertionFails(entity: Cell.className())
 		}
@@ -405,14 +366,9 @@ extension Context {
 		cell.attribute = [:]
 		cell.input = Set<Edge>()
 		cell.output = Set<Edge>()
+		cell.data = NSData()
 		try input.forEach {
 			try newEdge(output: cell, input: $0)
-		}
-		if recur {
-			cell.feedback = try newFeedback(width: width)
-		}
-		if buffer {
-			cell.decay = try newDecay(width: width)
 		}
 		cell.bias = try newBias(width: width)
 		return cell
@@ -434,7 +390,7 @@ extension Context {
 		}
 	}
 	public func unchainCell(let output output: Cell, let input: Cell) {
-		output.input.filter { $0.input === input } .forEach {
+		output.input.filter{ $0.input === input }.forEach {
 			deleteObject($0)
 		}
 	}

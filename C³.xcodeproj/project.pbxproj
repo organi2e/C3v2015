@@ -99,6 +99,9 @@
 		878C7AC41D01AF60002CDFD1 /* train-images.idx3-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "train-images.idx3-ubyte"; path = "MNIST/train-images.idx3-ubyte"; sourceTree = "<group>"; };
 		878C7AC51D01AF60002CDFD1 /* train-labels.idx1-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "train-labels.idx1-ubyte"; path = "MNIST/train-labels.idx1-ubyte"; sourceTree = "<group>"; };
 		87A42CBC1D4F5CD5008D9708 /* Feedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Feedback.swift; path = "C³/Feedback.swift"; sourceTree = "<group>"; };
+		87BC8D861D55D0EF004510EF /* mtlbias.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = mtlbias.metal; path = "C³/mtlbias.metal"; sourceTree = "<group>"; };
+		87BC8D921D55E05C004510EF /* mtledge.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = mtledge.metal; path = "C³/mtledge.metal"; sourceTree = "<group>"; };
+		87BC8D951D55E536004510EF /* mtlgauss.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = mtlgauss.metal; path = "C³/mtlgauss.metal"; sourceTree = "<group>"; };
 		87BCEBF01D4D745900FC3099 /* Decay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Decay.swift; path = "C³/Decay.swift"; sourceTree = "<group>"; };
 		87BCEBF91D4D746400FC3099 /* Gauss.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Gauss.swift; path = "C³/Gauss.swift"; sourceTree = "<group>"; };
 		87BCEBFA1D4D75A500FC3099 /* Bias.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Bias.swift; path = "C³/Bias.swift"; sourceTree = "<group>"; };
@@ -181,6 +184,9 @@
 				870EA91B1D54AD77008C3380 /* mtlblas.metal */,
 				870EA9241D54AD9A008C3380 /* mtlrand.metal */,
 				870EA9251D54ADB3008C3380 /* mtlmath.metal */,
+				87BC8D861D55D0EF004510EF /* mtlbias.metal */,
+				87BC8D921D55E05C004510EF /* mtledge.metal */,
+				87BC8D951D55E536004510EF /* mtlgauss.metal */,
 			);
 			name = "C³";
 			sourceTree = "<group>";
