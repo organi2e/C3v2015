@@ -87,10 +87,11 @@ class cpuComputerTests: XCTestCase {
 		}
 	}
 	*/
+	/*
 	func testOuterProduct() {
 		
-		let M: Int = 4096
-		let N: Int = 4096
+		let M: Int = 1024
+		let N: Int = 1024
 		
 		let d: Buffer = computer.newBuffer(length: sizeof(Float)*M*N)
 		let c: Buffer = computer.newBuffer(length: sizeof(Float)*M*N)
@@ -125,31 +126,34 @@ class cpuComputerTests: XCTestCase {
 		}
 		
 		let e = rmse(d: d, y: c)
+		XCTAssert(!isnan(e))
+		XCTAssert(!isinf(e))
 		if 1e-3 < e {
-			print("C: \(Array(c.scalar))")
-			print("D: \(Array(d.scalar))")
+			//print("C: \(Array(c.scalar))")
+			//print("D: \(Array(d.scalar))")
 			XCTFail("RMSE: \(e)")
 		}
 		
 	}
+*/
 	/*
 	func testGEMV() {
-		let M: Int = 4000
-		let N: Int = 1000
+		let M: Int = 1024
+		let N: Int = 1024
 		
 		let d: Buffer = computer.newBuffer(length: sizeof(Float)*M)
 		let y: Buffer = computer.newBuffer(length: sizeof(Float)*M)
 		let a: Buffer = computer.newBuffer(length: sizeof(Float)*M*N)
 		let x: Buffer = computer.newBuffer(length: sizeof(Float)*N)
 		
-		for col in 0..<M {
-			for row in 0..<N {
-				a.scalar[row*M+col] = Float(arc4random())/Float(UInt32.max)
-			}
-		}
-		for row in 0..<N {
-			x.scalar[row] = Float(arc4random())/Float(UInt32.max)
-		}
+		arc4random_buf(UnsafeMutablePointer<Void>(a.scalar.baseAddress), sizeof(Float)*a.scalar.count)
+		arc4random_buf(UnsafeMutablePointer<Void>(x.scalar.baseAddress), sizeof(Float)*x.scalar.count)
+		
+		vDSP_vfltu32(UnsafePointer<UInt32>(a.scalar.baseAddress), 1, a.scalar.baseAddress, 1, vDSP_Length(a.scalar.count))
+		vDSP_vsdiv(a.scalar.baseAddress, 1, [Float(UInt32.max)], a.scalar.baseAddress, 1, vDSP_Length(a.scalar.count))
+		
+		vDSP_vfltu32(UnsafePointer<UInt32>(x.scalar.baseAddress), 1, x.scalar.baseAddress, 1, vDSP_Length(x.scalar.count))
+		vDSP_vsdiv(x.scalar.baseAddress, 1, [Float(UInt32.max)], x.scalar.baseAddress, 1, vDSP_Length(x.scalar.count))
 		
 		measureBlock {
 			self.computer.gemv(y, a: a, x: x, alpha: 1.0, beta: 0.0, transpose: false, sync: false)
@@ -168,14 +172,17 @@ class cpuComputerTests: XCTestCase {
 		let A: la_object_t = la_matrix_from_float_buffer_nocopy(a.scalar.baseAddress, la_count_t(M), la_count_t(N), la_count_t(N), la_hint_t(LA_NO_HINT), nil, la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING))
 		let X: la_object_t = la_matrix_from_float_buffer_nocopy(x.scalar.baseAddress, la_count_t(N), la_count_t(1), la_count_t(1), la_hint_t(LA_NO_HINT), nil, la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING))
 		la_matrix_to_float_buffer(d.scalar.baseAddress, la_count_t(1), la_matrix_product(A, X))
-
+		
 		let e = rmse(d: d, y: y)
+		XCTAssert(!isnan(e))
+		XCTAssert(!isinf(e))
 		if 1e-3 < e {
 			print("D: \(Array(d.scalar))")
 			print("Y: \(Array(y.scalar))")
 			XCTFail("RMSE: \(e)")
 		}
 	}
+	*/
 	func testGEMM() {
 		let M: Int = 1024
 		let K: Int = 1024
@@ -186,17 +193,15 @@ class cpuComputerTests: XCTestCase {
 		let a: Buffer = computer.newBuffer(length: sizeof(Float)*M*K)
 		let x: Buffer = computer.newBuffer(length: sizeof(Float)*K*N)
 		
-		for col in 0..<M {
-			for row in 0..<K {
-				a.scalar[row*M+col] = Float(arc4random())/Float(UInt32.max)
-			}
-		}
+		arc4random_buf(UnsafeMutablePointer<Void>(a.scalar.baseAddress), sizeof(Float)*a.scalar.count)
+		arc4random_buf(UnsafeMutablePointer<Void>(x.scalar.baseAddress), sizeof(Float)*x.scalar.count)
 		
-		for col in 0..<K {
-			for row in 0..<N {
-				x.scalar[row*K+col] = Float(arc4random())/Float(UInt32.max)
-			}
-		}
+		vDSP_vfltu32(UnsafePointer<UInt32>(a.scalar.baseAddress), 1, a.scalar.baseAddress, 1, vDSP_Length(a.scalar.count))
+		vDSP_vsdiv(a.scalar.baseAddress, 1, [Float(UInt32.max)], a.scalar.baseAddress, 1, vDSP_Length(a.scalar.count))
+		
+		vDSP_vfltu32(UnsafePointer<UInt32>(x.scalar.baseAddress), 1, x.scalar.baseAddress, 1, vDSP_Length(x.scalar.count))
+		vDSP_vsdiv(x.scalar.baseAddress, 1, [Float(UInt32.max)], x.scalar.baseAddress, 1, vDSP_Length(x.scalar.count))
+		
 		computer.clear(d, sync: false)
 		computer.clear(y, sync: false)
 		
@@ -215,11 +220,15 @@ class cpuComputerTests: XCTestCase {
 			self.computer.gemm(y, a: a, x: x, alpha: 1.0, beta: 0.0, dim: (M, K, N), transpose: (false, false), sync: false)
 			self.computer.join()
 		}
-		self.computer.join()
+		
 		let A: la_object_t = la_matrix_from_float_buffer_nocopy(a.scalar.baseAddress, la_count_t(M), la_count_t(K), la_count_t(K), la_hint_t(LA_NO_HINT), nil, la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING))
 		let X: la_object_t = la_matrix_from_float_buffer_nocopy(x.scalar.baseAddress, la_count_t(K), la_count_t(N), la_count_t(N), la_hint_t(LA_NO_HINT), nil, la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING))
 		la_matrix_to_float_buffer(d.scalar.baseAddress, la_count_t(N), la_matrix_product(A, X))
+
 		let e = rmse(d: d, y: y)
+		XCTAssert(!isinf(e))
+		XCTAssert(!isnan(e))
+		
 		if 1e-3 < e {
 			print("D: \(Array(d.scalar)[0..<16])")
 			print("Y: \(Array(y.scalar)[0..<16])")
@@ -227,7 +236,6 @@ class cpuComputerTests: XCTestCase {
 		}
 		
 	}
-*/
 	/*
 	func testSQ() {
 		let n: Int = 1 << order
@@ -420,10 +428,9 @@ class cpuComputerTests: XCTestCase {
 	let order: Int = 24
 	func rmse(let d d: Buffer, let y: Buffer) -> Float {
 		assert(d.scalar.count==y.scalar.count)
-		let df: [Float] = zip(d.scalar, y.scalar).map{$0.0-$0.1}
-		let sd: [Float] = df.map{$0*$0}
-		let rme: Float = sd.reduce(0){$0+$1}/Float(d.scalar.count)
-		return sqrtf(rme)
+		let D: la_object_t = la_matrix_from_float_buffer_nocopy(d.scalar.baseAddress, la_count_t(d.scalar.count), 1, 1, la_hint_t(LA_NO_HINT), nil, la_attribute_t(LA_DEFAULT_ATTRIBUTES))
+		let Y: la_object_t = la_matrix_from_float_buffer_nocopy(y.scalar.baseAddress, la_count_t(y.scalar.count), 1, 1, la_hint_t(LA_NO_HINT), nil, la_attribute_t(LA_DEFAULT_ATTRIBUTES))
+		return sqrt(la_norm_as_float(la_difference(Y, D), la_norm_t(LA_L2_NORM))/Float(d.scalar.count))
 	}
 	func implementation() -> Computer {
 		return cpuComputer()
