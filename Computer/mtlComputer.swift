@@ -30,9 +30,10 @@ public class mtlComputer: cpuComputer {
 		let cdf: MTLComputePipelineState
 		let gemv: MTLComputePipelineState
 		let gemv4: MTLComputePipelineState
-		let gemm1: MTLComputePipelineState
+		let gemm: MTLComputePipelineState
 		let gemm4: MTLComputePipelineState
 		let gemm8: MTLComputePipelineState
+		let gemmx: MTLComputePipelineState
 		let normal: MTLComputePipelineState
 		let sigmoid: MTLComputePipelineState
 		let outerproduct: MTLComputePipelineState
@@ -65,9 +66,10 @@ public class mtlComputer: cpuComputer {
 		                           cdf: try pipeline("cdf"),
 		                           gemv: try pipeline("gemv"),
 		                           gemv4: try pipeline("gemv4"),
-		                           gemm1: try pipeline("gemm1"),
+		                           gemm: try pipeline("gemm"),
 		                           gemm4: try pipeline("gemm4"),
 		                           gemm8: try pipeline("gemm8"),
+		                           gemmx: try pipeline("gemmx"),
 		                           normal: try pipeline("normal"),
 		                           sigmoid: try pipeline("sigmoid"),
 		                           outerproduct: try pipeline("outerproduct")
@@ -139,18 +141,19 @@ public class mtlComputer: cpuComputer {
 			encoder.setBuffer(y.mtl, offset: 0, atIndex: 0)
 			encoder.setBuffer(a.mtl, offset: 0, atIndex: 1)
 			encoder.setBuffer(x.mtl, offset: 0, atIndex: 2)
-
-			/*
-			let bs: Int = 256
 			encoder.setBytes([UInt32(m/4)], length: sizeof(UInt32), atIndex: 3)
 			encoder.setBytes([UInt32(n/4)], length: sizeof(UInt32), atIndex: 4)
+			
+			let bs: Int = 64
+			
+			/*
 			encoder.setThreadgroupMemoryLength(sizeof(Float)*16*bs, atIndex: 0)
 			encoder.setThreadgroupMemoryLength(sizeof(Float)*4*bs, atIndex: 1)
 			encoder.dispatchThreadgroups(MTLSize(width: (m/4-1)/bs+1, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: bs, height: 1, depth: 1))
 			*/
 			
-			encoder.setThreadgroupMemoryLength(sizeof(Float)*4*n, atIndex: 1)
-			encoder.dispatchThreadgroups(MTLSize(width: m/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: n/4, height: 1, depth: 1))
+			encoder.setThreadgroupMemoryLength(sizeof(Float)*4*bs, atIndex: 1)
+			encoder.dispatchThreadgroups(MTLSize(width: m/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: bs, height: 1, depth: 1))
 			
 			encoder.endEncoding()
 			command.commit()
@@ -175,17 +178,17 @@ public class mtlComputer: cpuComputer {
 			let command: MTLCommandBuffer = queue.commandBuffer()
 			let encoder: MTLComputeCommandEncoder = command.computeCommandEncoder()
 			
-			let bs: Int = 16
-
-			encoder.setComputePipelineState(pipelines.gemm4)
+			let bs: Int = 8
+			
+			encoder.setComputePipelineState(pipelines.gemm)
 			encoder.setBuffer(y.mtl, offset: 0, atIndex: 0)
 			encoder.setBuffer(a.mtl, offset: 0, atIndex: 1)
 			encoder.setBuffer(x.mtl, offset: 0, atIndex: 2)
 			encoder.setBytes([UInt32(dim.0)/4], length: sizeof(UInt32), atIndex: 3)
 			encoder.setBytes([UInt32(dim.1)/4], length: sizeof(UInt32), atIndex: 4)
 			encoder.setBytes([UInt32(dim.2)/4], length: sizeof(UInt32), atIndex: 5)
-			encoder.setThreadgroupMemoryLength(sizeof(Float)*16*bs*bs, atIndex: 0)
-			encoder.setThreadgroupMemoryLength(sizeof(Float)*16*bs*bs, atIndex: 1)
+			encoder.setThreadgroupMemoryLength(sizeof(Float)*4*4*bs*bs, atIndex: 0)
+			encoder.setThreadgroupMemoryLength(sizeof(Float)*4*4*bs*bs, atIndex: 1)
 			encoder.dispatchThreadgroups(MTLSize(width: (dim.2/4-1)/bs+1, height: (dim.0/4-1)/bs+1, depth: 1), threadsPerThreadgroup: MTLSize(width: bs, height: bs, depth: 1))
 			
 			encoder.endEncoding()
@@ -205,9 +208,9 @@ public class mtlComputer: cpuComputer {
 			let m: Int = a.scalar.count
 			let n: Int = b.scalar.count
 			
-			let bs: Int = 16
+			let bs: Int = 4
 			
-			let group: MTLSize = MTLSize(width: m/4, height: 1, depth: 1)
+			let group: MTLSize = MTLSize(width: (m-1)/4+1, height: 1, depth: 1)
 			let local: MTLSize = MTLSize(width: bs, height: 1, depth: 1)
 			
 			let command: MTLCommandBuffer = queue.commandBuffer()

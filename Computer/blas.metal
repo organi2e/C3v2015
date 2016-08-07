@@ -69,6 +69,56 @@ kernel void outerproduct(device float4 * const C [[ buffer(0) ]],
  <unknown>:0: Test Case '-[ComputerTests.mtlComputerTests testOuterProduct]' measured [Time, seconds] average: 0.118, relative standard deviation: 11.988%, values: [0.160577, 0.116588, 0.112900, 0.112105, 0.112194, 0.113642, 0.117755, 0.114637, 0.112146, 0.111482], performanceMetricID:com.apple.XCTPerformanceMetric_WallClockTime, baselineName: "", baselineAverage: , maxPercentRegression: 10.000%, maxPercentRelativeStandardDeviation: 10.000%, maxRegression: 0.100, maxStandardDeviation: 0.100
  Test Case '-[ComputerTests.mtlComputerTests testOuterProduct]' passed (14.604 seconds).
  */
+kernel void gemmx(device float4 * C [[ buffer(0) ]],
+				  device const float4 * const A [[ buffer(1) ]],
+				  device const float4 * const B [[ buffer(2) ]],
+				  constant const uint & M [[ buffer(3) ]],
+				  constant const uint & K [[ buffer(4) ]],
+				  constant const uint & N [[ buffer(5) ]],
+				  uint2 const g [[ threadgroup_position_in_grid ]],
+				  uint2 const G [[ threadgroups_per_grid ]],
+				  uint2 const t [[ thread_position_in_threadgroup ]],
+				  uint2 const T [[ threads_per_threadgroup ]],
+				  threadgroup float4x4 * const c [[ threadgroup(0) ]] )
+{
+	uint s = t.x;
+	uint S = T.x;
+	
+	c[s] = float4x4(0.0);
+	
+	for( uint k = 0 ; k < K ; k += S ) {
+		
+		uint4 idx_a = (4 * g.y + uint4(0,1,2,3))*M+k+s;
+		float4x4 a = float4x4(A[idx_a.x],
+							  A[idx_a.y],
+							  A[idx_a.z],
+							  A[idx_a.w]);
+		
+		uint4 idx_b = (4*(k+s)+uint4(0,1,2,3))*N+(g.x);
+		float4x4 b = float4x4(B[idx_b.x],
+							  B[idx_b.y],
+							  B[idx_b.z],
+							  B[idx_b.w]
+							  );
+		c[s] += b * a;
+	}
+	
+	while ( S >>= 1 ) {
+		threadgroup_barrier ( mem_flags::mem_threadgroup );
+		if ( s < S ) {
+			c[s]+=c[S+s];
+		};
+	}
+	
+	if(!s) {
+		uint4 idx_c = (4*g.y+uint4(0,1,2,3))*G.x+g.x;
+		C[idx_c.x] = c[0][0];
+		C[idx_c.y] = c[0][1];
+		C[idx_c.z] = c[0][2];
+		C[idx_c.w] = c[0][3];
+	}
+}
+
 kernel void outerproduct(device float4 * const C [[ buffer(0) ]],
 						 device const float4 * const A [[ buffer(1) ]],
 						 device const float4 * const B [[ buffer(2) ]],
@@ -79,17 +129,23 @@ kernel void outerproduct(device float4 * const C [[ buffer(0) ]],
 						 uint const t [[ thread_position_in_threadgroup ]],
 						 uint const T [[ threads_per_threadgroup ]]
 						 ){
-	threadgroup float4 a;
-	if (!t) a = A[g];
-	threadgroup_barrier ( mem_flags :: mem_threadgroup );
 	
+	threadgroup float4 a;
+	
+	if ( !t ) a = A[g];
+	
+	threadgroup_barrier ( mem_flags :: mem_threadgroup );
+
 	for( uint k = 0, K = N ; k < K ; k += T ) {
-		float4 const b = B[k+t];
-		uint4 const idx = (uint4(0,1,2,3)+4*g)*N+k+t;
-		C[idx[0]] = a.x * b;
-		C[idx[1]] = a.y * b;
-		C[idx[2]] = a.z * b;
-		C[idx[3]] = a.w * b;
+		float4 const b = k + t < N ? B [ k + t ] : 0.0;
+		uint4 const row = g;
+		uint4 const col = k + t;
+		bool4 const msk = row < M && col < N;
+		uint4 const idx = ( uint4 ( 0, 1, 2, 3 ) + 4 * row ) * N + col;
+		if ( msk.x ) C [ idx.x ] = a.x * b;
+		if ( msk.y ) C [ idx.y ] = a.y * b;
+		if ( msk.z ) C [ idx.z ] = a.z * b;
+		if ( msk.w ) C [ idx.w ] = a.w * b;
 	}
 }
 
@@ -132,6 +188,44 @@ kernel void gemv4(device float4 * Y [[ buffer(0) ]],
 	if ( row < M ) Y[row] = y;
 }
 kernel void gemv(device float4 * y [[ buffer(0) ]],
+				 device const float4 * const A [[ buffer(1) ]],
+				 device const float4 * const x [[ buffer(2) ]],
+				 constant const uint & M [[ buffer(3) ]],
+				 constant const uint & N [[ buffer(4) ]],
+				 uint const g [[ threadgroup_position_in_grid ]],
+				 uint const G [[ threadgroups_per_grid ]],
+				 uint const t [[ thread_position_in_threadgroup ]],
+				 uint const T [[ threads_per_threadgroup ]],
+				 threadgroup float4 * const accumulator [[ threadgroup(0) ]] )
+{
+	accumulator[t] = 0;
+	
+	for ( uint k = 0, K = N ; k < K ; k += T ) {
+		
+		uint4 const row = g;
+		uint4 const col = k + t;
+		bool4 const msk = row < M && col < N;
+		uint4 const idx = ( uint4(0, 1, 2, 3) + 4 * row ) * K + col;
+	
+		accumulator [ t ] +=  x [ k + t ] * float4x4(msk.x ? A[idx.x] : 0.0,
+													 msk.y ? A[idx.y] : 0.0,
+													 msk.z ? A[idx.z] : 0.0,
+													 msk.w ? A[idx.w] : 0.0);
+
+	}
+	
+	uint offset = T;
+	while ( offset >>= 1 ) {
+		threadgroup_barrier ( mem_flags::mem_threadgroup );
+		if ( t < offset ) {
+			accumulator [ t ] += accumulator [ t + offset ];
+		};
+	}
+	if( !t )
+		y[ g ] = accumulator [ t ];
+}
+/*
+kernel void gemv(device float4 * y [[ buffer(0) ]],
 				  device const float4 * const A [[ buffer(1) ]],
 				  device const float4 * const x [[ buffer(2) ]],
 				  uint const m [[ threadgroup_position_in_grid ]],
@@ -160,6 +254,7 @@ kernel void gemv(device float4 * y [[ buffer(0) ]],
 	if( !n )
 		y[ m ] = accumulator [ n ];
 }
+*/
 /*
 kernel void gemv(device float4 * y [[ buffer(0) ]],
 				 device const float4x4 * const A [[ buffer(1) ]],
@@ -194,47 +289,65 @@ kernel void gemv(device float4 * y [[ buffer(0) ]],
  <unknown>:0: Test Case '-[ComputerTests.mtlComputerTests testGEMM]' measured [Time, seconds] average: 3.406, relative standard deviation: 8.578%, values: [3.096253, 3.121881, 3.561484, 3.097569, 3.135809, 3.737424, 3.566952, 3.360777, 3.994759, 3.388189], performanceMetricID:com.apple.XCTPerformanceMetric_WallClockTime, baselineName: "", baselineAverage: , maxPercentRegression: 10.000%, maxPercentRelativeStandardDeviation: 10.000%, maxRegression: 0.100, maxStandardDeviation: 0.100
  Test Case '-[ComputerTests.mtlComputerTests testGEMM]' passed (35.081 seconds).
 */
-/*
-kernel void gemm(device float4 * const y [[ buffer(0) ]],
-				 device const float4 * const w [[ buffer(1) ]],
-				 device const float4 * const x [[ buffer(2) ]],
-				 constant const float & alpha [[ buffer(3) ]],
-				 constant const float & beta [[ buffer(4) ]],
-				 constant const uint & K [[ buffer(5) ]],
-				 uint const g [[ threadgroup_position_in_grid ]],
-				 uint const G [[ threadgroups_per_grid ]],
-				 uint const t [[ thread_position_in_threadgroup ]],
-				 uint const T [[ threads_per_threadgroup ]],
-				 threadgroup float4x4 * const X [[ threadgroup(0) ]]
+kernel void gemm(device float4 * const C [[ buffer(0) ]],
+				 device const float4 * const A [[ buffer(1) ]],
+				 device const float4 * const B [[ buffer(2) ]],
+				 constant const uint & M [[ buffer(3) ]],
+				 constant const uint & K [[ buffer(4) ]],
+				 constant const uint & N [[ buffer(5) ]],
+				 uint2 const g [[ threadgroup_position_in_grid ]],
+				 uint2 const G [[ threadgroups_per_grid ]],
+				 uint2 const t [[ thread_position_in_threadgroup ]],
+				 uint2 const T [[ threads_per_threadgroup ]],
+				 threadgroup float4x4 * const a [[ threadgroup(0) ]],
+				 threadgroup float4x4 * const b [[ threadgroup(1) ]]
 				 ){
-	if (t==0) {
-		for(uint k=0;k<K;++k){
-			X[k] = float4x4(x[(4*k+0)*G+g],
-							x[(4*k+1)*G+g],
-							x[(4*k+2)*G+g],
-							x[(4*k+3)*G+g]);
-		}
-	}
-	threadgroup_barrier ( mem_flags::mem_threadgroup );
 	
-	float4x4 accumulator = float4x4(0.0);
-	for(uint k=0;k<K;++k) {
-		accumulator += float4x4(x[(4*k+0)*G+g],
-								x[(4*k+1)*G+g],
-								x[(4*k+2)*G+g],
-								x[(4*k+3)*G+g]) *
-						float4x4(w[(4*t+0)*K+k],
-								 w[(4*t+1)*K+k],
-								 w[(4*t+2)*K+k],
-								 w[(4*t+3)*K+k]
-								 );
+	uint const col = g.x * T.x + t.x;
+	uint const row = g.y * T.y + t.y;
+	
+	float4x4 c = float4x4(0.0);
+	
+	for ( uint i = 0, I = K ; i < I ; i += T.x ) {
+		
+		uint4 const rows_A = row;
+		uint4 const cols_A = i+t.x;
+		bool4 const mask_A = rows_A < M && cols_A < K;
+		uint4 const indx_A = (4 * rows_A + uint4(0,1,2,3)) * K + cols_A;
+		
+		uint4 const rows_B = i+t.y;
+		uint4 const cols_B = col;
+		bool4 const mask_B = rows_B < K && cols_B < N;
+		uint4 const indx_B = (4 * rows_B + uint4(0,1,2,3)) * N + cols_B;
+		
+		a[t.y*T.x+t.x] = float4x4(mask_A[0] ? A[indx_A[0]] : 0.0,
+								  mask_A[1] ? A[indx_A[1]] : 0.0,
+								  mask_A[2] ? A[indx_A[2]] : 0.0,
+								  mask_A[3] ? A[indx_A[3]] : 0.0);
+		
+		b[t.y*T.x+t.x] = float4x4(mask_B[0] ? B[indx_B[0]] : 0.0,
+								  mask_B[1] ? B[indx_B[1]] : 0.0,
+								  mask_B[2] ? B[indx_B[2]] : 0.0,
+								  mask_B[3] ? B[indx_B[3]] : 0.0);
+		
+		threadgroup_barrier( mem_flags::mem_threadgroup );
+		
+		for ( uint k = 0, K = T.x ; k < K ; ++ k )
+			c += b[ k * T.x + t.x ] * a[ t.y * T.x + k ];
+		
+		threadgroup_barrier( mem_flags::mem_threadgroup );
 	}
-	y[(4*t+0)*G+g] = accumulator[0];
-	y[(4*t+1)*G+g] = accumulator[1];
-	y[(4*t+2)*G+g] = accumulator[2];
-	y[(4*t+3)*G+g] = accumulator[3];
+	uint4 const rows_C = row;
+	uint4 const cols_C = col;
+	bool4 const mask_C = rows_C < K && cols_C < N;
+	uint4 const indx_C = ( 4 * rows_C + uint4(0,1,2,3) ) * N + cols_C;
+	
+	if ( mask_C[0] ) C[indx_C[0]] = c[0];
+	if ( mask_C[1] ) C[indx_C[1]] = c[1];
+	if ( mask_C[2] ) C[indx_C[2]] = c[2];
+	if ( mask_C[3] ) C[indx_C[3]] = c[3];
 }
-*/
+
 /*
  mem_none
  Test Case '-[ComputerTests.mtlComputerTests testGEMM]' started.
@@ -450,14 +563,14 @@ kernel void gemm4(device float4 * const C [[ buffer(0) ]],
 	
 	float4x4 c = float4x4(0.0);
 	
-	for ( uint i = 0, I = ( K - 1 ) / T.x + 1 ; i < I ; ++ i ) {
+	for ( uint i = 0, I = K ; i < I ; i += T.x ) {
 		
 		uint4 const rows_A = row;
-		uint4 const cols_A = i*T.x+t.x;
+		uint4 const cols_A = i+t.x;
 		bool4 const mask_A = rows_A < M && cols_A < K;
 		uint4 const indx_A = (4 * rows_A + uint4(0,1,2,3)) * K + cols_A;
 		
-		uint4 const rows_B = i*T.y+t.y;
+		uint4 const rows_B = i+t.y;
 		uint4 const cols_B = col;
 		bool4 const mask_B = rows_B < K && cols_B < N;
 		uint4 const indx_B = (4 * rows_B + uint4(0,1,2,3)) * N + cols_B;
@@ -468,9 +581,9 @@ kernel void gemm4(device float4 * const C [[ buffer(0) ]],
 								  mask_A[3] ? A[indx_A[3]] : 0.0);
 		
 		b[t.y*T.x+t.x] = float4x4(mask_B[0] ? B[indx_B[0]] : 0.0,
-								  mask_B[0] ? B[indx_B[1]] : 0.0,
-								  mask_B[0] ? B[indx_B[2]] : 0.0,
-								  mask_B[0] ? B[indx_B[3]] : 0.0);
+								  mask_B[1] ? B[indx_B[1]] : 0.0,
+								  mask_B[2] ? B[indx_B[2]] : 0.0,
+								  mask_B[3] ? B[indx_B[3]] : 0.0);
 		
 		threadgroup_barrier( mem_flags::mem_threadgroup );
 		
