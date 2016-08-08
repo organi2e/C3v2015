@@ -29,6 +29,7 @@ public class mtlComputer: cpuComputer {
 		let pdf: MTLComputePipelineState
 		let cdf: MTLComputePipelineState
 		let gemv: MTLComputePipelineState
+		let gemvt: MTLComputePipelineState
 		let gemv4: MTLComputePipelineState
 		let gemm1: MTLComputePipelineState
 		let gemm4: MTLComputePipelineState
@@ -65,6 +66,7 @@ public class mtlComputer: cpuComputer {
 		                           pdf: try pipeline("pdf"),
 		                           cdf: try pipeline("cdf"),
 		                           gemv: try pipeline("gemv"),
+		                           gemvt: try pipeline("gemvt"),
 		                           gemv4: try pipeline("gemv4"),
 		                           gemm1: try pipeline("gemm1"),
 		                           gemm4: try pipeline("gemm4"),
@@ -137,12 +139,13 @@ public class mtlComputer: cpuComputer {
 			let command: MTLCommandBuffer = queue.commandBuffer()
 			let encoder: MTLComputeCommandEncoder = command.computeCommandEncoder()
 			
-			encoder.setComputePipelineState(pipelines.gemv)
+			encoder.setComputePipelineState(transpose ? pipelines.gemv : pipelines.gemvt)
 			encoder.setBuffer(y.mtl, offset: 0, atIndex: 0)
 			encoder.setBuffer(a.mtl, offset: 0, atIndex: 1)
 			encoder.setBuffer(x.mtl, offset: 0, atIndex: 2)
 			encoder.setBytes([UInt32(m/4)], length: sizeof(UInt32), atIndex: 3)
 			encoder.setBytes([UInt32(n/4)], length: sizeof(UInt32), atIndex: 4)
+			encoder.setBytes([UInt32(Int(transpose))], length: sizeof(UInt32), atIndex: 5)
 			
 			let bs: Int = 64
 			
@@ -207,7 +210,7 @@ public class mtlComputer: cpuComputer {
 			let m: Int = a.scalar.count
 			let n: Int = b.scalar.count
 			
-			let bs: Int = 4
+			let bs: Int = 16
 			
 			let group: MTLSize = MTLSize(width: (m-1)/4+1, height: 1, depth: 1)
 			let local: MTLSize = MTLSize(width: bs, height: 1, depth: 1)

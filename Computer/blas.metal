@@ -140,15 +140,16 @@ kernel void outerproduct(device float4 * const C [[ buffer(0) ]],
 	threadgroup_barrier ( mem_flags :: mem_threadgroup );
 
 	for( uint k = 0, K = N ; k < K ; k += T ) {
-		float4 const b = k + t < N ? B [ k + t ] : 0.0;
-		uint4 const row = g;
-		uint4 const col = k + t;
-		bool4 const msk = row < M && col < N;
-		uint4 const idx = ( uint4 ( 0, 1, 2, 3 ) + 4 * row ) * N + col;
-		if ( msk.x ) C [ idx.x ] = a.x * b;
-		if ( msk.y ) C [ idx.y ] = a.y * b;
-		if ( msk.z ) C [ idx.z ] = a.z * b;
-		if ( msk.w ) C [ idx.w ] = a.w * b;
+		uint const rows = g;
+		uint const cols = k + t;
+		if ( cols < N ) {
+			uint4 const idx = ( uint4 ( 0, 1, 2, 3 ) + 4 * rows ) * N + cols;
+			float4 const b = B [ cols ];
+			C[idx.x] = a.x * b;
+			C[idx.y] = a.y * b;
+			C[idx.z] = a.z * b;
+			C[idx.w] = a.w * b;
+		}
 	}
 }
 
@@ -190,6 +191,37 @@ kernel void gemv4(device float4 * Y [[ buffer(0) ]],
 	}
 	if ( row < M ) Y[row] = y;
 }
+
+kernel void gemvt(device float4 * y [[ buffer(0) ]],
+				 device const float4 * const A [[ buffer(1) ]],
+				 device const float4 * const x [[ buffer(2) ]],
+				 constant const uint & M [[ buffer(3) ]],
+				 constant const uint & N [[ buffer(4) ]],
+				 uint const g [[ threadgroup_position_in_grid ]],
+				 uint const G [[ threadgroups_per_grid ]],
+				 uint const t [[ thread_position_in_threadgroup ]],
+				 uint const T [[ threads_per_threadgroup ]],
+				 threadgroup float4 * const accumulator [[ threadgroup(0) ]] )
+{
+	accumulator[t] = 0;
+	for ( uint i = 0, I = N ; i < I ; i += T ) {
+		uint const rows = g;
+		uint const cols = i + t;
+		if ( cols < N ) {
+			uint4 const idx = (4*cols+uint4(0,1,2,3))*N+rows;
+			accumulator[t] += float4x4(A[idx.x],A[idx.y],A[idx.z],A[idx.w]) * x[cols];
+		}
+	}
+	uint offset = T;
+	while ( offset >>= 1 ) {
+		threadgroup_barrier ( mem_flags :: mem_threadgroup );
+		if ( t < offset ) {
+			accumulator [ t ] += accumulator [ t + offset ];
+		};
+	}
+	if( !t )
+		y[ g ] = accumulator [ t ];
+}
 kernel void gemv(device float4 * y [[ buffer(0) ]],
 				 device const float4 * const A [[ buffer(1) ]],
 				 device const float4 * const x [[ buffer(2) ]],
@@ -202,24 +234,17 @@ kernel void gemv(device float4 * y [[ buffer(0) ]],
 				 threadgroup float4 * const accumulator [[ threadgroup(0) ]] )
 {
 	accumulator[t] = 0;
-	
-	for ( uint k = 0, K = N ; k < K ; k += T ) {
-		
-		uint4 const row = g;
-		uint4 const col = k + t;
-		bool4 const msk = row < M && col < N;
-		uint4 const idx = ( uint4(0, 1, 2, 3) + 4 * row ) * K + col;
-	
-		accumulator [ t ] +=  x [ k + t ] * float4x4(msk.x ? A[idx.x] : 0.0,
-													 msk.y ? A[idx.y] : 0.0,
-													 msk.z ? A[idx.z] : 0.0,
-													 msk.w ? A[idx.w] : 0.0);
-
+	for ( uint i = 0, I = N ; i < I ; i += T ) {
+		uint const rows = g;
+		uint const cols = i + t;
+		if ( cols < N ) {
+			uint4 const idx = (4*rows+uint4(0,1,2,3))*N+cols;
+			accumulator[t] += x[cols] * float4x4(A[idx.x],A[idx.y],A[idx.z],A[idx.w]);
+		}
 	}
-	
 	uint offset = T;
 	while ( offset >>= 1 ) {
-		threadgroup_barrier ( mem_flags::mem_threadgroup );
+		threadgroup_barrier ( mem_flags :: mem_threadgroup );
 		if ( t < offset ) {
 			accumulator [ t ] += accumulator [ t + offset ];
 		};

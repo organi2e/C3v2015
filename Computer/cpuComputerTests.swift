@@ -90,8 +90,8 @@ class cpuComputerTests: XCTestCase {
 	/*
 	func testOuterProduct() {
 		
-		let M: Int = 1024
-		let N: Int = 1024
+		let M: Int = 4096
+		let N: Int = 4096
 		
 		let d: Buffer = computer.newBuffer(length: sizeof(Float)*M*N)
 		let c: Buffer = computer.newBuffer(length: sizeof(Float)*M*N)
@@ -135,11 +135,56 @@ class cpuComputerTests: XCTestCase {
 		}
 		
 	}
-*/
-	/*
+	*/
+	
+	func testGEMVT() {
+		let M: Int = 4096
+		let N: Int = 4096
+		
+		let d: Buffer = computer.newBuffer(length: sizeof(Float)*M)
+		let y: Buffer = computer.newBuffer(length: sizeof(Float)*M)
+		let a: Buffer = computer.newBuffer(length: sizeof(Float)*M*N)
+		let x: Buffer = computer.newBuffer(length: sizeof(Float)*N)
+		
+		arc4random_buf(UnsafeMutablePointer<Void>(a.scalar.baseAddress), sizeof(Float)*a.scalar.count)
+		arc4random_buf(UnsafeMutablePointer<Void>(x.scalar.baseAddress), sizeof(Float)*x.scalar.count)
+		
+		vDSP_vfltu32(UnsafePointer<UInt32>(a.scalar.baseAddress), 1, a.scalar.baseAddress, 1, vDSP_Length(a.scalar.count))
+		vDSP_vsdiv(a.scalar.baseAddress, 1, [Float(UInt32.max)], a.scalar.baseAddress, 1, vDSP_Length(a.scalar.count))
+		
+		vDSP_vfltu32(UnsafePointer<UInt32>(x.scalar.baseAddress), 1, x.scalar.baseAddress, 1, vDSP_Length(x.scalar.count))
+		vDSP_vsdiv(x.scalar.baseAddress, 1, [Float(UInt32.max)], x.scalar.baseAddress, 1, vDSP_Length(x.scalar.count))
+		
+		measureBlock {
+			self.computer.gemv(y, a: a, x: x, alpha: 1.0, beta: 0.0, transpose: true, sync: false)
+			self.computer.gemv(y, a: a, x: x, alpha: 1.0, beta: 0.0, transpose: true, sync: false)
+			self.computer.gemv(y, a: a, x: x, alpha: 1.0, beta: 0.0, transpose: true, sync: false)
+			self.computer.gemv(y, a: a, x: x, alpha: 1.0, beta: 0.0, transpose: true, sync: false)
+			self.computer.gemv(y, a: a, x: x, alpha: 1.0, beta: 0.0, transpose: true, sync: false)
+			self.computer.gemv(y, a: a, x: x, alpha: 1.0, beta: 0.0, transpose: true, sync: false)
+			self.computer.gemv(y, a: a, x: x, alpha: 1.0, beta: 0.0, transpose: true, sync: false)
+			self.computer.gemv(y, a: a, x: x, alpha: 1.0, beta: 0.0, transpose: true, sync: false)
+			self.computer.gemv(y, a: a, x: x, alpha: 1.0, beta: 0.0, transpose: true, sync: false)
+			self.computer.gemv(y, a: a, x: x, alpha: 1.0, beta: 0.0, transpose: true, sync: false)
+			self.computer.join()
+		}
+		
+		let A: la_object_t = la_matrix_from_float_buffer_nocopy(a.scalar.baseAddress, la_count_t(N), la_count_t(M), la_count_t(M), la_hint_t(LA_NO_HINT), nil, la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING))
+		let X: la_object_t = la_matrix_from_float_buffer_nocopy(x.scalar.baseAddress, la_count_t(N), la_count_t(1), la_count_t(1), la_hint_t(LA_NO_HINT), nil, la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING))
+		la_matrix_to_float_buffer(d.scalar.baseAddress, la_count_t(1), la_matrix_product(la_transpose(A), X))
+		
+		let e = rmse(d: d, y: y)
+		XCTAssert(!isnan(e))
+		XCTAssert(!isinf(e))
+		if 1e-2 < e {
+			//print("D: \(Array(d.scalar))")
+			//print("Y: \(Array(y.scalar))")
+			XCTFail("RMSE: \(e)")
+		}
+	}
 	func testGEMV() {
-		let M: Int = 1024
-		let N: Int = 1024
+		let M: Int = 4096
+		let N: Int = 4096
 		
 		let d: Buffer = computer.newBuffer(length: sizeof(Float)*M)
 		let y: Buffer = computer.newBuffer(length: sizeof(Float)*M)
@@ -176,13 +221,13 @@ class cpuComputerTests: XCTestCase {
 		let e = rmse(d: d, y: y)
 		XCTAssert(!isnan(e))
 		XCTAssert(!isinf(e))
-		if 1e-3 < e {
-			print("D: \(Array(d.scalar))")
-			print("Y: \(Array(y.scalar))")
+		if 1e-2 < e {
+			//print("D: \(Array(d.scalar))")
+			//print("Y: \(Array(y.scalar))")
 			XCTFail("RMSE: \(e)")
 		}
 	}
-	*/
+	/*
 	func testGEMM() {
 		let M: Int = 64
 		let K: Int = 64
@@ -236,6 +281,7 @@ class cpuComputerTests: XCTestCase {
 		}
 		
 	}
+	*/
 	/*
 	func testSQ() {
 		let n: Int = 1 << order
