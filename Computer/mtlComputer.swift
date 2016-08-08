@@ -179,8 +179,7 @@ public class mtlComputer: cpuComputer {
 			let encoder: MTLComputeCommandEncoder = command.computeCommandEncoder()
 			
 			let bs: Int = 8
-			
-			encoder.setComputePipelineState(pipelines.gemm)
+			encoder.setComputePipelineState(pipelines.gemm4)
 			encoder.setBuffer(y.mtl, offset: 0, atIndex: 0)
 			encoder.setBuffer(a.mtl, offset: 0, atIndex: 1)
 			encoder.setBuffer(x.mtl, offset: 0, atIndex: 2)
@@ -189,6 +188,8 @@ public class mtlComputer: cpuComputer {
 			encoder.setBytes([UInt32(dim.2)/4], length: sizeof(UInt32), atIndex: 5)
 			encoder.setThreadgroupMemoryLength(sizeof(Float)*4*4*bs*bs, atIndex: 0)
 			encoder.setThreadgroupMemoryLength(sizeof(Float)*4*4*bs*bs, atIndex: 1)
+			encoder.setThreadgroupMemoryLength(sizeof(Float)*4*4*bs*bs, atIndex: 2)
+			encoder.setThreadgroupMemoryLength(sizeof(Float)*4*4*bs*bs, atIndex: 3)
 			encoder.dispatchThreadgroups(MTLSize(width: (dim.2/4-1)/bs+1, height: (dim.0/4-1)/bs+1, depth: 1), threadsPerThreadgroup: MTLSize(width: bs, height: bs, depth: 1))
 			
 			encoder.endEncoding()
