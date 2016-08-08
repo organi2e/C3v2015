@@ -7,6 +7,9 @@
 //
 
 #include <metal_stdlib>
+#include <metal_common>
+#include <metal_atomic>
+#include <metal_math>
 using namespace metal;
 
 kernel void add(device float4 * y [[ buffer(0) ]],
@@ -295,19 +298,19 @@ kernel void gemm(device float4 * const C [[ buffer(0) ]],
 				 constant const uint & M [[ buffer(3) ]],
 				 constant const uint & K [[ buffer(4) ]],
 				 constant const uint & N [[ buffer(5) ]],
-				 uint2 const g [[ threadgroup_position_in_grid ]],
-				 uint2 const G [[ threadgroups_per_grid ]],
-				 uint2 const t [[ thread_position_in_threadgroup ]],
-				 uint2 const T [[ threads_per_threadgroup ]],
+				 uint3 const g [[ threadgroup_position_in_grid ]],
+				 uint3 const G [[ threadgroups_per_grid ]],
+				 uint3 const t [[ thread_position_in_threadgroup ]],
+				 uint3 const T [[ threads_per_threadgroup ]],
 				 threadgroup float4x4 * const a [[ threadgroup(0) ]],
-				 threadgroup float4x4 * const b [[ threadgroup(1) ]]
+				 threadgroup float4x4 * const b [[ threadgroup(1) ]],
+				 threadgroup float4x4 * const c [[ threadgroup(2) ]]
 				 ){
 	
 	uint const col = g.x * T.x + t.x;
 	uint const row = g.y * T.y + t.y;
 	
-	float4x4 c = float4x4(0.0);
-	
+	c[t.z] = float4x4(0.0);
 	for ( uint i = 0, I = K ; i < I ; i += T.x ) {
 		
 		uint4 const rows_A = row;
@@ -332,20 +335,34 @@ kernel void gemm(device float4 * const C [[ buffer(0) ]],
 		
 		threadgroup_barrier( mem_flags::mem_threadgroup );
 		
-		for ( uint k = 0, K = T.x ; k < K ; ++ k )
-			c += b[ k * T.x + t.x ] * a[ t.y * T.x + k ];
+		for ( uint k = 0, K = T.x ; k < K ; k += T.z )
+			c[t.z] += b[ (k+t.z) * T.x + t.x ] * a[ t.y * T.x + (k+t.z)];
 		
 		threadgroup_barrier( mem_flags::mem_threadgroup );
+		
 	}
-	uint4 const rows_C = row;
-	uint4 const cols_C = col;
-	bool4 const mask_C = rows_C < K && cols_C < N;
-	uint4 const indx_C = ( 4 * rows_C + uint4(0,1,2,3) ) * N + cols_C;
 	
-	if ( mask_C[0] ) C[indx_C[0]] = c[0];
-	if ( mask_C[1] ) C[indx_C[1]] = c[1];
-	if ( mask_C[2] ) C[indx_C[2]] = c[2];
-	if ( mask_C[3] ) C[indx_C[3]] = c[3];
+	uint offset = T.z;
+	while(offset>>=1) {
+		threadgroup_barrier( mem_flags::mem_threadgroup );
+		if (t.z<offset) {
+			c[t.z] += c[t.z+offset];
+		}
+		threadgroup_barrier( mem_flags::mem_threadgroup );
+	}
+	
+	if ( t.z == 0 ) {
+		
+		uint4 const rows_C = row;
+		uint4 const cols_C = col;
+		bool4 const mask_C = rows_C < K && cols_C < N;
+		uint4 const indx_C = ( 4 * rows_C + uint4(0,1,2,3) ) * N + cols_C;
+	
+		if ( mask_C[0] ) C[indx_C[0]] = c[0][0];
+		if ( mask_C[1] ) C[indx_C[1]] = c[0][1];
+		if ( mask_C[2] ) C[indx_C[2]] = c[0][2];
+		if ( mask_C[3] ) C[indx_C[3]] = c[0][3];
+	}
 }
 
 /*
@@ -554,8 +571,10 @@ kernel void gemm4(device float4 * const C [[ buffer(0) ]],
 				  uint2 const G [[ threadgroups_per_grid ]],
 				  uint2 const t [[ thread_position_in_threadgroup ]],
 				  uint2 const T [[ threads_per_threadgroup ]],
-				  threadgroup float4x4 * a [[ threadgroup(0) ]],
-				  threadgroup float4x4 * b [[ threadgroup(1) ]]
+				  threadgroup float4 * fetch_a [[ threadgroup(0) ]],
+				  threadgroup float4 * fetch_b [[ threadgroup(1) ]],
+				  threadgroup float4x4 * block_a [[ threadgroup(2) ]],
+				  threadgroup float4x4 * block_b [[ threadgroup(3) ]]
 				  ){
 	
 	uint const col = g.x * T.x + t.x;
@@ -575,22 +594,24 @@ kernel void gemm4(device float4 * const C [[ buffer(0) ]],
 		bool4 const mask_B = rows_B < K && cols_B < N;
 		uint4 const indx_B = (4 * rows_B + uint4(0,1,2,3)) * N + cols_B;
 		
-		a[t.y*T.x+t.x] = float4x4(mask_A[0] ? A[indx_A[0]] : 0.0,
-								  mask_A[1] ? A[indx_A[1]] : 0.0,
-								  mask_A[2] ? A[indx_A[2]] : 0.0,
-								  mask_A[3] ? A[indx_A[3]] : 0.0);
 		
-		b[t.y*T.x+t.x] = float4x4(mask_B[0] ? B[indx_B[0]] : 0.0,
-								  mask_B[1] ? B[indx_B[1]] : 0.0,
-								  mask_B[2] ? B[indx_B[2]] : 0.0,
-								  mask_B[3] ? B[indx_B[3]] : 0.0);
+		threadgroup_barrier( mem_flags::mem_threadgroup );
+		
+		block_a[t.y*T.x+t.x] = float4x4(mask_A[0] ? A[indx_A[0]] : 0.0,
+										mask_A[1] ? A[indx_A[1]] : 0.0,
+										mask_A[2] ? A[indx_A[2]] : 0.0,
+										mask_A[3] ? A[indx_A[3]] : 0.0);
+		
+		block_b[t.y*T.x+t.x] = float4x4(mask_B[0] ? B[indx_B[0]] : 0.0,
+										mask_B[1] ? B[indx_B[1]] : 0.0,
+										mask_B[2] ? B[indx_B[2]] : 0.0,
+										mask_B[3] ? B[indx_B[3]] : 0.0);
 		
 		threadgroup_barrier( mem_flags::mem_threadgroup );
 		
 		for ( uint k = 0, K = T.x ; k < K ; ++ k )
-			c += b[ k * T.x + t.x ] * a[ t.y * T.x + k ];
+			c += block_b[ k * T.x + t.x ] * block_a[ t.y * T.x + k ];
 		
-		threadgroup_barrier( mem_flags::mem_threadgroup );
 	}
 	uint4 const rows_C = row;
 	uint4 const cols_C = col;
