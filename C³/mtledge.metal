@@ -84,13 +84,51 @@ kernel void edgeCollect(device float4 * level_value [[ buffer(0) ]],
 kernel void edgeCorrectFF(device float4 * edge_mean [[ buffer(0) ]],
 						  device float4 * edge_logvariance [[ buffer(1) ]],
 						  device const float4 * edge_variance [[ buffer(2) ]],
-						  constant const float & eps [[ buffer(3) ]],
-						  device const float4 * delta_mean [[ buffer(4) ]],
-						  device const float4 * delta_variance [[ buffer(5) ]],
-						  device const float4 * input_state [[ buffer(6) ]]
-						) {
+						  device const float4 * input_state [[ buffer(3) ]],
+						  constant const float & eps [[ buffer(4) ]],
+						  device const float4 * delta_mean [[ buffer(5) ]],
+						  device const float4 * delta_variance [[ buffer(6) ]],
+						  constant const uint & M [[ buffer(7) ]],
+						  constant const uint & N [[ buffer(8) ]],
+						  uint const g [[ threadgroup_position_in_grid ]],
+						  uint const G [[ threadgroups_per_grid ]],
+						  uint const t [[ thread_position_in_threadgroup ]],
+						  uint const T [[ threads_per_threadgroup ]])
+{
 	
+	threadgroup float4 mean = 0.0;
+	threadgroup float4 variance = 0.0;
+	
+	if ( !t ) {
+		mean = delta_mean[g];
+		variance = delta_variance[g];
+	}
 
+	threadgroup_barrier ( mem_flags :: mem_threadgroup );
+	
+	for( uint k = 0, K = N ; k < K ; k += T ) {
+		
+		uint const rows = g;
+		uint const cols = k + t;
+		
+		if ( cols < N ) {
+			
+			uint4 const idx = ( uint4 ( 0, 1, 2, 3 ) + 4 * rows ) * N + cols;
+			float4 const state = input_state [ cols ];
+			
+			edge_mean[idx.x] += eps * mean.x * state;
+			edge_mean[idx.y] += eps * mean.y * state;
+			edge_mean[idx.z] += eps * mean.z * state;
+			edge_mean[idx.w] += eps * mean.w * state;
+			
+			edge_logvariance[idx.x] -= ( 0.5 * eps ) * edge_variance[idx.x] * mean.x * state * state;
+			edge_logvariance[idx.y] -= ( 0.5 * eps ) * edge_variance[idx.y] * mean.y * state * state;
+			edge_logvariance[idx.z] -= ( 0.5 * eps ) * edge_variance[idx.z] * mean.z * state * state;
+			edge_logvariance[idx.w] -= ( 0.5 * eps ) * edge_variance[idx.w] * mean.w * state * state;
+			
+		}
+	}
+	
 }
 /*
 kernel void edgeCollect(device float4 * level_value [[ buffer(0) ]],

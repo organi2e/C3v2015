@@ -111,21 +111,5 @@ class BiasTests: XCTestCase {
 			XCTFail("RMSE: \(rmseLogvariance)")
 		}
 		
-		/*
-		let srcValue: UnsafeMutableBufferPointer<Float> = UnsafeMutableBufferPointer<Float>(start: UnsafeMutablePointer<Float>(bias.value.contents()), count: rows)
-		let srcMean: UnsafeMutableBufferPointer<Float> = UnsafeMutableBufferPointer<Float>(start: UnsafeMutablePointer<Float>(bias.mean.contents()), count: rows)
-		let srcVariance: UnsafeMutableBufferPointer<Float> = UnsafeMutableBufferPointer<Float>(start: UnsafeMutablePointer<Float>(bias.variance.contents()), count: rows)
-		
-		let dstValue: UnsafeMutableBufferPointer<Float> = UnsafeMutableBufferPointer<Float>(start: UnsafeMutablePointer<Float>(value.contents()), count: rows)
-		let dstMean: UnsafeMutableBufferPointer<Float> = UnsafeMutableBufferPointer<Float>(start: UnsafeMutablePointer<Float>(mean.contents()), count: rows)
-		let dstVariance: UnsafeMutableBufferPointer<Float> = UnsafeMutableBufferPointer<Float>(start: UnsafeMutablePointer<Float>(variance.contents()), count: rows)
-		
-		context.join()
-		
-		XCTAssert(srcValue.elementsEqual(dstValue))
-		XCTAssert(srcMean.elementsEqual(dstMean))
-		XCTAssert(srcVariance.elementsEqual(dstVariance))
-		*/
-		
 	}
 }

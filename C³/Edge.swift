@@ -56,17 +56,37 @@ extension Edge {
 		}
 		
 	}
-	func correct(let eps eps: Float, let visit: Set<Cell>) {
+	func correct(let eps eps: Float, let error input_error: MTLBuffer, let state input_state: MTLBuffer, let visit: Set<Cell>) {
 		
 		if let context: Context = managedObjectContext as? Context {
 			
 			let (delta_mean, delta_variance) = output.correct(eps: eps, visit: visit)
-			let state: MTLBuffer = input.collect(visit: [])
+			
+			let edge_mean: MTLBuffer = mean
+			let edge_logvariance: MTLBuffer = logvariance
+			let edge_variance: MTLBuffer = variance
+			
+			let group: MTLSize = MTLSize(width: rows/4, height: 1, depth: 1)
+			let local: MTLSize = MTLSize(width: 16, height: 1, depth: 1)
+			
+			let edge_rows: Int = rows
+			let edge_cols: Int = cols
 			
 			context.newComputeCommand(function: "edgeCorrect") {
-				$0.setBytes([eps], length: 0, atIndex: 2)
-				$0.setBuffer(delta_mean, offset: 0, atIndex: 3)
-				$0.setBuffer(delta_variance, offset: 0, atIndex: 4)
+				
+				$0.setBuffer(edge_mean, offset: 0, atIndex: 0)
+				$0.setBuffer(edge_logvariance, offset: 0, atIndex: 1)
+				$0.setBuffer(edge_variance, offset: 0, atIndex: 2)
+				$0.setBuffer(input_state, offset: 0, atIndex: 3)
+				$0.setBytes([eps], length: sizeof(Float), atIndex: 4)
+				$0.setBuffer(delta_mean, offset: 0, atIndex: 5)
+				$0.setBuffer(delta_variance, offset: 0, atIndex: 6)
+				
+				$0.setBytes([UInt32(edge_rows/4)], length: sizeof(UInt32), atIndex: 7)
+				$0.setBytes([UInt32(edge_cols/4)], length: sizeof(UInt32), atIndex: 8)
+				
+				$0.dispatchThreadgroups(group, threadsPerThreadgroup: local)
+				
 			}
 			
 			

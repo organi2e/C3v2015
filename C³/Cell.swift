@@ -22,10 +22,10 @@ public class Cell: NSManagedObject {
 	private struct State {
 		let train: MTLBuffer
 		let value: MTLBuffer
+		let error: MTLBuffer
 	}
 	
 	private struct Level {
-		let error: MTLBuffer
 		let value: MTLBuffer
 		let mean: MTLBuffer
 		let variance: MTLBuffer
@@ -68,23 +68,23 @@ extension Cell {
 			state = [
 				State(
 					train: context.newBuffer(length: sizeof(Float)*width),
-					value: context.newBuffer(length: sizeof(Float)*width)
+					value: context.newBuffer(length: sizeof(Float)*width),
+					error: context.newBuffer(length: sizeof(Float)*width)
 				),
 				State(
 					train: context.newBuffer(length: sizeof(Float)*width),
-					value: context.newBuffer(length: sizeof(Float)*width)
+					value: context.newBuffer(length: sizeof(Float)*width),
+					error: context.newBuffer(length: sizeof(Float)*width)
 				)
 			]
 			
 			level = [
 				Level(
-					error: context.newBuffer(length: sizeof(Float)*width),
 					value: context.newBuffer(length: sizeof(Float)*width),
 					mean: context.newBuffer(length: sizeof(Float)*width),
 					variance: context.newBuffer(length: sizeof(Float)*width)
 				),
 				Level(
-					error: context.newBuffer(length: sizeof(Float)*width),
 					value: context.newBuffer(length: sizeof(Float)*width),
 					mean: context.newBuffer(length: sizeof(Float)*width),
 					variance: context.newBuffer(length: sizeof(Float)*width)
@@ -134,8 +134,8 @@ extension Cell {
 			
 			assert(newLevel.length==oldLevel.length)
 			
-			let newError: MTLBuffer = level[0].error
-			let oldError: MTLBuffer = level[1].error
+			let newError: MTLBuffer = state[0].error
+			let oldError: MTLBuffer = state[1].error
 			
 			assert(newError.length==oldError.length)
 			
@@ -312,8 +312,11 @@ extension Cell {
 						let group: MTLSize = MTLSize(width: (width-1)/4+1, height: 1, depth: 1)
 						let local: MTLSize = MTLSize(width: 1, height: 1, depth: 1)
 						
+						let state_error: MTLBuffer = state[0].error
+						let state_value: MTLBuffer = state[0].value
+						
 						output.forEach {
-							$0.correct(eps: eps, visit: visit.union([self]))
+							$0.correct(eps: eps, error: state_error, state: state_value, visit: visit.union([self]))
 						}
 						
 					}
