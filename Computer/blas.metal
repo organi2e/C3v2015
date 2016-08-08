@@ -587,7 +587,7 @@ kernel void gemm4(device float4 * const C [[ buffer(0) ]],
 			uint const rows_A = rows;
 			uint const cols_A = i+t.x;
 			
-			uint4 const idx_A = (4 * rows_A + uint4(0,1,2,3)) * K + cols_A;
+			uint4 const idx_A = (4 * rows_A + uint4(0, 1, 2, 3)) * K + cols_A;
 			
 			block_a[t.y*T.x+t.x] = rows_A < M && cols_A < K ?
 			float4x4(A[idx_A[0]],
@@ -598,7 +598,7 @@ kernel void gemm4(device float4 * const C [[ buffer(0) ]],
 			uint const rows_B = i+t.y;
 			uint const cols_B = cols;
 			
-			uint4 const idx_B = (4 * rows_B + uint4(0,1,2,3)) * N + cols_B;
+			uint4 const idx_B = (4 * rows_B + uint4(0, 1, 2, 3)) * N + cols_B;
 			
 			block_b[t.y*T.x+t.x] = rows_B < K && cols_B < N ?
 			float4x4(B[idx_B[0]],
@@ -606,12 +606,13 @@ kernel void gemm4(device float4 * const C [[ buffer(0) ]],
 					 B[idx_B[2]],
 					 B[idx_B[3]]) : float4x4(0.0);
 			
-			threadgroup_barrier( mem_flags::mem_threadgroup );
+			threadgroup_barrier( mem_flags :: mem_threadgroup );
 			
 			for ( uint k = 0, K = T.x ; k < K ; ++ k )
 				c += block_b[ k * T.x + t.x ] * block_a[ t.y * T.x + k ];
 			
-			threadgroup_barrier( mem_flags::mem_threadgroup );
+			threadgroup_barrier( mem_flags :: mem_threadgroup );
+			
 		}
 		uint4 const idx_C = ( 4 * rows + uint4(0, 1, 2, 3) ) * N + cols;
 		C[idx_C[0]] = c[0];
