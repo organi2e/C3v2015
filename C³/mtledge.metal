@@ -17,75 +17,78 @@ kernel void edgeCollect(device float4 * level_value [[ buffer(0) ]],
 						device const float4 * const edge_variance [[ buffer(5) ]],
 						device const float4 * const input_state [[ buffer(6) ]],
 						
-						uint const m [[ threadgroup_position_in_grid ]],
-						uint const M [[ threadgroups_per_grid ]],
-						uint const n [[ thread_position_in_threadgroup ]],
-						uint const N [[ threads_per_threadgroup ]],
+						constant uint & M [[ buffer(7) ]],
+						constant uint & N [[ buffer(8) ]],
+						
+						uint const t [[ thread_position_in_threadgroup ]],
+						uint const T [[ threads_per_threadgroup ]],
+						
+						uint const g [[ threadgroup_position_in_grid ]],
+						uint const G [[ threadgroups_per_grid ]],
 						
 						threadgroup float4 * const th_value [[ threadgroup(0) ]],
 						threadgroup float4 * const th_mean [[ threadgroup(1) ]],
 						threadgroup float4 * const th_variance [[ threadgroup(2) ]])
 {
-	float4 const state = input_state [ n ];
+	float4 value = 0.0;
+	float4 mean = 0.0;
+	float4 variance = 0.0;
 	
-	uint4 const idx = ( uint4(0,1,2,3) + 4 * m ) * N + n;
-	
-	th_value[n] = ( state ) *
-		float4x4(edge_value[idx[0]],
-				 edge_value[idx[1]],
-				 edge_value[idx[2]],
-				 edge_value[idx[3]]);
-	
-	th_mean[n] = ( state ) *
-		float4x4(edge_mean[idx[0]],
-				 edge_mean[idx[1]],
-				 edge_mean[idx[2]],
-				 edge_mean[idx[3]]);
-	
-	th_variance[n] = ( state * state ) *
-		float4x4(edge_variance[idx[0]],
-				 edge_variance[idx[1]],
-				 edge_variance[idx[2]],
-				 edge_variance[idx[3]]);
-	
-	uint offset = 1 << ( clz ( uint( 1 ) ) - clz ( N ) );
-	
-	threadgroup_barrier ( mem_flags::mem_threadgroup );
-	if ( n < ( N % offset ) ) {
-		th_value[n] += th_value[offset+n];
-		th_mean[n] += th_mean[offset+n];
-		th_variance[n] += th_variance[offset+n];
+	for ( uint k = 0, K = N ; k < K ; k += T ) {
+		if ( k + t < N ) {
+			float4 const state = input_state [ k + t ];
+			
+			uint4 const idx = ( 4 * g + uint4( 0, 1, 2, 3) ) * N + k + t;
+			
+			value += ( state ) *
+			float4x4(edge_value[idx[0]],
+					 edge_value[idx[1]],
+					 edge_value[idx[2]],
+					 edge_value[idx[3]]);
+			
+			mean += ( state ) *
+			float4x4(edge_mean[idx[0]],
+					 edge_mean[idx[1]],
+					 edge_mean[idx[2]],
+					 edge_mean[idx[3]]);
+			
+			variance += ( state * state ) *
+			float4x4(edge_variance[idx[0]],
+					 edge_variance[idx[1]],
+					 edge_variance[idx[2]],
+					 edge_variance[idx[3]]);
+		}
 	}
 	
+	th_value[t] = value;
+	th_mean[t] = mean;
+	th_variance[t] = variance;
+	
+	uint offset = T;
 	while ( offset >>= 1 ) {
-		threadgroup_barrier ( mem_flags::mem_threadgroup );
-		if ( n < offset ) {
-			th_value[n] += th_value[offset+n];
-			th_mean[n] += th_mean[offset+n];
-			th_variance[n] += th_variance[offset+n];
+		threadgroup_barrier ( mem_flags :: mem_threadgroup );
+		if ( t < offset ) {
+			th_value [ t ] += th_value [ offset + t ];
+			th_mean [ t ] += th_mean [ offset + t ];
+			th_variance [ t ] += th_variance [ offset + t ];
 		};
 	}
 	
-	if(!n) {
-		level_value[m] = th_value[n];
-		level_mean[m] = th_mean[n];
-		level_variance[m] = th_variance[n];
-		
+	if ( !t ) {
+		level_value [ g ] = *th_value;
+		level_mean [ g ] = *th_mean;
+		level_variance [ g ] = *th_variance;
 	}
 	
 }
-kernel void edgeCorrect(device float4 * edge_mean [[ buffer(0) ]],
-						device float4 * edge_logvariance [[ buffer(1) ]],
-						device const float4 * edge_variance [[ buffer(2) ]],
-						constant const float & eps [[ buffer(3) ]],
-						device const float4 * delta_mean [[ buffer(4) ]],
-						device const float4 * delta_variance [[ buffer(5) ]],
-						device const float4 * input_state [[ buffer(6) ]],
-						
+kernel void edgeCorrectFF(device float4 * edge_mean [[ buffer(0) ]],
+						  device float4 * edge_logvariance [[ buffer(1) ]],
+						  device const float4 * edge_variance [[ buffer(2) ]],
+						  constant const float & eps [[ buffer(3) ]],
+						  device const float4 * delta_mean [[ buffer(4) ]],
+						  device const float4 * delta_variance [[ buffer(5) ]],
+						  device const float4 * input_state [[ buffer(6) ]]
 						) {
-	float4x4 s = float4x4(0.0);
-	float4x4 m = float4x4(0.0);
-	float4x4 v = float4x4(0.0);
 	
 
 }

@@ -184,8 +184,8 @@ class cpuComputerTests: XCTestCase {
 	}
 	*/
 	func testGEMM() {
-		let M: Int = 4096
-		let K: Int = 4096
+		let M: Int = 64
+		let K: Int = 64
 		let N: Int = 4096
 		
 		let d: Buffer = computer.newBuffer(length: sizeof(Float)*M*N)

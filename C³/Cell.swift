@@ -259,13 +259,7 @@ extension Cell {
 				}
 
 				bias.collect(value: level_value, mean: level_mean, variance: level_variance)
-				
-				context.newComputeCommand(function: "step") {
-					$0.setBuffer(state_value, offset: 0, atIndex: 0)
-					$0.setBuffer(level_value, offset: 0, atIndex: 1)
-					$0.dispatchThreadgroups(group, threadsPerThreadgroup: local)
-				}
-				
+				activate(context, state: state_value, level: level_value)
 				ready.insert(.State)
 				
 			} else {
@@ -274,6 +268,17 @@ extension Cell {
 			}
 		}
 		return state[0].value
+	}
+	private func activate (let context: Context, let state: MTLBuffer, let level: MTLBuffer ) {
+		
+		let group: MTLSize = MTLSize(width: (width-1)/4+1, height: 1, depth: 1)
+		let local: MTLSize = MTLSize(width: 1, height: 1, depth: 1)
+		
+		context.newComputeCommand(function: "step") {
+			$0.setBuffer(state, offset: 0, atIndex: 0)
+			$0.setBuffer(level, offset: 0, atIndex: 1)
+			$0.dispatchThreadgroups(group, threadsPerThreadgroup: local)
+		}
 	}
 	public func correct(let eps eps: Float) {
 		correct(eps: eps, visit: [])
@@ -324,6 +329,17 @@ extension Cell {
 			}
 		}
 		return(delta[0].mean, delta[0].variance)
+	}
+	private func derivate(let context: Context, let delta: MTLBuffer, let error: MTLBuffer) {
+		
+		let group: MTLSize = MTLSize(width: (width-1)/4+1, height: 1, depth: 1)
+		let local: MTLSize = MTLSize(width: 1, height: 1, depth: 1)
+		
+		context.newComputeCommand(function: "sign") {
+			$0.setBuffer(delta, offset: 0, atIndex: 0)
+			$0.setBuffer(error, offset: 0, atIndex: 1)
+			$0.dispatchThreadgroups(group, threadsPerThreadgroup: local)
+		}
 	}
 }
 extension Cell {
