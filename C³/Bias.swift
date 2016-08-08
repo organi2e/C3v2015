@@ -62,7 +62,7 @@ extension Bias {
 				$0.setBuffer(bias_mean, offset: 0, atIndex: 0)
 				$0.setBuffer(bias_logvariance, offset: 0, atIndex: 1)
 				$0.setBuffer(bias_variance, offset: 0, atIndex: 2)
-				$0.setBytes([eps], length: 0, atIndex: 3)
+				$0.setBytes([eps], length: sizeof(Float), atIndex: 3)
 				$0.setBuffer(delta_mean, offset: 0, atIndex: 4)
 				$0.setBuffer(delta_variance, offset: 0, atIndex: 5)
 				

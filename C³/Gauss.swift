@@ -29,7 +29,11 @@ extension Gauss {
 		super.awakeFromFetch()
 		setup()
 	}
-
+	override func awakeFromSnapshotEvents(flags: NSSnapshotEventType) {
+		super.awakeFromSnapshotEvents(flags)
+		print("snap")
+		setup()
+	}
 }
 
 extension Gauss {

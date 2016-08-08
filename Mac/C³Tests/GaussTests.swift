@@ -12,12 +12,9 @@ import XCTest
 class GaussTests: XCTestCase {
 	let NOHINT: la_hint_t = la_hint_t(LA_NO_HINT)
 	let ATTR: la_attribute_t = la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING)
+	let context: Context = try!Context()
 	func testRefresh() {
-		guard let context: Context = try?Context() else {
-			XCTFail()
-			return
-		}
-		guard let gauss: Gauss = context.new() else {
+		guard let gauss: Gauss = new() else {
 			XCTFail()
 			return
 		}
@@ -45,5 +42,10 @@ class GaussTests: XCTestCase {
 		XCTAssert(abs(log(ymean)-log(dmean))<0.1)
 		XCTAssert(abs(2.0*log(ydeviation)-log(dvariance))<0.1)
 		
+	}
+	func new() -> Gauss? {
+		let gauss: Gauss? = context.new()
+		gauss?.resize(rows: 4, cols: 4)
+		return gauss
 	}
 }

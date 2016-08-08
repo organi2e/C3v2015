@@ -53,7 +53,7 @@
 		87B1FD351D0546B500981CF4 /* Edge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87B1FD221D05466D00981CF4 /* Edge.swift */; };
 		87B1FD361D0546B500981CF4 /* Error.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87B1FD231D05466D00981CF4 /* Error.swift */; };
 		87B1FD3B1D0546C700981CF4 /* C³.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 87B1FD381D0546BF00981CF4 /* C³.xcdatamodeld */; };
-		87B1FD3C1D0546FC00981CF4 /* LATests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87B1FD2D1D05468600981CF4 /* LATests.swift */; };
+		87B1FD3C1D0546FC00981CF4 /* BiasTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87B1FD2D1D05468600981CF4 /* BiasTests.swift */; };
 		87B9C0271D49249900534528 /* MNISTTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87B9C0261D49249900534528 /* MNISTTest.swift */; };
 		87BC8D911D55D19D004510EF /* mtlbias.metal in Sources */ = {isa = PBXBuildFile; fileRef = 87BC8D8F1D55D103004510EF /* mtlbias.metal */; };
 		87BC8D941D55E071004510EF /* mtledge.metal in Sources */ = {isa = PBXBuildFile; fileRef = 87BC8D931D55E071004510EF /* mtledge.metal */; };
@@ -183,7 +183,7 @@
 		87B1FD221D05466D00981CF4 /* Edge.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Edge.swift; path = "../../C³/Edge.swift"; sourceTree = "<group>"; };
 		87B1FD231D05466D00981CF4 /* Error.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Error.swift; path = "../../C³/Error.swift"; sourceTree = "<group>"; };
 		87B1FD2C1D05467800981CF4 /* C³.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "C³.h"; sourceTree = "<group>"; };
-		87B1FD2D1D05468600981CF4 /* LATests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LATests.swift; sourceTree = "<group>"; };
+		87B1FD2D1D05468600981CF4 /* BiasTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BiasTests.swift; sourceTree = "<group>"; };
 		87B1FD2E1D05468600981CF4 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		87B1FD391D0546BF00981CF4 /* C3.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = C3.xcdatamodel; sourceTree = "<group>"; };
 		87B9C0261D49249900534528 /* MNISTTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MNISTTest.swift; sourceTree = "<group>"; };
@@ -388,8 +388,8 @@
 			children = (
 				87B1FD2E1D05468600981CF4 /* Info.plist */,
 				873BFCA91D4359BE00F61B4B /* GaussTests.swift */,
+				87B1FD2D1D05468600981CF4 /* BiasTests.swift */,
 				8719AE4B1D38BB9800F8DCA4 /* CellTests.swift */,
-				87B1FD2D1D05468600981CF4 /* LATests.swift */,
 				876A4B551D066EDC00D32E1B /* DictTests.swift */,
 				87B9C0261D49249900534528 /* MNISTTest.swift */,
 				87D8B4051D4B6E590010EA4F /* TraceTests.swift */,
@@ -806,7 +806,7 @@
 				873BFCAA1D4359BE00F61B4B /* GaussTests.swift in Sources */,
 				876A4B561D066EDC00D32E1B /* DictTests.swift in Sources */,
 				87B9C0271D49249900534528 /* MNISTTest.swift in Sources */,
-				87B1FD3C1D0546FC00981CF4 /* LATests.swift in Sources */,
+				87B1FD3C1D0546FC00981CF4 /* BiasTests.swift in Sources */,
 				8719AE4D1D38BBE500F8DCA4 /* CellTests.swift in Sources */,
 				87D8B4061D4B6E590010EA4F /* TraceTests.swift in Sources */,
 			);
