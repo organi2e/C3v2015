@@ -118,9 +118,35 @@ extension Gauss {
 		
 	}
 	
-	internal func adjust(let mean mean: Float, let variance: Float) {
-		adjustMean(mean: [Float](count: Int(rows*cols), repeatedValue: mean))
-		adjustVariance(variance: [Float](count: Int(rows*cols), repeatedValue: variance))
+	internal func adjust(let mean adjust_mean: Float, let variance adjust_variance: Float) {
+		if let context: Context = managedObjectContext as? Context {
+			
+			let m: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows*cols)
+			let v: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows*cols)
+			
+			let semaphore: dispatch_semaphore_t = dispatch_semaphore_create(0)
+			
+			let gauss_mean: MTLBuffer = mean
+			let gauss_variance: MTLBuffer = variance
+			
+			let gauss_rows: la_count_t = la_count_t(rows)
+			let gauss_cols: la_count_t = la_count_t(cols)
+			
+			context.performBlock {
+				la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(m.contents()), gauss_cols, la_matrix_from_splat(la_splat_from_float(adjust_mean, Config.ATTR), gauss_rows, gauss_cols))
+				la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(v.contents()), gauss_cols, la_matrix_from_splat(la_splat_from_float(adjust_variance, Config.ATTR), gauss_rows, gauss_cols))
+				dispatch_semaphore_signal(semaphore)
+			}
+			
+			context.newBlitCommand(schedule: { dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER) }, complete: { m.setPurgeableState(.Empty); v.setPurgeableState(.Empty); }) {
+				$0.copyFromBuffer(m, sourceOffset: 0, toBuffer: gauss_mean, destinationOffset: 0, size: min(m.length, gauss_mean.length))
+				$0.copyFromBuffer(v, sourceOffset: 0, toBuffer: gauss_variance, destinationOffset: 0, size: min(v.length, gauss_variance.length))
+			}
+			
+		} else {
+			assertionFailure()
+			
+		}
 	}
 	
 	internal func adjustMean(let mean buffer: [Float]) {
