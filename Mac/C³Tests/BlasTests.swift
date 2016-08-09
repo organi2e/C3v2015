@@ -111,7 +111,7 @@ class BlasTests: XCTestCase {
 		let local: MTLSize = MTLSize(width: bs, height: 1, depth: 1)
 		
 		measureBlock {
-			(0..<16).forEach {(_)in
+			(0..<4).forEach {(_)in
 				self.context.newComputeCommand(function: "outer") {
 					$0.setBuffer(MC, offset: 0, atIndex: 0)
 					$0.setBuffer(MA, offset: 0, atIndex: 1)

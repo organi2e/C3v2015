@@ -24,14 +24,19 @@ extension Edge {
 			
 			let input_state: MTLBuffer = input.collect(visit: visit)
 			
-			let group: MTLSize = MTLSize(width: (rows-1)/4+1, height: 1, depth: 1)
-			let local: MTLSize = MTLSize(width: (cols-1)/4+1, height: 1, depth: 1)
+			let bs: Int = 64
+			
+			let edge_rows: Int = rows/4
+			let edge_cols: Int = cols/4
+			
+			let group: MTLSize = MTLSize(width: edge_rows, height: 1, depth: 1)
+			let local: MTLSize = MTLSize(width: bs, height: 1, depth: 1)
 			
 			let edge_value: MTLBuffer = value
 			let edge_mean: MTLBuffer = mean
 			let edge_variance: MTLBuffer = variance
 			
-			let local_memry: Int = sizeof(Float)*cols
+			let local_memry: Int = sizeof(Float)*16*bs
 			
 			context.newComputeCommand(function: "edgeCollect") {
 				
@@ -42,6 +47,8 @@ extension Edge {
 				$0.setBuffer(edge_mean, offset: 0, atIndex: 4)
 				$0.setBuffer(edge_variance, offset: 0, atIndex: 5)
 				$0.setBuffer(input_state, offset: 0, atIndex: 6)
+				
+				$0.setBytes([UInt32(edge_rows), UInt32(edge_cols)], length: 2*sizeof(UInt32), atIndex: 7)
 				
 				$0.setThreadgroupMemoryLength(local_memry, atIndex: 0)
 				$0.setThreadgroupMemoryLength(local_memry, atIndex: 1)
