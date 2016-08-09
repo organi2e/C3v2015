@@ -206,7 +206,7 @@ extension Context {
 			}
 			let group: MTLSize = MTLSize(width: cols/4, height: rows/4, depth: 1)
 			let local: MTLSize = MTLSize(width: 1, height: 1, depth: 1)
-			newComputeCommand(function: "fromColMajorMatrix", schedule: { dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER) }, complete: { cache.setPurgeableState(.Empty) }) {
+			newComputeCommand(function: "fromRowMajorMatrix", schedule: { dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER) }, complete: { cache.setPurgeableState(.Empty) }) {
 				$0.setBuffer(result, offset: 0, atIndex: 0)
 				$0.setBuffer(cache, offset: 0, atIndex: 1)
 				$0.setBytes([UInt32(rows/4)], length: sizeof(UInt32), atIndex: 2)
@@ -228,7 +228,7 @@ extension Context {
 		} else {
 			let group: MTLSize = MTLSize(width: cols/4, height: rows/4, depth: 1)
 			let local: MTLSize = MTLSize(width: 1, height: 1, depth: 1)
-			newComputeCommand(function: "toColMajorMatrix", complete: { NSData(bytesNoCopy: cache.contents(), length: cache.length, freeWhenDone: false).getBytes(pool, length: sizeof(Float)*rows*cols); cache.setPurgeableState(.Empty); }) {
+			newComputeCommand(function: "toRowMajorMatrix", complete: { NSData(bytesNoCopy: cache.contents(), length: cache.length, freeWhenDone: false).getBytes(pool, length: sizeof(Float)*rows*cols); cache.setPurgeableState(.Empty); }) {
 				$0.setBuffer(cache, offset: 0, atIndex: 0)
 				$0.setBuffer(buffer, offset: 0, atIndex: 1)
 				$0.setBytes([UInt32(rows/4)], length: sizeof(UInt32), atIndex: 2)
