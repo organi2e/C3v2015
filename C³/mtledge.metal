@@ -8,6 +8,39 @@
 
 #include <metal_stdlib>
 using namespace metal;
+/*
+kernel void edgeCollect(device float4 * y [[ buffer(0) ]],
+						device const float4x4 * const A [[ buffer(1) ]],
+						device const float4 * const x [[ buffer(2) ]],
+						constant uint2 const & dim [[ buffer(3) ]],
+						constant float2 const & w [[ buffer(4) ]],
+						uint const g [[ threadgroup_position_in_grid ]],
+						uint const G [[ threadgroups_per_grid ]],
+						uint const t [[ thread_position_in_threadgroup ]],
+						uint const T [[ threads_per_threadgroup ]],
+						threadgroup float4 * const accumulator [[ threadgroup(0) ]] )
+{
+	uint const M = dim.x;
+	uint const N = dim.y;
+	accumulator[t] = 0;
+	for ( uint i = 0, I = N ; i < I ; i += T ) {
+		uint const rows = g;
+		uint const cols = i + t;
+		if ( cols < N ) {
+			accumulator[t] += A[cols*M+rows] * x[cols];
+		}
+	}
+	uint offset = T;
+	while ( offset >>= 1 ) {
+		threadgroup_barrier ( mem_flags :: mem_threadgroup );
+		if ( t < offset ) {
+			accumulator [ t ] += accumulator [ t + offset ];
+		};
+	}
+	if( !t )
+		y[ g ] = w.x * accumulator [ t ] + w.y * y[ g ];
+}
+*/
 kernel void edgeCollect(device float4 * level_value [[ buffer(0) ]],
 						device float4 * level_mean [[ buffer(1) ]],
 						device float4 * level_variance [[ buffer(2) ]],
@@ -15,10 +48,10 @@ kernel void edgeCollect(device float4 * level_value [[ buffer(0) ]],
 						device const float4 * const edge_value [[ buffer(3) ]],
 						device const float4 * const edge_mean [[ buffer(4) ]],
 						device const float4 * const edge_variance [[ buffer(5) ]],
+						
 						device const float4 * const input_state [[ buffer(6) ]],
 						
-						constant uint & M [[ buffer(7) ]],
-						constant uint & N [[ buffer(8) ]],
+						constant uint2 const & dim [[ buffer(7) ]],
 						
 						uint const t [[ thread_position_in_threadgroup ]],
 						uint const T [[ threads_per_threadgroup ]],
@@ -30,33 +63,20 @@ kernel void edgeCollect(device float4 * level_value [[ buffer(0) ]],
 						threadgroup float4 * const th_mean [[ threadgroup(1) ]],
 						threadgroup float4 * const th_variance [[ threadgroup(2) ]])
 {
+	uint const M = dim.x;
+	uint const N = dim.y;
+	
 	float4 value = 0.0;
 	float4 mean = 0.0;
 	float4 variance = 0.0;
 	
 	for ( uint k = 0, K = N ; k < K ; k += T ) {
-		if ( k + t < N ) {
+		if ( k + t < K ) {
 			float4 const state = input_state [ k + t ];
-			
-			uint4 const idx = ( 4 * g + uint4( 0, 1, 2, 3) ) * N + k + t;
-			
-			value += ( state ) *
-			float4x4(edge_value[idx[0]],
-					 edge_value[idx[1]],
-					 edge_value[idx[2]],
-					 edge_value[idx[3]]);
-			
-			mean += ( state ) *
-			float4x4(edge_mean[idx[0]],
-					 edge_mean[idx[1]],
-					 edge_mean[idx[2]],
-					 edge_mean[idx[3]]);
-			
-			variance += ( state * state ) *
-			float4x4(edge_variance[idx[0]],
-					 edge_variance[idx[1]],
-					 edge_variance[idx[2]],
-					 edge_variance[idx[3]]);
+			uint const idx = M * ( k + t ) + g;
+			value += edge_value[idx] * ( state );
+			mean += edge_mean[idx] * ( state );
+			variance += edge_variance[idx] * ( state * state );
 		}
 	}
 	
@@ -81,30 +101,24 @@ kernel void edgeCollect(device float4 * level_value [[ buffer(0) ]],
 	}
 	
 }
-kernel void edgeCorrectFF(device float4 * edge_mean [[ buffer(0) ]],
-						  device float4 * edge_logvariance [[ buffer(1) ]],
-						  device const float4 * edge_variance [[ buffer(2) ]],
+kernel void edgeCorrectFF(device float4x4 * edge_mean [[ buffer(0) ]],
+						  device float4x4 * edge_logvariance [[ buffer(1) ]],
+						  device const float4x4 * edge_variance [[ buffer(2) ]],
 						  device const float4 * input_state [[ buffer(3) ]],
 						  constant const float & eps [[ buffer(4) ]],
 						  device const float4 * delta_mean [[ buffer(5) ]],
 						  device const float4 * delta_variance [[ buffer(6) ]],
-						  constant const uint & M [[ buffer(7) ]],
-						  constant const uint & N [[ buffer(8) ]],
+						  constant const uint2 & dim [[ buffer(7) ]],
 						  uint const g [[ threadgroup_position_in_grid ]],
 						  uint const G [[ threadgroups_per_grid ]],
 						  uint const t [[ thread_position_in_threadgroup ]],
 						  uint const T [[ threads_per_threadgroup ]])
 {
+	uint const M = dim.x;
+	uint const N = dim.y;
 	
-	threadgroup float4 mean = 0.0;
-	threadgroup float4 variance = 0.0;
-	
-	if ( !t ) {
-		mean = delta_mean[g];
-		variance = delta_variance[g];
-	}
-
-	threadgroup_barrier ( mem_flags :: mem_threadgroup );
+	float4 const mean = delta_mean[g];
+	float4 const variance = delta_variance[g];
 	
 	for( uint k = 0, K = N ; k < K ; k += T ) {
 		
@@ -113,22 +127,32 @@ kernel void edgeCorrectFF(device float4 * edge_mean [[ buffer(0) ]],
 		
 		if ( cols < N ) {
 			
-			uint4 const idx = ( uint4 ( 0, 1, 2, 3 ) + 4 * rows ) * N + cols;
-			float4 const state = input_state [ cols ];
+			uint const idx = cols * M + rows;
 			
-			edge_mean[idx.x] += eps * mean.x * state;
-			edge_mean[idx.y] += eps * mean.y * state;
-			edge_mean[idx.z] += eps * mean.z * state;
-			edge_mean[idx.w] += eps * mean.w * state;
+			float4 const state_p1 = input_state [ cols ];
+			float4 const state_p2 = state_p1 * state_p1;
 			
-			edge_logvariance[idx.x] -= ( 0.5 * eps ) * edge_variance[idx.x] * mean.x * state * state;
-			edge_logvariance[idx.y] -= ( 0.5 * eps ) * edge_variance[idx.y] * mean.y * state * state;
-			edge_logvariance[idx.z] -= ( 0.5 * eps ) * edge_variance[idx.z] * mean.z * state * state;
-			edge_logvariance[idx.w] -= ( 0.5 * eps ) * edge_variance[idx.w] * mean.w * state * state;
+			float4x4 dm = float4x4(mean, mean, mean, mean);
+			
+			dm[0] *= state_p1[0];
+			dm[1] *= state_p1[1];
+			dm[2] *= state_p1[2];
+			dm[3] *= state_p1[3];
+			
+			edge_mean[idx] += eps * dm;
+			
+			float4x4 dv = float4x4(variance, variance, variance, variance);
+			float4x4 ev = edge_variance[idx];
+			
+			dv[0] *= ev[0] * state_p2[0];
+			dv[1] *= ev[1] * state_p2[1];
+			dv[2] *= ev[2] * state_p2[2];
+			dv[3] *= ev[3] * state_p2[3];
+			
+			edge_logvariance[idx] -= ( 0.5 * eps ) * dv;
 			
 		}
 	}
-	
 }
 /*
 kernel void edgeCollect(device float4 * level_value [[ buffer(0) ]],

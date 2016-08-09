@@ -20,28 +20,40 @@ class GaussTests: XCTestCase {
 		}
 		let dmean: Float = Float(arc4random())/Float(UInt16.max)
 		let dvariance: Float = Float(arc4random())/Float(UInt16.max)
-		let rows: UInt = 64
-		let cols: UInt = 64
+		let rows: Int = 64
+		let cols: Int = 64
 		let count: Int = Int(rows*cols)
 		
-		gauss.resize(rows: Int(rows), cols: Int(cols))
+		gauss.resize(rows: rows, cols: cols)
 		gauss.adjust(mean: dmean, variance: dvariance)
 		gauss.refresh()
 		
-		context.join()
+		let value: la_object_t = context.toLAObject(gauss.value, rows: count, cols: 1)
 		
 		var ymean: Float = 0.0
 		var ydeviation: Float = 0.0
 		
 		let cache: [Float] = [Float](count: count, repeatedValue: 0.0)
 		
-		vDSP_meanv(UnsafePointer<Float>(gauss.value.contents()), 1, &ymean, vDSP_Length(count))
-		vDSP_vsadd(UnsafePointer<Float>(gauss.value.contents()), 1, [-ymean], UnsafeMutablePointer<Float>(cache), 1, vDSP_Length(count))
+		context.join()
+		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), 1, value)
+		
+		vDSP_meanv(UnsafePointer<Float>(cache), 1, &ymean, vDSP_Length(count))
+		XCTAssert(!isnan(ymean))
+		XCTAssert(!isinf(ymean))
+		
+		if 1e-1 < abs(log(ymean)-log(dmean)) {
+			XCTFail("\(ymean) vs \(dmean)")
+		}
+		
+		vDSP_vsadd(UnsafePointer<Float>(cache), 1, [-ymean], UnsafeMutablePointer<Float>(cache), 1, vDSP_Length(count))
 		vDSP_rmsqv(UnsafePointer<Float>(cache), 1, &ydeviation, vDSP_Length(count))
+		XCTAssert(!isnan(ydeviation))
+		XCTAssert(!isinf(ydeviation))
 		
-		XCTAssert(abs(log(ymean)-log(dmean))<0.1)
-		XCTAssert(abs(2.0*log(ydeviation)-log(dvariance))<0.1)
-		
+		if 1e-1 < abs(2.0*log(ydeviation)-log(dvariance)) {
+			XCTFail("\(ydeviation*ydeviation) vs \(dvariance)")
+		}
 	}
 	func new() -> Gauss? {
 		let gauss: Gauss? = context.new()

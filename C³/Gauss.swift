@@ -76,6 +76,14 @@ extension Gauss {
 				dispatch_semaphore_signal(semaphore)
 			}
 			
+			let schedule: ()->() = {
+				dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
+			}
+			
+			let complete: ()->() = {
+				cache.setPurgeableState(.Empty)
+			}
+			
 			let gauss_value: MTLBuffer = value
 			let gauss_variance: MTLBuffer = variance
 			let gauss_mean: MTLBuffer = mean
@@ -84,7 +92,7 @@ extension Gauss {
 			let group: MTLSize = MTLSize(width: (rows*cols-1)/4+1, height: 1, depth: 1)
 			let local: MTLSize = MTLSize(width: 1, height: 1, depth: 1)
 			
-			context.newComputeCommand(function: "gaussShuffle", schedule: {dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)}, complete: {cache.setPurgeableState(.Empty)}) {
+			context.newComputeCommand(function: "gaussShuffle", schedule: schedule, complete: complete) {
 				
 				$0.setBuffer(gauss_value, offset: 0, atIndex: 0)
 				$0.setBuffer(gauss_variance, offset: 0, atIndex: 1)
@@ -119,6 +127,9 @@ extension Gauss {
 	}
 	
 	internal func adjust(let mean adjust_mean: Float, let variance adjust_variance: Float) {
+		
+		assert(0<adjust_variance)
+		
 		if let context: Context = managedObjectContext as? Context {
 			
 			let m: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows*cols)
@@ -127,20 +138,36 @@ extension Gauss {
 			let semaphore: dispatch_semaphore_t = dispatch_semaphore_create(0)
 			
 			let gauss_mean: MTLBuffer = mean
-			let gauss_variance: MTLBuffer = variance
+			let gauss_logvariance: MTLBuffer = logvariance
 			
 			let gauss_rows: la_count_t = la_count_t(rows)
 			let gauss_cols: la_count_t = la_count_t(cols)
 			
 			context.performBlock {
 				la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(m.contents()), gauss_cols, la_matrix_from_splat(la_splat_from_float(adjust_mean, Config.ATTR), gauss_rows, gauss_cols))
-				la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(v.contents()), gauss_cols, la_matrix_from_splat(la_splat_from_float(adjust_variance, Config.ATTR), gauss_rows, gauss_cols))
+				la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(v.contents()), gauss_cols, la_matrix_from_splat(la_splat_from_float(log(adjust_variance), Config.ATTR), gauss_rows, gauss_cols))
 				dispatch_semaphore_signal(semaphore)
 			}
 			
-			context.newBlitCommand(schedule: { dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER) }, complete: { m.setPurgeableState(.Empty); v.setPurgeableState(.Empty); }) {
+			let willChange: (String)->() = willChangeValueForKey
+			let didChange: (String)->() = didChangeValueForKey
+			
+			let schedule: ()->() = {
+				dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
+				willChange(Gauss.meankey)
+				willChange(Gauss.logvariancekey)
+			}
+			
+			let complete: ()->() = {
+				m.setPurgeableState(.Empty)
+				v.setPurgeableState(.Empty)
+				didChange(Gauss.meankey)
+				didChange(Gauss.logvariancekey)
+			}
+			
+			context.newBlitCommand(schedule: schedule, complete: complete) {
 				$0.copyFromBuffer(m, sourceOffset: 0, toBuffer: gauss_mean, destinationOffset: 0, size: min(m.length, gauss_mean.length))
-				$0.copyFromBuffer(v, sourceOffset: 0, toBuffer: gauss_variance, destinationOffset: 0, size: min(v.length, gauss_variance.length))
+				$0.copyFromBuffer(v, sourceOffset: 0, toBuffer: gauss_logvariance, destinationOffset: 0, size: min(v.length, gauss_logvariance.length))
 			}
 			
 		} else {

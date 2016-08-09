@@ -351,7 +351,7 @@ extension Cell {
 			if let context: Context = managedObjectContext as? Context where newValue.count <= width {
 				let cache: MTLBuffer = context.newBuffer(newValue.map{Float($0)}, options: .StorageModePrivate)
 				let value: MTLBuffer = state[0].value
-				context.newBlitCommand(complete: {cache.setPurgeableState(.Empty) }) {
+				context.newBlitCommand(complete: { cache.setPurgeableState(.Empty) }) {
 					$0.copyFromBuffer(cache, sourceOffset: 0, toBuffer: value, destinationOffset: 0, size: min(cache.length, value.length))
 				}
 				ready.insert(.State)
@@ -361,6 +361,7 @@ extension Cell {
 			}
 		}
 		get {
+			collect()
 			if let context: Context = managedObjectContext as? Context {
 				let cache: MTLBuffer = context.newBuffer(length: sizeof(Float)*width)
 				let value: MTLBuffer = state[0].value
@@ -395,7 +396,7 @@ extension Cell {
 				let train: MTLBuffer = state[0].train
 				context.newBlitCommand(sync: true) {
 					$0.copyFromBuffer(train, sourceOffset: 0, toBuffer: cache, destinationOffset: 0, size: min(cache.length, train.length))
-				}
+				}	
 				return UnsafeMutableBufferPointer<Float>(start: UnsafeMutablePointer<Float>(cache.contents()), count: width).map{Bool($0)}
 			} else {
 				assertionFailure(Context.Error.InvalidContext.rawValue)
@@ -419,6 +420,7 @@ extension Context {
 			try newEdge(output: cell, input: $0)
 		}
 		cell.bias = try newBias(width: width)
+		cell.setup()
 		return cell
 	}
 	public func searchCell( let width width: Int? = nil, let label: String? = nil ) -> [Cell] {
