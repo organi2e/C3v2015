@@ -14,33 +14,33 @@ class GaussTests: XCTestCase {
 	let ATTR: la_attribute_t = la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING)
 	let context: Context = try!Context()
 	func testRefresh() {
-		guard let gauss: Gauss = new() else {
+		
+		guard let gauss: Gauss = context.new() else {
 			XCTFail()
 			return
 		}
-		let dmean: Float = Float(arc4random())/Float(UInt16.max)
-		let dvariance: Float = Float(arc4random())/Float(UInt16.max)
-		let rows: Int = 200//4 * Int(1+arc4random_uniform(256))
-		let cols: Int = 200//4 * Int(1+arc4random_uniform(256))
-		let count: Int = Int(rows*cols)
 		
-		//print(rows, cols)
-		
-		gauss.resize(rows: rows, cols: cols)
-		gauss.adjust(mean: dmean, variance: dvariance)
-		gauss.refresh()
-		
-		let value: la_object_t = context.toLAObject(gauss.value, rows: count, cols: 1)
+		let dmean: Float = Float(arc4random_uniform(256))/128.0-1.0
+		let dvariance: Float = Float(1+arc4random_uniform(256))/256.0
 		
 		var ymean: Float = 0.0
 		var ydeviation: Float = 0.0
 		
-		let cache: [Float] = [Float](count: count, repeatedValue: 0.0)
+		let rows: Int = 256
+		let cols: Int = 256
+		
+		gauss.resize(rows: rows, cols: cols)
+		gauss.adjust(mean: dmean, variance: dvariance)
+		gauss.shuffle()
+		
+		let value: la_object_t = context.toLAObject(gauss.value, rows: rows*cols, cols: 1)
+		let cache: [Float] = [Float](count: rows*cols, repeatedValue: 0.0)
 		
 		context.join()
+
 		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), 1, value)
 		
-		vDSP_meanv(UnsafePointer<Float>(cache), 1, &ymean, vDSP_Length(count))
+		vDSP_meanv(UnsafePointer<Float>(cache), 1, &ymean, vDSP_Length(rows*cols))
 		XCTAssert(!isnan(ymean))
 		XCTAssert(!isinf(ymean))
 		
@@ -51,8 +51,8 @@ class GaussTests: XCTestCase {
 			XCTFail("mean: \(ymean) vs \(dmean)")
 		}
 		
-		vDSP_vsadd(UnsafePointer<Float>(cache), 1, [-ymean], UnsafeMutablePointer<Float>(cache), 1, vDSP_Length(count))
-		vDSP_rmsqv(UnsafePointer<Float>(cache), 1, &ydeviation, vDSP_Length(count))
+		vDSP_vsadd(UnsafePointer<Float>(cache), 1, [-ymean], UnsafeMutablePointer<Float>(cache), 1, vDSP_Length(rows*cols))
+		vDSP_rmsqv(UnsafePointer<Float>(cache), 1, &ydeviation, vDSP_Length(rows*cols))
 		XCTAssert(!isnan(ydeviation))
 		XCTAssert(!isinf(ydeviation))
 		
@@ -66,10 +66,6 @@ class GaussTests: XCTestCase {
 				print(cache[$0*rows..<$0*rows+cols])
 			}
 		}
-	}
-	func new() -> Gauss? {
-		let gauss: Gauss? = context.new()
-		gauss?.resize(rows: 4, cols: 4)
-		return gauss
+		
 	}
 }

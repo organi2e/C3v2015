@@ -210,7 +210,7 @@ extension Cell {
 			
 		} else if ready.contains(.State) {
 			input.forEach {
-				$0.refresh()
+				$0.shuffle()
 				$0.input.iClear(visit.union([self]))
 			}
 			refresh()
@@ -222,6 +222,7 @@ extension Cell {
 		
 		} else if ready.contains(.Delta) {
 			output.forEach {
+				$0.refresh()
 				$0.output.oClear(visit.union([self]))
 			}
 			forget()

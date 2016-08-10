@@ -144,30 +144,18 @@ class EdgeTests: XCTestCase {
 		let mtl_level_mean: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows)
 		let mtl_level_variance: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows)
 		
-		let bs: Int = 16
-		let local_memry: Int = sizeof(Float)*16*bs
-		
-		let group: MTLSize = MTLSize(width: rows/4, height: 1, depth: 1)
-		let local: MTLSize = MTLSize(width: bs, height: 1, depth: 1)
-		
 		measureBlock {
-			self.context.newComputeCommand(function: "edgeCollect") {
-				$0.setBuffer(mtl_level_value, offset: 0, atIndex: 0)
-				$0.setBuffer(mtl_level_mean, offset: 0, atIndex: 1)
-				$0.setBuffer(mtl_level_variance, offset: 0, atIndex: 2)
-				$0.setBuffer(mtl_edge_value, offset: 0, atIndex: 3)
-				$0.setBuffer(mtl_edge_mean, offset: 0, atIndex: 4)
-				$0.setBuffer(mtl_edge_variance, offset: 0, atIndex: 5)
-				$0.setBuffer(mtl_input_state, offset: 0, atIndex: 6)
-					
-				$0.setBytes([uint(rows/4), uint(cols/4)], length: 2*sizeof(uint), atIndex: 7)
-					
-				$0.setThreadgroupMemoryLength(local_memry, atIndex: 0)
-				$0.setThreadgroupMemoryLength(local_memry, atIndex: 1)
-				$0.setThreadgroupMemoryLength(local_memry, atIndex: 2)
-			
-				$0.dispatchThreadgroups(group, threadsPerThreadgroup: local)
-			}
+			Edge.collect(context: self.context,
+				level_value: mtl_level_value,
+				level_mean: mtl_level_mean,
+				level_variance: mtl_level_variance,
+				edge_value: mtl_edge_value,
+				edge_mean: mtl_edge_mean,
+				edge_variance: mtl_edge_variance,
+				input_state: mtl_input_state,
+				rows: rows,
+				cols: cols
+			)
 			self.context.join()
 		}
 		
@@ -197,7 +185,7 @@ class EdgeTests: XCTestCase {
 		}
 		
 	}
-	func testCorrect() {
+	func testCorrectFF() {
 		let rows: Int = 1024
 		let cols: Int = 1024
 		
@@ -209,54 +197,14 @@ class EdgeTests: XCTestCase {
 		
 		let mtl_edge_value: MTLBuffer = context.fromLAObject(la_edge_value)
 		let mtl_edge_mean: MTLBuffer = context.fromLAObject(la_edge_mean)
-		let mtl_edge_variance: MTLBuffer = context.fromLAObject(la_edge_variance)
+		let mtl_edge_variance: MTLBuffer = context.fromLAObject(la_edge_logvariance)
+		let mtl_edge_logvariance: MTLBuffer = context.fromLAObject(la_edge_logvariance)
 		
 		let la_delta_mean: la_object_t = la_matrix_from_float_buffer(uniform(rows), la_count_t(rows), la_count_t(1), la_count_t(1), NOHINT, ATTR)
 		let la_delta_variance: la_object_t = la_matrix_from_float_buffer(uniform(rows), la_count_t(rows), la_count_t(1), la_count_t(1), NOHINT, ATTR)
 		
+		let eps: Float = 0.5
 		
-	}
-	func testRefresh() {
-		guard let edge: Edge = context.new() else {
-			XCTFail()
-			return
-		}
-		let dmean: Float = Float(arc4random())/Float(UInt16.max)
-		let dvariance: Float = Float(arc4random())/Float(UInt16.max)
-		let rows: Int = 64
-		let cols: Int = 64
-		let count: Int = Int(rows*cols)
-		
-		edge.resize(rows: rows, cols: cols)
-		edge.adjust(mean: dmean, variance: dvariance)
-		edge.refresh()
-		
-		let value: la_object_t = context.toLAObject(edge.value, rows: count, cols: 1)
-		
-		var ymean: Float = 0.0
-		var ydeviation: Float = 0.0
-		
-		let cache: [Float] = [Float](count: count, repeatedValue: 0.0)
-		
-		context.join()
-		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), 1, value)
-		
-		vDSP_meanv(UnsafePointer<Float>(cache), 1, &ymean, vDSP_Length(count))
-		XCTAssert(!isnan(ymean))
-		XCTAssert(!isinf(ymean))
-		
-		if 1e-1 < abs(log(ymean)-log(dmean)) {
-			XCTFail("\(ymean) vs \(dmean)")
-		}
-		
-		vDSP_vsadd(UnsafePointer<Float>(cache), 1, [-ymean], UnsafeMutablePointer<Float>(cache), 1, vDSP_Length(count))
-		vDSP_rmsqv(UnsafePointer<Float>(cache), 1, &ydeviation, vDSP_Length(count))
-		XCTAssert(!isnan(ydeviation))
-		XCTAssert(!isinf(ydeviation))
-		
-		if 1e-1 < abs(2.0*log(ydeviation)-log(dvariance)) {
-			XCTFail("\(ydeviation*ydeviation) vs \(dvariance)")
-		}
 		
 	}
 }
