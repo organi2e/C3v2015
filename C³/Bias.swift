@@ -16,63 +16,48 @@ extension Bias {
 }
 
 extension Bias {
-	internal func collect(let value level_value: MTLBuffer, let mean level_mean: MTLBuffer, let variance level_variance: MTLBuffer) {
-		
-		if let context: Context = managedObjectContext as? Context {
-			
-			let group: MTLSize = MTLSize(width: (rows-1)/4+1, height: 1, depth: 1)
-			let local: MTLSize = MTLSize(width: (cols-1)/4+1, height: 1, depth: 1)
-			
-			let bias_value: MTLBuffer = value
-			let bias_mean: MTLBuffer = mean
-			let bias_variance: MTLBuffer = variance
-			
-			context.newComputeCommand(function: "biasCollect") {
-				
-				$0.setBuffer(level_value, offset: 0, atIndex: 0)
-				$0.setBuffer(level_mean, offset: 0, atIndex: 1)
-				$0.setBuffer(level_variance, offset: 0, atIndex: 2)
-				$0.setBuffer(bias_value, offset: 0, atIndex: 3)
-				$0.setBuffer(bias_mean, offset: 0, atIndex: 4)
-				$0.setBuffer(bias_variance, offset: 0, atIndex: 5)
-				
-				$0.dispatchThreadgroups(group, threadsPerThreadgroup: local)
-				
-			}
-			
-		} else {
-			assertionFailure(Context.Error.InvalidContext.rawValue)
-			
-		}
+	internal func collect(let context: Context, let level: (MTLBuffer, MTLBuffer, MTLBuffer)) {
+		Bias.collect(context: context, level: level, bias: (value, mean, variance), rows: rows, cols: cols)
 		
 	}
-	internal func correctFF(let eps eps: Float, let mean delta_mean: MTLBuffer, let variance delta_variance: MTLBuffer) {
+	internal func correctFF(let context: Context, let eps: Float, let delta: (MTLBuffer, MTLBuffer)) {
+		func schedule() {
+			willChangeValueForKey(Bias.logmeankey)
+			willChangeValueForKey(Bias.logvariancekey)
+		}
+		func complete() {
+			didChangeValueForKey(Bias.logmeankey)
+			didChangeValueForKey(Bias.logvariancekey)
+		}
+		Bias.correctFF(context: context, eps: eps, bias: (logmean, logvariance, mean, variance), delta: delta, rows: rows, cols: cols, schedule: schedule, complete: complete)
 		
-		if let context: Context = managedObjectContext as? Context {
+	}
+}
+extension Bias {
+	internal static func collect(let context context: Context, let level: (MTLBuffer, MTLBuffer, MTLBuffer), let bias: (MTLBuffer, MTLBuffer, MTLBuffer), let rows: Int, let cols: Int) {
+		context.newComputeCommand(function: "biasCollect") {
+			$0.setBuffer(level.0, offset: 0, atIndex: 0)
+			$0.setBuffer(level.1, offset: 0, atIndex: 1)
+			$0.setBuffer(level.2, offset: 0, atIndex: 2)
+			$0.setBuffer(bias.0, offset: 0, atIndex: 3)
+			$0.setBuffer(bias.1, offset: 0, atIndex: 4)
+			$0.setBuffer(bias.2, offset: 0, atIndex: 5)
 			
-			let group: MTLSize = MTLSize(width: (rows-1)/4+1, height: 1, depth: 1)
-			let local: MTLSize = MTLSize(width: (cols-1)/4+1, height: 1, depth: 1)
-			
-			let bias_mean: MTLBuffer = mean
-			let bias_logvariance: MTLBuffer = logvariance
-			let bias_variance: MTLBuffer = variance
-			
-			context.newComputeCommand(function: "biasCorrectFF") {
-				
-				$0.setBuffer(bias_mean, offset: 0, atIndex: 0)
-				$0.setBuffer(bias_logvariance, offset: 0, atIndex: 1)
-				$0.setBuffer(bias_variance, offset: 0, atIndex: 2)
-				$0.setBytes([eps], length: sizeof(Float), atIndex: 3)
-				$0.setBuffer(delta_mean, offset: 0, atIndex: 4)
-				$0.setBuffer(delta_variance, offset: 0, atIndex: 5)
-				
-				$0.dispatchThreadgroups(group, threadsPerThreadgroup: local)
-				
-			}
-			
-		} else {
-			assertionFailure(Context.Error.InvalidContext.rawValue)
-			
+			$0.dispatchThreadgroups(MTLSize(width: (rows-1)/4+1, height: 1, depth: 1),
+			                        threadsPerThreadgroup: MTLSize(width: (cols-1)/4+1, height: 1, depth: 1))
+		}
+	}
+	internal static func correctFF(let context context: Context, let eps: Float, let bias: (MTLBuffer, MTLBuffer, MTLBuffer, MTLBuffer), let delta: (MTLBuffer, MTLBuffer), let rows: Int, let cols: Int, let schedule: (()->())?=nil, let complete: (()->())?=nil) {
+		context.newComputeCommand(function: "biasCorrect", schedule: schedule, complete: complete) {
+			$0.setBuffer(bias.0, offset: 0, atIndex: 0)
+			$0.setBuffer(bias.1, offset: 0, atIndex: 1)
+			$0.setBuffer(bias.2, offset: 0, atIndex: 2)
+			$0.setBuffer(bias.3, offset: 0, atIndex: 3)
+			$0.setBuffer(delta.0, offset: 0, atIndex: 4)
+			$0.setBuffer(delta.1, offset: 0, atIndex: 5)
+			$0.setBytes([eps], length: sizeof(Float), atIndex: 6)
+			$0.dispatchThreadgroups(MTLSize(width: 1, height: 1, depth: 1),
+			                        threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}
 		
 	}

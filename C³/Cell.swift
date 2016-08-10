@@ -246,21 +246,12 @@ extension Cell {
 				
 			} else if let context: Context = managedObjectContext as? Context {
 				
-				let group: MTLSize = MTLSize(width: (width-1)/4+1, height: 1, depth: 1)
-				let local: MTLSize = MTLSize(width: 1, height: 1, depth: 1)
-				
-				let state_value: MTLBuffer = state[0].value
-				
-				let level_value: MTLBuffer = level[0].value
-				let level_mean: MTLBuffer = level[0].mean
-				let level_variance: MTLBuffer = level[0].variance
-				
 				input.forEach {
-					$0.collect(value: level_value, mean: level_mean, variance: level_variance, visit: visit.union([self]))
+					$0.collect(context, level: (level[0].value, level[0].mean, level[0].variance), visit: visit.union([self]))
 				}
-
-				bias.collect(value: level_value, mean: level_mean, variance: level_variance)
-				activate(context, state: state_value, level: level_value)
+				bias.collect(context, level: (level[0].value, level[0].mean, level[0].variance))
+				
+				Cell.activate(context: context, state: state[0].value, level: level[0].value, width: width)
 				ready.insert(.State)
 				
 			} else {
@@ -269,17 +260,6 @@ extension Cell {
 			}
 		}
 		return state[0].value
-	}
-	private func activate (let context: Context, let state: MTLBuffer, let level: MTLBuffer ) {
-		
-		let group: MTLSize = MTLSize(width: (width-1)/4+1, height: 1, depth: 1)
-		let local: MTLSize = MTLSize(width: 1, height: 1, depth: 1)
-		
-		context.newComputeCommand(function: "step") {
-			$0.setBuffer(state, offset: 0, atIndex: 0)
-			$0.setBuffer(level, offset: 0, atIndex: 1)
-			$0.dispatchThreadgroups(group, threadsPerThreadgroup: local)
-		}
 	}
 	public func correct(let eps eps: Float) {
 		correct(eps: eps, visit: [])
@@ -295,33 +275,16 @@ extension Cell {
 			} else if ready.contains(.State) {
 				if let context: Context = managedObjectContext as? Context where ready.contains(.State) {
 					if ready.contains(.Train) {
-						
-						let group: MTLSize = MTLSize(width: (width-1)/4+1, height: 1, depth: 1)
-						let local: MTLSize = MTLSize(width: 1, height: 1, depth: 1)
-						
-						let train: MTLBuffer = state[0].train
-						let value: MTLBuffer = state[0].value
-						
-						context.newComputeCommand(function: "sub") {
-							$0.setBuffer(train, offset: 0, atIndex: 0)
-							$0.setBuffer(value, offset: 0, atIndex: 1)
-							$0.dispatchThreadgroups(group, threadsPerThreadgroup: local)
-						}
+						Cell.difference(context: context, error: state[0].error, train: state[0].train, state: state[0].value, width: width)
 					
 					} else {
-						
-						let group: MTLSize = MTLSize(width: (width-1)/4+1, height: 1, depth: 1)
-						let local: MTLSize = MTLSize(width: 1, height: 1, depth: 1)
-						
-						let state_error: MTLBuffer = state[0].error
-						let state_value: MTLBuffer = state[0].value
-						
 						output.forEach {
-							$0.correct(eps: eps, error: state_error, state: state_value, visit: visit.union([self]))
+							$0.correct(context, eps: eps, error: state[0].error, state: state[0].value, visit: visit.union([self]))
 						}
 						
 					}
-					
+					Cell.derivate(context: context, delta: (delta[0].mean, delta[1].mean), level: (level[0].mean, level[0].variance), error: state[0].error, width: width)
+					bias.correctFF(context, eps: eps, delta: (delta[0].mean, delta[0].variance))
 				} else {
 					assertionFailure(Context.Error.InvalidContext.rawValue)
 					
@@ -333,17 +296,6 @@ extension Cell {
 			}
 		}
 		return(delta[0].mean, delta[0].variance)
-	}
-	private func derivate(let context: Context, let delta: MTLBuffer, let error: MTLBuffer) {
-		
-		let group: MTLSize = MTLSize(width: (width-1)/4+1, height: 1, depth: 1)
-		let local: MTLSize = MTLSize(width: 1, height: 1, depth: 1)
-		
-		context.newComputeCommand(function: "sign") {
-			$0.setBuffer(delta, offset: 0, atIndex: 0)
-			$0.setBuffer(error, offset: 0, atIndex: 1)
-			$0.dispatchThreadgroups(group, threadsPerThreadgroup: local)
-		}
 	}
 }
 extension Cell {
@@ -369,6 +321,7 @@ extension Cell {
 				context.newBlitCommand(sync: true) {
 					$0.copyFromBuffer(value, sourceOffset: 0, toBuffer: cache, destinationOffset: 0, size: min(cache.length, value.length))
 				}
+				defer { cache.setPurgeableState(.Empty) }
 				return UnsafeMutableBufferPointer<Float>(start: UnsafeMutablePointer<Float>(cache.contents()), count: width).map{Bool($0)}
 			} else {
 				assertionFailure(Context.Error.InvalidContext.rawValue)
@@ -397,13 +350,41 @@ extension Cell {
 				let train: MTLBuffer = state[0].train
 				context.newBlitCommand(sync: true) {
 					$0.copyFromBuffer(train, sourceOffset: 0, toBuffer: cache, destinationOffset: 0, size: min(cache.length, train.length))
-				}	
+				}
+				defer { cache.setPurgeableState(.Empty) }
 				return UnsafeMutableBufferPointer<Float>(start: UnsafeMutablePointer<Float>(cache.contents()), count: width).map{Bool($0)}
 			} else {
 				assertionFailure(Context.Error.InvalidContext.rawValue)
 				
 			}
 			return [Bool](count: width, repeatedValue: false)
+		}
+	}
+}
+extension Cell {
+	internal static func difference(let context context: Context, let error: MTLBuffer, let train: MTLBuffer, let state: MTLBuffer, let width: Int) {
+		context.newComputeCommand(function: "cellDifference") {
+			$0.setBuffer(error, offset: 0, atIndex: 0)
+			$0.setBuffer(train, offset: 0, atIndex: 1)
+			$0.setBuffer(state, offset: 0, atIndex: 2)
+			$0.dispatchThreadgroups(MTLSize(width: (width-1)/4+1, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
+		}
+	}
+	internal static func activate(let context context: Context, let state: MTLBuffer, let level: MTLBuffer, let width: Int) {
+		context.newComputeCommand(function: "cellActivate") {
+			$0.setBuffer(state, offset: 0, atIndex: 0)
+			$0.setBuffer(level, offset: 0, atIndex: 1)
+			$0.dispatchThreadgroups(MTLSize(width: (width-1)/4+1, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
+		}
+	}
+	internal static func derivate(let context context: Context, let delta: (MTLBuffer, MTLBuffer), let level: (MTLBuffer, MTLBuffer), let error: MTLBuffer, let width: Int) {
+		context.newComputeCommand(function: "cellDerivate") {
+			$0.setBuffer(delta.0, offset: 0, atIndex: 0)
+			$0.setBuffer(delta.1, offset: 0, atIndex: 1)
+			$0.setBuffer(level.0, offset: 0, atIndex: 2)
+			$0.setBuffer(level.1, offset: 0, atIndex: 3)
+			$0.setBuffer(error, offset: 0, atIndex: 4)
+			$0.setBytes([Float(M_PI)], length: 0, atIndex: 5)
 		}
 	}
 }

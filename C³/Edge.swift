@@ -18,79 +18,27 @@ extension Edge {
 }
 
 extension Edge {
-	func collect(let value level_value: MTLBuffer, let mean level_mean: MTLBuffer, let variance level_variance: MTLBuffer, let visit: Set<Cell>) {
-		
-		if let context: Context = managedObjectContext as? Context {
-			Edge.collect(context: context,
-			             level_value: level_value,
-			             level_mean: level_mean,
-			             level_variance: level_variance,
-			             edge_value: value,
-			             edge_mean: mean,
-			             edge_variance: variance,
-			             input_state: input.collect(visit: visit),
-			             rows: rows,
-			             cols: cols
-			)
-			
-		} else {
-			assertionFailure(Context.Error.InvalidContext.rawValue)
-			
-		}
+	func collect(let context: Context, let level: (MTLBuffer, MTLBuffer, MTLBuffer), let visit: Set<Cell>) {
+		Edge.collect(context: context, level: level, edge: (value, mean, variance), state: input.collect(visit: visit), rows: rows, cols: cols)
 		
 	}
-	internal func correct(let eps eps: Float, let error input_error: MTLBuffer, let state input_state: MTLBuffer, let visit: Set<Cell>) {
-		
-		if let context: Context = managedObjectContext as? Context {
-			
-			let (delta_mean, delta_variance) = output.correct(eps: eps, visit: visit)
-			
-			let edge_mean: MTLBuffer = mean
-			let edge_logvariance: MTLBuffer = logvariance
-			let edge_variance: MTLBuffer = variance
-			
-			let group: MTLSize = MTLSize(width: rows/4, height: 1, depth: 1)
-			let local: MTLSize = MTLSize(width: 16, height: 1, depth: 1)
-			
-			let edge_rows: Int = rows
-			let edge_cols: Int = cols
-			
-			context.newComputeCommand(function: "edgeCorrect") {
-				
-				$0.setBuffer(edge_mean, offset: 0, atIndex: 0)
-				$0.setBuffer(edge_logvariance, offset: 0, atIndex: 1)
-				$0.setBuffer(edge_variance, offset: 0, atIndex: 2)
-				$0.setBuffer(input_state, offset: 0, atIndex: 3)
-				$0.setBytes([eps], length: sizeof(Float), atIndex: 4)
-				$0.setBuffer(delta_mean, offset: 0, atIndex: 5)
-				$0.setBuffer(delta_variance, offset: 0, atIndex: 6)
-				
-				$0.setBytes([uint(edge_rows/4), uint(edge_cols/4)], length: 2*sizeof(uint), atIndex: 7)
-				
-				$0.dispatchThreadgroups(group, threadsPerThreadgroup: local)
-				
-			}
-			
-			
-		} else {
-			assertionFailure(Context.Error.InvalidContext.rawValue)
-		
-		}
+	internal func correct(let context: Context, let eps: Float, let error: MTLBuffer, let state: MTLBuffer, let visit: Set<Cell>) {
+		let (delta_mean, delta_variance) = output.correct(eps: eps, visit: visit)
 		
 	}
 }
 extension Edge {
-	internal static func collect(let context context: Context, let level_value: MTLBuffer, let level_mean: MTLBuffer, let level_variance: MTLBuffer, let edge_value: MTLBuffer, let edge_mean: MTLBuffer, let edge_variance: MTLBuffer, let input_state: MTLBuffer, let rows: Int, let cols: Int, let bs: Int = 64) {
+	internal static func collect(let context context: Context, let level: (MTLBuffer, MTLBuffer, MTLBuffer), let edge: (MTLBuffer, MTLBuffer, MTLBuffer), let state: MTLBuffer, let rows: Int, let cols: Int, let bs: Int = 64) {
 		
 		context.newComputeCommand(function: "edgeCollect") {
 			
-			$0.setBuffer(level_value, offset: 0, atIndex: 0)
-			$0.setBuffer(level_mean, offset: 0, atIndex: 1)
-			$0.setBuffer(level_variance, offset: 0, atIndex: 2)
-			$0.setBuffer(edge_value, offset: 0, atIndex: 3)
-			$0.setBuffer(edge_mean, offset: 0, atIndex: 4)
-			$0.setBuffer(edge_variance, offset: 0, atIndex: 5)
-			$0.setBuffer(input_state, offset: 0, atIndex: 6)
+			$0.setBuffer(level.0, offset: 0, atIndex: 0)
+			$0.setBuffer(level.1, offset: 0, atIndex: 1)
+			$0.setBuffer(level.2, offset: 0, atIndex: 2)
+			$0.setBuffer(edge.0, offset: 0, atIndex: 3)
+			$0.setBuffer(edge.1, offset: 0, atIndex: 4)
+			$0.setBuffer(edge.2, offset: 0, atIndex: 5)
+			$0.setBuffer(state, offset: 0, atIndex: 6)
 			
 			$0.setBytes([uint(rows/4), uint(cols/4)], length: 2*sizeof(uint), atIndex: 7)
 			
@@ -102,10 +50,17 @@ extension Edge {
 			
 		}
 	}
-	internal static func correctFF(let context context: Context, let eps: Float, let mean: MTLBuffer, let logvariance: MTLBuffer, let delta: MTLBuffer, let variance: MTLBuffer, let state: MTLBuffer, let rows: Int, let cols: Int) {
-		context.newComputeCommand(function: "edgeCorrectFF") {
-			$0.setBuffer(mean, offset: 0, atIndex: 0)
-			$0.setBuffer(logvariance, offset: 0, atIndex: 1)
+	internal static func correctFF(let context context: Context, let eps: Float, let edge: (MTLBuffer, MTLBuffer, MTLBuffer, MTLBuffer), let delta: (MTLBuffer, MTLBuffer), let state: MTLBuffer, let rows: Int, let cols: Int, let schedule: (()->())?=nil, let complete:(()->())?=nil) {
+		context.newComputeCommand(function: "edgeCorrectFF", schedule: schedule, complete: complete) {
+			$0.setBuffer(edge.0, offset: 0, atIndex: 0)
+			$0.setBuffer(edge.1, offset: 0, atIndex: 1)
+			$0.setBuffer(edge.2, offset: 0, atIndex: 2)
+			$0.setBuffer(edge.3, offset: 0, atIndex: 3)
+			$0.setBuffer(delta.0, offset: 0, atIndex: 4)
+			$0.setBuffer(delta.1, offset: 0, atIndex: 5)
+			$0.setBuffer(state, offset: 0, atIndex: 6)
+			$0.setBytes([eps], length: sizeof(Float), atIndex: 7)
+			$0.setBytes([uint(rows/4), uint(cols/4)], length: 2*sizeof(uint), atIndex: 8)
 			
 		}
 	}

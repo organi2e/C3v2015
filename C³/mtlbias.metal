@@ -22,17 +22,18 @@ kernel void biasCollect(device float4 * level_value [[ buffer(0) ]],
 	level_mean[n] += bias_mean[n];
 	level_variance[n] += bias_variance[n];
 }
-kernel void biasCorrectFF(device float4 * bias_mean [[ buffer(0) ]],
+kernel void biasCorrectFF(device float4 * bias_logmean [[ buffer(0) ]],
 						  device float4 * bias_logvariance [[ buffer(1) ]],
-						  device const float4 * bias_variance [[ buffer(2) ]],
-						  constant const float & eps [[ buffer(3) ]],
+						  device const float4 * bias_mean [[ buffer(2) ]],
+						  device const float4 * bias_variance [[ buffer(3) ]],
 						  device const float4 * delta_mean [[ buffer(4) ]],
 						  device const float4 * delta_variance [[ buffer(5) ]],
+						  constant const float & eps [[ buffer(6) ]],
 						  uint const n [[ thread_position_in_grid ]],
 						  uint const N [[ threads_per_grid ]]
 						  ) {
-	bias_mean[n] += eps * delta_mean[n];
-	bias_logvariance[n] -= ( 0.5 * eps ) * bias_variance[n] * delta_variance[n];
+	bias_logmean[n] += eps * ( 1.0 - bias_mean[n] * bias_mean[n] ) * delta_mean[n];
+	bias_logvariance[n] += eps * ( bias_variance[n] ) * delta_variance[n];
 }
 kernel void biasCorrectFB(device float4 * bias_mean [[ buffer(0) ]],
 						  device float4 * bias_logvariance [[ buffer(1) ]],

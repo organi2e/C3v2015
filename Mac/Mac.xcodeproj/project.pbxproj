@@ -69,6 +69,7 @@
 		87C516D91D3F803400E3F36B /* UnitTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87C516D81D3F803400E3F36B /* UnitTest.swift */; };
 		87D18E331D3F18B300982020 /* LA.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87D18E321D3F18B300982020 /* LA.swift */; };
 		87D8B4061D4B6E590010EA4F /* BlasTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87D8B4051D4B6E590010EA4F /* BlasTests.swift */; };
+		87F6AC071D5B8C5B005710FF /* mtlcell.metal in Sources */ = {isa = PBXBuildFile; fileRef = 87F6AC061D5B8C5B005710FF /* mtlcell.metal */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -204,6 +205,7 @@
 		87C516D81D3F803400E3F36B /* UnitTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = UnitTest.swift; path = ../../NLA/UnitTest.swift; sourceTree = "<group>"; };
 		87D18E321D3F18B300982020 /* LA.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = LA.swift; path = "../../C³/LA.swift"; sourceTree = "<group>"; };
 		87D8B4051D4B6E590010EA4F /* BlasTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BlasTests.swift; sourceTree = "<group>"; };
+		87F6AC061D5B8C5B005710FF /* mtlcell.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = mtlcell.metal; path = "../../C³/mtlcell.metal"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -358,6 +360,7 @@
 		87B1FD021D05461100981CF4 /* C³ */ = {
 			isa = PBXGroup;
 			children = (
+				87F6AC061D5B8C5B005710FF /* mtlcell.metal */,
 				87BC8D961D55E544004510EF /* mtlgauss.metal */,
 				87BC8D931D55E071004510EF /* mtledge.metal */,
 				87BC8D8F1D55D103004510EF /* mtlbias.metal */,
@@ -780,6 +783,7 @@
 				87BC8D911D55D19D004510EF /* mtlbias.metal in Sources */,
 				870EA92C1D54ADD3008C3380 /* mtlblas.metal in Sources */,
 				870EA92D1D54ADD3008C3380 /* mtlmath.metal in Sources */,
+				87F6AC071D5B8C5B005710FF /* mtlcell.metal in Sources */,
 				870EA92E1D54ADD3008C3380 /* mtlrand.metal in Sources */,
 				87B1FD3B1D0546C700981CF4 /* C³.xcdatamodeld in Sources */,
 				87BCEBFE1D4D764100FC3099 /* Decay.swift in Sources */,

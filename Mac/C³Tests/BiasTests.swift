@@ -35,7 +35,7 @@ class BiasTests: XCTestCase {
 		
 		bias.resize(rows: rows, cols: cols)
 		bias.refresh()
-		bias.collect(value: value, mean: mean, variance: variance)
+		//bias.collect(value: value, mean: mean, variance: variance)
 		
 		let srcValue: UnsafeMutableBufferPointer<Float> = UnsafeMutableBufferPointer<Float>(start: UnsafeMutablePointer<Float>(bias.value.contents()), count: rows)
 		let srcMean: UnsafeMutableBufferPointer<Float> = UnsafeMutableBufferPointer<Float>(start: UnsafeMutablePointer<Float>(bias.mean.contents()), count: rows)
@@ -77,7 +77,7 @@ class BiasTests: XCTestCase {
 		bias.resize(rows: rows, cols: cols)
 		bias.adjust(mean: mean, variance: variance)
 		bias.refresh()
-		bias.correctFF(eps: eps, mean: mtl_mean, variance: mtl_variance)
+		//bias.correctFF(eps: eps, mean: mtl_mean, variance: mtl_variance)
 		
 		let srcMean_la = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(srcMean), la_count_t(rows), 1, 1, NOHINT, nil, ATTR)
 		let dMean_la = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(dMean), la_count_t(rows), 1, 1, NOHINT, nil, ATTR)
