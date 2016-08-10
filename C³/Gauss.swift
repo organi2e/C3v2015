@@ -35,7 +35,7 @@ extension Gauss {
 
 extension Gauss {
 	
-	static private let meankey: String = "meandata"
+	static private let logmeankey: String = "logmeandata"
 	static private let logvariancekey: String = "logvariancedata"
 	
 	internal func setup() {
@@ -56,7 +56,7 @@ extension Gauss {
 			refresh()
 			shuffle()
 			
-			setPrimitiveValue(NSData(bytesNoCopy: mean.contents(), length: mean.length, freeWhenDone: false), forKey: Gauss.meankey)
+			setPrimitiveValue(NSData(bytesNoCopy: logmean.contents(), length: logmean.length, freeWhenDone: false), forKey: Gauss.logmeankey)
 			setPrimitiveValue(NSData(bytesNoCopy: logvariance.contents(), length: logvariance.length, freeWhenDone: false), forKey: Gauss.logvariancekey)
 			
 		} else {
@@ -87,6 +87,13 @@ extension Gauss {
 		if let context: Context = managedObjectContext as? Context {
 			let adjust_logmean: Float = log(2.0/(adjust_mean+1.0)-1.0)
 			let adjust_logvariance: Float = log(adjust_variance)
+			
+			assert(!isnan(adjust_logmean))
+			assert(!isinf(adjust_logmean))
+			
+			assert(!isnan(adjust_logvariance))
+			assert(!isinf(adjust_logvariance))
+			
 			Gauss.adjust(context: context, logmean: logmean, logvariance: logvariance, newLogmean: adjust_logmean, newLogvariance: adjust_logvariance, rows: rows, cols: cols)
 			
 		} else {
@@ -97,19 +104,16 @@ extension Gauss {
 	}
 	internal func resize(let rows r: Int, let cols c: Int ) {
 		
-		rows = Int(r)
-		cols = Int(c)
+		rows = r
+		cols = c
 		
 		logmeandata = NSData(bytes: [Float](count: rows*cols, repeatedValue: 0), length: sizeof(Float)*rows*cols)
 		assert(logmeandata.length==sizeof(Float)*Int(rows*cols))
 		
 		logvariancedata = NSData(bytes: [Float](count: rows*cols, repeatedValue: 0), length: sizeof(Float)*rows*cols)
 		assert(logvariancedata.length==sizeof(Float)*Int(rows*cols))
-		print(1)
-		
 		
 		setup()
-		print(1)
 		
 		
 	}
@@ -134,7 +138,7 @@ extension Gauss {
 		}
 	}
 	internal static func adjust(let context context: Context, let logmean: MTLBuffer, let logvariance: MTLBuffer, let newLogmean: Float, let newLogvariance: Float, let rows: Int, let cols: Int) {
-		context.newComputeCommand(function: "gaussAdjusts") {
+		context.newComputeCommand(function: "gaussAdjust") {
 			$0.setBuffer(logmean, offset: 0, atIndex: 0)
 			$0.setBuffer(logvariance, offset: 0, atIndex: 1)
 			$0.setBytes([newLogmean, newLogvariance], length: 2*sizeof(Float), atIndex: 2)
