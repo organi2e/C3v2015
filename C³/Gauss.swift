@@ -14,6 +14,7 @@ internal class Gauss: NSManagedObject {
 	var mean: MTLBuffer!
 	var variance: MTLBuffer!
 	var logvariance: MTLBuffer!
+	private var uniform: MTLBuffer!
 }
 
 extension Gauss {
@@ -51,11 +52,13 @@ extension Gauss {
 			mean = context.newBuffer(data: meandata)
 			logvariance = context.newBuffer(data: logvariancedata)
 			
+			uniform = context.newBuffer(length: sizeof(UInt16)*rows*cols)
+			arc4random_buf(uniform.contents(), uniform.length)
+			
 			refresh()
 			
 			setPrimitiveValue(NSData(bytesNoCopy: mean.contents(), length: mean.length, freeWhenDone: false), forKey: Gauss.meankey)
 			setPrimitiveValue(NSData(bytesNoCopy: logvariance.contents(), length: logvariance.length, freeWhenDone: false), forKey: Gauss.logvariancekey)
-			
 			
 		} else {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
@@ -68,37 +71,22 @@ extension Gauss {
 		
 		if let context: Context = managedObjectContext as? Context {
 			
-			let semaphore: dispatch_semaphore_t = dispatch_semaphore_create(0)
-			let cache: MTLBuffer = context.newBuffer(length: sizeof(UInt16)*rows*cols)
-			
-			context.performBlock {
-				arc4random_buf(cache.contents(), cache.length)
-				dispatch_semaphore_signal(semaphore)
-			}
-			
-			let schedule: ()->() = {
-				dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
-			}
-			
-			let complete: ()->() = {
-				cache.setPurgeableState(.Empty)
-			}
-			
 			let gauss_value: MTLBuffer = value
 			let gauss_variance: MTLBuffer = variance
 			let gauss_mean: MTLBuffer = mean
 			let gauss_logvariance: MTLBuffer = logvariance
+			let gauss_uniform: MTLBuffer = uniform
 			
 			let group: MTLSize = MTLSize(width: (rows*cols-1)/4+1, height: 1, depth: 1)
 			let local: MTLSize = MTLSize(width: 1, height: 1, depth: 1)
 			
-			context.newComputeCommand(function: "gaussShuffle", schedule: schedule, complete: complete) {
+			context.newComputeCommand(function: "gaussShuffle", complete: {context.performBlock{arc4random_buf(gauss_uniform.contents(), gauss_uniform.length)}}) {
 				
 				$0.setBuffer(gauss_value, offset: 0, atIndex: 0)
 				$0.setBuffer(gauss_variance, offset: 0, atIndex: 1)
 				$0.setBuffer(gauss_mean, offset: 0, atIndex: 2)
 				$0.setBuffer(gauss_logvariance, offset: 0, atIndex: 3)
-				$0.setBuffer(cache, offset: 0, atIndex: 4)
+				$0.setBuffer(gauss_uniform, offset: 0, atIndex: 4)
 				
 				$0.dispatchThreadgroups(group, threadsPerThreadgroup: local)
 				
@@ -132,10 +120,10 @@ extension Gauss {
 		
 		if let context: Context = managedObjectContext as? Context {
 			
+			let semaphore: dispatch_semaphore_t = dispatch_semaphore_create(0)
+			
 			let m: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows*cols)
 			let v: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows*cols)
-			
-			let semaphore: dispatch_semaphore_t = dispatch_semaphore_create(0)
 			
 			let gauss_mean: MTLBuffer = mean
 			let gauss_logvariance: MTLBuffer = logvariance

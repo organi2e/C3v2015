@@ -19,7 +19,7 @@ public class Cell: NSManagedObject {
 	}
 	private var ready: Set<Ready> = Set<Ready>()
 	
-	private struct State {
+	internal struct State {
 		let train: MTLBuffer
 		let value: MTLBuffer
 		let error: MTLBuffer
@@ -36,7 +36,7 @@ public class Cell: NSManagedObject {
 		let variance: MTLBuffer
 	}
 	
-	private var state: [State] = []
+	internal var state: [State] = []
 	private var level: [Level] = []
 	private var delta: [Delta] = []
 	
