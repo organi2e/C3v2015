@@ -20,9 +20,11 @@ class GaussTests: XCTestCase {
 		}
 		let dmean: Float = Float(arc4random())/Float(UInt16.max)
 		let dvariance: Float = Float(arc4random())/Float(UInt16.max)
-		let rows: Int = 64
-		let cols: Int = 64
+		let rows: Int = 200//4 * Int(1+arc4random_uniform(256))
+		let cols: Int = 200//4 * Int(1+arc4random_uniform(256))
 		let count: Int = Int(rows*cols)
+		
+		//print(rows, cols)
 		
 		gauss.resize(rows: rows, cols: cols)
 		gauss.adjust(mean: dmean, variance: dvariance)
@@ -42,8 +44,11 @@ class GaussTests: XCTestCase {
 		XCTAssert(!isnan(ymean))
 		XCTAssert(!isinf(ymean))
 		
+		var dump: Bool = false
+		
 		if 1e-1 < abs(log(ymean)-log(dmean)) {
-			XCTFail("\(ymean) vs \(dmean)")
+			dump = true
+			XCTFail("mean: \(ymean) vs \(dmean)")
 		}
 		
 		vDSP_vsadd(UnsafePointer<Float>(cache), 1, [-ymean], UnsafeMutablePointer<Float>(cache), 1, vDSP_Length(count))
@@ -52,7 +57,14 @@ class GaussTests: XCTestCase {
 		XCTAssert(!isinf(ydeviation))
 		
 		if 1e-1 < abs(2.0*log(ydeviation)-log(dvariance)) {
-			XCTFail("\(ydeviation*ydeviation) vs \(dvariance)")
+			dump = true
+			XCTFail("var.: \(ydeviation*ydeviation) vs \(dvariance)")
+		}
+		
+		if dump {
+			(0..<rows).forEach {
+				print(cache[$0*rows..<$0*rows+cols])
+			}
 		}
 	}
 	func new() -> Gauss? {

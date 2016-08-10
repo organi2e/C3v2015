@@ -26,10 +26,10 @@ extension Edge {
 			
 			let bs: Int = 64
 			
-			let edge_rows: Int = rows/4
-			let edge_cols: Int = cols/4
+			let edge_rows: Int = rows
+			let edge_cols: Int = cols
 			
-			let group: MTLSize = MTLSize(width: edge_rows, height: 1, depth: 1)
+			let group: MTLSize = MTLSize(width: edge_rows/4, height: 1, depth: 1)
 			let local: MTLSize = MTLSize(width: bs, height: 1, depth: 1)
 			
 			let edge_value: MTLBuffer = value
@@ -48,7 +48,7 @@ extension Edge {
 				$0.setBuffer(edge_variance, offset: 0, atIndex: 5)
 				$0.setBuffer(input_state, offset: 0, atIndex: 6)
 				
-				$0.setBytes([UInt32(edge_rows), UInt32(edge_cols)], length: 2*sizeof(UInt32), atIndex: 7)
+				$0.setBytes([uint(edge_rows/4), uint(edge_cols/4)], length: 2*sizeof(uint), atIndex: 7)
 				
 				$0.setThreadgroupMemoryLength(local_memry, atIndex: 0)
 				$0.setThreadgroupMemoryLength(local_memry, atIndex: 1)
@@ -89,8 +89,7 @@ extension Edge {
 				$0.setBuffer(delta_mean, offset: 0, atIndex: 5)
 				$0.setBuffer(delta_variance, offset: 0, atIndex: 6)
 				
-				$0.setBytes([UInt32(edge_rows/4)], length: sizeof(UInt32), atIndex: 7)
-				$0.setBytes([UInt32(edge_cols/4)], length: sizeof(UInt32), atIndex: 8)
+				$0.setBytes([uint(edge_rows/4), uint(edge_cols/4)], length: 2*sizeof(uint), atIndex: 7)
 				
 				$0.dispatchThreadgroups(group, threadsPerThreadgroup: local)
 				

@@ -8,46 +8,13 @@
 
 #include <metal_stdlib>
 using namespace metal;
-/*
-kernel void edgeCollect(device float4 * y [[ buffer(0) ]],
-						device const float4x4 * const A [[ buffer(1) ]],
-						device const float4 * const x [[ buffer(2) ]],
-						constant uint2 const & dim [[ buffer(3) ]],
-						constant float2 const & w [[ buffer(4) ]],
-						uint const g [[ threadgroup_position_in_grid ]],
-						uint const G [[ threadgroups_per_grid ]],
-						uint const t [[ thread_position_in_threadgroup ]],
-						uint const T [[ threads_per_threadgroup ]],
-						threadgroup float4 * const accumulator [[ threadgroup(0) ]] )
-{
-	uint const M = dim.x;
-	uint const N = dim.y;
-	accumulator[t] = 0;
-	for ( uint i = 0, I = N ; i < I ; i += T ) {
-		uint const rows = g;
-		uint const cols = i + t;
-		if ( cols < N ) {
-			accumulator[t] += A[cols*M+rows] * x[cols];
-		}
-	}
-	uint offset = T;
-	while ( offset >>= 1 ) {
-		threadgroup_barrier ( mem_flags :: mem_threadgroup );
-		if ( t < offset ) {
-			accumulator [ t ] += accumulator [ t + offset ];
-		};
-	}
-	if( !t )
-		y[ g ] = w.x * accumulator [ t ] + w.y * y[ g ];
-}
-*/
 kernel void edgeCollect(device float4 * level_value [[ buffer(0) ]],
 						device float4 * level_mean [[ buffer(1) ]],
 						device float4 * level_variance [[ buffer(2) ]],
 						
-						device const float4 * const edge_value [[ buffer(3) ]],
-						device const float4 * const edge_mean [[ buffer(4) ]],
-						device const float4 * const edge_variance [[ buffer(5) ]],
+						device const float4x4 * const edge_value [[ buffer(3) ]],
+						device const float4x4 * const edge_mean [[ buffer(4) ]],
+						device const float4x4 * const edge_variance [[ buffer(5) ]],
 						
 						device const float4 * const input_state [[ buffer(6) ]],
 						
@@ -70,10 +37,12 @@ kernel void edgeCollect(device float4 * level_value [[ buffer(0) ]],
 	float4 mean = 0.0;
 	float4 variance = 0.0;
 	
+	uint const rows = g;
 	for ( uint k = 0, K = N ; k < K ; k += T ) {
-		if ( k + t < K ) {
-			float4 const state = input_state [ k + t ];
-			uint const idx = M * ( k + t ) + g;
+		uint const cols = k + t;
+		if ( cols < K ) {
+			float4 const state = input_state [ cols ];
+			uint const idx = cols * M + rows;
 			value += edge_value[idx] * ( state );
 			mean += edge_mean[idx] * ( state );
 			variance += edge_variance[idx] * ( state * state );
@@ -95,9 +64,9 @@ kernel void edgeCollect(device float4 * level_value [[ buffer(0) ]],
 	}
 	
 	if ( !t ) {
-		level_value [ g ] = *th_value;
-		level_mean [ g ] = *th_mean;
-		level_variance [ g ] = *th_variance;
+		level_value [ rows ] = *th_value;
+		level_mean [ rows ] = *th_mean;
+		level_variance [ rows ] = *th_variance;
 	}
 	
 }

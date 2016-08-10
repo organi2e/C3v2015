@@ -111,10 +111,6 @@ extension Context {
 	internal func newComputeCommand ( let sync sync: Bool = false, let function: String, let schedule: (()->())? = nil, let complete: (()->())? = nil, let configure: (MTLComputeCommandEncoder->())) {
 		if let pipeline: MTLComputePipelineState = mtl.pipeline[function] {
 			let command: MTLCommandBuffer = mtl.queue.commandBuffer()
-			let encoder: MTLComputeCommandEncoder = command.computeCommandEncoder()
-			encoder.setComputePipelineState(pipeline)
-			configure(encoder)
-			encoder.endEncoding()
 			if let schedule: ()->() = schedule {
 				command.addScheduledHandler {(_)in
 					schedule()
@@ -125,6 +121,10 @@ extension Context {
 					complete()
 				}
 			}
+			let encoder: MTLComputeCommandEncoder = command.computeCommandEncoder()
+			encoder.setComputePipelineState(pipeline)
+			configure(encoder)
+			encoder.endEncoding()
 			command.commit()
 			if sync { command.waitUntilCompleted() }
 			
@@ -135,9 +135,6 @@ extension Context {
 	}
 	internal func newBlitCommand( let sync sync: Bool = false, let schedule: (()->())? = nil, let complete: (()->())? = nil, let configure: (MTLBlitCommandEncoder->())) {
 		let command: MTLCommandBuffer = mtl.queue.commandBuffer()
-		let encoder: MTLBlitCommandEncoder = command.blitCommandEncoder()
-		configure(encoder)
-		encoder.endEncoding()
 		if let schedule: ()->() = schedule {
 			command.addScheduledHandler {(_)in
 				schedule()
@@ -148,6 +145,9 @@ extension Context {
 				complete()
 			}
 		}
+		let encoder: MTLBlitCommandEncoder = command.blitCommandEncoder()
+		configure(encoder)
+		encoder.endEncoding()
 		command.commit()
 		if sync { command.waitUntilCompleted() }
 	}
