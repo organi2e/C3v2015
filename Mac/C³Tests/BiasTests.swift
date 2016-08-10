@@ -61,6 +61,9 @@ class BiasTests: XCTestCase {
 		let rows: Int = 16
 		let cols: Int = 1
 		
+		let mean: Float = Float(1+arc4random_uniform(256))/128.0 - 1.0
+		let variance: Float = Float(1+arc4random_uniform(256))/Float(256.0)
+		
 		let srcMean: [Float] = (0..<rows).map{(_)in Float(arc4random())/Float(UInt32.max)}
 		let srcLogvar: [Float] = (0..<rows).map{(_)in Float(arc4random())/Float(UInt32.max)}
 		let srcVariance: [Float] = srcLogvar.map{exp($0)}
@@ -68,14 +71,13 @@ class BiasTests: XCTestCase {
 		let dMean: [Float] = (0..<rows).map{(_)in Float(arc4random())/Float(UInt32.max)}
 		let dVariance: [Float] = (0..<rows).map{(_)in Float(arc4random())/Float(UInt32.max)}
 		
-		let mean: MTLBuffer = context.newBuffer(dMean)
-		let variance: MTLBuffer = context.newBuffer(dVariance)
+		let mtl_mean: MTLBuffer = context.newBuffer(dMean)
+		let mtl_variance: MTLBuffer = context.newBuffer(dVariance)
 		
 		bias.resize(rows: rows, cols: cols)
-		bias.adjustMean(mean: srcMean)
-		bias.adjustVariance(variance: srcVariance)
+		bias.adjust(mean: mean, variance: variance)
 		bias.refresh()
-		bias.correctFF(eps: eps, mean: mean, variance: variance)
+		bias.correctFF(eps: eps, mean: mtl_mean, variance: mtl_variance)
 		
 		let srcMean_la = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(srcMean), la_count_t(rows), 1, 1, NOHINT, nil, ATTR)
 		let dMean_la = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(dMean), la_count_t(rows), 1, 1, NOHINT, nil, ATTR)

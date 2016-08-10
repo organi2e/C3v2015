@@ -10,17 +10,18 @@ import Metal
 import CoreData
 
 internal class Gauss: NSManagedObject {
-	var value: MTLBuffer!
-	var mean: MTLBuffer!
-	var variance: MTLBuffer!
-	var logvariance: MTLBuffer!
-	private var uniform: MTLBuffer!
+	internal private(set) var value: MTLBuffer!
+	internal private(set) var mean: MTLBuffer!
+	internal private(set) var variance: MTLBuffer!
+	internal private(set) var uniform: MTLBuffer!
+	internal private(set) var logmean: MTLBuffer!
+	internal private(set) var logvariance: MTLBuffer!
 }
 
 extension Gauss {
 	@NSManaged internal private(set) var rows: Int
 	@NSManaged internal private(set) var cols: Int
-	@NSManaged private var meandata: NSData
+	@NSManaged private var logmeandata: NSData
 	@NSManaged private var logvariancedata: NSData
 
 }
@@ -28,11 +29,6 @@ extension Gauss {
 extension Gauss {
 	internal override func awakeFromFetch() {
 		super.awakeFromFetch()
-		setup()
-	}
-	override func awakeFromSnapshotEvents(flags: NSSnapshotEventType) {
-		super.awakeFromSnapshotEvents(flags)
-		print("snap")
 		setup()
 	}
 }
@@ -47,15 +43,18 @@ extension Gauss {
 		if let context: Context = managedObjectContext as? Context {
 			
 			value = context.newBuffer(length: sizeof(Float)*rows*cols)
+			uniform = context.newBuffer(length: sizeof(UInt16)*rows*cols)
+			
+			mean = context.newBuffer(length: sizeof(Float)*rows*cols)
 			variance = context.newBuffer(length: sizeof(Float)*rows*cols)
 			
-			mean = context.newBuffer(data: meandata)
+			logmean = context.newBuffer(data: logmeandata)
 			logvariance = context.newBuffer(data: logvariancedata)
 			
-			uniform = context.newBuffer(length: sizeof(UInt16)*rows*cols)
 			arc4random_buf(uniform.contents(), uniform.length)
 			
 			refresh()
+			shuffle()
 			
 			setPrimitiveValue(NSData(bytesNoCopy: mean.contents(), length: mean.length, freeWhenDone: false), forKey: Gauss.meankey)
 			setPrimitiveValue(NSData(bytesNoCopy: logvariance.contents(), length: logvariance.length, freeWhenDone: false), forKey: Gauss.logvariancekey)
@@ -66,138 +65,80 @@ extension Gauss {
 		}
 		
 	}
-	
-	internal func refresh() {
-		
+	internal func shuffle() {
 		if let context: Context = managedObjectContext as? Context {
-			
-			let gauss_value: MTLBuffer = value
-			let gauss_variance: MTLBuffer = variance
-			let gauss_mean: MTLBuffer = mean
-			let gauss_logvariance: MTLBuffer = logvariance
-			let gauss_uniform: MTLBuffer = uniform
-			
-			let group: MTLSize = MTLSize(width: (rows*cols-1)/4+1, height: 1, depth: 1)
-			let local: MTLSize = MTLSize(width: 1, height: 1, depth: 1)
-			
-			context.newComputeCommand(function: "gaussShuffle", complete: {context.performBlock{arc4random_buf(gauss_uniform.contents(), gauss_uniform.length)}}) {
-				
-				$0.setBuffer(gauss_value, offset: 0, atIndex: 0)
-				$0.setBuffer(gauss_variance, offset: 0, atIndex: 1)
-				$0.setBuffer(gauss_mean, offset: 0, atIndex: 2)
-				$0.setBuffer(gauss_logvariance, offset: 0, atIndex: 3)
-				$0.setBuffer(gauss_uniform, offset: 0, atIndex: 4)
-				
-				$0.dispatchThreadgroups(group, threadsPerThreadgroup: local)
-				
-			}
+			Gauss.shuffle(context: context, value: value, mean: mean, variance: variance, uniform: uniform, rows: rows, cols: cols)
 			
 		} else {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
 			
 		}
-		
 	}
-	
+	internal func refresh() {
+		if let context: Context = managedObjectContext as? Context {
+			Gauss.refresh(context: context, mean: mean, variance: variance, logmean: logmean, logvariance: logvariance, rows: rows, cols: cols)
+			
+		} else {
+			assertionFailure(Context.Error.InvalidContext.rawValue)
+			
+		}
+	}
+	internal func adjust(let mean adjust_mean: Float, let variance adjust_variance: Float) {
+		if let context: Context = managedObjectContext as? Context {
+			let adjust_logmean: Float = log(2.0/(adjust_mean+1.0)-1.0)
+			let adjust_logvariance: Float = log(adjust_variance)
+			Gauss.adjust(context: context, logmean: logmean, logvariance: logvariance, newLogmean: adjust_logmean, newLogvariance: adjust_logvariance, rows: rows, cols: cols)
+			
+		} else {
+			assertionFailure(Context.Error.InvalidContext.rawValue)
+			
+		}
+		refresh()
+	}
 	internal func resize(let rows r: Int, let cols c: Int ) {
 		
-		rows = r
-		cols = c
+		rows = Int(r)
+		cols = Int(c)
 		
-		meandata = NSData(bytes: [Float](count: rows*cols, repeatedValue: 0), length: sizeof(Float)*rows*cols)
-		assert(meandata.length==sizeof(Float)*Int(rows*cols))
+		logmeandata = NSData(bytes: [Float](count: rows*cols, repeatedValue: 0), length: sizeof(Float)*rows*cols)
+		assert(logmeandata.length==sizeof(Float)*Int(rows*cols))
 		
 		logvariancedata = NSData(bytes: [Float](count: rows*cols, repeatedValue: 0), length: sizeof(Float)*rows*cols)
 		assert(logvariancedata.length==sizeof(Float)*Int(rows*cols))
+		print(1)
+		
 		
 		setup()
+		print(1)
+		
 		
 	}
-	
-	internal func adjust(let mean adjust_mean: Float, let variance adjust_variance: Float) {
-		
-		assert(0<adjust_variance)
-		
-		if let context: Context = managedObjectContext as? Context {
-			
-			let semaphore: dispatch_semaphore_t = dispatch_semaphore_create(0)
-			
-			let m: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows*cols)
-			let v: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows*cols)
-			
-			let gauss_mean: MTLBuffer = mean
-			let gauss_logvariance: MTLBuffer = logvariance
-			
-			let gauss_rows: la_count_t = la_count_t(rows)
-			let gauss_cols: la_count_t = la_count_t(cols)
-			
-			context.performBlock {
-				la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(m.contents()), gauss_cols, la_matrix_from_splat(la_splat_from_float(adjust_mean, Config.ATTR), gauss_rows, gauss_cols))
-				la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(v.contents()), gauss_cols, la_matrix_from_splat(la_splat_from_float(log(adjust_variance), Config.ATTR), gauss_rows, gauss_cols))
-				dispatch_semaphore_signal(semaphore)
-			}
-			
-			let willChange: (String)->() = willChangeValueForKey
-			let didChange: (String)->() = didChangeValueForKey
-			
-			let schedule: ()->() = {
-				dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
-				willChange(Gauss.meankey)
-				willChange(Gauss.logvariancekey)
-			}
-			
-			let complete: ()->() = {
-				m.setPurgeableState(.Empty)
-				v.setPurgeableState(.Empty)
-				didChange(Gauss.meankey)
-				didChange(Gauss.logvariancekey)
-			}
-			
-			context.newBlitCommand(schedule: schedule, complete: complete) {
-				$0.copyFromBuffer(m, sourceOffset: 0, toBuffer: gauss_mean, destinationOffset: 0, size: min(m.length, gauss_mean.length))
-				$0.copyFromBuffer(v, sourceOffset: 0, toBuffer: gauss_logvariance, destinationOffset: 0, size: min(v.length, gauss_logvariance.length))
-			}
-			
-		} else {
-			assertionFailure()
-			
+}
+extension Gauss {
+	internal static func refresh(let context context: Context, let mean: MTLBuffer, let variance: MTLBuffer, let logmean: MTLBuffer, let logvariance: MTLBuffer, let rows: Int, let cols: Int) {
+		context.newComputeCommand(function: "gaussRefresh") {
+			$0.setBuffer(mean, offset: 0, atIndex: 0)
+			$0.setBuffer(variance, offset: 0, atIndex: 1)
+			$0.setBuffer(logmean, offset: 0, atIndex: 2)
+			$0.setBuffer(logvariance, offset: 0, atIndex: 3)
+			$0.dispatchThreadgroups(MTLSize(width: (rows*cols-1)/4+1, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}
 	}
-	
-	internal func adjustMean(let mean buffer: [Float]) {
-		if let context: Context = managedObjectContext as? Context {
-			let gauss: MTLBuffer = mean
-			let cache: MTLBuffer = context.newBuffer(buffer)
-			context.newBlitCommand(complete: {cache.setPurgeableState(.Empty)}) {
-				$0.copyFromBuffer(cache, sourceOffset: 0, toBuffer: gauss, destinationOffset: 0, size: min(gauss.length, cache.length))
-			}
-			
-		} else {
-			assertionFailure()
-			
+	internal static func shuffle(let context context: Context, let value: MTLBuffer, let mean: MTLBuffer, let variance: MTLBuffer, let uniform: MTLBuffer, let rows: Int, let cols: Int) {
+		context.newComputeCommand(function: "gaussShuffle", complete: {context.performBlock{arc4random_buf(uniform.contents(), uniform.length)}}) {
+			$0.setBuffer(value, offset: 0, atIndex: 0)
+			$0.setBuffer(mean, offset: 0, atIndex: 1)
+			$0.setBuffer(variance, offset: 0, atIndex: 2)
+			$0.setBuffer(uniform, offset: 0, atIndex: 3)
+			$0.dispatchThreadgroups(MTLSize(width: (rows*cols-1)/4+1, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}
 	}
-	
-	internal func adjustVariance(let variance buffer: [Float]) {
-	
-		if let context: Context = managedObjectContext as? Context {
-			
-			let cache: MTLBuffer = context.newBuffer(buffer)
-			let gauss: MTLBuffer = logvariance
-			
-			let group: MTLSize = MTLSize(width: (rows*cols-1)/4+1, height: 1, depth: 1)
-			let local: MTLSize = MTLSize(width: 1, height: 1, depth: 1)
-
-			context.newComputeCommand(function: "log", complete: {cache.setPurgeableState(.Empty)}) {
-				$0.setBuffer(gauss, offset: 0, atIndex: 0)
-				$0.setBuffer(cache, offset: 0, atIndex: 1)
-				$0.dispatchThreadgroups(group, threadsPerThreadgroup: local)
-			}
-			
-		} else {
-			assertionFailure()
-		
+	internal static func adjust(let context context: Context, let logmean: MTLBuffer, let logvariance: MTLBuffer, let newLogmean: Float, let newLogvariance: Float, let rows: Int, let cols: Int) {
+		context.newComputeCommand(function: "gaussAdjusts") {
+			$0.setBuffer(logmean, offset: 0, atIndex: 0)
+			$0.setBuffer(logvariance, offset: 0, atIndex: 1)
+			$0.setBytes([newLogmean, newLogvariance], length: 2*sizeof(Float), atIndex: 2)
+			$0.dispatchThreadgroups(MTLSize(width: (rows*cols-1)/4+1, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}
 	}
-	
 }
