@@ -23,7 +23,8 @@ extension Gauss {
 	@NSManaged internal private(set) var cols: Int
 	@NSManaged private var logmeandata: NSData
 	@NSManaged private var logvariancedata: NSData
-
+	@nonobjc internal static let logmeankey: String = "logmeandata"
+	@nonobjc internal static let logvariancekey: String = "logvariancedata"
 }
 
 extension Gauss {
@@ -34,9 +35,6 @@ extension Gauss {
 }
 
 extension Gauss {
-	
-	static private let logmeankey: String = "logmeandata"
-	static private let logvariancekey: String = "logvariancedata"
 	
 	internal func setup() {
 	

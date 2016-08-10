@@ -20,14 +20,14 @@ class GaussTests: XCTestCase {
 			return
 		}
 		
-		let dmean: Float = Float(arc4random_uniform(256))/256.0-0.5
-		let dvariance: Float = Float(1+arc4random_uniform(256))/256.0
+		let dmean: Float = Float(arc4random_uniform(256))/128.0-1.0
+		let dvariance: Float = Float(1+arc4random_uniform(1024))/256.0
 		
 		var ymean: Float = 0.0
 		var yvariance: Float = 0.0
 		
-		let rows: Int = 256
-		let cols: Int = 256
+		let rows: Int = 4*Int(1+arc4random_uniform(256))
+		let cols: Int = 4*Int(1+arc4random_uniform(256))
 		
 		gauss.resize(rows: rows, cols: cols)
 		gauss.adjust(mean: dmean, variance: dvariance)

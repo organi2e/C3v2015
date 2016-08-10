@@ -63,7 +63,7 @@ class EdgeTests: XCTestCase {
 		let variance: MTLBuffer = context.newBuffer([Float](count: o_rows, repeatedValue: 0.0))
 		
 		input.active = (0..<i_rows).map{(_)in arc4random_uniform(2) % 2 != 0}
-		edge.collect(value: value, mean: mean, variance: variance, visit: [])
+		//edge.collect(value: value, mean: mean, variance: variance, visit: [])
 		
 		let input_state: la_object_t = context.toLAObject(input.state[0].value, rows: i_rows, cols: 1)
 		
@@ -145,17 +145,7 @@ class EdgeTests: XCTestCase {
 		let mtl_level_variance: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows)
 		
 		measureBlock {
-			Edge.collect(context: self.context,
-				level_value: mtl_level_value,
-				level_mean: mtl_level_mean,
-				level_variance: mtl_level_variance,
-				edge_value: mtl_edge_value,
-				edge_mean: mtl_edge_mean,
-				edge_variance: mtl_edge_variance,
-				input_state: mtl_input_state,
-				rows: rows,
-				cols: cols
-			)
+			
 			self.context.join()
 		}
 		

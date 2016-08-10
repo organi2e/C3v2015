@@ -110,6 +110,7 @@
 		87C516D41D3F742500E3F36B /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Config.swift; path = NLA/Config.swift; sourceTree = "<group>"; };
 		87C516D71D3F802C00E3F36B /* UnitTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = UnitTest.swift; path = NLA/UnitTest.swift; sourceTree = "<group>"; };
 		87D18E341D3F18BB00982020 /* LA.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = LA.swift; path = "C³/LA.swift"; sourceTree = "<group>"; };
+		87F6ABFD1D5B8C48005710FF /* mtlcell.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = mtlcell.metal; path = "C³/mtlcell.metal"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -187,6 +188,7 @@
 				87BC8D861D55D0EF004510EF /* mtlbias.metal */,
 				87BC8D921D55E05C004510EF /* mtledge.metal */,
 				87BC8D951D55E536004510EF /* mtlgauss.metal */,
+				87F6ABFD1D5B8C48005710FF /* mtlcell.metal */,
 			);
 			name = "C³";
 			sourceTree = "<group>";
