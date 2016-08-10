@@ -20,11 +20,11 @@ class GaussTests: XCTestCase {
 			return
 		}
 		
-		let dmean: Float = Float(arc4random_uniform(256))/128.0-1.0
+		let dmean: Float = Float(arc4random_uniform(256))/256.0-0.5
 		let dvariance: Float = Float(1+arc4random_uniform(256))/256.0
 		
 		var ymean: Float = 0.0
-		var ydeviation: Float = 0.0
+		var yvariance: Float = 0.0
 		
 		let rows: Int = 256
 		let cols: Int = 256
@@ -52,13 +52,13 @@ class GaussTests: XCTestCase {
 		}
 		
 		vDSP_vsadd(UnsafePointer<Float>(cache), 1, [-ymean], UnsafeMutablePointer<Float>(cache), 1, vDSP_Length(rows*cols))
-		vDSP_rmsqv(UnsafePointer<Float>(cache), 1, &ydeviation, vDSP_Length(rows*cols))
-		XCTAssert(!isnan(ydeviation))
-		XCTAssert(!isinf(ydeviation))
+		vDSP_rmsqv(UnsafePointer<Float>(cache), 1, &yvariance, vDSP_Length(rows*cols))
+		XCTAssert(!isnan(yvariance))
+		XCTAssert(!isinf(yvariance))
 		
-		if 1e-1 < abs(2.0*log(ydeviation)-log(dvariance)) {
+		if 1e-1 < abs(2.0*log(yvariance)-log(dvariance)) {
 			dump = true
-			XCTFail("var.: \(ydeviation*ydeviation) vs \(dvariance)")
+			XCTFail("var.: \(yvariance) vs \(dvariance)")
 		}
 		
 		if dump {

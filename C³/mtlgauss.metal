@@ -9,8 +9,8 @@
 #include <metal_stdlib>
 using namespace metal;
 kernel void gaussShuffle(device float4 * const value [[ buffer(0) ]],
-						 device const float4 * const variance [[ buffer(1) ]],
-						 device const float4 * const mean [[ buffer(2) ]],
+						 device const float4 * const mean [[ buffer(1) ]],
+						 device const float4 * const variance [[ buffer(2) ]],
 						 device const ushort4 * const seed [[ buffer(3) ]],
 						 uint const n [[ thread_position_in_grid ]],
 						 uint const N [[ threads_per_grid ]]) {
