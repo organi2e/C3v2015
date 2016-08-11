@@ -83,7 +83,7 @@ extension Gauss {
 	}
 	internal func adjust(let mean adjust_mean: Float, let variance adjust_variance: Float) {
 		if let context: Context = managedObjectContext as? Context {
-			let adjust_logmean: Float = log(2.0/(adjust_mean+1.0)-1.0)
+			let adjust_logmean: Float = -0.5*log(2.0/(adjust_mean+1.0)-1.0)
 			let adjust_logvariance: Float = log(adjust_variance)
 			
 			assert(!isnan(adjust_logmean))

@@ -100,13 +100,13 @@ kernel void outer(device float4x4 * const C [[ buffer(0) ]],
 				  uint const T [[ threads_per_threadgroup ]])
 {
 	uint const M = dim.x;
-	uint const N = dim.y;
-	uint const rows = g;
-	float4 const a = A[rows];
-	for( uint k = 0, K = N ; k < K ; k += T ) {
-		uint const cols = k + t;
-		if ( cols < N ) {
-			float4 const b = B [ cols ];
+	//uint const N = dim.y;
+	uint const cols = g;
+	float4 const b = B[cols];
+	for( uint k = 0, K = M ; k < K ; k += T ) {
+		uint const rows = k + t;
+		if ( rows < M ) {
+			float4 const a = A [ rows ];
 			uint const idx = cols * M + rows;
 			float4x4 const c = float4x4(a*b.x, a*b.y, a*b.z, a*b.w);
 			C[idx] = w.x * c + w.y * C[idx];

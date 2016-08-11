@@ -42,8 +42,8 @@ class BlasTests: XCTestCase {
 	*/
 	/*
 	func testCPUOuter() {
-		let rows: Int = 256
-		let cols: Int = 256
+		let rows: Int = 4096
+		let cols: Int = 4096
 		
 		let LA: la_object_t = la_matrix_from_float_buffer((0..<rows).map{(_)in Float(arc4random_uniform(256))/Float(128.0)-1.0}, la_count_t(rows), la_count_t(1), la_count_t(1), NOHINT, ATTR)
 		let LB: la_object_t = la_matrix_from_float_buffer((0..<cols).map{(_)in Float(arc4random_uniform(256))/Float(128.0)-1.0}, la_count_t(1), la_count_t(cols), la_count_t(cols), NOHINT, ATTR)
@@ -57,6 +57,8 @@ class BlasTests: XCTestCase {
 			}
 		}
 	}
+	*/
+	/*
 	func testCPUGEMV() {
 		let rows: Int = 256
 		let cols: Int = 256
@@ -107,7 +109,7 @@ class BlasTests: XCTestCase {
 		
 		let bs: Int = 64
 		
-		let group: MTLSize = MTLSize(width: rows/4, height: 1, depth: 1)
+		let group: MTLSize = MTLSize(width: cols/4, height: 1, depth: 1)
 		let local: MTLSize = MTLSize(width: bs, height: 1, depth: 1)
 		
 		measureBlock {
