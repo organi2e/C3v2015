@@ -70,55 +70,58 @@ kernel void edgeCollect(device float4 * level_value [[ buffer(0) ]],
 	}
 	
 }
-kernel void edgeCorrectFF(device float4x4 * edge_mean [[ buffer(0) ]],
-						  device float4x4 * edge_logvariance [[ buffer(1) ]],
-						  device const float4x4 * edge_variance [[ buffer(2) ]],
-						  device const float4 * input_state [[ buffer(3) ]],
-						  constant const float & eps [[ buffer(4) ]],
-						  device const float4 * delta_mean [[ buffer(5) ]],
-						  device const float4 * delta_variance [[ buffer(6) ]],
-						  constant const uint2 & dim [[ buffer(7) ]],
+kernel void edgeCorrectFF(device float4x4 * const edge_logmean [[ buffer(1) ]],
+						  device float4x4 * const edge_logvariance [[ buffer(2) ]],
+						  device const float4 * const input_state [[ buffer(3) ]],
+						  device const float4x4 * const edge_mean [[ buffer(4) ]],
+						  device const float4x4 * const edge_variance [[ buffer(5) ]],
+						  device const float4 * const delta_mean [[ buffer(6) ]],
+						  device const float4 * const delta_variance [[ buffer(7) ]],
+						  constant const float & eps [[ buffer(8) ]],
+						  constant const uint2 & dim [[ buffer(9) ]],
 						  uint const g [[ threadgroup_position_in_grid ]],
 						  uint const G [[ threadgroups_per_grid ]],
 						  uint const t [[ thread_position_in_threadgroup ]],
 						  uint const T [[ threads_per_threadgroup ]])
 {
 	uint const M = dim.x;
-	uint const N = dim.y;
+	//uint const N = dim.y;
 	
-	float4 const mean = delta_mean[g];
-	float4 const variance = delta_variance[g];
+	uint const cols = g;
 	
-	for( uint k = 0, K = N ; k < K ; k += T ) {
+	float4 const state = input_state [ cols ];
+	float4 const power = state * state;
+	
+	for( uint k = 0, K = M ; k < K ; k += T ) {
 		
-		uint const rows = g;
-		uint const cols = k + t;
+		uint const rows = k + t;
 		
-		if ( cols < N ) {
+		if ( rows < M ) {
 			
 			uint const idx = cols * M + rows;
 			
-			float4 const state_p1 = input_state [ cols ];
-			float4 const state_p2 = state_p1 * state_p1;
+			float4 const mean = delta_mean[rows];
+			float4 const variance = delta_variance[rows];
 			
 			float4x4 dm = float4x4(mean, mean, mean, mean);
+			float4x4 jm = edge_mean[idx];
 			
-			dm[0] *= state_p1[0];
-			dm[1] *= state_p1[1];
-			dm[2] *= state_p1[2];
-			dm[3] *= state_p1[3];
+			dm[0] *= (1-jm[0]*jm[0]) * state.x;
+			dm[1] *= (1-jm[1]*jm[1]) * state.y;
+			dm[2] *= (1-jm[2]*jm[2]) * state.z;
+			dm[3] *= (1-jm[3]*jm[3]) * state.w;
 			
-			edge_mean[idx] += eps * dm;
+			edge_logmean[idx] += eps * dm;
 			
 			float4x4 dv = float4x4(variance, variance, variance, variance);
-			float4x4 ev = edge_variance[idx];
+			float4x4 jv = edge_variance[idx];
 			
-			dv[0] *= ev[0] * state_p2[0];
-			dv[1] *= ev[1] * state_p2[1];
-			dv[2] *= ev[2] * state_p2[2];
-			dv[3] *= ev[3] * state_p2[3];
+			dv[0] *= (jv[0]) * power.x;
+			dv[1] *= (jv[1]) * power.y;
+			dv[2] *= (jv[2]) * power.z;
+			dv[3] *= (jv[3]) * power.w;
 			
-			edge_logvariance[idx] -= ( 0.5 * eps ) * dv;
+			edge_logvariance[idx] += eps * dv;
 			
 		}
 	}

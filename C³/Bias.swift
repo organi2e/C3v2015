@@ -48,7 +48,7 @@ extension Bias {
 		}
 	}
 	internal static func correctFF(let context context: Context, let eps: Float, let bias: (MTLBuffer, MTLBuffer, MTLBuffer, MTLBuffer), let delta: (MTLBuffer, MTLBuffer), let rows: Int, let cols: Int, let schedule: (()->())?=nil, let complete: (()->())?=nil) {
-		context.newComputeCommand(function: "biasCorrect", schedule: schedule, complete: complete) {
+		context.newComputeCommand(function: "biasCorrectFF", schedule: schedule, complete: complete) {
 			$0.setBuffer(bias.0, offset: 0, atIndex: 0)
 			$0.setBuffer(bias.1, offset: 0, atIndex: 1)
 			$0.setBuffer(bias.2, offset: 0, atIndex: 2)
