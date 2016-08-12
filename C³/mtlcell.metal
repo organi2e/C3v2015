@@ -27,7 +27,7 @@ kernel void cellDerivate(device float4 * const delta_mean [[ buffer(0) ]],
 						 ) {
 	float4 const jacob = exp(-0.5*(level_mean[n]*level_mean[n])/level_variance[n])/sqrt(2.0*M_PI*level_variance[n]);
 	float4 const dm = jacob * state_error[n];
-	float4 const dv = -0.5 * dm * level_mean[n] / level_variance[n];
+	float4 const dv = - 0.5 * dm * level_mean[n] / level_variance[n];
 	delta_mean[n] = dm;
 	delta_variance[n] = dv;
 }

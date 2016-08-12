@@ -98,8 +98,10 @@ class EdgeTests: XCTestCase {
 	}
 	func testCorrectFF() {
 		
-		let o_width: Int = 256
-		let i_width: Int = 256
+		let dumps: Bool = true
+		
+		let o_width: Int = 4
+		let i_width: Int = 4
 		
 		var logmean: [Float] = uniform(o_width*i_width)
 		var logvariance: [Float] = uniform(o_width*i_width)
@@ -155,19 +157,26 @@ class EdgeTests: XCTestCase {
 		Edge.correctFF(context: context, eps: eps, error: error_mtl, edge: edge_mtl, state: state_mtl, delta: delta_mtl, rows: o_width, cols: i_width)
 		
 		let obsError_la: la_object_t = context.toLAObject(error_mtl, rows: i_width, cols: 1)
+		
 		let obsLogmean_la: la_object_t = context.toLAObject(edge_mtl.logmean, rows: o_width, cols: i_width)
 		let obsLogvariance_la: la_object_t = context.toLAObject(edge_mtl.logvariance, rows: o_width, cols: i_width)
 		
 		for i in 0..<i_width {
 			var accum: Float = 0.0
 			for o in 0..<o_width {
-				accum += edge.mean[o*i_width+i] * delta.mean[o]
-				accum += edge.variance[o*i_width+i] * delta.variance[o] *
-				logmean[o*i_width+i] += eps * ( 1 - mean[o*i_width+i] * mean[o*i_width+i] ) * state[i] * delta.mean[o]
-				logvariance[o*i_width+i] += eps * variance[o*i_width+i] * state[i] * delta.mean[o]
+				
+				accum += delta.mean[o] * edge.mean[o * i_width + i]
+				accum += delta.variance[o] * edge.variance[o * i_width + i] * 2.0 * state[i]
+				
+				logmean[ o * i_width + i ] += eps * ( 1.0 - mean[o*i_width+i] * mean[o*i_width+i] ) * ( state[i] ) * delta.mean[o]
+				logvariance[ o * i_width + i ] += eps * ( variance[o*i_width+i] ) * ( state[i] * state[i] ) * delta.variance[o]
+				
 			}
 			error[i] = accum
 		}
+		
+		let dstLogmean_la: la_object_t = la_matrix_from_float_buffer(UnsafePointer<Float>(logmean), la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, ATTR)
+		let dstLogvariance_la: la_object_t = la_matrix_from_float_buffer(UnsafePointer<Float>(logvariance), la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, ATTR)
 		
 		context.join()
 		
@@ -175,21 +184,49 @@ class EdgeTests: XCTestCase {
 		XCTAssert(!isnan(rmseError))
 		XCTAssert(!isinf(rmseError))
 		if 1e-4 < rmseError {
+			print("a")
+			dump(error_la)
+			print("b")
+			dump(obsError_la)
 			XCTFail("RMSE: \(rmseError)")
+		} else if dumps {
+			print("a")
+			dump(error_la)
+			print("b")
+			dump(obsError_la)
 		}
 		
-		let rmseLogmean: Float = la_norm_as_float(la_difference(edge_la.logmean, obsLogmean_la), la_norm_t(LA_L2_NORM)) / sqrt(Float(o_width*i_width))
+		let rmseLogmean: Float = la_norm_as_float(la_difference(dstLogmean_la, obsLogmean_la), la_norm_t(LA_L2_NORM)) / sqrt(Float(o_width*i_width))
 		XCTAssert(!isnan(rmseLogmean))
 		XCTAssert(!isinf(rmseLogmean))
 		if 1e-4 < rmseLogmean {
+			print("logmean a")
+			dump(dstLogmean_la)
+			print("logmean b")
+			dump(obsLogmean_la)
 			XCTFail("RMSE: \(rmseLogmean)")
+		} else if dumps {
+			print("logmean a")
+			dump(dstLogmean_la)
+			print("logmean b")
+			dump(obsLogmean_la)
 		}
 		
-		let rmseLogvariance: Float = la_norm_as_float(la_difference(edge_la.logvariance, obsLogvariance_la), la_norm_t(LA_L2_NORM)) / sqrt(Float(o_width*i_width))
+		let rmseLogvariance: Float = la_norm_as_float(la_difference(dstLogvariance_la, obsLogvariance_la), la_norm_t(LA_L2_NORM)) / sqrt(Float(o_width*i_width))
 		XCTAssert(!isnan(rmseLogvariance))
 		XCTAssert(!isinf(rmseLogvariance))
-		if 1e-4 < rmseLogvariance {
+		
+		if 1e-5 < rmseLogvariance {
+			print("logvariance a")
+			dump(dstLogvariance_la)
+			print("logvariance b")
+			dump(obsLogvariance_la)
 			XCTFail("RMSE: \(rmseLogvariance)")
+		} else if dumps {
+			print("logvariance a")
+			dump(dstLogvariance_la)
+			print("logvariance b")
+			dump(obsLogvariance_la)
 		}
 		
 	}
