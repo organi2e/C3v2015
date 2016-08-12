@@ -8,6 +8,40 @@
 
 #include <metal_stdlib>
 using namespace metal;
+kernel void gemvt(device float4 * y [[ buffer(0) ]],
+				  device const float4x4 * const A [[ buffer(1) ]],
+				  device const float4 * const x [[ buffer(2) ]],
+				  constant uint2 const & dim [[ buffer(3) ]],
+				  constant float2 const & w [[ buffer(4) ]],
+				  uint const g [[ threadgroup_position_in_grid ]],
+				  uint const G [[ threadgroups_per_grid ]],
+				  uint const t [[ thread_position_in_threadgroup ]],
+				  uint const T [[ threads_per_threadgroup ]],
+				  threadgroup float4 * const accumulator [[ threadgroup(0) ]] )
+{
+	//uint const M = dim.x;
+	uint const N = dim.y;
+	
+	uint const rows = g;
+	float4 vector = 0.0;
+	for ( uint i = 0, I = N ; i < I ; i += T ) {
+		uint const cols = i + t;
+		if ( cols < N ) {
+			vector +=  x[cols] * A[rows*N+cols];
+		}
+	}
+	accumulator[t] = vector;
+	
+	uint offset = T;
+	while ( offset >>= 1 ) {
+		threadgroup_barrier ( mem_flags :: mem_threadgroup );
+		if ( t < offset ) {
+			accumulator [ t ] += accumulator [ t + offset ];
+		};
+	}
+	if( !t )
+		y[ g ] = w.x * accumulator [ t ] + w.y * y[ g ];
+}
 kernel void gemv(device float4 * y [[ buffer(0) ]],
 				 device const float4x4 * const A [[ buffer(1) ]],
 				 device const float4 * const x [[ buffer(2) ]],
@@ -21,14 +55,17 @@ kernel void gemv(device float4 * y [[ buffer(0) ]],
 {
 	uint const M = dim.x;
 	uint const N = dim.y;
-	accumulator[t] = 0;
+	uint const rows = g;
+
+	float4 vector = 0.0;
 	for ( uint i = 0, I = N ; i < I ; i += T ) {
-		uint const rows = g;
 		uint const cols = i + t;
 		if ( cols < N ) {
-			accumulator[t] += A[cols*M+rows] * x[cols];
+			vector += A[cols*M+rows] * x[cols];
 		}
 	}
+	accumulator[t] = vector;
+	
 	uint offset = T;
 	while ( offset >>= 1 ) {
 		threadgroup_barrier ( mem_flags :: mem_threadgroup );

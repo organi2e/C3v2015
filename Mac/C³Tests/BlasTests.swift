@@ -196,6 +196,51 @@ class BlasTests: XCTestCase {
 
 		
 	}
+	func testMTLGEMVT() {
+		
+		let rows: Int = 4 * Int(1+arc4random_uniform(256))
+		let cols: Int = 4 * Int(1+arc4random_uniform(256))
+		
+		let LA: la_object_t = la_matrix_from_float_buffer((0..<rows*cols).map{(_)in Float(arc4random_uniform(256))/Float(128.0)-1.0}, la_count_t(rows), la_count_t(cols), la_count_t(cols), NOHINT, ATTR)
+		let LB: la_object_t = la_matrix_from_float_buffer((0..<rows).map{(_)in Float(arc4random_uniform(256))/Float(128.0)-1.0}, la_count_t(rows), la_count_t(1), la_count_t(1), NOHINT, ATTR)
+		let LC: la_object_t = la_matrix_product(la_transpose(LA), LB)
+		
+		let MA: MTLBuffer = context.fromLAObject(LA)
+		let MB: MTLBuffer = context.fromLAObject(LB)
+		let MC: MTLBuffer = context.newBuffer(length: sizeof(Float)*cols)
+		
+		let bs: Int = 64
+		
+		let group: MTLSize = MTLSize(width: cols/4, height: 1, depth: 1)
+		let local: MTLSize = MTLSize(width: bs, height: 1, depth: 1)
+		
+		measureBlock {
+			(0..<16).forEach {(_)in
+				self.context.newComputeCommand(function: "gemvt") {
+					$0.setBuffer(MC, offset: 0, atIndex: 0)
+					$0.setBuffer(MA, offset: 0, atIndex: 1)
+					$0.setBuffer(MB, offset: 0, atIndex: 2)
+					$0.setBytes([UInt32(cols/4), UInt32(rows/4)], length: 2*sizeof(UInt32), atIndex: 3)
+					$0.setBytes([Float(1.0), Float(0.0)], length: 2*sizeof(Float), atIndex: 4)
+					$0.setThreadgroupMemoryLength(sizeof(Float)*16*bs, atIndex: 0)
+					$0.dispatchThreadgroups(group, threadsPerThreadgroup: local)
+				}
+			}
+			self.context.join()
+		}
+		
+		let CC: la_object_t = context.toLAObject(MC, rows: cols, cols: 1)
+		let E: la_object_t = la_difference(LC, CC)
+
+		context.join()
+
+		let rmse: Float = la_norm_as_float(E, la_norm_t(LA_L2_NORM))
+		XCTAssert(!isnan(rmse))
+		XCTAssert(!isinf(rmse))
+		if 1e-9 < rmse {
+			XCTFail("RMSE: \(rmse)")
+		}
+	}
 	func testMTLGEMV() {
 		
 		let rows: Int = 4 * Int(1+arc4random_uniform(256))

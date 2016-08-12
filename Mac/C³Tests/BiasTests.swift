@@ -87,7 +87,7 @@ class BiasTests: XCTestCase {
 		
 		context.join()
 		
-		let rmseMean: Float = la_norm_as_float(errMean_la, la_norm_t(LA_L2_NORM))/Float(width)
+		let rmseMean: Float = la_norm_as_float(errMean_la, la_norm_t(LA_L2_NORM))/sqrt(Float(width))
 		if 1e-7 < rmseMean {
 			let cache: [Float] = [Float](count: width, repeatedValue: mean)
 			print("SRC: \(cache)")
@@ -99,7 +99,7 @@ class BiasTests: XCTestCase {
 			XCTFail("RMSE: \(rmseMean)")
 		}
 		
-		let rmseLogvariance: Float = la_norm_as_float(errVariance_la, la_norm_t(LA_L2_NORM))/Float(width)
+		let rmseLogvariance: Float = la_norm_as_float(errVariance_la, la_norm_t(LA_L2_NORM))/sqrt(Float(width))
 		if 1e-7 < rmseLogvariance {
 			let cache: [Float] = [Float](count: width, repeatedValue: variance)
 			print("SRC: \(cache)")

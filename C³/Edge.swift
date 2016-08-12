@@ -50,18 +50,20 @@ extension Edge {
 			
 		}
 	}
-	internal static func correctFF(let context context: Context, let eps: Float, let edge: (MTLBuffer, MTLBuffer, MTLBuffer, MTLBuffer), let delta: (MTLBuffer, MTLBuffer), let state: MTLBuffer, let rows: Int, let cols: Int, let schedule: (()->())?=nil, let complete:(()->())?=nil) {
+	internal static func correctFF(let context context: Context, let eps: Float, let error: MTLBuffer, let edge: (MTLBuffer, MTLBuffer, MTLBuffer, MTLBuffer), let state: MTLBuffer, let delta: (MTLBuffer, MTLBuffer), let rows: Int, let cols: Int, let bs: Int = 4, let schedule: (()->())?=nil, let complete:(()->())?=nil) {
 		context.newComputeCommand(function: "edgeCorrectFF", schedule: schedule, complete: complete) {
-			$0.setBuffer(edge.0, offset: 0, atIndex: 0)
-			$0.setBuffer(edge.1, offset: 0, atIndex: 1)
-			$0.setBuffer(edge.2, offset: 0, atIndex: 2)
-			$0.setBuffer(edge.3, offset: 0, atIndex: 3)
-			$0.setBuffer(delta.0, offset: 0, atIndex: 4)
-			$0.setBuffer(delta.1, offset: 0, atIndex: 5)
-			$0.setBuffer(state, offset: 0, atIndex: 6)
-			$0.setBytes([eps], length: sizeof(Float), atIndex: 7)
-			$0.setBytes([uint(rows/4), uint(cols/4)], length: 2*sizeof(uint), atIndex: 8)
-			
+			$0.setBuffer(error, offset: 0, atIndex: 0)
+			$0.setBuffer(edge.0, offset: 0, atIndex: 1)
+			$0.setBuffer(edge.1, offset: 0, atIndex: 2)
+			$0.setBuffer(state, offset: 0, atIndex: 3)
+			$0.setBuffer(edge.2, offset: 0, atIndex: 4)
+			$0.setBuffer(edge.3, offset: 0, atIndex: 5)
+			$0.setBuffer(delta.0, offset: 0, atIndex: 6)
+			$0.setBuffer(delta.1, offset: 0, atIndex: 7)
+			$0.setBytes([eps], length: sizeof(Float), atIndex: 8)
+			$0.setBytes([uint(rows/4), uint(cols/4)], length: 2*sizeof(uint), atIndex: 9)
+			$0.setThreadgroupMemoryLength(sizeof(Float)*4*bs, atIndex: 0)
+			$0.dispatchThreadgroups(MTLSize(width: cols/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: bs, height: 1, depth: 1))
 		}
 	}
 
