@@ -36,165 +36,161 @@ class EdgeTests: XCTestCase {
 		dump(matrix)
 	}
 	func testCollect() {
-	
-		let i_rows: Int = 4 * Int(1+arc4random_uniform(256))
-		let o_rows: Int = 4 * Int(1+arc4random_uniform(256))
-		
-		let input: Cell = try!context.newCell(width: i_rows)
-		let output: Cell = try!context.newCell(width: o_rows)
-		
-		guard let edge: Edge = context.new() else {
-			XCTFail()
-			return
-		}
-		
-		edge.resize(rows: o_rows, cols: i_rows)
-		edge.adjust(mean: 0.0, variance: 1/Float(i_rows))
-		edge.input = input
-		edge.output = output
-		edge.setup()
-		edge.refresh()
-		
-		input.oClear()
-		output.iClear()
-		
-		let value: MTLBuffer = context.newBuffer([Float](count: o_rows, repeatedValue: 0.0))
-		let mean: MTLBuffer = context.newBuffer([Float](count: o_rows, repeatedValue: 0.0))
-		let variance: MTLBuffer = context.newBuffer([Float](count: o_rows, repeatedValue: 0.0))
-		
-		input.active = (0..<i_rows).map{(_)in arc4random_uniform(2) % 2 != 0}
-		//edge.collect(value: value, mean: mean, variance: variance, visit: [])
-		
-		let input_state: la_object_t = context.toLAObject(input.state[0].value, rows: i_rows, cols: 1)
-		
-		context.join()
-		
-		let edge_value: la_object_t = context.toLAObject(edge.value, rows: o_rows, cols: i_rows)
-		let edge_mean: la_object_t = context.toLAObject(edge.mean, rows: o_rows, cols: i_rows)
-		let edge_variance: la_object_t = context.toLAObject(edge.variance, rows: o_rows, cols: i_rows)
-		
-		context.join()
-		
-		let output_value: la_object_t = la_matrix_product(edge_value, input_state)
-		let output_mean: la_object_t = la_matrix_product(edge_mean, input_state)
-		let output_variance: la_object_t = la_matrix_product(edge_variance, la_elementwise_product(input_state, input_state))
-		
-		context.join()
-		
-		let ob_value: la_object_t = context.toLAObject(value, rows: o_rows, cols: 1)
-		let ob_mean: la_object_t = context.toLAObject(mean, rows: o_rows, cols: 1)
-		let ob_variance: la_object_t = context.toLAObject(variance, rows: o_rows, cols: 1)
-		
-		context.join()
-		
-		let rmse_value: Float = la_norm_as_float(la_difference(output_value, ob_value), la_norm_t(LA_L2_NORM)) / sqrt(Float(o_rows))
-		if 1e-3 < rmse_value {
-			//print("output")
-			//dump(la_transpose(output_value))
-			//print("observe")
-			//dump(la_transpose(ob_value))
-			print("edge")
-			dump(edge.value, rows: o_rows, cols: i_rows)
-			XCTFail("RMSE: \(rmse_value)")
-		}
-		let rmse_mean: Float = la_norm_as_float(la_difference(output_mean, ob_mean), la_norm_t(LA_L2_NORM)) / sqrt(Float(o_rows))
-		if 1e-4 < rmse_mean {
-			XCTFail("RMSE: \(rmse_mean)")
-		}
-		let rmse_variance: Float = la_norm_as_float(la_difference(output_variance, ob_variance), la_norm_t(LA_L2_NORM)) / sqrt(Float(o_rows))
-		if 1e-4 < rmse_variance {
-			XCTFail("RMSE: \(rmse_variance)")
-		}
-		
-	}
-	func testCollectWithPrimitive() {
-		let rows: Int = 1024
-		let cols: Int = 1024
-		let value: la_object_t = la_matrix_from_float_buffer(uniform(rows*cols), la_count_t(rows), la_count_t(cols), la_count_t(cols), NOHINT, ATTR)
-		let mean: la_object_t = la_matrix_from_float_buffer(uniform(rows*cols), la_count_t(rows), la_count_t(cols), la_count_t(cols), NOHINT, ATTR)
-		let variance: la_object_t = la_matrix_from_float_buffer(uniform(rows*cols), la_count_t(rows), la_count_t(cols), la_count_t(cols), NOHINT, ATTR)
-		let state: la_object_t = la_matrix_from_float_buffer(uniform(cols), la_count_t(cols), la_count_t(1), la_count_t(1), NOHINT, ATTR)
-		let cache: [Float] = [Float](count: rows, repeatedValue: 0.0)
-		
-		measureBlock {
-			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), la_count_t(1), la_matrix_product(value, state))
-			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), la_count_t(1), la_matrix_product(mean, state))
-			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), la_count_t(1), la_matrix_product(variance, la_elementwise_product(state, state)))
-		}
-		
-	}
-	func testCollectWithMacro() {
 		
 		let rows: Int = 1024
 		let cols: Int = 1024
 		
-		let la_edge_value: la_object_t = la_matrix_from_float_buffer(uniform(rows*cols), la_count_t(rows), la_count_t(cols), la_count_t(cols), NOHINT, ATTR)
-		let la_edge_mean: la_object_t = la_matrix_from_float_buffer(uniform(rows*cols), la_count_t(rows), la_count_t(cols), la_count_t(cols), NOHINT, ATTR)
-		let la_edge_variance: la_object_t = la_matrix_from_float_buffer(uniform(rows*cols), la_count_t(rows), la_count_t(cols), la_count_t(cols), NOHINT, ATTR)
+		let state_la: la_object_t = la_matrix_from_float_buffer(uniform(cols), la_count_t(cols), la_count_t(1), la_count_t(1), NOHINT, ATTR)
+		let state_mtl: MTLBuffer = context.fromLAObject(state_la)
 		
-		let la_input_state: la_object_t = la_matrix_from_float_buffer(uniform(cols), la_count_t(cols), la_count_t(1), la_count_t(1), NOHINT, ATTR)
+		let edge_la = (
+			value: la_matrix_from_float_buffer(uniform(rows*cols), la_count_t(rows), la_count_t(cols), la_count_t(cols), NOHINT, ATTR),
+			mean: la_matrix_from_float_buffer(uniform(rows*cols), la_count_t(rows), la_count_t(cols), la_count_t(cols), NOHINT, ATTR),
+			variance: la_matrix_from_float_buffer(uniform(rows*cols), la_count_t(rows), la_count_t(cols), la_count_t(cols), NOHINT, ATTR)
+		)
 		
-		let mtl_edge_value: MTLBuffer = context.fromLAObject(la_edge_value)
-		let mtl_edge_mean: MTLBuffer = context.fromLAObject(la_edge_mean)
-		let mtl_edge_variance: MTLBuffer = context.fromLAObject(la_edge_variance)
+		let edge_mtl = (
+			value: context.fromLAObject(edge_la.value),
+			mean: context.fromLAObject(edge_la.mean),
+			variance: context.fromLAObject(edge_la.variance)
+		)
 		
-		let mtl_input_state: MTLBuffer = context.fromLAObject(la_input_state)
-		
-		let mtl_level_value: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows)
-		let mtl_level_mean: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows)
-		let mtl_level_variance: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows)
-		
+		let level_mtl = (
+			value: context.newBuffer(length: sizeof(Float)*rows),
+			mean: context.newBuffer(length: sizeof(Float)*rows),
+			variance: context.newBuffer(length: sizeof(Float)*rows)
+		)
+
 		measureBlock {
-			
+			Edge.collect(context: self.context, level: level_mtl, edge: edge_mtl, state: state_mtl, rows: rows, cols: cols)
 			self.context.join()
 		}
 		
-		let la_mtl_level_value: la_object_t = context.toLAObject(mtl_level_value, rows: rows, cols: 1)
-		let la_mtl_level_mean: la_object_t = context.toLAObject(mtl_level_mean, rows: rows, cols: 1)
-		let la_mtl_level_variance: la_object_t = context.toLAObject(mtl_level_variance, rows: rows, cols: 1)
+		let level_mtl_la = (
+			value: context.toLAObject(level_mtl.value, rows: rows, cols: 1),
+			mean: context.toLAObject(level_mtl.mean, rows: rows, cols: 1),
+			variance: context.toLAObject(level_mtl.variance, rows: rows, cols: 1)
+		)
 		
-		let la_level_value: la_object_t = la_matrix_product(la_edge_value, la_input_state)
-		let la_level_mean: la_object_t = la_matrix_product(la_edge_mean, la_input_state)
-		let la_level_variance: la_object_t = la_matrix_product(la_edge_variance, la_elementwise_product(la_input_state, la_input_state))
+		let level_la = (
+			value: la_matrix_product(edge_la.value, state_la),
+			mean: la_matrix_product(edge_la.mean, state_la),
+			variance: la_matrix_product(edge_la.variance, la_elementwise_product(state_la, state_la))
+		)
 		
 		context.join()
 		
-		let rmse_value: Float = la_norm_as_float(la_difference(la_mtl_level_value, la_level_value), la_norm_t(LA_L2_NORM)) / sqrt(Float(rows))
+		let rmse_value: Float = la_norm_as_float(la_difference(level_mtl_la.value, level_la.value), la_norm_t(LA_L2_NORM)) / sqrt(Float(rows))
 		if 1e-4 < rmse_value {
 			XCTFail("RMSE: \(rmse_value)")
 		}
 		
-		let rmse_mean: Float = la_norm_as_float(la_difference(la_mtl_level_mean, la_level_mean), la_norm_t(LA_L2_NORM)) / sqrt(Float(rows))
+		let rmse_mean: Float = la_norm_as_float(la_difference(level_mtl_la.mean, level_la.mean), la_norm_t(LA_L2_NORM)) / sqrt(Float(rows))
 		if 1e-4 < rmse_value {
 			XCTFail("RMSE: \(rmse_mean)")
 		}
 		
-		let rmse_variance: Float = la_norm_as_float(la_difference(la_mtl_level_variance, la_level_variance), la_norm_t(LA_L2_NORM)) / sqrt(Float(rows))
+		let rmse_variance: Float = la_norm_as_float(la_difference(level_mtl_la.variance, level_la.variance), la_norm_t(LA_L2_NORM)) / sqrt(Float(rows))
 		if 1e-4 < rmse_value {
 			XCTFail("RMSE: \(rmse_variance)")
 		}
 		
 	}
 	func testCorrectFF() {
-		let rows: Int = 1024
-		let cols: Int = 1024
 		
-		let la_edge_value: la_object_t = la_matrix_from_float_buffer(uniform(rows*cols), la_count_t(rows), la_count_t(cols), la_count_t(cols), NOHINT, ATTR)
-		let la_edge_mean: la_object_t = la_matrix_from_float_buffer(uniform(rows*cols), la_count_t(rows), la_count_t(cols), la_count_t(cols), NOHINT, ATTR)
-		let la_edge_logvariance: la_object_t = la_matrix_from_float_buffer(uniform(rows*cols), la_count_t(rows), la_count_t(cols), la_count_t(cols), NOHINT, ATTR)
+		let o_width: Int = 256
+		let i_width: Int = 256
 		
-		let la_input_state: la_object_t = la_matrix_from_float_buffer(uniform(cols), la_count_t(cols), la_count_t(1), la_count_t(1), NOHINT, ATTR)
+		var logmean: [Float] = uniform(o_width*i_width)
+		var logvariance: [Float] = uniform(o_width*i_width)
 		
-		let mtl_edge_value: MTLBuffer = context.fromLAObject(la_edge_value)
-		let mtl_edge_mean: MTLBuffer = context.fromLAObject(la_edge_mean)
-		let mtl_edge_variance: MTLBuffer = context.fromLAObject(la_edge_logvariance)
-		let mtl_edge_logvariance: MTLBuffer = context.fromLAObject(la_edge_logvariance)
+		let mean: [Float] = logmean.map{tanh($0)}
+		let variance: [Float] = logvariance.map{exp($0)}
 		
-		let la_delta_mean: la_object_t = la_matrix_from_float_buffer(uniform(rows), la_count_t(rows), la_count_t(1), la_count_t(1), NOHINT, ATTR)
-		let la_delta_variance: la_object_t = la_matrix_from_float_buffer(uniform(rows), la_count_t(rows), la_count_t(1), la_count_t(1), NOHINT, ATTR)
+		let edge = (
+			logmean: logmean,
+			logvariance: logvariance,
+			mean: mean,
+			variance: variance
+		)
+		
+		var error: [Float] = uniform(i_width)
+		let state: [Float] = uniform(i_width)
+
+		let error_la: la_object_t = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(error), la_count_t(i_width), 1, 1, NOHINT, nil, ATTR)
+		let state_la: la_object_t = la_matrix_from_float_buffer(state, la_count_t(i_width), 1, 1, NOHINT, ATTR)
+		
+		let error_mtl: MTLBuffer = context.fromLAObject(error_la)
+		let state_mtl: MTLBuffer = context.fromLAObject(state_la)
+		
+		let delta = (
+			mean: uniform(o_width),
+			variance: uniform(o_width)
+		)
+		let delta_la = (
+			mean: la_matrix_from_float_buffer(delta.mean, la_count_t(o_width), 1, 1, NOHINT, ATTR),
+			variance: la_matrix_from_float_buffer(delta.variance, la_count_t(o_width), 1, 1, NOHINT, ATTR)
+		)
+		let delta_mtl = (
+			mean: context.fromLAObject(delta_la.mean),
+			variance: context.fromLAObject(delta_la.variance)
+		)
+		
+		let edge_la = (
+			logmean: la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(edge.logmean), la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, nil, ATTR),
+			logvariance: la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(edge.logvariance), la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, nil, ATTR),
+			mean: la_matrix_from_float_buffer(edge.mean, la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, ATTR),
+			variance: la_matrix_from_float_buffer(edge.variance, la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, ATTR)
+		)
+		
+		let edge_mtl = (
+			logmean: context.fromLAObject(edge_la.logmean),
+			logvariance: context.fromLAObject(edge_la.logvariance),
+			mean: context.fromLAObject(edge_la.mean),
+			variance: context.fromLAObject(edge_la.variance)
+		)
 		
 		let eps: Float = 0.5
 		
+		Edge.correctFF(context: context, eps: eps, error: error_mtl, edge: edge_mtl, state: state_mtl, delta: delta_mtl, rows: o_width, cols: i_width)
+		
+		let obsError_la: la_object_t = context.toLAObject(error_mtl, rows: i_width, cols: 1)
+		let obsLogmean_la: la_object_t = context.toLAObject(edge_mtl.logmean, rows: o_width, cols: i_width)
+		let obsLogvariance_la: la_object_t = context.toLAObject(edge_mtl.logvariance, rows: o_width, cols: i_width)
+		
+		for i in 0..<i_width {
+			var accum: Float = 0.0
+			for o in 0..<o_width {
+				accum += edge.mean[o*i_width+i] * delta.mean[o]
+				accum += edge.variance[o*i_width+i] * delta.variance[o] *
+				logmean[o*i_width+i] += eps * ( 1 - mean[o*i_width+i] * mean[o*i_width+i] ) * state[i] * delta.mean[o]
+				logvariance[o*i_width+i] += eps * variance[o*i_width+i] * state[i] * delta.mean[o]
+			}
+			error[i] = accum
+		}
+		
+		context.join()
+		
+		let rmseError: Float = la_norm_as_float(la_difference(error_la, obsError_la), la_norm_t(LA_L2_NORM)) / sqrt(Float(i_width))
+		XCTAssert(!isnan(rmseError))
+		XCTAssert(!isinf(rmseError))
+		if 1e-4 < rmseError {
+			XCTFail("RMSE: \(rmseError)")
+		}
+		
+		let rmseLogmean: Float = la_norm_as_float(la_difference(edge_la.logmean, obsLogmean_la), la_norm_t(LA_L2_NORM)) / sqrt(Float(o_width*i_width))
+		XCTAssert(!isnan(rmseLogmean))
+		XCTAssert(!isinf(rmseLogmean))
+		if 1e-4 < rmseLogmean {
+			XCTFail("RMSE: \(rmseLogmean)")
+		}
+		
+		let rmseLogvariance: Float = la_norm_as_float(la_difference(edge_la.logvariance, obsLogvariance_la), la_norm_t(LA_L2_NORM)) / sqrt(Float(o_width*i_width))
+		XCTAssert(!isnan(rmseLogvariance))
+		XCTAssert(!isinf(rmseLogvariance))
+		if 1e-4 < rmseLogvariance {
+			XCTFail("RMSE: \(rmseLogvariance)")
+		}
 		
 	}
 }
