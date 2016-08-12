@@ -84,41 +84,6 @@ kernel void edgeCorrectFF(device float4 * const input_error [[ buffer(0) ]],
 						  uint const g [[ threadgroup_position_in_grid ]],
 						  uint const G [[ threadgroups_per_grid ]],
 						  uint const t [[ thread_position_in_threadgroup ]],
-						  uint const T [[ threads_per_threadgroup ]]) {
-	uint const M = dim.x;
-	float4 error = 0.0;
-	uint const cols = g;
-	for ( uint k = 0, K = M ; k < K ; k += T ) {
-		uint const rows = k + t;
-		if ( rows < M ) {
-			error += delta_mean[rows] * edge_mean[cols*M+rows];
-		}
-	}
-	accumulator[t] = error;
-	uint offset = T;
-	while ( offset >>= 1 ) {
-		threadgroup_barrier( mem_flags :: mem_threadgroup );
-		if ( t < offset ) {
-			accumulator[t] += accumulator[offset+t];
-		}
-	}
-	if ( t == 0 )
-		input_error[cols] = accumulator[0];
-}
-kernel void edgeCorrectF2(device float4 * const input_error [[ buffer(0) ]],
-						  device float4x4 * const edge_logmean [[ buffer(1) ]],
-						  device float4x4 * const edge_logvariance [[ buffer(2) ]],
-						  device const float4 * const input_state [[ buffer(3) ]],
-						  device const float4x4 * const edge_mean [[ buffer(4) ]],
-						  device const float4x4 * const edge_variance [[ buffer(5) ]],
-						  device const float4 * const delta_mean [[ buffer(6) ]],
-						  device const float4 * const delta_variance [[ buffer(7) ]],
-						  constant const float & eps [[ buffer(8) ]],
-						  constant const uint2 & dim [[ buffer(9) ]],
-						  threadgroup float4 * const accumulator [[ threadgroup(0) ]],
-						  uint const g [[ threadgroup_position_in_grid ]],
-						  uint const G [[ threadgroups_per_grid ]],
-						  uint const t [[ thread_position_in_threadgroup ]],
 						  uint const T [[ threads_per_threadgroup ]])
 {
 	uint const M = dim.x;
@@ -126,8 +91,8 @@ kernel void edgeCorrectF2(device float4 * const input_error [[ buffer(0) ]],
 	
 	uint const cols = g;
 	
-	float4 const val = input_state [ cols ];
-	float4 const pow = val * val;
+	float4 const state = input_state [ cols ];
+	float4 const power = state * state;
 	
 	float4 error = 0.0;
 	
@@ -145,25 +110,25 @@ kernel void edgeCorrectF2(device float4 * const input_error [[ buffer(0) ]],
 			float4x4 dm = float4x4(mean, mean, mean, mean);
 			float4x4 const jm = edge_mean[idx];
 			
-			dm[0] *= ( 1 - jm[0] * jm[0] ) * val.x;
-			dm[1] *= ( 1 - jm[1] * jm[1] ) * val.y;
-			dm[2] *= ( 1 - jm[2] * jm[2] ) * val.z;
-			dm[3] *= ( 1 - jm[3] * jm[3] ) * val.w;
+			dm[0] *= ( 1 - jm[0] * jm[0] ) * state.x;
+			dm[1] *= ( 1 - jm[1] * jm[1] ) * state.y;
+			dm[2] *= ( 1 - jm[2] * jm[2] ) * state.z;
+			dm[3] *= ( 1 - jm[3] * jm[3] ) * state.w;
 			
 			edge_logmean[idx] += eps * dm;
 			
 			float4x4 dv = float4x4(variance, variance, variance, variance);
 			float4x4 const jv = edge_variance[idx];
 			
-			dv[0] *= ( jv[0] ) * pow.x;
-			dv[1] *= ( jv[1] ) * pow.y;
-			dv[2] *= ( jv[2] ) * pow.z;
-			dv[3] *= ( jv[3] ) * pow.w;
+			dv[0] *= ( jv[0] ) * power.x;
+			dv[1] *= ( jv[1] ) * power.y;
+			dv[2] *= ( jv[2] ) * power.z;
+			dv[3] *= ( jv[3] ) * power.w;
 			
 			edge_logvariance[idx] += eps * dv;
 			
-			error += delta_mean[rows] * edge_mean[idx];
-			
+			error += ( delta_mean[ rows ] * edge_mean[ idx ] );
+			error += ( delta_variance[ rows ] * edge_variance[ idx ] ) * 2.0 * state;
 		}
 	}
 	
