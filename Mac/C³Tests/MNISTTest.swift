@@ -55,7 +55,7 @@ class MNISTTests: XCTestCase {
 						I.active = ID
 							
 						O.collect()
-						I.correct(eps: 1/16.0)
+						I.correct(eps: 1/256.0)
 							
 						//O.active[0..<10].enumerate().forEach { cnt[$0.0] = cnt[$0.0] + Int($0.1) }
 					}
@@ -79,7 +79,7 @@ class MNISTTests: XCTestCase {
 				I: Cell = context.searchCell(width: 784, label: "MNIST_I").last,
 				O: Cell = context.searchCell(width: 16, label: "MNIST_O").last
 			{
-				(0..<16).forEach {
+				(0..<64).forEach {
 					let image: Image = Image.t10k[Int(arc4random_uniform(UInt32(Image.t10k.count)))]
 					let ID: [Bool] = image.pixel.map{ 0.5 < $0 }
 					let OD: [Bool] = (0..<10).map{ $0 == image.label }

@@ -49,9 +49,7 @@ extension Bias {
 			$0.setBuffer(bias.0, offset: 0, atIndex: 3)
 			$0.setBuffer(bias.1, offset: 0, atIndex: 4)
 			$0.setBuffer(bias.2, offset: 0, atIndex: 5)
-			
-			$0.dispatchThreadgroups(MTLSize(width: (rows-1)/4+1, height: 1, depth: 1),
-			                        threadsPerThreadgroup: MTLSize(width: (cols-1)/4+1, height: 1, depth: 1))
+			$0.dispatchThreadgroups(MTLSize(width: rows*cols/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}
 	}
 	internal static func correctFF(let context context: Context, let eps: Float, let bias: (MTLBuffer, MTLBuffer, MTLBuffer, MTLBuffer), let delta: (MTLBuffer, MTLBuffer), let rows: Int, let cols: Int, let schedule: (()->())?=nil, let complete: (()->())?=nil) {
@@ -63,8 +61,7 @@ extension Bias {
 			$0.setBuffer(delta.0, offset: 0, atIndex: 4)
 			$0.setBuffer(delta.1, offset: 0, atIndex: 5)
 			$0.setBytes([eps], length: sizeof(Float), atIndex: 6)
-			$0.dispatchThreadgroups(MTLSize(width: 1, height: 1, depth: 1),
-			                        threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
+			$0.dispatchThreadgroups(MTLSize(width: rows*cols/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}
 		
 	}

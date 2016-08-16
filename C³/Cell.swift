@@ -139,11 +139,12 @@ extension Cell {
 		if let context: Context = managedObjectContext as? Context where 0 < width {
 			
 			states.progress()
-			levels.progress()
 			
 			let newState: MTLBuffer = states.new.value
 			let newTrain: MTLBuffer = states.new.train
 			let newError: MTLBuffer = states.new.error
+			
+			levels.progress()
 			
 			let newValue: MTLBuffer = levels.new.value
 			let newMean: MTLBuffer = levels.new.mean

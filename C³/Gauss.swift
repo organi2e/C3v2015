@@ -139,10 +139,10 @@ extension Gauss {
 		cols = c
 		
 		logmeandata = NSData(bytes: [Float](count: rows*cols, repeatedValue: 0), length: sizeof(Float)*rows*cols)
-		assert(logmeandata.length==sizeof(Float)*Int(rows*cols))
+		assert(logmeandata.length==sizeof(Float)*rows*cols)
 		
 		logvariancedata = NSData(bytes: [Float](count: rows*cols, repeatedValue: 0), length: sizeof(Float)*rows*cols)
-		assert(logvariancedata.length==sizeof(Float)*Int(rows*cols))
+		assert(logvariancedata.length==sizeof(Float)*rows*cols)
 		
 		setup()
 		

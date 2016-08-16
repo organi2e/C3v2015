@@ -11,8 +11,6 @@ import XCTest
 
 class CellTests: XCTestCase {
 	static let file: String = "test.sqlite"
-	static let keys: [Int] = [Int(arc4random()), Int(arc4random())]
-	static let value: [Float] = [arc4random(), arc4random(), arc4random(), arc4random()].map{Float($0)/Float(UInt32.max)}
 	
 	static let f: Bool = false
 	static let T: Bool = true
@@ -20,11 +18,11 @@ class CellTests: XCTestCase {
 	//let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f]]
 	//let OS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f]]
 	
-	//let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,f,T,T], [f,T,f,f]]
-	//let OS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f]]
-	
-	let IS: [[Bool]] = [[T,T,T,f], [T,T,f,T], [T,T,f,f], [T,f,T,T]]
+	let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,f,T,T], [f,T,f,f]]
 	let OS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f]]
+	
+	//let IS: [[Bool]] = [[T,T,T,f], [T,T,f,T], [T,T,f,f], [T,f,T,T]]
+	//let OS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f]]
 	
 	//let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [f,f,T,f]]
 	//let OS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f]]
@@ -63,12 +61,12 @@ class CellTests: XCTestCase {
 				I: Cell = context.searchCell(label: "I").last,
 				O: Cell = context.searchCell(label: "O").last
 			{
-				(0..<1024).forEach {
+				(0..<256).forEach {
 					
 					let ID: [Bool] = IS[$0%IS.count]
 					let OD: [Bool] = OS[$0%OS.count]
 					
-					(0..<16).forEach {(let iter: Int)in
+					(0..<64).forEach {(let iter: Int)in
 						
 						O.iClear()
 						I.oClear()
@@ -77,7 +75,7 @@ class CellTests: XCTestCase {
 						I.active = ID
 
 						O.collect()
-						I.correct(eps: 1/16.0)
+						I.correct(eps: 1/64.0)
 						
 					}
 					
