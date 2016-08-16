@@ -18,13 +18,35 @@ extension Edge {
 }
 
 extension Edge {
-	func collect(let context: Context, let level: (MTLBuffer, MTLBuffer, MTLBuffer), let visit: Set<Cell>) {
-		Edge.collect(context: context, level: level, edge: (value, mean, variance), state: input.collect(visit: visit), rows: rows, cols: cols)
+	func collect(let level level: (MTLBuffer, MTLBuffer, MTLBuffer), let visit: Set<Cell>) {
+		let state: MTLBuffer = input.collect(visit: visit)
+		if let context: Context = managedObjectContext as? Context {
+			Edge.collect(context: context, level: level, edge: (value, mean, variance), state: state, rows: rows, cols: cols)
+			
+		} else {
+			assertionFailure(Context.Error.InvalidContext.rawValue)
+			
+		}
 		
 	}
-	internal func correct(let context: Context, let eps: Float, let error: MTLBuffer, let state: MTLBuffer, let visit: Set<Cell>) {
-		let (delta_mean, delta_variance) = output.correct(eps: eps, visit: visit)
-		
+	internal func correct(let error error: MTLBuffer, let eps: Float, let state: MTLBuffer, let visit: Set<Cell>) {
+		let delta: (MTLBuffer, MTLBuffer) = output.correct(eps: eps, visit: visit)
+		if let context: Context = managedObjectContext as? Context {
+			func schedule() {
+				willChangeValueForKey(Edge.logmeankey)
+				willChangeValueForKey(Edge.logvariancekey)
+			}
+			func complete() {
+				didChangeValueForKey(Edge.logvariancekey)
+				didChangeValueForKey(Edge.logmeankey)
+			}
+			//dump("v")
+			Edge.correctFF(context: context, eps: eps, error: error, edge: (logmean, logvariance, mean, variance), state: state, delta: delta, rows: rows, cols: cols, schedule: schedule, complete: complete)
+			//dump("d")
+		} else {
+			assertionFailure(Context.Error.InvalidContext.rawValue)
+			
+		}
 	}
 }
 extension Edge {
@@ -74,6 +96,7 @@ extension Context {
 			throw Error.CoreData.InsertionFails(entity: Cell.className())
 		}
 		edge.resize(rows: output.width, cols: input.width)
+		edge.adjust(mean: 0, variance: 1/Float(input.width))//Xavier's initial value
 		edge.output = output
 		edge.input = input
 		return edge

@@ -17,50 +17,51 @@ class CellTests: XCTestCase {
 	static let f: Bool = false
 	static let T: Bool = true
 	
-	//let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,f,T,T], [f,T,f,f]]
+	//let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f]]
 	//let OS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f]]
 	
-	let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [f,f,T,f],[f,f,f,T], [f,f,T,f], [f,T,f,f], [f,f,T,f]]
-	let OS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f],[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,T,T,T]]
+	let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,f,T,T], [f,T,f,f]]
+	let OS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f]]
+	
+	//let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [f,f,T,f],[f,f,f,T], [f,f,T,f], [f,T,f,f], [f,f,T,f]]
+	//let OS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f],[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,T,T,T]]
+	
+	let context: Context = try!Context(storage: try!NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true).URLByAppendingPathComponent(CellTests.file))
 	
 	func test0Insert() {
-		do {
-			let url: NSURL = try NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true).URLByAppendingPathComponent(CellTests.file)
-			let context: Context = try Context(storage: url)
-			
-			let I: Cell = try context.newCell(width: 4, label: "I")
-			let H: Cell = try context.newCell(width: 64, recur: true, buffer: true, label: "H")
-			let G: Cell = try context.newCell(width: 64, recur: true, buffer: true, label: "G")
-			let O: Cell = try context.newCell(width: 4, label: "O")
-			
-			try context.chainCell(output: O, input: G)
-			try context.chainCell(output: H, input: G)
-			try context.chainCell(output: G, input: H)
-			try context.chainCell(output: H, input: I)
-			
-			try context.save()
-			
-		} catch let e {
-			XCTFail(String(e))
+		if context.searchCell(label: "I").isEmpty || context.searchCell(label: "O").isEmpty {
+			do {
+				let I: Cell = try context.newCell(width: 4, label: "I")
+				let H: Cell = try context.newCell(width: 64, recur: false, buffer: false, label: "H")
+				let O: Cell = try context.newCell(width: 4, label: "O")
+				
+				try context.chainCell(output: O, input: H)
+				try context.chainCell(output: H, input: I)
+				
+				try context.save()
+				
+			} catch let e {
+				XCTFail(String(e))
+				
+			}
+		} else {
+			print("bypass")
 			
 		}
 	}
 	func test1Update() {
 		do {
-			let url: NSURL = try NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true).URLByAppendingPathComponent(CellTests.file)
-			let context: Context = try Context(storage: url)
 			if let
 				I: Cell = context.searchCell(label: "I").last,
 				O: Cell = context.searchCell(label: "O").last
 			{
-				(0..<4).forEach {
+				(0..<256).forEach {
 					
-					let ID: [Bool] = IS[$0%8]
-					let OD: [Bool] = OS[$0%8]
+					let ID: [Bool] = IS[$0%4]
+					let OD: [Bool] = OS[$0%4]
 					
-					print("epoch: \($0)")
 					
-					(0..<1).forEach {(let iter: Int)in
+					(0..<16).forEach {(let iter: Int)in
 						
 						O.iClear()
 						I.oClear()
@@ -69,10 +70,12 @@ class CellTests: XCTestCase {
 						I.active = ID
 
 						O.collect()
-						print(O.active)
-						//I.correct(eps: 1/64.0)
+						I.correct(eps: 1/16.0)
+						
 						
 					}
+					
+					print("epoch: \($0)")
 					
 				}
 			}
@@ -84,18 +87,15 @@ class CellTests: XCTestCase {
 			
 		}
 	}
-	/*
 	func test2Validation() {
 		do {
-			let url: NSURL = try NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true).URLByAppendingPathComponent(CellTests.file)
-			let context: Context = try Context(storage: url)
 			if let
 				I: Cell = context.searchCell(label: "I").last,
 				O: Cell = context.searchCell(label: "O").last
 			{
-				(0..<8).forEach {
-					let ID: [Bool] = IS[$0%8]
-					let OD: [Bool] = OS[$0%8]
+				(0..<4).forEach {
+					let ID: [Bool] = IS[$0%IS.count]
+					let OD: [Bool] = OS[$0%OS.count]
 					var DC: [Int] = [Int](count: 10, repeatedValue: 0)
 					(0..<32).forEach {(_)in
 						
@@ -118,7 +118,6 @@ class CellTests: XCTestCase {
 			XCTFail(String(e))
 		}
 	}
-*/
 	/*
 	func test0Insert() {
 		do {

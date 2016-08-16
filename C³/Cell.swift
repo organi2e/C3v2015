@@ -7,6 +7,7 @@
 //
 //
 
+import Accelerate
 import Metal
 import CoreData
 
@@ -19,7 +20,7 @@ public class Cell: NSManagedObject {
 	}
 	private var ready: Set<Ready> = Set<Ready>()
 	
-	internal struct State {
+	private struct State {
 		let train: MTLBuffer
 		let value: MTLBuffer
 		let error: MTLBuffer
@@ -36,10 +37,10 @@ public class Cell: NSManagedObject {
 		let variance: MTLBuffer
 	}
 	
-	internal var state: [State] = []
+	private var state: [State] = []
 	private var level: [Level] = []
 	private var delta: [Delta] = []
-	
+	private var stage: Int = 0
 }
 
 extension Cell {
@@ -54,9 +55,22 @@ extension Cell {
 }
 
 extension Cell {
-	override public func awakeFromFetch() {
+	public override func awakeFromFetch() {
 		super.awakeFromFetch()
 		setup()
+	}
+	public override func awakeFromSnapshotEvents(flags: NSSnapshotEventType) {
+		super.awakeFromSnapshotEvents(flags)
+		setup()
+	}
+}
+
+extension Cell {
+	private var new: Int {
+		return ( stage + 0 ) % 2
+	}
+	private var old: Int {
+		return ( stage + 1 ) % 2
 	}
 }
 
@@ -107,8 +121,6 @@ extension Cell {
 		
 		}
 		
-		bias.setup()
-		
 		refresh()
 		forget()
 		
@@ -148,7 +160,7 @@ extension Cell {
 			let oldVariance: MTLBuffer = level[1].variance
 			
 			assert(newVariance.length==oldVariance.length)
-			
+
 			context.newBlitCommand {
 				
 				$0.copyFromBuffer(newState, sourceOffset: 0, toBuffer: oldState, destinationOffset: 0, size: min(newState.length, oldState.length))
@@ -221,6 +233,7 @@ extension Cell {
 		if visit.contains(self) {
 		
 		} else if ready.contains(.Delta) {
+			
 			output.forEach {
 				$0.refresh()
 				$0.output.oClear(visit.union([self]))
@@ -247,9 +260,9 @@ extension Cell {
 			} else if let context: Context = managedObjectContext as? Context {
 				
 				input.forEach {
-					$0.collect(context, level: (level[0].value, level[0].mean, level[0].variance), visit: visit.union([self]))
+					$0.collect(level: (level[0].value, level[0].mean, level[0].variance), visit: visit.union([self]))
 				}
-				bias.collect(context, level: (level[0].value, level[0].mean, level[0].variance))
+				bias.collect((level[0].value, level[0].mean, level[0].variance))
 				
 				Cell.activate(context: context, state: state[0].value, level: level[0].value, width: width)
 				ready.insert(.State)
@@ -273,23 +286,24 @@ extension Cell {
 				return(delta[0].mean, delta[0].variance)
 				
 			} else if ready.contains(.State) {
-				if let context: Context = managedObjectContext as? Context where ready.contains(.State) {
+				if let context: Context = managedObjectContext as? Context {
 					if ready.contains(.Train) {
 						Cell.difference(context: context, error: state[0].error, train: state[0].train, state: state[0].value, width: width)
 					
 					} else {
 						output.forEach {
-							$0.correct(context, eps: eps, error: state[0].error, state: state[0].value, visit: visit.union([self]))
+							$0.correct(error: state[0].error, eps: eps, state: state[0].value, visit: visit.union([self]))
 						}
 						
 					}
-					Cell.derivate(context: context, delta: (delta[0].mean, delta[1].mean), level: (level[0].mean, level[0].variance), error: state[0].error, width: width)
-					bias.correctFF(context, eps: eps, delta: (delta[0].mean, delta[0].variance))
+					Cell.derivate(context: context, delta: (delta[0].mean, delta[0].variance), level: (level[0].mean, level[0].variance), error: state[0].error, width: width)
+					
+					bias.correctFF(eps, delta: (delta[0].mean, delta[0].variance))
 				} else {
 					assertionFailure(Context.Error.InvalidContext.rawValue)
 					
 				}
-				
+				ready.insert(.Delta)
 			} else {
 				return(delta[1].mean, delta[1].variance)
 				
@@ -384,7 +398,8 @@ extension Cell {
 			$0.setBuffer(level.0, offset: 0, atIndex: 2)
 			$0.setBuffer(level.1, offset: 0, atIndex: 3)
 			$0.setBuffer(error, offset: 0, atIndex: 4)
-			$0.setBytes([Float(M_PI)], length: 0, atIndex: 5)
+			$0.setBytes([Float(M_PI)], length: sizeof(Float), atIndex: 5)
+			$0.dispatchThreadgroups(MTLSize(width: (width-1)/4+1, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}
 	}
 }

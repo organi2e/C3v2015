@@ -16,21 +16,30 @@ extension Bias {
 }
 
 extension Bias {
-	internal func collect(let context: Context, let level: (MTLBuffer, MTLBuffer, MTLBuffer)) {
-		Bias.collect(context: context, level: level, bias: (value, mean, variance), rows: rows, cols: cols)
-		
+	internal func collect(let level: (MTLBuffer, MTLBuffer, MTLBuffer)) {
+		if let context: Context = managedObjectContext as? Context {
+			Bias.collect(context: context, level: level, bias: (value, mean, variance), rows: rows, cols: cols)
+		} else {
+			assertionFailure(Context.Error.InvalidContext.rawValue)
+		}
 	}
-	internal func correctFF(let context: Context, let eps: Float, let delta: (MTLBuffer, MTLBuffer)) {
-		func schedule() {
-			willChangeValueForKey(Bias.logmeankey)
-			willChangeValueForKey(Bias.logvariancekey)
+	internal func correctFF(let eps: Float, let delta: (MTLBuffer, MTLBuffer)) {
+		if let context: Context = managedObjectContext as? Context {
+			func schedule() {
+				willChangeValueForKey(Bias.logmeankey)
+				willChangeValueForKey(Bias.logvariancekey)
+			}
+			func complete() {
+				didChangeValueForKey(Bias.logvariancekey)
+				didChangeValueForKey(Bias.logmeankey)
+			}
+			//dump("v")
+			Bias.correctFF(context: context, eps: eps, bias: (logmean, logvariance, mean, variance), delta: delta, rows: rows, cols: cols, schedule: schedule, complete: complete)
+			//dump("d")
+		} else {
+			assertionFailure(Context.Error.InvalidContext.rawValue)
+			
 		}
-		func complete() {
-			didChangeValueForKey(Bias.logmeankey)
-			didChangeValueForKey(Bias.logvariancekey)
-		}
-		Bias.correctFF(context: context, eps: eps, bias: (logmean, logvariance, mean, variance), delta: delta, rows: rows, cols: cols, schedule: schedule, complete: complete)
-		
 	}
 }
 extension Bias {
