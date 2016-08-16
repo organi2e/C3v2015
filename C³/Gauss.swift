@@ -32,6 +32,10 @@ extension Gauss {
 		super.awakeFromFetch()
 		setup()
 	}
+	override func awakeFromSnapshotEvents(flags: NSSnapshotEventType) {
+		super.awakeFromSnapshotEvents(flags)
+		setup()
+	}
 }
 
 extension Gauss {
@@ -43,16 +47,19 @@ extension Gauss {
 			value = context.newBuffer(length: sizeof(Float)*rows*cols)
 			uniform = context.newBuffer(length: sizeof(UInt16)*rows*cols)
 			
+			arc4random_buf(uniform.contents(), uniform.length)
+			
 			mean = context.newBuffer(length: sizeof(Float)*rows*cols)
 			variance = context.newBuffer(length: sizeof(Float)*rows*cols)
 			
 			logmean = context.newBuffer(data: logmeandata)
 			logvariance = context.newBuffer(data: logvariancedata)
 			
-			arc4random_buf(uniform.contents(), uniform.length)
-			
 			refresh()
 			shuffle()
+			
+			assert(logmean.length==sizeof(Float)*rows*cols)
+			assert(logvariance.length==sizeof(Float)*rows*cols)
 			
 			setPrimitiveValue(NSData(bytesNoCopy: logmean.contents(), length: logmean.length, freeWhenDone: false), forKey: Gauss.logmeankey)
 			setPrimitiveValue(NSData(bytesNoCopy: logvariance.contents(), length: logvariance.length, freeWhenDone: false), forKey: Gauss.logvariancekey)
@@ -64,16 +71,16 @@ extension Gauss {
 		
 	}
 	internal func shuffle() {
-		if let context: Context = managedObjectContext as? Context {
+		if let context: Context = managedObjectContext as? Context where 0 < rows && 0 < cols {
 			Gauss.shuffle(context: context, value: value, mean: mean, variance: variance, uniform: uniform, rows: rows, cols: cols)
 			
 		} else {
-			assertionFailure(Context.Error.InvalidContext.rawValue)
+			assertionFailure("\(Context.Error.InvalidContext.rawValue) or rows:\(rows), cols: \(cols)")
 			
 		}
 	}
 	internal func refresh() {
-		if let context: Context = managedObjectContext as? Context {
+		if let context: Context = managedObjectContext as? Context where 0 < rows && 0 < cols {
 			Gauss.refresh(context: context, mean: mean, variance: variance, logmean: logmean, logvariance: logvariance, rows: rows, cols: cols)
 			
 		} else {
@@ -81,8 +88,36 @@ extension Gauss {
 			
 		}
 	}
+	internal func dump(let label: String? = nil) {
+		if let context: Context = managedObjectContext as? Context where 0 < rows && 0 < cols {
+			
+			let logm: la_object_t = context.toLAObject(logmean, rows: rows, cols: cols)
+			let logv: la_object_t = context.toLAObject(logvariance, rows: rows, cols: cols)
+			
+			let cache: [Float] = [Float](count: rows*cols, repeatedValue: 0)
+			
+			if let label: String = label {
+				print(label)
+			}
+			context.join()
+			
+			print("logmean")
+			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), la_count_t(cols), logm)
+			(0..<rows).forEach {
+				print(cache[$0*cols..<($0+1)*cols])
+			}
+			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), la_count_t(cols), logv)
+			print("logvariance")
+			(0..<rows).forEach {
+				print(cache[$0*cols..<($0+1)*cols])
+			}
+			
+		} else {
+		
+		}
+	}
 	internal func adjust(let mean adjust_mean: Float, let variance adjust_variance: Float) {
-		if let context: Context = managedObjectContext as? Context {
+		if let context: Context = managedObjectContext as? Context where 0 < rows && 0 < cols {
 			let adjust_logmean: Float = -0.5*log(2.0/(adjust_mean+1.0)-1.0)
 			let adjust_logvariance: Float = log(adjust_variance)
 			
@@ -127,7 +162,8 @@ extension Gauss {
 		}
 	}
 	internal static func shuffle(let context context: Context, let value: MTLBuffer, let mean: MTLBuffer, let variance: MTLBuffer, let uniform: MTLBuffer, let rows: Int, let cols: Int) {
-		context.newComputeCommand(function: "gaussShuffle", complete: {context.performBlock{arc4random_buf(uniform.contents(), uniform.length)}}) {
+		arc4random_buf(uniform.contents(), uniform.length)
+		context.newComputeCommand(function: "gaussShuffle") {
 			$0.setBuffer(value, offset: 0, atIndex: 0)
 			$0.setBuffer(mean, offset: 0, atIndex: 1)
 			$0.setBuffer(variance, offset: 0, atIndex: 2)

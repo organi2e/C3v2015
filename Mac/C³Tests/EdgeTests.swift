@@ -98,10 +98,8 @@ class EdgeTests: XCTestCase {
 	}
 	func testCorrectFF() {
 		
-		let dumps: Bool = true
-		
-		let o_width: Int = 4
-		let i_width: Int = 4
+		let o_width: Int = 4 * Int(1+arc4random_uniform(255))
+		let i_width: Int = 4 * Int(1+arc4random_uniform(255))
 		
 		var logmean: [Float] = uniform(o_width*i_width)
 		var logvariance: [Float] = uniform(o_width*i_width)
@@ -183,50 +181,35 @@ class EdgeTests: XCTestCase {
 		let rmseError: Float = la_norm_as_float(la_difference(error_la, obsError_la), la_norm_t(LA_L2_NORM)) / sqrt(Float(i_width))
 		XCTAssert(!isnan(rmseError))
 		XCTAssert(!isinf(rmseError))
-		if 1e-4 < rmseError {
+		if 1e-3 < rmseError {
 			print("a")
 			dump(error_la)
 			print("b")
 			dump(obsError_la)
 			XCTFail("RMSE: \(rmseError)")
-		} else if dumps {
-			print("a")
-			dump(error_la)
-			print("b")
-			dump(obsError_la)
 		}
 		
 		let rmseLogmean: Float = la_norm_as_float(la_difference(dstLogmean_la, obsLogmean_la), la_norm_t(LA_L2_NORM)) / sqrt(Float(o_width*i_width))
 		XCTAssert(!isnan(rmseLogmean))
 		XCTAssert(!isinf(rmseLogmean))
-		if 1e-4 < rmseLogmean {
+		if 1e-3 < rmseLogmean {
 			print("logmean a")
 			dump(dstLogmean_la)
 			print("logmean b")
 			dump(obsLogmean_la)
 			XCTFail("RMSE: \(rmseLogmean)")
-		} else if dumps {
-			print("logmean a")
-			dump(dstLogmean_la)
-			print("logmean b")
-			dump(obsLogmean_la)
 		}
 		
 		let rmseLogvariance: Float = la_norm_as_float(la_difference(dstLogvariance_la, obsLogvariance_la), la_norm_t(LA_L2_NORM)) / sqrt(Float(o_width*i_width))
 		XCTAssert(!isnan(rmseLogvariance))
 		XCTAssert(!isinf(rmseLogvariance))
 		
-		if 1e-5 < rmseLogvariance {
+		if 1e-3 < rmseLogvariance {
 			print("logvariance a")
 			dump(dstLogvariance_la)
 			print("logvariance b")
 			dump(obsLogvariance_la)
 			XCTFail("RMSE: \(rmseLogvariance)")
-		} else if dumps {
-			print("logvariance a")
-			dump(dstLogvariance_la)
-			print("logvariance b")
-			dump(obsLogvariance_la)
 		}
 		
 	}

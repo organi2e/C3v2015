@@ -127,8 +127,8 @@ kernel void edgeCorrectFF(device float4 * const input_error [[ buffer(0) ]],
 			
 			edge_logvariance[idx] += eps * dv;
 			
-			error += ( delta_mean[ rows ] * edge_mean[ idx ] );
-			error += ( delta_variance[ rows ] * edge_variance[ idx ] ) * 2.0 * state;
+			error += ( mean * edge_mean[ idx ] );
+			error += ( variance * edge_variance[ idx ] ) * 2.0 * state;
 		}
 	}
 	
