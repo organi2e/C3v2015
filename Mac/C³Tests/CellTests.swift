@@ -72,7 +72,7 @@ class CellTests: XCTestCase {
 						I.active = ID
 
 						O.collect()
-						I.correct(eps: 1/64.0)
+						I.correct(eps: 1/4.0)
 						
 					}
 					

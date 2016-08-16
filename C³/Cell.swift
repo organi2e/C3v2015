@@ -37,10 +37,24 @@ public class Cell: NSManagedObject {
 		let variance: MTLBuffer
 	}
 	
+	private struct Stage {
+		var value: Int
+		var new: Int {
+			return ( value + 0 ) % 2
+		}
+		var old: Int {
+			return ( value + 1 ) % 2
+		}
+		mutating func progress() {
+			value = value + 1
+		}
+	}
+	
 	private var state: [State] = []
 	private var level: [Level] = []
 	private var delta: [Delta] = []
-	private var stage: Int = 0
+	private var iRef: Stage = Stage(value: 0)
+	private var oRef: Stage = Stage(value: 0)
 }
 
 extension Cell {
@@ -66,15 +80,6 @@ extension Cell {
 }
 
 extension Cell {
-	private var new: Int {
-		return ( stage + 0 ) % 2
-	}
-	private var old: Int {
-		return ( stage + 1 ) % 2
-	}
-	private func progress() {
-		stage = stage + 1
-	}
 	public var withDecay: Bool {
 		return decay != nil
 	}
@@ -90,38 +95,38 @@ extension Cell {
 			
 			state = [
 				State(
-					train: context.newBuffer(length: sizeof(Float)*width),
-					value: context.newBuffer(length: sizeof(Float)*width),
-					error: context.newBuffer(length: sizeof(Float)*width)
+					train: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
+					value: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
+					error: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
 				),
 				State(
-					train: context.newBuffer(length: sizeof(Float)*width),
-					value: context.newBuffer(length: sizeof(Float)*width),
-					error: context.newBuffer(length: sizeof(Float)*width)
+					train: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
+					value: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
+					error: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
 				)
 			]
 			
 			level = [
 				Level(
-					value: context.newBuffer(length: sizeof(Float)*width),
-					mean: context.newBuffer(length: sizeof(Float)*width),
-					variance: context.newBuffer(length: sizeof(Float)*width)
+					value: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
+					mean: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
+					variance: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
 				),
 				Level(
-					value: context.newBuffer(length: sizeof(Float)*width),
-					mean: context.newBuffer(length: sizeof(Float)*width),
-					variance: context.newBuffer(length: sizeof(Float)*width)
+					value: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
+					mean: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
+					variance: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
 				)
 			]
 			
 			delta = [
 				Delta(
-					mean: context.newBuffer(length: sizeof(Float)*width),
-					variance: context.newBuffer(length: sizeof(Float)*width)
+					mean: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
+					variance: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
 				),
 				Delta(
-					mean: context.newBuffer(length: sizeof(Float)*width),
-					variance: context.newBuffer(length: sizeof(Float)*width)
+					mean: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
+					variance: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
 				)
 			]
 		
@@ -226,6 +231,7 @@ extension Cell {
 		
 		}
 	}
+	
 	public func iClear(let visit: Set<Cell>=[]) {
 		if visit.contains(self) {
 			
@@ -242,7 +248,6 @@ extension Cell {
 		if visit.contains(self) {
 		
 		} else if ready.contains(.Delta) {
-			
 			output.forEach {
 				$0.refresh()
 				$0.output.oClear(visit.union([self]))
@@ -252,11 +257,7 @@ extension Cell {
 		}
 	}
 	
-	public func collect() {
-		collect(visit: [])
-	
-	}
-	internal func collect(let visit visit: Set<Cell>) -> MTLBuffer {
+	public func collect(let visit visit: Set<Cell>=[]) -> MTLBuffer {
 		
 		if visit.contains(self) {
 			return state[1].value
@@ -283,10 +284,7 @@ extension Cell {
 		}
 		return state[0].value
 	}
-	public func correct(let eps eps: Float) {
-		correct(eps: eps, visit: [])
-	}
-	internal func correct(let eps eps: Float, let visit: Set<Cell>) -> (MTLBuffer, MTLBuffer) {
+	public func correct(let eps eps: Float, let visit: Set<Cell>=[]) -> (MTLBuffer, MTLBuffer) {
 		if visit.contains(self) {
 			return(delta[1].mean, delta[1].variance)
 			
@@ -339,7 +337,7 @@ extension Cell {
 		get {
 			collect()
 			if let context: Context = managedObjectContext as? Context {
-				let cache: MTLBuffer = context.newBuffer(length: sizeof(Float)*width)
+				let cache: MTLBuffer = context.newBuffer(length: sizeof(Float)*width, options: .CPUCacheModeDefaultCache)
 				let value: MTLBuffer = state[0].value
 				context.newBlitCommand(sync: true) {
 					$0.copyFromBuffer(value, sourceOffset: 0, toBuffer: cache, destinationOffset: 0, size: min(cache.length, value.length))
@@ -369,7 +367,7 @@ extension Cell {
 		}
 		get {
 			if let context: Context = managedObjectContext as? Context {
-				let cache: MTLBuffer = context.newBuffer(length: sizeof(Float)*width)
+				let cache: MTLBuffer = context.newBuffer(length: sizeof(Float)*width, options: .CPUCacheModeDefaultCache)
 				let train: MTLBuffer = state[0].train
 				context.newBlitCommand(sync: true) {
 					$0.copyFromBuffer(train, sourceOffset: 0, toBuffer: cache, destinationOffset: 0, size: min(cache.length, train.length))
@@ -411,6 +409,13 @@ extension Cell {
 			$0.dispatchThreadgroups(MTLSize(width: (width-1)/4+1, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}
 	}
+	internal static func forget(let context context: Context, let error: MTLBuffer, let rate: Float, let width: Int) {
+		context.newComputeCommand(function: "cellForget") {
+			$0.setBuffer(error, offset: 0, atIndex: 0)
+			$0.setBytes([rate], length: sizeof(Float), atIndex: 1)
+			$0.dispatchThreadgroups(MTLSize(width: width/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
+		}
+	}
 }
 extension Context {
 	public func newCell ( let width width: Int, let label: String = "", let recur: Bool = false, let buffer: Bool = false, let input: [Cell] = [] ) throws -> Cell {
@@ -418,21 +423,21 @@ extension Context {
 			throw Error.CoreData.InsertionFails(entity: Cell.className())
 		}
 		cell.label = label
-		cell.width = width
+		cell.width = ((width-1)/4+1)*4
 		cell.attribute = [:]
 		cell.input = Set<Edge>()
 		cell.output = Set<Edge>()
 		try input.forEach {
 			try newEdge(output: cell, input: $0)
 		}
-		cell.bias = try newBias(width: width)
+		cell.bias = try newBias(width: cell.width)
 		cell.setup()
 		return cell
 	}
 	public func searchCell( let width width: Int? = nil, let label: String? = nil ) -> [Cell] {
 		var attribute: [String: AnyObject] = [:]
 		if let width: Int = width {
-			attribute [ "width" ] = width
+			attribute [ "width" ] = ((width-1)/4+1)*4
 		}
 		if let label: String = label {
 			attribute [ "label" ] = label

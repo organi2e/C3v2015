@@ -239,7 +239,7 @@ extension Context {
 		}
 		return la_matrix_from_float_buffer_nocopy(pool, la_count_t(rows), la_count_t(cols), la_count_t(cols), la_hint_t(LA_NO_HINT), { free($0) }, attribute)
 	}
-	internal func join() {
+	public func join() {
 		let command: MTLCommandBuffer = mtl.queue.commandBuffer()
 		command.commit()
 		command.waitUntilCompleted()
