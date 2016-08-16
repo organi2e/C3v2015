@@ -26,6 +26,9 @@ class CellTests: XCTestCase {
 	let IS: [[Bool]] = [[T,T,T,f], [T,T,f,T], [T,T,f,f], [T,f,T,T]]
 	let OS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f]]
 	
+	//let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [f,f,T,f]]
+	//let OS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f]]
+	
 	//let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [f,f,T,f],[f,f,f,T], [f,f,T,f], [f,T,f,f], [f,f,T,f]]
 	//let OS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f],[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,T,T,T]]
 	
@@ -35,10 +38,12 @@ class CellTests: XCTestCase {
 		if context.searchCell(label: "I").isEmpty || context.searchCell(label: "O").isEmpty {
 			do {
 				let I: Cell = try context.newCell(width: 4, label: "I")
-				let H: Cell = try context.newCell(width: 64, recur: false, buffer: false, label: "H")
+				let H: Cell = try context.newCell(width: 256, recur: false, buffer: false, label: "H")
+				let G: Cell = try context.newCell(width: 256, recur: false, buffer: false, label: "G")
 				let O: Cell = try context.newCell(width: 4, label: "O")
 				
-				try context.chainCell(output: O, input: H)
+				try context.chainCell(output: O, input: G)
+				try context.chainCell(output: G, input: H)
 				try context.chainCell(output: H, input: I)
 				
 				try context.save()
@@ -58,10 +63,10 @@ class CellTests: XCTestCase {
 				I: Cell = context.searchCell(label: "I").last,
 				O: Cell = context.searchCell(label: "O").last
 			{
-				(0..<256).forEach {
+				(0..<1024).forEach {
 					
-					let ID: [Bool] = IS[$0%4]
-					let OD: [Bool] = OS[$0%4]
+					let ID: [Bool] = IS[$0%IS.count]
+					let OD: [Bool] = OS[$0%OS.count]
 					
 					(0..<16).forEach {(let iter: Int)in
 						
@@ -72,7 +77,7 @@ class CellTests: XCTestCase {
 						I.active = ID
 
 						O.collect()
-						I.correct(eps: 1/4.0)
+						I.correct(eps: 1/16.0)
 						
 					}
 					
@@ -93,11 +98,11 @@ class CellTests: XCTestCase {
 			I: Cell = context.searchCell(label: "I").last,
 			O: Cell = context.searchCell(label: "O").last
 		{
-			(0..<4).forEach {
+			(0..<16).forEach {
 				let ID: [Bool] = IS[$0%IS.count]
 				let OD: [Bool] = OS[$0%OS.count]
 				var DC: [Int] = [Int](count: 10, repeatedValue: 0)
-				(0..<32).forEach {(_)in
+				(0..<64).forEach {(_)in
 					
 					I.oClear()
 					O.iClear()
