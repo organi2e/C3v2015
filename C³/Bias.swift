@@ -16,14 +16,14 @@ extension Bias {
 }
 
 extension Bias {
-	internal func collect(let level: (MTLBuffer, MTLBuffer, MTLBuffer)) {
+	internal func collect(let level level: (MTLBuffer, MTLBuffer, MTLBuffer)) {
 		if let context: Context = managedObjectContext as? Context {
 			Bias.collect(context: context, level: level, bias: (value, mean, variance), rows: rows, cols: cols)
 		} else {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
 		}
 	}
-	internal func correctFF(let eps: Float, let delta: (MTLBuffer, MTLBuffer)) {
+	internal func correctFF(let eps eps: Float, let delta: (MTLBuffer, MTLBuffer)) {
 		if let context: Context = managedObjectContext as? Context {
 			func schedule() {
 				willChangeValueForKey(Bias.logmeankey)
@@ -33,9 +33,7 @@ extension Bias {
 				didChangeValueForKey(Bias.logvariancekey)
 				didChangeValueForKey(Bias.logmeankey)
 			}
-			//dump("v")
 			Bias.correctFF(context: context, eps: eps, bias: (logmean, logvariance, mean, variance), delta: delta, rows: rows, cols: cols, schedule: schedule, complete: complete)
-			//dump("d")
 		} else {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
 			

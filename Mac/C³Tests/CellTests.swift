@@ -20,7 +20,10 @@ class CellTests: XCTestCase {
 	//let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f]]
 	//let OS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f]]
 	
-	let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,f,T,T], [f,T,f,f]]
+	//let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,f,T,T], [f,T,f,f]]
+	//let OS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f]]
+	
+	let IS: [[Bool]] = [[T,T,T,f], [T,T,f,T], [T,T,f,f], [T,f,T,T]]
 	let OS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f]]
 	
 	//let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [f,f,T,f],[f,f,f,T], [f,f,T,f], [f,T,f,f], [f,f,T,f]]
@@ -60,7 +63,6 @@ class CellTests: XCTestCase {
 					let ID: [Bool] = IS[$0%4]
 					let OD: [Bool] = OS[$0%4]
 					
-					
 					(0..<16).forEach {(let iter: Int)in
 						
 						O.iClear()
@@ -70,8 +72,7 @@ class CellTests: XCTestCase {
 						I.active = ID
 
 						O.collect()
-						I.correct(eps: 1/16.0)
-						
+						I.correct(eps: 1/64.0)
 						
 					}
 					
@@ -88,34 +89,29 @@ class CellTests: XCTestCase {
 		}
 	}
 	func test2Validation() {
-		do {
-			if let
-				I: Cell = context.searchCell(label: "I").last,
-				O: Cell = context.searchCell(label: "O").last
-			{
-				(0..<4).forEach {
-					let ID: [Bool] = IS[$0%IS.count]
-					let OD: [Bool] = OS[$0%OS.count]
-					var DC: [Int] = [Int](count: 10, repeatedValue: 0)
-					(0..<32).forEach {(_)in
-						
-						I.oClear()
-						O.iClear()
-						
-						I.active = ID
-						O.active.enumerate().forEach {
-							DC[$0.index] = DC[$0.index] + Int($0.element)
-						}
+		if let
+			I: Cell = context.searchCell(label: "I").last,
+			O: Cell = context.searchCell(label: "O").last
+		{
+			(0..<4).forEach {
+				let ID: [Bool] = IS[$0%IS.count]
+				let OD: [Bool] = OS[$0%OS.count]
+				var DC: [Int] = [Int](count: 10, repeatedValue: 0)
+				(0..<32).forEach {(_)in
+					
+					I.oClear()
+					O.iClear()
+					
+					I.active = ID
+					O.active.enumerate().forEach {
+						DC[$0.index] = DC[$0.index] + Int($0.element)
 					}
-					print(zip(OD, DC).map{ $0.0 ? "[\($0.1)]" : "\($0.1)" })
 				}
-				
-			} else {
-				XCTFail()
+				print(zip(OD, DC).map{ $0.0 ? "[\($0.1)]" : "\($0.1)" })
 			}
-
-		} catch let e {
-			XCTFail(String(e))
+			
+		} else {
+			XCTFail()
 		}
 	}
 	/*
