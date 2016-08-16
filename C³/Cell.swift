@@ -72,6 +72,15 @@ extension Cell {
 	private var old: Int {
 		return ( stage + 1 ) % 2
 	}
+	private func progress() {
+		stage = stage + 1
+	}
+	public var withDecay: Bool {
+		return decay != nil
+	}
+	public var withFeedback: Bool {
+		return feedback != nil
+	}
 }
 
 extension Cell {
@@ -262,7 +271,7 @@ extension Cell {
 				input.forEach {
 					$0.collect(level: (level[0].value, level[0].mean, level[0].variance), visit: visit.union([self]))
 				}
-				bias.collect((level[0].value, level[0].mean, level[0].variance))
+				bias.collect(level: (level[0].value, level[0].mean, level[0].variance))
 				
 				Cell.activate(context: context, state: state[0].value, level: level[0].value, width: width)
 				ready.insert(.State)
@@ -298,7 +307,7 @@ extension Cell {
 					}
 					Cell.derivate(context: context, delta: (delta[0].mean, delta[0].variance), level: (level[0].mean, level[0].variance), error: state[0].error, width: width)
 					
-					bias.correctFF(eps, delta: (delta[0].mean, delta[0].variance))
+					bias.correctFF(eps: eps, delta: (delta[0].mean, delta[0].variance))
 				} else {
 					assertionFailure(Context.Error.InvalidContext.rawValue)
 					
