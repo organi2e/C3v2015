@@ -38,3 +38,10 @@ kernel void cellDifference(device float4 * const error [[ buffer(0) ]],
 						   ) {
 	error[n] = train[n] - state[n];
 }
+kernel void cellForget(device float4 * const error [[ buffer(0) ]],
+					   constant float const & rate [[ buffer(1) ]],
+					   uint const n [[ thread_position_in_grid ]],
+					   uint const N [[ threads_per_grid ]]
+						   ) {
+	error[n] *= rate;
+}

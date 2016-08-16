@@ -8,7 +8,8 @@
 
 import XCTest
 import MNIST
-import C3
+@testable import C3
+
 class MNISTTests: XCTestCase {
 	static let file: String = "test.sqlite"
 	func test0Insert() {
@@ -17,13 +18,13 @@ class MNISTTests: XCTestCase {
 			let context: Context = try Context(storage: url)
 			if context.searchCell(width: 784, label: "MNIST_I").isEmpty {
 				let I: Cell = try context.newCell(width: 784, label: "MNIST_I")
-				let H: Cell = try context.newCell(width: 512, label: "MNIST_H")
-				let G: Cell = try context.newCell(width: 512, label: "MNIST_G")
+				let G: Cell = try context.newCell(width: 256, label: "MNIST_G")
+				let F: Cell = try context.newCell(width:  64, label: "MNIST_F")
 				let O: Cell = try context.newCell(width:  16, label: "MNIST_O")
 				
-				try context.chainCell(output: H, input: I)
-				try context.chainCell(output: G, input: H)
-				try context.chainCell(output: O, input: G)
+				try context.chainCell(output: G, input: I)
+				try context.chainCell(output: F, input: G)
+				try context.chainCell(output: O, input: F)
 				
 				try context.save()
 			} else {
@@ -45,8 +46,8 @@ class MNISTTests: XCTestCase {
 					let image: Image = Image.train[Int(arc4random_uniform(UInt32(Image.train.count)))]
 					let ID: [Bool] = image.pixel.map{ 0.5 < $0 }
 					let OD: [Bool] = (0..<10).map{ $0 == image.label }
-					var cnt: [Int] = [Int](count: 10, repeatedValue: 0)
-					(0..<16).forEach {(_)in
+					//var cnt: [Int] = [Int](count: 10, repeatedValue: 0)
+					(0..<64).forEach {(_)in
 						O.iClear()
 						I.oClear()
 						
@@ -54,14 +55,14 @@ class MNISTTests: XCTestCase {
 						I.active = ID
 							
 						O.collect()
-						I.correct(eps: 1/256.0)
+						I.correct(eps: 1/16.0)
 							
-						O.active[0..<10].enumerate().forEach {
-							cnt[$0.0] = cnt[$0.0] + Int($0.1)
-						}
+						//O.active[0..<10].enumerate().forEach { cnt[$0.0] = cnt[$0.0] + Int($0.1) }
 					}
-					print($0, zip(OD, cnt).map{ $0.0 ? "[\($0.1)]" : "\($0.1)"})
+					print("epoch: \($0)")
+					//print($0, zip(OD, cnt).map{ $0.0 ? "[\($0.1)]" : "\($0.1)"})
 				}
+				context.join()
 				try context.save()
 			} else {
 				XCTFail()
@@ -78,7 +79,7 @@ class MNISTTests: XCTestCase {
 				I: Cell = context.searchCell(width: 784, label: "MNIST_I").last,
 				O: Cell = context.searchCell(width: 16, label: "MNIST_O").last
 			{
-				(0..<64).forEach {
+				(0..<16).forEach {
 					let image: Image = Image.t10k[Int(arc4random_uniform(UInt32(Image.t10k.count)))]
 					let ID: [Bool] = image.pixel.map{ 0.5 < $0 }
 					let OD: [Bool] = (0..<10).map{ $0 == image.label }

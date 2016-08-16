@@ -11,9 +11,9 @@ import CoreData
 
 internal class Gauss: NSManagedObject {
 	internal private(set) var value: MTLBuffer!
+	internal private(set) var uniform: MTLBuffer!
 	internal private(set) var mean: MTLBuffer!
 	internal private(set) var variance: MTLBuffer!
-	internal private(set) var uniform: MTLBuffer!
 	internal private(set) var logmean: MTLBuffer!
 	internal private(set) var logvariance: MTLBuffer!
 }
@@ -44,16 +44,14 @@ extension Gauss {
 	
 		if let context: Context = managedObjectContext as? Context {
 			
-			value = context.newBuffer(length: sizeof(Float)*rows*cols)
-			uniform = context.newBuffer(length: sizeof(UInt16)*rows*cols)
+			value = context.newBuffer(length: sizeof(Float)*rows*cols, options: .StorageModePrivate)
+			uniform = context.newBuffer(length: sizeof(Float)*rows*cols, options: .CPUCacheModeWriteCombined)
 			
-			arc4random_buf(uniform.contents(), uniform.length)
+			mean = context.newBuffer(length: sizeof(Float)*rows*cols, options: .StorageModePrivate)
+			variance = context.newBuffer(length: sizeof(Float)*rows*cols, options: .StorageModePrivate)
 			
-			mean = context.newBuffer(length: sizeof(Float)*rows*cols)
-			variance = context.newBuffer(length: sizeof(Float)*rows*cols)
-			
-			logmean = context.newBuffer(data: logmeandata)
-			logvariance = context.newBuffer(data: logvariancedata)
+			logmean = context.newBuffer(data: logmeandata, options: .CPUCacheModeDefaultCache)
+			logvariance = context.newBuffer(data: logvariancedata, options: .CPUCacheModeDefaultCache)
 			
 			refresh()
 			shuffle()
@@ -153,30 +151,33 @@ extension Gauss {
 }
 extension Gauss {
 	internal static func refresh(let context context: Context, let mean: MTLBuffer, let variance: MTLBuffer, let logmean: MTLBuffer, let logvariance: MTLBuffer, let rows: Int, let cols: Int) {
+		assert(rows*cols%4==0)
 		context.newComputeCommand(function: "gaussRefresh") {
 			$0.setBuffer(mean, offset: 0, atIndex: 0)
 			$0.setBuffer(variance, offset: 0, atIndex: 1)
 			$0.setBuffer(logmean, offset: 0, atIndex: 2)
 			$0.setBuffer(logvariance, offset: 0, atIndex: 3)
-			$0.dispatchThreadgroups(MTLSize(width: (rows*cols-1)/4+1, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
+			$0.dispatchThreadgroups(MTLSize(width: rows*cols/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}
 	}
 	internal static func shuffle(let context context: Context, let value: MTLBuffer, let mean: MTLBuffer, let variance: MTLBuffer, let uniform: MTLBuffer, let rows: Int, let cols: Int) {
+		assert(rows*cols%4==0)
 		arc4random_buf(uniform.contents(), uniform.length)
 		context.newComputeCommand(function: "gaussShuffle") {
 			$0.setBuffer(value, offset: 0, atIndex: 0)
 			$0.setBuffer(mean, offset: 0, atIndex: 1)
 			$0.setBuffer(variance, offset: 0, atIndex: 2)
 			$0.setBuffer(uniform, offset: 0, atIndex: 3)
-			$0.dispatchThreadgroups(MTLSize(width: (rows*cols-1)/4+1, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
+			$0.dispatchThreadgroups(MTLSize(width: rows*cols/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}
 	}
 	internal static func adjust(let context context: Context, let logmean: MTLBuffer, let logvariance: MTLBuffer, let newLogmean: Float, let newLogvariance: Float, let rows: Int, let cols: Int) {
+		assert(rows*cols%4==0)
 		context.newComputeCommand(function: "gaussAdjust") {
 			$0.setBuffer(logmean, offset: 0, atIndex: 0)
 			$0.setBuffer(logvariance, offset: 0, atIndex: 1)
 			$0.setBytes([newLogmean, newLogvariance], length: 2*sizeof(Float), atIndex: 2)
-			$0.dispatchThreadgroups(MTLSize(width: (rows*cols-1)/4+1, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
+			$0.dispatchThreadgroups(MTLSize(width: rows*cols/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}
 	}
 }

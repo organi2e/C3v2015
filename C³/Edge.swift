@@ -40,9 +40,8 @@ extension Edge {
 				didChangeValueForKey(Edge.logvariancekey)
 				didChangeValueForKey(Edge.logmeankey)
 			}
-			//dump("v")
 			Edge.correctFF(context: context, eps: eps, error: error, edge: (logmean, logvariance, mean, variance), state: state, delta: delta, rows: rows, cols: cols, schedule: schedule, complete: complete)
-			//dump("d")
+
 		} else {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
 			
