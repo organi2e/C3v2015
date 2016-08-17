@@ -250,7 +250,7 @@ extension Cell {
 			
 		} else {
 			if ready.contains(.Delta) {
-				return(deltas.old.value, deltas.new.mean, deltas.new.variance)
+				return(deltas.new.value, deltas.new.mean, deltas.new.variance)
 				
 			} else if ready.contains(.State) {
 				if let context: Context = managedObjectContext as? Context {

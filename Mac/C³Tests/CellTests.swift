@@ -15,13 +15,13 @@ class CellTests: XCTestCase {
 	static let f: Bool = false
 	static let T: Bool = true
 	
-	//let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f]]
+	let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f]]
 	//let OS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f]]
 	
 	//let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,f,T,T], [f,T,f,f]]
 	//let OS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f]]
 	
-	let IS: [[Bool]] = [[T,T,T,f], [T,T,f,T], [T,T,f,f], [T,f,T,T]]
+	//let IS: [[Bool]] = [[T,T,T,f], [T,T,f,T], [T,T,f,f], [T,f,T,T]]
 	let OS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f]]
 	
 	//let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [f,f,T,f]]

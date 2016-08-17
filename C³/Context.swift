@@ -7,6 +7,7 @@
 //
 import Accelerate
 import Metal
+import Cocoa
 import CoreData
 
 public class Context: NSManagedObjectContext {
@@ -108,6 +109,11 @@ public class Context: NSManagedObjectContext {
 	}
 }
 extension Context {
+	
+	internal func newRenderCommand(let sync sync: Bool, let drawable: CAMetalDrawable, let color: MTLClearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0), let configure: (MTLRenderCommandEncoder->())) {
+		let x: MTLRenderPipelineDescriptor = MTLRenderPipelineDescriptor()
+		
+	}
 	internal func newComputeCommand ( let sync sync: Bool = false, let function: String, let schedule: (()->())? = nil, let complete: (()->())? = nil, let configure: (MTLComputeCommandEncoder->())) {
 		if let pipeline: MTLComputePipelineState = mtl.pipeline[function] {
 			let command: MTLCommandBuffer = mtl.queue.commandBuffer()

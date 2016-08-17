@@ -83,6 +83,7 @@
 		87591B151D3C472100BD9248 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Config.swift; path = Computer/Config.swift; sourceTree = "<group>"; };
 		87591B181D3C48A200BD9248 /* cpuComputer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = cpuComputer.swift; path = Computer/cpuComputer.swift; sourceTree = "<group>"; };
 		87591B191D3C48B000BD9248 /* mtlComputer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = mtlComputer.swift; path = Computer/mtlComputer.swift; sourceTree = "<group>"; };
+		875DD18C1D6452D500A5C250 /* mtlrender.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = mtlrender.metal; path = "C³/mtlrender.metal"; sourceTree = "<group>"; };
 		87799A601D41BF200088B9E7 /* math.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = math.metal; path = NLA/math.metal; sourceTree = "<group>"; };
 		878985B71D050D42002C2A8D /* C3.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = C3.xcdatamodel; sourceTree = "<group>"; };
 		878985B81D050D42002C2A8D /* Cell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Cell.swift; path = "C³/Cell.swift"; sourceTree = "<group>"; };
@@ -169,6 +170,7 @@
 		878C7A6B1D01AE66002CDFD1 /* C³ */ = {
 			isa = PBXGroup;
 			children = (
+				875DD18C1D6452D500A5C250 /* mtlrender.metal */,
 				878985B61D050D42002C2A8D /* C³.xcdatamodeld */,
 				873934A91D42FCF800888988 /* Blob.swift */,
 				878985B81D050D42002C2A8D /* Cell.swift */,

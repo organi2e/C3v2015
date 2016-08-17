@@ -19,7 +19,7 @@ class MNISTTests: XCTestCase {
 			if context.searchCell(width: 784, label: "MNIST_I").isEmpty {
 				let I: Cell = try context.newCell(width: 784, label: "MNIST_I")
 				let G: Cell = try context.newCell(width: 256, label: "MNIST_G")
-				let F: Cell = try context.newCell(width:  64, label: "MNIST_F")
+				let F: Cell = try context.newCell(width: 256, label: "MNIST_F")
 				let O: Cell = try context.newCell(width:  16, label: "MNIST_O")
 				
 				try context.chainCell(output: G, input: I)
@@ -42,7 +42,7 @@ class MNISTTests: XCTestCase {
 				I: Cell = context.searchCell(width: 784, label: "MNIST_I").last,
 				O: Cell = context.searchCell(width: 16,	label: "MNIST_O").last
 			{
-				(0..<16).forEach {
+				(0..<4096).forEach {
 					let image: Image = Image.train[Int(arc4random_uniform(UInt32(Image.train.count)))]
 					let ID: [Bool] = image.pixel.map{ 0.5 < $0 }
 					let OD: [Bool] = (0..<10).map{ $0 == image.label }
