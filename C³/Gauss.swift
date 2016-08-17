@@ -117,7 +117,7 @@ extension Gauss {
 	internal func adjust(let mean adjust_mean: Float, let variance adjust_variance: Float) {
 		if let context: Context = managedObjectContext as? Context where 0 < rows && 0 < cols {
 			let adjust_logmean: Float = -0.5*log(2.0/(adjust_mean+1.0)-1.0)
-			let adjust_logvariance: Float = log(adjust_variance)
+			let adjust_logvariance: Float = log(exp(adjust_variance)-1.0)
 			
 			assert(!isnan(adjust_logmean))
 			assert(!isinf(adjust_logmean))

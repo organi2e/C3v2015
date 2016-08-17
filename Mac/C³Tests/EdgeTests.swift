@@ -128,10 +128,12 @@ class EdgeTests: XCTestCase {
 			variance: uniform(o_width)
 		)
 		let delta_la = (
+			value: la_matrix_from_float_buffer(delta.mean, la_count_t(o_width), 1, 1, NOHINT, ATTR),
 			mean: la_matrix_from_float_buffer(delta.mean, la_count_t(o_width), 1, 1, NOHINT, ATTR),
 			variance: la_matrix_from_float_buffer(delta.variance, la_count_t(o_width), 1, 1, NOHINT, ATTR)
 		)
 		let delta_mtl = (
+			value: context.fromLAObject(delta_la.value),
 			mean: context.fromLAObject(delta_la.mean),
 			variance: context.fromLAObject(delta_la.variance)
 		)
@@ -139,6 +141,7 @@ class EdgeTests: XCTestCase {
 		let edge_la = (
 			logmean: la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(edge.logmean), la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, nil, ATTR),
 			logvariance: la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(edge.logvariance), la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, nil, ATTR),
+			value: la_matrix_from_float_buffer(edge.mean, la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, ATTR),
 			mean: la_matrix_from_float_buffer(edge.mean, la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, ATTR),
 			variance: la_matrix_from_float_buffer(edge.variance, la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, ATTR)
 		)
@@ -146,6 +149,7 @@ class EdgeTests: XCTestCase {
 		let edge_mtl = (
 			logmean: context.fromLAObject(edge_la.logmean),
 			logvariance: context.fromLAObject(edge_la.logvariance),
+			value: context.fromLAObject(edge_la.value),
 			mean: context.fromLAObject(edge_la.mean),
 			variance: context.fromLAObject(edge_la.variance)
 		)

@@ -54,6 +54,7 @@ public class Cell: NSManagedObject {
 	}
 	
 	private struct Delta {
+		let value: MTLBuffer
 		let mean: MTLBuffer
 		let variance: MTLBuffer
 	}
@@ -118,6 +119,7 @@ extension Cell {
 			})
 			deltas = RingBuffer<Delta>(array: (0..<count).map{(_)in
 				return Delta(
+					value: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
 					mean: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
 					variance: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
 				)
@@ -174,14 +176,14 @@ extension Cell {
 			
 			deltas.progress()
 			
+			let newValue: MTLBuffer = deltas.new.value
 			let newMean: MTLBuffer = deltas.new.mean
 			let newVariance: MTLBuffer = deltas.new.variance
 			
 			context.newBlitCommand {
-
+				$0.fillBuffer(newValue, range: NSRange(location: 0, length: newValue.length), value: 0)
 				$0.fillBuffer(newMean, range: NSRange(location: 0, length: newMean.length), value: 0)
 				$0.fillBuffer(newVariance, range: NSRange(location: 0, length: newVariance.length), value: 0)
-				
 			}
 			
 		} else {
@@ -190,25 +192,25 @@ extension Cell {
 		}
 	}
 	
-	public func iClear(let visit: Set<Cell>=[]) {
-		if visit.contains(self) {
+	public func iClear(let ignore: Set<Cell>=[]) {
+		if ignore.contains(self) {
 			
 		} else if ready.contains(.State) {
 			input.forEach {
 				$0.shuffle()
-				$0.input.iClear(visit.union([self]))
+				$0.input.iClear(ignore.union([self]))
 			}
 			refresh()
 			ready.remove(.State)
 		}
 	}
-	public func oClear(let visit: Set<Cell> = []) {
-		if visit.contains(self) {
+	public func oClear(let ignore: Set<Cell>=[]) {
+		if ignore.contains(self) {
 		
 		} else if ready.contains(.Delta) {
 			output.forEach {
 				$0.refresh()
-				$0.output.oClear(visit.union([self]))
+				$0.output.oClear(ignore.union([self]))
 			}
 			forget()
 			ready.remove(.Delta)
@@ -242,19 +244,23 @@ extension Cell {
 		}
 		return states.new.value
 	}
-	public func correct(let eps eps: Float, let visit: Set<Cell>=[]) -> (MTLBuffer, MTLBuffer) {
+	public func correct(let eps eps: Float, let visit: Set<Cell>=[]) -> (MTLBuffer, MTLBuffer, MTLBuffer) {
 		if visit.contains(self) {
-			return(deltas.old.mean, deltas.old.variance)
+			return(deltas.old.value, deltas.old.mean, deltas.old.variance)
 			
 		} else {
 			if ready.contains(.Delta) {
-				return(deltas.new.mean, deltas.new.variance)
+				return(deltas.old.value, deltas.new.mean, deltas.new.variance)
 				
 			} else if ready.contains(.State) {
 				if let context: Context = managedObjectContext as? Context {
 
 					if ready.contains(.Train) {
-						Cell.difference(context: context, error: states.new.error, train: states.new.train, state: states.new.value, width: width)
+						Cell.difference(context: context,
+						                error: states.new.error,
+						                train: states.new.train,
+						                state: states.new.value,
+						                width: width)
 					
 					} else {
 						output.forEach {
@@ -262,7 +268,11 @@ extension Cell {
 						}
 						
 					}
-					Cell.derivate(context: context, delta: (deltas.new.mean, deltas.new.variance), level: (levels.new.mean, levels.new.variance), error: states.new.error, width: width)
+					Cell.derivate(context: context,
+					              delta: (deltas.new.value, deltas.new.mean, deltas.new.variance),
+					              level: (levels.new.value, levels.new.mean, levels.new.variance),
+					              error: states.new.error,
+					              width: width)
 					ready.insert(.Delta)
 					
 					bias.correctFF(eps: eps, delta: (deltas.new.mean, deltas.new.variance))
@@ -273,7 +283,7 @@ extension Cell {
 				}
 			}
 		}
-		return(deltas.new.mean, deltas.new.variance)
+		return(deltas.new.value, deltas.new.mean, deltas.new.variance)
 	}
 }
 extension Cell {
@@ -375,14 +385,16 @@ extension Cell {
 			$0.dispatchThreadgroups(MTLSize(width: width/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}
 	}
-	internal static func derivate(let context context: Context, let delta: (MTLBuffer, MTLBuffer), let level: (MTLBuffer, MTLBuffer), let error: MTLBuffer, let width: Int) {
+	internal static func derivate(let context context: Context, let delta: (MTLBuffer, MTLBuffer, MTLBuffer), let level: (MTLBuffer, MTLBuffer, MTLBuffer), let error: MTLBuffer, let width: Int) {
 		context.newComputeCommand(function: "cellDerivate") {
 			$0.setBuffer(delta.0, offset: 0, atIndex: 0)
 			$0.setBuffer(delta.1, offset: 0, atIndex: 1)
-			$0.setBuffer(level.0, offset: 0, atIndex: 2)
-			$0.setBuffer(level.1, offset: 0, atIndex: 3)
-			$0.setBuffer(error, offset: 0, atIndex: 4)
-			$0.setBytes([Float(M_PI)], length: sizeof(Float), atIndex: 5)
+			$0.setBuffer(delta.2, offset: 0, atIndex: 2)
+			$0.setBuffer(level.0, offset: 0, atIndex: 3)
+			$0.setBuffer(level.1, offset: 0, atIndex: 4)
+			$0.setBuffer(level.2, offset: 0, atIndex: 5)
+			$0.setBuffer(error, offset: 0, atIndex: 6)
+			$0.setBytes([Float(M_PI)], length: sizeof(Float), atIndex: 7)
 			$0.dispatchThreadgroups(MTLSize(width: width/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}
 	}

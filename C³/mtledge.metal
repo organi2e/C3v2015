@@ -74,12 +74,14 @@ kernel void edgeCorrectFF(device float4 * const input_error [[ buffer(0) ]],
 						  device float4x4 * const edge_logmean [[ buffer(1) ]],
 						  device float4x4 * const edge_logvariance [[ buffer(2) ]],
 						  device const float4 * const input_state [[ buffer(3) ]],
-						  device const float4x4 * const edge_mean [[ buffer(4) ]],
-						  device const float4x4 * const edge_variance [[ buffer(5) ]],
-						  device const float4 * const delta_mean [[ buffer(6) ]],
-						  device const float4 * const delta_variance [[ buffer(7) ]],
-						  constant const float & eps [[ buffer(8) ]],
-						  constant const uint2 & dim [[ buffer(9) ]],
+						  device const float4x4 * const edge_value [[ buffer(4) ]],
+						  device const float4x4 * const edge_mean [[ buffer(5) ]],
+						  device const float4x4 * const edge_variance [[ buffer(6) ]],
+						  device const float4 * const delta_value [[ buffer(7) ]],
+						  device const float4 * const delta_mean [[ buffer(8) ]],
+						  device const float4 * const delta_variance [[ buffer(9) ]],
+						  constant const float & eps [[ buffer(10) ]],
+						  constant const uint2 & dim [[ buffer(11) ]],
 						  threadgroup float4 * const accumulator [[ threadgroup(0) ]],
 						  uint const g [[ threadgroup_position_in_grid ]],
 						  uint const G [[ threadgroups_per_grid ]],
@@ -109,26 +111,37 @@ kernel void edgeCorrectFF(device float4 * const input_error [[ buffer(0) ]],
 			
 			float4x4 dm = float4x4(mean, mean, mean, mean);
 			float4x4 const jm = edge_mean[idx];
-			
-			dm[0] *= ( 1 - jm[0] * jm[0] ) * state.x;
-			dm[1] *= ( 1 - jm[1] * jm[1] ) * state.y;
-			dm[2] *= ( 1 - jm[2] * jm[2] ) * state.z;
-			dm[3] *= ( 1 - jm[3] * jm[3] ) * state.w;
+			/*
+			dm[0] *= state.x;
+			dm[1] *= state.y;
+			dm[2] *= state.z;
+			dm[3] *= state.w;
+			*/
+			dm[0] *= ( 1.0 - jm[0] * jm[0] ) * state.x;
+			dm[1] *= ( 1.0 - jm[1] * jm[1] ) * state.y;
+			dm[2] *= ( 1.0 - jm[2] * jm[2] ) * state.z;
+			dm[3] *= ( 1.0 - jm[3] * jm[3] ) * state.w;
 			
 			edge_logmean[idx] += eps * dm;
 			
 			float4x4 dv = float4x4(variance, variance, variance, variance);
 			float4x4 const jv = edge_variance[idx];
-			
-			dv[0] *= ( jv[0] ) * power.x;
-			dv[1] *= ( jv[1] ) * power.y;
-			dv[2] *= ( jv[2] ) * power.z;
-			dv[3] *= ( jv[3] ) * power.w;
+			/*
+			dv[0] *= power.x;
+			dv[1] *= power.y;
+			dv[2] *= power.z;
+			dv[3] *= power.w;
+			*/
+			dv[0] *= ( 1.0 - exp ( - jv[0]) ) * power.x;
+			dv[1] *= ( 1.0 - exp ( - jv[1]) ) * power.y;
+			dv[2] *= ( 1.0 - exp ( - jv[2]) ) * power.z;
+			dv[3] *= ( 1.0 - exp ( - jv[3]) ) * power.w;
 			
 			edge_logvariance[idx] += eps * dv;
 			
-			error += ( mean * edge_mean[ idx ] );
-			error += ( variance * edge_variance[ idx ] ) * 2.0 * state;
+			error += mean * edge_value[idx];
+			//error += ( mean * edge_mean[ idx ] );
+			//error += ( variance * edge_variance[ idx ] ) * 2.0 * state;
 		}
 	}
 	
