@@ -5,6 +5,7 @@
 //  Created by Kota Nakano on 5/23/16.
 //
 //
+import Metal
 import Foundation
 public class Image {
 	public let rows: Int
@@ -17,7 +18,7 @@ public class Image {
 		self.rows = rows
 		self.columns = columns
 	}
-	private static func load(let image: String, let label: String) -> [Image] {
+	private static func load(let image image: String, let label: String) -> [Image] {
 		var result: [Image] = []
 		func dataFromBundle(let path: String) -> NSData? {
 			var result: NSData?
@@ -33,8 +34,8 @@ public class Image {
 			let rows: Int = head[2]
 			let columns: Int = head[3]
 			let pixelsbody: [UInt8] = bodydata.toArray()
-			if length*rows*columns == pixelsbody.count, let data: NSData = dataFromBundle(label) where sizeof(UInt32)*2<data.length {
-				let(headdata, bodydata) = data.split(sizeof(UInt32)*2)
+			if length * rows * columns == pixelsbody.count, let data: NSData = dataFromBundle(label) where sizeof(UInt32) * 2 < data.length {
+				let(headdata, bodydata) = data.split(sizeof(UInt32) * 2)
 				let head: [Int] = headdata.toArray().map{Int(UInt32(bigEndian: $0))}
 				let length: Int = head[1]
 				let labelsbody: [UInt8] = bodydata.toArray()
@@ -47,8 +48,8 @@ public class Image {
 		}
 		return result
 	}
-	public static let train: [Image] = Image.load("train-images.idx3-ubyte", label: "train-labels.idx1-ubyte")
-	public static let t10k: [Image] = Image.load("t10k-images.idx3-ubyte", label: "t10k-labels.idx1-ubyte")
+	public static let train: [Image] = Image.load(image: "train-images.idx3-ubyte", label: "train-labels.idx1-ubyte")
+	public static let t10k: [Image] = Image.load(image: "t10k-images.idx3-ubyte", label: "t10k-labels.idx1-ubyte")
 }
 extension NSData {
 	func split(let cursor: Int) -> (NSData, NSData){

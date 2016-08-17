@@ -104,6 +104,7 @@ kernel void edgeCorrectFF(device float4 * const input_error [[ buffer(0) ]],
 		
 		if ( rows < M ) {
 			
+			float4 const value = delta_value[rows];
 			float4 const mean = delta_mean[rows];
 			float4 const variance = delta_variance[rows];
 			
@@ -139,7 +140,7 @@ kernel void edgeCorrectFF(device float4 * const input_error [[ buffer(0) ]],
 			
 			edge_logvariance[idx] += eps * dv;
 			
-			error += mean * edge_value[idx];
+			error += value * edge_value[idx];
 			//error += ( mean * edge_mean[ idx ] );
 			//error += ( variance * edge_variance[ idx ] ) * 2.0 * state;
 		}

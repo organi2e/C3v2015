@@ -28,6 +28,7 @@
 		87591B171D3C473600BD9248 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87591B161D3C473600BD9248 /* Config.swift */; };
 		87591B1B1D3C48D300BD9248 /* cpuComputer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87591B1A1D3C48D300BD9248 /* cpuComputer.swift */; };
 		87591B1D1D3C48D700BD9248 /* mtlComputer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87591B1C1D3C48D700BD9248 /* mtlComputer.swift */; };
+		875DD1971D64532800A5C250 /* mtlrender.metal in Sources */ = {isa = PBXBuildFile; fileRef = 875DD1951D6452E100A5C250 /* mtlrender.metal */; };
 		876A4B561D066EDC00D32E1B /* EdgeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 876A4B551D066EDC00D32E1B /* EdgeTests.swift */; };
 		87799A6A1D41C0920088B9E7 /* math.metal in Sources */ = {isa = PBXBuildFile; fileRef = 87799A691D41C0920088B9E7 /* math.metal */; };
 		878C7A921D01AF05002CDFD1 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878C7A911D01AF05002CDFD1 /* AppDelegate.swift */; };
@@ -157,6 +158,7 @@
 		87591B161D3C473600BD9248 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Config.swift; path = ../../Computer/Config.swift; sourceTree = "<group>"; };
 		87591B1A1D3C48D300BD9248 /* cpuComputer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = cpuComputer.swift; path = ../../Computer/cpuComputer.swift; sourceTree = "<group>"; };
 		87591B1C1D3C48D700BD9248 /* mtlComputer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = mtlComputer.swift; path = ../../Computer/mtlComputer.swift; sourceTree = "<group>"; };
+		875DD1951D6452E100A5C250 /* mtlrender.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = mtlrender.metal; path = "../../C³/mtlrender.metal"; sourceTree = "<group>"; };
 		876A4B551D066EDC00D32E1B /* EdgeTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EdgeTests.swift; sourceTree = "<group>"; };
 		87799A691D41C0920088B9E7 /* math.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = math.metal; path = ../../NLA/math.metal; sourceTree = "<group>"; };
 		878C7A8F1D01AF05002CDFD1 /* sandbox.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = sandbox.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -360,6 +362,7 @@
 		87B1FD021D05461100981CF4 /* C³ */ = {
 			isa = PBXGroup;
 			children = (
+				875DD1951D6452E100A5C250 /* mtlrender.metal */,
 				87F6AC061D5B8C5B005710FF /* mtlcell.metal */,
 				87BC8D961D55E544004510EF /* mtlgauss.metal */,
 				87BC8D931D55E071004510EF /* mtledge.metal */,
@@ -785,6 +788,9 @@
 				870EA92D1D54ADD3008C3380 /* mtlmath.metal in Sources */,
 				87F6AC071D5B8C5B005710FF /* mtlcell.metal in Sources */,
 				870EA92E1D54ADD3008C3380 /* mtlrand.metal in Sources */,
+				87BC8D971D55E544004510EF /* mtlgauss.metal in Sources */,
+				87BC8D941D55E071004510EF /* mtledge.metal in Sources */,
+				875DD1971D64532800A5C250 /* mtlrender.metal in Sources */,
 				87B1FD3B1D0546C700981CF4 /* C³.xcdatamodeld in Sources */,
 				87BCEBFE1D4D764100FC3099 /* Decay.swift in Sources */,
 				87BCEBFC1D4D763D00FC3099 /* Bias.swift in Sources */,
@@ -793,13 +799,11 @@
 				87B1FD321D0546B500981CF4 /* Config.swift in Sources */,
 				87B1FD331D0546B500981CF4 /* Context.swift in Sources */,
 				87D18E331D3F18B300982020 /* LA.swift in Sources */,
-				87BC8D941D55E071004510EF /* mtledge.metal in Sources */,
 				87B1FD341D0546B500981CF4 /* Dict.swift in Sources */,
 				87B1FD351D0546B500981CF4 /* Edge.swift in Sources */,
 				87B1FD361D0546B500981CF4 /* Error.swift in Sources */,
 				87A42CC71D4F5F58008D9708 /* Feedback.swift in Sources */,
 				87BCEC001D4D765000FC3099 /* Gauss.swift in Sources */,
-				87BC8D971D55E544004510EF /* mtlgauss.metal in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

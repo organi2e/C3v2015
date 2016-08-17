@@ -101,13 +101,16 @@ class EdgeTests: XCTestCase {
 		let o_width: Int = 4 * Int(1+arc4random_uniform(255))
 		let i_width: Int = 4 * Int(1+arc4random_uniform(255))
 		
+		let value: [Float] = uniform(o_width*i_width)
+		
 		var logmean: [Float] = uniform(o_width*i_width)
 		var logvariance: [Float] = uniform(o_width*i_width)
 		
 		let mean: [Float] = logmean.map{tanh($0)}
-		let variance: [Float] = logvariance.map{exp($0)}
+		let variance: [Float] = logvariance.map{log(1+exp($0))}
 		
 		let edge = (
+			value: value,
 			logmean: logmean,
 			logvariance: logvariance,
 			mean: mean,
@@ -124,11 +127,12 @@ class EdgeTests: XCTestCase {
 		let state_mtl: MTLBuffer = context.fromLAObject(state_la)
 		
 		let delta = (
+			value: uniform(o_width),
 			mean: uniform(o_width),
 			variance: uniform(o_width)
 		)
 		let delta_la = (
-			value: la_matrix_from_float_buffer(delta.mean, la_count_t(o_width), 1, 1, NOHINT, ATTR),
+			value: la_matrix_from_float_buffer(delta.value, la_count_t(o_width), 1, 1, NOHINT, ATTR),
 			mean: la_matrix_from_float_buffer(delta.mean, la_count_t(o_width), 1, 1, NOHINT, ATTR),
 			variance: la_matrix_from_float_buffer(delta.variance, la_count_t(o_width), 1, 1, NOHINT, ATTR)
 		)
@@ -141,7 +145,7 @@ class EdgeTests: XCTestCase {
 		let edge_la = (
 			logmean: la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(edge.logmean), la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, nil, ATTR),
 			logvariance: la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(edge.logvariance), la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, nil, ATTR),
-			value: la_matrix_from_float_buffer(edge.mean, la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, ATTR),
+			value: la_matrix_from_float_buffer(edge.value, la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, ATTR),
 			mean: la_matrix_from_float_buffer(edge.mean, la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, ATTR),
 			variance: la_matrix_from_float_buffer(edge.variance, la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, ATTR)
 		)
@@ -167,11 +171,12 @@ class EdgeTests: XCTestCase {
 			var accum: Float = 0.0
 			for o in 0..<o_width {
 				
-				accum += delta.mean[o] * edge.mean[o * i_width + i]
-				accum += delta.variance[o] * edge.variance[o * i_width + i] * 2.0 * state[i]
+				accum += delta.value[o] * edge.value[o * i_width + i]
+				//accum += delta.mean[o] * edge.mean[o * i_width + i]
+				//accum += delta.variance[o] * edge.variance[o * i_width + i] * 2.0 * state[i]
 				
 				logmean[ o * i_width + i ] += eps * ( 1.0 - mean[o*i_width+i] * mean[o*i_width+i] ) * ( state[i] ) * delta.mean[o]
-				logvariance[ o * i_width + i ] += eps * ( variance[o*i_width+i] ) * ( state[i] * state[i] ) * delta.variance[o]
+				logvariance[ o * i_width + i ] += eps * ( 1.0 - exp ( -variance[o*i_width+i] ) ) * ( state[i] * state[i] ) * delta.variance[o]
 				
 			}
 			error[i] = accum
