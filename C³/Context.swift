@@ -36,23 +36,27 @@ public class Context: NSManagedObjectContext {
 	struct MTL {
 		let device: MTLDevice
 		let queue: MTLCommandQueue
-		let pipeline: [String: MTLComputePipelineState]
+		let functions: [String: MTLFunction]
+		
 		init(let device mtldevice: MTLDevice) throws {
 			guard let libpath: String = NSBundle(forClass: Context.self).pathForResource("default", ofType: "metallib"), library: MTLLibrary = try? mtldevice.newLibraryWithFile(libpath) else {
 				throw Error.Metal.NoLibraryFound
 			}
-			var kernels: [String: MTLComputePipelineState] = [:]
+			var myfunctions: [String: MTLFunction] = [:]
 			try library.functionNames.forEach {
 				guard let function: MTLFunction = library.newFunctionWithName($0) else {
 					throw Error.Metal.PipelineNotAvailable(function: $0)
 				}
-				kernels[$0] = try mtldevice.newComputePipelineStateWithFunction(function)
+				myfunctions[$0] = function
 			}
 			device = mtldevice
 			queue = device.newCommandQueue()
-			pipeline = kernels
+			functions = myfunctions
 		}
 	}
+	
+	var computePipelines: [String: MTLComputePipelineState]
+	var renderPipelines: [String: MTLRenderPipelineState]
 	
 	private let mtl: MTL
 	private let storage: NSURL?
@@ -65,6 +69,8 @@ public class Context: NSManagedObjectContext {
 		
 		mtl = try MTL(device: device)
 		storage = storageurl
+		computePipelines = [:]
+		renderPipelines = [:]
 		
 		super.init(concurrencyType: .PrivateQueueConcurrencyType)
 		
@@ -91,6 +97,8 @@ public class Context: NSManagedObjectContext {
 			fatalError(Error.Metal.NoDeviceFound.description)
 		}
 		mtl = newmtl
+		computePipelines = [:]
+		renderPipelines = [:]
 		super.init(coder: aDecoder)
 		guard let url: NSURL = Config.bundle.URLForResource(Config.coredata.name, withExtension: Config.coredata.ext) else {
 			fatalError(Error.CoreData.NoModelFound.description)
@@ -109,13 +117,74 @@ public class Context: NSManagedObjectContext {
 	}
 }
 extension Context {
-	
-	internal func newRenderCommand(let sync sync: Bool, let drawable: CAMetalDrawable, let color: MTLClearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0), let configure: (MTLRenderCommandEncoder->())) {
-		let x: MTLRenderPipelineDescriptor = MTLRenderPipelineDescriptor()
-		
+	internal func newRenderLayer() -> CAMetalLayer {
+		let layer: CAMetalLayer = CAMetalLayer()
+		layer.device = mtl.device
+		layer.pixelFormat = .BGRA8Unorm
+		return layer
 	}
-	internal func newComputeCommand ( let sync sync: Bool = false, let function: String, let schedule: (()->())? = nil, let complete: (()->())? = nil, let configure: (MTLComputeCommandEncoder->())) {
-		if let pipeline: MTLComputePipelineState = mtl.pipeline[function] {
+	internal func newRenderCommand(let sync sync: Bool, let layer: CAMetalLayer, let shader: (String, String), let color: MTLClearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0), let schedule: (()->())? = nil, let complete: (()->())? = nil, let configure: (MTLRenderCommandEncoder->())) -> Bool {
+		let key: String = "\(shader.0),\(shader.1)"
+		if renderPipelines.indexForKey(key) == nil {
+			guard let vert: MTLFunction = mtl.functions[shader.0] else {
+				assertionFailure(shader.0)
+				return false
+			}
+			guard let frag: MTLFunction = mtl.functions[shader.1] else {
+				assertionFailure(shader.1)
+				return false
+			}
+			let descriptor: MTLRenderPipelineDescriptor = MTLRenderPipelineDescriptor()
+			descriptor.vertexFunction = vert
+			descriptor.fragmentFunction = frag
+			if let pipeline: MTLRenderPipelineState = try?mtl.device.newRenderPipelineStateWithDescriptor(descriptor) {
+				renderPipelines.updateValue(pipeline, forKey: key)
+			}
+		}
+		if let pipeline: MTLRenderPipelineState = renderPipelines[key], let drawable: CAMetalDrawable = layer.nextDrawable() {
+			
+			let descriptor: MTLRenderPassDescriptor = MTLRenderPassDescriptor()
+			descriptor.colorAttachments[0].texture = drawable.texture
+			descriptor.colorAttachments[0].clearColor = color
+			descriptor.colorAttachments[0].loadAction = .Clear
+			descriptor.colorAttachments[0].storeAction = .Store
+			
+			let command: MTLCommandBuffer = mtl.queue.commandBuffer()
+			let encoder: MTLRenderCommandEncoder = command.renderCommandEncoderWithDescriptor(descriptor)
+			
+			if let schedule: () -> () = schedule {
+				command.addScheduledHandler {(_)in
+					schedule()
+				}
+			}
+			
+			if let complete: () -> () = complete {
+				command.addCompletedHandler {(_)in
+					complete()
+				}
+			}
+			
+			encoder.setRenderPipelineState(pipeline)
+			configure(encoder)
+			command.presentDrawable(drawable)
+			command.commit()
+			
+		} else {
+			return false
+		}
+		return true
+	}
+	internal func newComputeCommand ( let sync sync: Bool = false, let function name: String, let schedule: (()->())? = nil, let complete: (()->())? = nil, let configure: (MTLComputeCommandEncoder->())) -> Bool {
+		if computePipelines.indexForKey(name) == nil {
+			guard let function: MTLFunction = mtl.functions[name] else {
+				assertionFailure(name)
+				return false
+			}
+			if let pipeline: MTLComputePipelineState = try?mtl.device.newComputePipelineStateWithFunction(function) {
+				computePipelines.updateValue(pipeline, forKey: name)
+			}
+		}
+		if let pipeline: MTLComputePipelineState = computePipelines[name] {
 			let command: MTLCommandBuffer = mtl.queue.commandBuffer()
 			if let schedule: ()->() = schedule {
 				command.addScheduledHandler {(_)in
@@ -133,13 +202,12 @@ extension Context {
 			encoder.endEncoding()
 			command.commit()
 			if sync { command.waitUntilCompleted() }
-			
 		} else {
-			assertionFailure(function)
-			
+			return false
 		}
+		return true
 	}
-	internal func newBlitCommand( let sync sync: Bool = false, let schedule: (()->())? = nil, let complete: (()->())? = nil, let configure: (MTLBlitCommandEncoder->())) {
+	internal func newBlitCommand( let sync sync: Bool = false, let schedule: (()->())? = nil, let complete: (()->())? = nil, let configure: (MTLBlitCommandEncoder->())) -> Bool {
 		let command: MTLCommandBuffer = mtl.queue.commandBuffer()
 		if let schedule: ()->() = schedule {
 			command.addScheduledHandler {(_)in
@@ -156,6 +224,7 @@ extension Context {
 		encoder.endEncoding()
 		command.commit()
 		if sync { command.waitUntilCompleted() }
+		return true
 	}
 	internal func newCommand(let sync sync: Bool = false, let schedule: (()->())? = nil, let complete: (()->())? = nil) {
 		let command: MTLCommandBuffer = mtl.queue.commandBuffer()
