@@ -32,8 +32,11 @@ kernel void biasCorrectFF(device float4 * bias_logmean [[ buffer(0) ]],
 						  uint const n [[ thread_position_in_grid ]],
 						  uint const N [[ threads_per_grid ]]
 						  ) {
+	
+//	bias_logmean[n] += eps * delta_mean[n];
+//	bias_logvariance[n] += eps * delta_variance[n];
 	bias_logmean[n] += eps * ( 1.0 - bias_mean[n] * bias_mean[n] ) * delta_mean[n];
-	bias_logvariance[n] += eps * ( bias_variance[n] ) * delta_variance[n];
+	bias_logvariance[n] += eps * ( 1.0 - exp ( - bias_variance[n] ) ) * delta_variance[n];
 }
 kernel void biasCorrectFB(device float4 * bias_mean [[ buffer(0) ]],
 						  device float4 * bias_logvariance [[ buffer(1) ]],

@@ -24,7 +24,7 @@ kernel void gaussRefresh(device float4 * const mean [[ buffer(0) ]],
 						 uint const n [[ thread_position_in_grid  ]],
 						 uint const N [[ threads_per_grid  ]]) {
 	mean[n] = tanh(logmean[n]);
-	variance[n] = exp(logvariance[n]);
+	variance[n] = log(1.0+exp(logvariance[n]));
 }
 kernel void gaussAdjust(device float4 * const logmean [[ buffer(0) ]],
 						 device float4 * const logvariance [[ buffer(1) ]],
