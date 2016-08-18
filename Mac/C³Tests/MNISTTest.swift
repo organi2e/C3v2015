@@ -24,7 +24,7 @@ class MNISTTests: XCTestCase {
 		do {
 			let url: NSURL = try NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true).URLByAppendingPathComponent(MNISTTests.file)
 			let context: Context = try Context(storage: url)
-			if context.searchCell(width: 784, label: "MNIST_O").isEmpty {
+			if context.searchCell(width: 16, label: "MNIST_O").isEmpty {
 				let I1: Cell = try context.newCell(width: 784, label: "MNIST_I1")
 				let I2: Cell = try context.newCell(width: 784, label: "MNIST_I2")
 				let I3: Cell = try context.newCell(width: 784, label: "MNIST_I3")
@@ -59,7 +59,7 @@ class MNISTTests: XCTestCase {
 				I4: Cell = context.searchCell(width: 784, label: "MNIST_I4").last,
 				O: Cell = context.searchCell(width: 16,	label: "MNIST_O").last
 			{
-				try (0..<65536).forEach {
+				try (0..<1024).forEach {
 					let image: Image = Image.train[Int(arc4random_uniform(UInt32(Image.train.count)))]
 					let pixel: [UInt8] = image.pixel
 					let ID1: [Bool] = pixel.map{ TH1 < $0 }
