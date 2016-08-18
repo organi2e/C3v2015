@@ -56,7 +56,7 @@ public class Context: NSManagedObjectContext {
 	}
 	
 	var computePipelines: [String: MTLComputePipelineState]
-	var renderPipelines: [String: MTLRenderPipelineState]
+	var renderPipelines: [String: [MTLPixelFormat:MTLRenderPipelineState]]
 	
 	private let mtl: MTL
 	private let storage: NSURL?
@@ -117,35 +117,35 @@ public class Context: NSManagedObjectContext {
 	}
 }
 extension Context {
-	internal func newRenderLayer() -> CAMetalLayer {
+	public func newRenderLayer(let pixelFormat: MTLPixelFormat = .BGRA8Unorm) -> CAMetalLayer {
 		let layer: CAMetalLayer = CAMetalLayer()
 		layer.device = mtl.device
-		layer.pixelFormat = .BGRA8Unorm
+		layer.pixelFormat = pixelFormat
 		return layer
 	}
-	internal func newRenderCommand(let sync sync: Bool, let layer: CAMetalLayer, let shader: (String, String), let color: MTLClearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0), let schedule: (()->())? = nil, let complete: (()->())? = nil, let configure: (MTLRenderCommandEncoder->())) -> Bool {
+	public func newRenderCommand(let sync sync: Bool = false, let layer: CAMetalLayer, let shader: (String, String), let color: (Double, Double, Double, Double) = (0,0,0,0), let schedule: (()->())? = nil, let complete: (()->())? = nil, let configure: (MTLRenderCommandEncoder->())) -> Bool {
 		let key: String = "\(shader.0),\(shader.1)"
 		if renderPipelines.indexForKey(key) == nil {
-			guard let vert: MTLFunction = mtl.functions[shader.0] else {
-				assertionFailure(shader.0)
-				return false
-			}
-			guard let frag: MTLFunction = mtl.functions[shader.1] else {
-				assertionFailure(shader.1)
-				return false
-			}
 			let descriptor: MTLRenderPipelineDescriptor = MTLRenderPipelineDescriptor()
-			descriptor.vertexFunction = vert
-			descriptor.fragmentFunction = frag
+			if let vert: MTLFunction = mtl.functions[shader.0] {
+				descriptor.vertexFunction = vert
+			}
+			if let frag: MTLFunction = mtl.functions[shader.1] {
+				descriptor.fragmentFunction = frag
+			}
+			descriptor.colorAttachments[0].pixelFormat = layer.pixelFormat
 			if let pipeline: MTLRenderPipelineState = try?mtl.device.newRenderPipelineStateWithDescriptor(descriptor) {
-				renderPipelines.updateValue(pipeline, forKey: key)
+				if renderPipelines.indexForKey(key) == nil {
+					renderPipelines.updateValue([:], forKey: key)
+				}
+				renderPipelines[key]?[layer.pixelFormat] = pipeline
 			}
 		}
-		if let pipeline: MTLRenderPipelineState = renderPipelines[key], let drawable: CAMetalDrawable = layer.nextDrawable() {
+		if let pipeline: MTLRenderPipelineState = renderPipelines[key]?[layer.pixelFormat], let drawable: CAMetalDrawable = layer.nextDrawable() {
 			
 			let descriptor: MTLRenderPassDescriptor = MTLRenderPassDescriptor()
 			descriptor.colorAttachments[0].texture = drawable.texture
-			descriptor.colorAttachments[0].clearColor = color
+			descriptor.colorAttachments[0].clearColor = MTLClearColor(red: color.1, green: color.2, blue: color.3, alpha: color.0)
 			descriptor.colorAttachments[0].loadAction = .Clear
 			descriptor.colorAttachments[0].storeAction = .Store
 			
@@ -166,6 +166,7 @@ extension Context {
 			
 			encoder.setRenderPipelineState(pipeline)
 			configure(encoder)
+			encoder.endEncoding()
 			command.presentDrawable(drawable)
 			command.commit()
 			
@@ -241,13 +242,25 @@ extension Context {
 		command.commit()
 		if sync { command.waitUntilCompleted() }
 	}
-	internal func newBuffer(let length length: Int, let options: MTLResourceOptions = .CPUCacheModeDefaultCache ) -> MTLBuffer {
+	public func newSampler(label: String? = nil, filters: (MTLSamplerMinMagFilter, MTLSamplerMinMagFilter) = (.Nearest, .Nearest), addressing: (MTLSamplerAddressMode, MTLSamplerAddressMode) = (.Repeat, .Repeat)) -> MTLSamplerState {
+		let descriptor: MTLSamplerDescriptor = MTLSamplerDescriptor()
+		descriptor.minFilter = filters.0
+		descriptor.magFilter = filters.1
+		descriptor.sAddressMode = addressing.0
+		descriptor.tAddressMode = addressing.1
+		return mtl.device.newSamplerStateWithDescriptor(descriptor)
+	}
+	public func newTexture2D(let pixelFormat: MTLPixelFormat = .BGRA8Unorm, let width: Int, let height: Int, let mipmap: Bool = false) -> MTLTexture {
+		let descriptor: MTLTextureDescriptor = MTLTextureDescriptor.texture2DDescriptorWithPixelFormat(pixelFormat, width: width, height: height, mipmapped: mipmap)
+		return mtl.device.newTextureWithDescriptor(descriptor)
+	}
+	public func newBuffer(let length length: Int, let options: MTLResourceOptions = .CPUCacheModeDefaultCache ) -> MTLBuffer {
 		return mtl.device.newBufferWithLength(length, options: options)
 	}
-	internal func newBuffer(let data data: NSData, let options: MTLResourceOptions = .CPUCacheModeDefaultCache ) -> MTLBuffer {
+	public func newBuffer(let data data: NSData, let options: MTLResourceOptions = .CPUCacheModeDefaultCache ) -> MTLBuffer {
 		return mtl.device.newBufferWithBytes(data.bytes, length: data.length, options: options)
 	}
-	internal func newBuffer(let buffer: [Float], let options: MTLResourceOptions = .CPUCacheModeDefaultCache ) -> MTLBuffer {
+	public func newBuffer(let buffer: [Float], let options: MTLResourceOptions = .CPUCacheModeDefaultCache ) -> MTLBuffer {
 		return mtl.device.newBufferWithBytes(buffer, length: sizeof(Float)*buffer.count, options: options)
 	}
 	internal func fromLAObject(let matrix: la_object_t, let options: MTLResourceOptions = .CPUCacheModeDefaultCache) -> MTLBuffer {
