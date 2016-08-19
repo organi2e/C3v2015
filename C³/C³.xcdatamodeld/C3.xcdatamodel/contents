@@ -1,12 +1,19 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model userDefinedModelVersionIdentifier="" type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="10174" systemVersion="15F34" minimumToolsVersion="Xcode 7.0">
-    <entity name="Bias" representedClassName="C3.Bias" parentEntity="Gauss" syncable="YES">
+<model userDefinedModelVersionIdentifier="" type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="10174" systemVersion="15G31" minimumToolsVersion="Xcode 7.0">
+    <entity name="Art" isAbstract="YES" syncable="YES">
+        <attribute name="cols" attributeType="Integer 64" syncable="YES"/>
+        <attribute name="logmudata" attributeType="Binary" allowsExternalBinaryDataStorage="YES" syncable="YES"/>
+        <attribute name="logsigmadata" attributeType="Binary" allowsExternalBinaryDataStorage="YES" syncable="YES"/>
+        <attribute name="rows" attributeType="Integer 64" syncable="YES"/>
+    </entity>
+    <entity name="Bias" representedClassName="C3.Bias" parentEntity="Cauchy" syncable="YES">
         <relationship name="cell" maxCount="1" deletionRule="Nullify" destinationEntity="Cell" inverseName="bias" inverseEntity="Cell" syncable="YES"/>
     </entity>
     <entity name="Blob" representedClassName="C3.Blob" syncable="YES">
         <attribute name="data" attributeType="Binary" syncable="YES"/>
         <attribute name="name" attributeType="String" indexed="YES" syncable="YES"/>
     </entity>
+    <entity name="Cauchy" representedClassName="C3.Cauchy" parentEntity="Art" syncable="YES"/>
     <entity name="Cell" representedClassName="C3.Cell" syncable="YES">
         <attribute name="attribute" transient="YES" attributeType="Transformable" syncable="YES"/>
         <attribute name="label" attributeType="String" indexed="YES" syncable="YES"/>
@@ -27,19 +34,14 @@
         <attribute name="key" attributeType="Transformable" indexed="YES" syncable="YES"/>
         <attribute name="value" attributeType="Transformable" syncable="YES"/>
     </entity>
-    <entity name="Edge" representedClassName="C3.Edge" parentEntity="Gauss" syncable="YES">
+    <entity name="Edge" representedClassName="C3.Edge" parentEntity="Cauchy" syncable="YES">
         <relationship name="input" maxCount="1" deletionRule="Nullify" destinationEntity="Cell" inverseName="output" inverseEntity="Cell" syncable="YES"/>
         <relationship name="output" maxCount="1" deletionRule="Nullify" destinationEntity="Cell" inverseName="input" inverseEntity="Cell" syncable="YES"/>
     </entity>
     <entity name="Feedback" representedClassName="C3.Feedback" parentEntity="Gauss" syncable="YES">
         <relationship name="cell" maxCount="1" deletionRule="Nullify" destinationEntity="Cell" inverseName="feedback" inverseEntity="Cell" syncable="YES"/>
     </entity>
-    <entity name="Gauss" representedClassName="C3.Gauss" syncable="YES">
-        <attribute name="cols" attributeType="Integer 64" syncable="YES"/>
-        <attribute name="logmeandata" attributeType="Binary" allowsExternalBinaryDataStorage="YES" syncable="YES"/>
-        <attribute name="logvariancedata" attributeType="Binary" allowsExternalBinaryDataStorage="YES" syncable="YES"/>
-        <attribute name="rows" attributeType="Integer 64" syncable="YES"/>
-    </entity>
+    <entity name="Gauss" representedClassName="C3.Gauss" parentEntity="Art" syncable="YES"/>
     <elements>
         <element name="Bias" positionX="54" positionY="189" width="128" height="60"/>
         <element name="Blob" positionX="36" positionY="171" width="128" height="75"/>
@@ -48,6 +50,8 @@
         <element name="Dict" positionX="18" positionY="81" width="128" height="75"/>
         <element name="Edge" positionX="54" positionY="108" width="128" height="75"/>
         <element name="Feedback" positionX="36" positionY="171" width="128" height="60"/>
-        <element name="Gauss" positionX="36" positionY="171" width="128" height="105"/>
+        <element name="Gauss" positionX="36" positionY="171" width="128" height="45"/>
+        <element name="Cauchy" positionX="36" positionY="171" width="128" height="45"/>
+        <element name="Art" positionX="45" positionY="180" width="128" height="105"/>
     </elements>
 </model>

@@ -97,7 +97,7 @@ extension Context {
 			throw Error.CoreData.InsertionFails(entity: Cell.className())
 		}
 		edge.resize(rows: output.width, cols: input.width)
-		edge.adjust(mean: 0, variance: 1/Float(input.width))//Xavier's initial value
+		edge.adjust(mu: 0, sigma: 1/Float(input.width))//Xavier's initial value
 		edge.output = output
 		edge.input = input
 		return edge

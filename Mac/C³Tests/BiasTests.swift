@@ -64,7 +64,7 @@ class BiasTests: XCTestCase {
 		let variance: Float = Float(1+arc4random_uniform(255))/Float(256.0)
 		
 		bias.resize(rows: width, cols: 1)
-		bias.adjust(mean: mean, variance: variance)
+		bias.adjust(mu: mean, sigma: variance)
 		
 		let dMean: [Float] = (0..<width).map{(_)in Float(arc4random())/Float(UInt32.max)}
 		let dVariance: [Float] = (0..<width).map{(_)in Float(arc4random())/Float(UInt32.max)}
