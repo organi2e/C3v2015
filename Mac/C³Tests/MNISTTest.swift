@@ -44,7 +44,7 @@ class MNISTTests: XCTestCase {
 			{
 				try (0..<65536).forEach {
 					let image: Image = Image.train[Int(arc4random_uniform(UInt32(Image.train.count)))]
-					let ID: [Bool] = image.pixel.map{ 0.5 < $0 }
+					let ID: [Bool] = image.pixel.map{ 128 < $0 }
 					let OD: [Bool] = (0..<10).map{ $0 == image.label }
 					//var cnt: [Int] = [Int](count: 10, repeatedValue: 0)
 					(0..<64).forEach {(_)in
@@ -83,7 +83,7 @@ class MNISTTests: XCTestCase {
 			{
 				(0..<64).forEach {
 					let image: Image = Image.t10k[Int(arc4random_uniform(UInt32(Image.t10k.count)))]
-					let ID: [Bool] = image.pixel.map{ 0.5 < $0 }
+					let ID: [Bool] = image.pixel.map{ 128 < $0 }
 					let OD: [Bool] = (0..<10).map{ $0 == image.label }
 					var cnt: [Int] = [Int](count: 10, repeatedValue: 0)
 					(0..<64).forEach {(_)in
