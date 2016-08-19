@@ -26,11 +26,12 @@ class GaussTests: XCTestCase {
 		var ymean: Float = 0.0
 		var yvariance: Float = 0.0
 		
-		let rows: Int = 4*Int(1+arc4random_uniform(256))
-		let cols: Int = 4*Int(1+arc4random_uniform(256))
+		let rows: Int = 1024//4*Int(1+arc4random_uniform(256))
+		let cols: Int = 1024//4*Int(1+arc4random_uniform(256))
 		
 		gauss.resize(rows: rows, cols: cols)
-		gauss.adjust(mean: dmean, variance: dvariance)
+		gauss.adjust(mu: dmean, sigma: dvariance)
+		
 		gauss.shuffle()
 		
 		let value: la_object_t = context.toLAObject(gauss.value, rows: rows*cols, cols: 1)
@@ -61,7 +62,7 @@ class GaussTests: XCTestCase {
 			XCTFail("var.: \(yvariance) vs \(dvariance)")
 		}
 		
-		if dump {
+		if false {
 			(0..<rows).forEach {
 				print(cache[$0*rows..<$0*rows+cols])
 			}
