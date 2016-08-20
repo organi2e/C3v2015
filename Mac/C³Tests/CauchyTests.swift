@@ -72,9 +72,14 @@ class CauchyTests: XCTestCase {
 			
 		}
 		
+		XCTAssert(!isinf(e_mu))
+		XCTAssert(!isinf(e_mu))
 		if abs(log(e_mu)-log(d_mu)) > 0.1 {
 			XCTFail("\(e_mu) vs \(d_mu)")
 		}
+		
+		XCTAssert(!isinf(e_gamma))
+		XCTAssert(!isinf(e_gamma))
 		if abs(log(e_gamma)-log(d_sigma)) > 0.5 {
 			XCTFail("\(e_gamma) vs \(d_sigma)")
 		}
