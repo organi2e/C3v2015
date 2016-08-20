@@ -8,7 +8,7 @@
 import Metal
 import CoreData
 
-internal class Edge: Gauss {
+internal class Edge: Cauchy {
 	
 }
 
@@ -21,7 +21,7 @@ extension Edge {
 	func collect(let level level: (MTLBuffer, MTLBuffer, MTLBuffer), let visit: Set<Cell>) {
 		let state: MTLBuffer = input.collect(visit: visit)
 		if let context: Context = managedObjectContext as? Context {
-			Edge.collect(context: context, level: level, edge: (value, mean, variance), state: state, rows: rows, cols: cols)
+			self.dynamicType.collect(context: context, level: level, edge: (value, mu, sigma), state: state, rows: rows, cols: cols)
 			
 		} else {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
@@ -33,14 +33,14 @@ extension Edge {
 		let delta: (MTLBuffer, MTLBuffer, MTLBuffer) = output.correct(eps: eps, visit: visit)
 		if let context: Context = managedObjectContext as? Context {
 			func schedule() {
-				willChangeValueForKey(Edge.logmeankey)
-				willChangeValueForKey(Edge.logvariancekey)
+				willChangeValueForKey(self.dynamicType.logmukey)
+				willChangeValueForKey(self.dynamicType.logsigmakey)
 			}
 			func complete() {
-				didChangeValueForKey(Edge.logvariancekey)
-				didChangeValueForKey(Edge.logmeankey)
+				didChangeValueForKey(self.dynamicType.logsigmakey)
+				didChangeValueForKey(self.dynamicType.logmukey)
 			}
-			Edge.correctFF(context: context, eps: eps, error: error, edge: (logmean, logvariance, value, mean, variance), state: state, delta: delta, rows: rows, cols: cols, schedule: schedule, complete: complete)
+			self.dynamicType.correctFF(context: context, eps: eps, error: error, edge: (logmu, logsigma, value, mu, sigma), state: state, delta: delta, rows: rows, cols: cols, schedule: schedule, complete: complete)
 
 		} else {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
@@ -49,9 +49,11 @@ extension Edge {
 	}
 }
 extension Edge {
+	internal class var collectKernel: String { return "edgeCollect" }
+	internal class var correctFFKernel: String { return "edgeCorrectFF" }
 	internal static func collect(let context context: Context, let level: (MTLBuffer, MTLBuffer, MTLBuffer), let edge: (MTLBuffer, MTLBuffer, MTLBuffer), let state: MTLBuffer, let rows: Int, let cols: Int, let bs: Int = 64) {
 		
-		context.newComputeCommand(function: "edgeCollect") {
+		context.newComputeCommand(function: collectKernel) {
 			
 			$0.setBuffer(level.0, offset: 0, atIndex: 0)
 			$0.setBuffer(level.1, offset: 0, atIndex: 1)
@@ -72,7 +74,7 @@ extension Edge {
 		}
 	}
 	internal static func correctFF(let context context: Context, let eps: Float, let error: MTLBuffer, let edge: (MTLBuffer, MTLBuffer, MTLBuffer, MTLBuffer, MTLBuffer), let state: MTLBuffer, let delta: (MTLBuffer, MTLBuffer, MTLBuffer), let rows: Int, let cols: Int, let bs: Int = 4, let schedule: (()->())?=nil, let complete:(()->())?=nil) {
-		context.newComputeCommand(function: "edgeCorrectFF", schedule: schedule, complete: complete) {
+		context.newComputeCommand(function: correctFFKernel, schedule: schedule, complete: complete) {
 			$0.setBuffer(error, offset: 0, atIndex: 0)
 			$0.setBuffer(edge.0, offset: 0, atIndex: 1)
 			$0.setBuffer(edge.1, offset: 0, atIndex: 2)

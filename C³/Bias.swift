@@ -6,7 +6,7 @@
 //
 //
 import Metal
-internal class Bias: Gauss {
+internal class Bias: Cauchy {
 
 }
 
@@ -18,22 +18,25 @@ extension Bias {
 extension Bias {
 	internal func collect(let level level: (MTLBuffer, MTLBuffer, MTLBuffer)) {
 		if let context: Context = managedObjectContext as? Context {
-			Bias.collect(context: context, level: level, bias: (value, mean, variance), rows: rows, cols: cols)
+			self.dynamicType.collect(context: context, level: level, bias: (value, mu, sigma), rows: rows, cols: cols)
+			
 		} else {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
+			
 		}
 	}
 	internal func correctFF(let eps eps: Float, let delta: (MTLBuffer, MTLBuffer)) {
 		if let context: Context = managedObjectContext as? Context {
 			func schedule() {
-				willChangeValueForKey(Bias.logmeankey)
-				willChangeValueForKey(Bias.logvariancekey)
+				willChangeValueForKey(self.dynamicType.logmukey)
+				willChangeValueForKey(self.dynamicType.logsigmakey)
 			}
 			func complete() {
-				didChangeValueForKey(Bias.logvariancekey)
-				didChangeValueForKey(Bias.logmeankey)
+				didChangeValueForKey(self.dynamicType.logsigmakey)
+				didChangeValueForKey(self.dynamicType.logmukey)
 			}
-			Bias.correctFF(context: context, eps: eps, bias: (logmean, logvariance, mean, variance), delta: delta, rows: rows, cols: cols, schedule: schedule, complete: complete)
+			self.dynamicType.correctFF(context: context, eps: eps, bias: (logmu, logsigma, mu, sigma), delta: delta, rows: rows, cols: cols, schedule: schedule, complete: complete)
+			
 		} else {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
 			
@@ -41,8 +44,10 @@ extension Bias {
 	}
 }
 extension Bias {
+	internal class var collectKernel: String { return "biasCollect" }
+	internal class var correctFFKernel: String { return "biasCorrectFF" }
 	internal static func collect(let context context: Context, let level: (MTLBuffer, MTLBuffer, MTLBuffer), let bias: (MTLBuffer, MTLBuffer, MTLBuffer), let rows: Int, let cols: Int) {
-		context.newComputeCommand(function: "biasCollect") {
+		context.newComputeCommand(function: collectKernel) {
 			$0.setBuffer(level.0, offset: 0, atIndex: 0)
 			$0.setBuffer(level.1, offset: 0, atIndex: 1)
 			$0.setBuffer(level.2, offset: 0, atIndex: 2)
@@ -52,8 +57,8 @@ extension Bias {
 			$0.dispatchThreadgroups(MTLSize(width: rows*cols/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}
 	}
-	internal static func correctFF(let context context: Context, let eps: Float, let bias: (MTLBuffer, MTLBuffer, MTLBuffer, MTLBuffer), let delta: (MTLBuffer, MTLBuffer), let rows: Int, let cols: Int, let schedule: (()->())?=nil, let complete: (()->())?=nil) {
-		context.newComputeCommand(function: "biasCorrectFF", schedule: schedule, complete: complete) {
+	internal static func correctFF(let context context: Context, let eps: Float, let bias: (MTLBuffer, MTLBuffer, MTLBuffer, MTLBuffer), let delta: (MTLBuffer, MTLBuffer), let rows: Int, let cols: Int, let schedule: (()->())? = nil, let complete: (()->())? = nil) {
+		context.newComputeCommand(function: correctFFKernel, schedule: schedule, complete: complete) {
 			$0.setBuffer(bias.0, offset: 0, atIndex: 0)
 			$0.setBuffer(bias.1, offset: 0, atIndex: 1)
 			$0.setBuffer(bias.2, offset: 0, atIndex: 2)

@@ -9,6 +9,9 @@
 #include<metal_stdlib>
 #include<metal_math>
 using namespace metal;
+
+float4 cauchyGradient(float4 const, float4 const, float const);
+
 kernel void cellActivate(device float4 * const state [[ buffer(0) ]],
 						 device const float4 * const level [[ buffer(1) ]],
 						 uint const n [[ thread_position_in_grid ]],
@@ -17,22 +20,22 @@ kernel void cellActivate(device float4 * const state [[ buffer(0) ]],
 	state[n] = step(0.0,level[n]);
 }
 kernel void cellDerivate(device float4 * const delta_value [[ buffer(0) ]],
-						 device float4 * const delta_mean [[ buffer(1) ]],
-						 device float4 * const delta_variance [[ buffer(2) ]],
+						 device float4 * const delta_mu [[ buffer(1) ]],
+						 device float4 * const delta_sigma [[ buffer(2) ]],
 						 device const float4 * const level_value [[ buffer(3) ]],
-						 device const float4 * const level_mean [[ buffer(4) ]],
-						 device const float4 * const level_variance [[ buffer(5) ]],
+						 device const float4 * const level_mu [[ buffer(4) ]],
+						 device const float4 * const level_sigma [[ buffer(5) ]],
 						 device const float4 * const state_error [[ buffer(6) ]],
 						 constant float const & M_PI [[ buffer(7) ]],
 						 uint const n [[ thread_position_in_grid ]],
 						 uint const N [[ threads_per_grid ]]
 						 ) {
-	float4 const jacob = exp(-0.5*(level_mean[n]*level_mean[n])/level_variance[n])*rsqrt(2.0*M_PI*level_variance[n]);
+	float4 const gradient = cauchyGradient(level_mu[n], level_sigma[n], M_PI);
 	float4 const error = sign(state_error[n]);
-	float4 const delta = jacob * error;
+	float4 const delta = gradient * error;
 	delta_value[n] = delta;
-	delta_mean[n] = delta;
-	delta_variance[n] = - 0.5 * delta * level_mean[n] / level_variance[n];
+	delta_mu[n] = delta;
+	delta_sigma[n] = - 0.5 * delta * level_mu[n] / level_sigma[n];
 }
 kernel void cellDifference(device float4 * const error [[ buffer(0) ]],
 						   device const float4 * const train [[ buffer(1) ]],

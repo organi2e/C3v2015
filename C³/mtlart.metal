@@ -11,11 +11,11 @@ using namespace metal;
 
 float4 artMu(float4 const);
 float4 artMuInverse(float4 const);
-float4 artMuGradient(float4 const, float4 const);
+float4 artMuGradient(float4 const);
 
 float4 artSigma(float4 const);
 float4 artSigmaInverse(float4 const);
-float4 artSigmaGradient(float4 const, float4 const);
+float4 artSigmaGradient(float4 const);
 
 float4 artMu(float4 const x) {
 	return x;//tanh(x);
@@ -23,18 +23,18 @@ float4 artMu(float4 const x) {
 float4 artMuInverse(float4 const y) {
 	return y;//atanh(y);
 }
-float4 artMuGradient(float4 const y, float4 const x) {
+float4 artMuGradient(float4 const y) {
 	return 1;// - y * y;
 }
 
 float4 artSigma(float4 const x) {
-	return exp(x);
+	return log(exp(x)+1.0);
 }
 float4 artSigmaInverse(float4 const y) {
-	return log(y);
+	return log(exp(y)-1.0);
 }
-float4 artSigmaGradient(float4 const y, float4 const x) {
-	return y;
+float4 artSigmaGradient(float4 const y) {
+	return 1.0 - exp(-y);
 }
 
 kernel void artXorShift(device uint * const value [[ buffer(0) ]],

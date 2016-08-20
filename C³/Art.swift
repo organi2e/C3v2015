@@ -139,7 +139,7 @@ extension Art {
 	internal class var shuffleKernel: String { return "artShuffle" }
 	internal class var refreshKernel: String { return "artRefresh" }
 	internal class var adjustKernel: String { return "artAdjust" }
-	internal class func shuffle(let context context: Context, let value: MTLBuffer, let mu: MTLBuffer, let sigma: MTLBuffer, let uniform: MTLBuffer, let rows: Int, let cols: Int) {
+	internal static func shuffle(let context context: Context, let value: MTLBuffer, let mu: MTLBuffer, let sigma: MTLBuffer, let uniform: MTLBuffer, let rows: Int, let cols: Int) {
 		assert(rows*cols%4==0)
 		arc4random_buf(uniform.contents(), uniform.length)
 		context.newComputeCommand(function: shuffleKernel) {
@@ -167,8 +167,8 @@ extension Art {
 			willChangeValueForKey(logsigmakey)
 		}
 		func complete() {
-			didChangeValueForKey(logmukey)
 			didChangeValueForKey(logsigmakey)
+			didChangeValueForKey(logmukey)
 		}
 		context.newComputeCommand(function: adjustKernel) {
 			$0.setBuffer(logmu, offset: 0, atIndex: 0)

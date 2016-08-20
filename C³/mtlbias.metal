@@ -9,34 +9,39 @@
 #include <metal_stdlib>
 using namespace metal;
 
+float4 artMu(float4 const);
+float4 artMuInverse(float4 const);
+float4 artMuGradient(float4 const);
+
+float4 artSigma(float4 const);
+float4 artSigmaInverse(float4 const);
+float4 artSigmaGradient(float4 const);
+
 kernel void biasCollect(device float4 * level_value [[ buffer(0) ]],
-						device float4 * level_mean [[ buffer(1) ]],
-						device float4 * level_variance [[ buffer(2) ]],
+						device float4 * level_mu [[ buffer(1) ]],
+						device float4 * level_sigma [[ buffer(2) ]],
 						device const float4 * bias_value [[ buffer(3) ]],
-						device const float4 * bias_mean [[ buffer(4) ]],
-						device const float4 * bias_variance [[ buffer(5) ]],
+						device const float4 * bias_mu [[ buffer(4) ]],
+						device const float4 * bias_sigma [[ buffer(5) ]],
 						uint const n [[ thread_position_in_grid ]],
 						uint const N [[ threads_per_grid ]]
 						) {
 	level_value[n] += bias_value[n];
-	level_mean[n] += bias_mean[n];
-	level_variance[n] += bias_variance[n];
+	level_mu[n] += bias_mu[n];
+	level_sigma[n] += bias_sigma[n];
 }
-kernel void biasCorrectFF(device float4 * bias_logmean [[ buffer(0) ]],
-						  device float4 * bias_logvariance [[ buffer(1) ]],
-						  device const float4 * bias_mean [[ buffer(2) ]],
-						  device const float4 * bias_variance [[ buffer(3) ]],
-						  device const float4 * delta_mean [[ buffer(4) ]],
-						  device const float4 * delta_variance [[ buffer(5) ]],
+kernel void biasCorrectFF(device float4 * bias_logmu [[ buffer(0) ]],
+						  device float4 * bias_logsigma [[ buffer(1) ]],
+						  device const float4 * bias_mu [[ buffer(2) ]],
+						  device const float4 * bias_sigma [[ buffer(3) ]],
+						  device const float4 * delta_mu [[ buffer(4) ]],
+						  device const float4 * delta_sigma [[ buffer(5) ]],
 						  constant const float & eps [[ buffer(6) ]],
 						  uint const n [[ thread_position_in_grid ]],
 						  uint const N [[ threads_per_grid ]]
 						  ) {
-	
-//	bias_logmean[n] += eps * delta_mean[n];
-//	bias_logvariance[n] += eps * delta_variance[n];
-	bias_logmean[n] += eps * ( 1.0 - bias_mean[n] * bias_mean[n] ) * delta_mean[n];
-	bias_logvariance[n] += eps * ( 1.0 - exp ( - bias_variance[n] ) ) * delta_variance[n];
+	bias_logmu[n] += eps * artMuGradient(bias_mu[n]) * delta_mu[n];
+	bias_logsigma[n] += eps * artSigmaGradient(bias_sigma[n]) * delta_sigma[n];
 }
 kernel void biasCorrectFB(device float4 * bias_mean [[ buffer(0) ]],
 						  device float4 * bias_logvariance [[ buffer(1) ]],

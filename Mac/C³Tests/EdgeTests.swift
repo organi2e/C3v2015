@@ -9,6 +9,13 @@ import Accelerate
 import XCTest
 @testable import C3
 
+func muGrad(value: Float) -> Float {
+	return 1.0
+}
+func sigmaGrad(value: Float) -> Float {
+	return 1.0 - exp( -value )
+}
+
 class EdgeTests: XCTestCase {
 	let context: Context = try!Context()
 	let NOHINT: la_hint_t = la_hint_t(LA_NO_HINT)
@@ -45,20 +52,20 @@ class EdgeTests: XCTestCase {
 		
 		let edge_la = (
 			value: la_matrix_from_float_buffer(uniform(rows*cols), la_count_t(rows), la_count_t(cols), la_count_t(cols), NOHINT, ATTR),
-			mean: la_matrix_from_float_buffer(uniform(rows*cols), la_count_t(rows), la_count_t(cols), la_count_t(cols), NOHINT, ATTR),
-			variance: la_matrix_from_float_buffer(uniform(rows*cols), la_count_t(rows), la_count_t(cols), la_count_t(cols), NOHINT, ATTR)
+			mu: la_matrix_from_float_buffer(uniform(rows*cols), la_count_t(rows), la_count_t(cols), la_count_t(cols), NOHINT, ATTR),
+			sigma: la_matrix_from_float_buffer(uniform(rows*cols), la_count_t(rows), la_count_t(cols), la_count_t(cols), NOHINT, ATTR)
 		)
 		
 		let edge_mtl = (
 			value: context.fromLAObject(edge_la.value),
-			mean: context.fromLAObject(edge_la.mean),
-			variance: context.fromLAObject(edge_la.variance)
+			mu: context.fromLAObject(edge_la.mu),
+			sigma: context.fromLAObject(edge_la.sigma)
 		)
 		
 		let level_mtl = (
 			value: context.newBuffer(length: sizeof(Float)*rows),
-			mean: context.newBuffer(length: sizeof(Float)*rows),
-			variance: context.newBuffer(length: sizeof(Float)*rows)
+			mu: context.newBuffer(length: sizeof(Float)*rows),
+			sigma: context.newBuffer(length: sizeof(Float)*rows)
 		)
 
 		measureBlock {
@@ -68,14 +75,14 @@ class EdgeTests: XCTestCase {
 		
 		let level_mtl_la = (
 			value: context.toLAObject(level_mtl.value, rows: rows, cols: 1),
-			mean: context.toLAObject(level_mtl.mean, rows: rows, cols: 1),
-			variance: context.toLAObject(level_mtl.variance, rows: rows, cols: 1)
+			mu: context.toLAObject(level_mtl.mu, rows: rows, cols: 1),
+			sigma: context.toLAObject(level_mtl.sigma, rows: rows, cols: 1)
 		)
 		
 		let level_la = (
 			value: la_matrix_product(edge_la.value, state_la),
-			mean: la_matrix_product(edge_la.mean, state_la),
-			variance: la_matrix_product(edge_la.variance, la_elementwise_product(state_la, state_la))
+			mu: la_matrix_product(edge_la.mu, state_la),
+			sigma: la_matrix_product(edge_la.sigma, la_elementwise_product(state_la, state_la))
 		)
 		
 		context.join()
@@ -85,14 +92,14 @@ class EdgeTests: XCTestCase {
 			XCTFail("RMSE: \(rmse_value)")
 		}
 		
-		let rmse_mean: Float = la_norm_as_float(la_difference(level_mtl_la.mean, level_la.mean), la_norm_t(LA_L2_NORM)) / sqrt(Float(rows))
+		let rmse_mu: Float = la_norm_as_float(la_difference(level_mtl_la.mu, level_la.mu), la_norm_t(LA_L2_NORM)) / sqrt(Float(rows))
 		if 1e-4 < rmse_value {
-			XCTFail("RMSE: \(rmse_mean)")
+			XCTFail("RMSE: \(rmse_mu)")
 		}
 		
-		let rmse_variance: Float = la_norm_as_float(la_difference(level_mtl_la.variance, level_la.variance), la_norm_t(LA_L2_NORM)) / sqrt(Float(rows))
+		let rmse_sigma: Float = la_norm_as_float(la_difference(level_mtl_la.sigma, level_la.sigma), la_norm_t(LA_L2_NORM)) / sqrt(Float(rows))
 		if 1e-4 < rmse_value {
-			XCTFail("RMSE: \(rmse_variance)")
+			XCTFail("RMSE: \(rmse_sigma)")
 		}
 		
 	}
@@ -103,18 +110,18 @@ class EdgeTests: XCTestCase {
 		
 		let value: [Float] = uniform(o_width*i_width)
 		
-		var logmean: [Float] = uniform(o_width*i_width)
-		var logvariance: [Float] = uniform(o_width*i_width)
+		var logmu: [Float] = uniform(o_width*i_width)
+		var logsigma: [Float] = uniform(o_width*i_width)
 		
-		let mean: [Float] = logmean.map{tanh($0)}
-		let variance: [Float] = logvariance.map{log(1+exp($0))}
+		let mu: [Float] = logmu.map{tanh($0)}
+		let sigma: [Float] = logsigma.map{log(1+exp($0))}
 		
 		let edge = (
 			value: value,
-			logmean: logmean,
-			logvariance: logvariance,
-			mean: mean,
-			variance: variance
+			logmu: logmu,
+			logsigma: logsigma,
+			mu: mu,
+			sigma: sigma
 		)
 		
 		var error: [Float] = uniform(i_width)
@@ -128,34 +135,34 @@ class EdgeTests: XCTestCase {
 		
 		let delta = (
 			value: uniform(o_width),
-			mean: uniform(o_width),
-			variance: uniform(o_width)
+			mu: uniform(o_width),
+			sigma: uniform(o_width)
 		)
 		let delta_la = (
 			value: la_matrix_from_float_buffer(delta.value, la_count_t(o_width), 1, 1, NOHINT, ATTR),
-			mean: la_matrix_from_float_buffer(delta.mean, la_count_t(o_width), 1, 1, NOHINT, ATTR),
-			variance: la_matrix_from_float_buffer(delta.variance, la_count_t(o_width), 1, 1, NOHINT, ATTR)
+			mu: la_matrix_from_float_buffer(delta.mu, la_count_t(o_width), 1, 1, NOHINT, ATTR),
+			sigma: la_matrix_from_float_buffer(delta.sigma, la_count_t(o_width), 1, 1, NOHINT, ATTR)
 		)
 		let delta_mtl = (
 			value: context.fromLAObject(delta_la.value),
-			mean: context.fromLAObject(delta_la.mean),
-			variance: context.fromLAObject(delta_la.variance)
+			mu: context.fromLAObject(delta_la.mu),
+			sigma: context.fromLAObject(delta_la.sigma)
 		)
 		
 		let edge_la = (
-			logmean: la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(edge.logmean), la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, nil, ATTR),
-			logvariance: la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(edge.logvariance), la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, nil, ATTR),
+			logmu: la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(edge.logmu), la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, nil, ATTR),
+			logsigma: la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(edge.logsigma), la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, nil, ATTR),
 			value: la_matrix_from_float_buffer(edge.value, la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, ATTR),
-			mean: la_matrix_from_float_buffer(edge.mean, la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, ATTR),
-			variance: la_matrix_from_float_buffer(edge.variance, la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, ATTR)
+			mu: la_matrix_from_float_buffer(edge.mu, la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, ATTR),
+			sigma: la_matrix_from_float_buffer(edge.sigma, la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, ATTR)
 		)
 		
 		let edge_mtl = (
-			logmean: context.fromLAObject(edge_la.logmean),
-			logvariance: context.fromLAObject(edge_la.logvariance),
+			logmu: context.fromLAObject(edge_la.logmu),
+			logsigma: context.fromLAObject(edge_la.logsigma),
 			value: context.fromLAObject(edge_la.value),
-			mean: context.fromLAObject(edge_la.mean),
-			variance: context.fromLAObject(edge_la.variance)
+			mu: context.fromLAObject(edge_la.mu),
+			sigma: context.fromLAObject(edge_la.sigma)
 		)
 		
 		let eps: Float = 0.5
@@ -164,26 +171,26 @@ class EdgeTests: XCTestCase {
 		
 		let obsError_la: la_object_t = context.toLAObject(error_mtl, rows: i_width, cols: 1)
 		
-		let obsLogmean_la: la_object_t = context.toLAObject(edge_mtl.logmean, rows: o_width, cols: i_width)
-		let obsLogvariance_la: la_object_t = context.toLAObject(edge_mtl.logvariance, rows: o_width, cols: i_width)
+		let obsLogmu_la: la_object_t = context.toLAObject(edge_mtl.logmu, rows: o_width, cols: i_width)
+		let obsLogsigma_la: la_object_t = context.toLAObject(edge_mtl.logsigma, rows: o_width, cols: i_width)
 		
 		for i in 0..<i_width {
 			var accum: Float = 0.0
 			for o in 0..<o_width {
 				
 				accum += delta.value[o] * edge.value[o * i_width + i]
-				//accum += delta.mean[o] * edge.mean[o * i_width + i]
-				//accum += delta.variance[o] * edge.variance[o * i_width + i] * 2.0 * state[i]
+				//accum += delta.mu[o] * edge.mu[o * i_width + i]
+				//accum += delta.sigma[o] * edge.sigma[o * i_width + i] * 2.0 * state[i]
 				
-				logmean[ o * i_width + i ] += eps * ( 1.0 - mean[o*i_width+i] * mean[o*i_width+i] ) * ( state[i] ) * delta.mean[o]
-				logvariance[ o * i_width + i ] += eps * ( 1.0 - exp ( -variance[o*i_width+i] ) ) * ( state[i] * state[i] ) * delta.variance[o]
+				logmu[ o * i_width + i ] += eps * muGrad ( mu[o*i_width+i] ) * ( state[i] ) * delta.mu[o]
+				logsigma[ o * i_width + i ] += eps * sigmaGrad ( sigma[o*i_width+i] ) * ( state[i] * state[i] ) * delta.sigma[o]
 				
 			}
 			error[i] = accum
 		}
 		
-		let dstLogmean_la: la_object_t = la_matrix_from_float_buffer(UnsafePointer<Float>(logmean), la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, ATTR)
-		let dstLogvariance_la: la_object_t = la_matrix_from_float_buffer(UnsafePointer<Float>(logvariance), la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, ATTR)
+		let dstLogmu_la: la_object_t = la_matrix_from_float_buffer(UnsafePointer<Float>(logmu), la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, ATTR)
+		let dstLogsigma_la: la_object_t = la_matrix_from_float_buffer(UnsafePointer<Float>(logsigma), la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, ATTR)
 		
 		context.join()
 		
@@ -198,27 +205,27 @@ class EdgeTests: XCTestCase {
 			XCTFail("RMSE: \(rmseError)")
 		}
 		
-		let rmseLogmean: Float = la_norm_as_float(la_difference(dstLogmean_la, obsLogmean_la), la_norm_t(LA_L2_NORM)) / sqrt(Float(o_width*i_width))
-		XCTAssert(!isnan(rmseLogmean))
-		XCTAssert(!isinf(rmseLogmean))
-		if 1e-3 < rmseLogmean {
-			print("logmean a")
-			dump(dstLogmean_la)
-			print("logmean b")
-			dump(obsLogmean_la)
-			XCTFail("RMSE: \(rmseLogmean)")
+		let rmseLogmu: Float = la_norm_as_float(la_difference(dstLogmu_la, obsLogmu_la), la_norm_t(LA_L2_NORM)) / sqrt(Float(o_width*i_width))
+		XCTAssert(!isnan(rmseLogmu))
+		XCTAssert(!isinf(rmseLogmu))
+		if 1e-3 < rmseLogmu {
+			print("logmu a")
+			dump(dstLogmu_la)
+			print("logmu b")
+			dump(obsLogmu_la)
+			XCTFail("RMSE: \(rmseLogmu)")
 		}
 		
-		let rmseLogvariance: Float = la_norm_as_float(la_difference(dstLogvariance_la, obsLogvariance_la), la_norm_t(LA_L2_NORM)) / sqrt(Float(o_width*i_width))
-		XCTAssert(!isnan(rmseLogvariance))
-		XCTAssert(!isinf(rmseLogvariance))
+		let rmseLogsigma: Float = la_norm_as_float(la_difference(dstLogsigma_la, obsLogsigma_la), la_norm_t(LA_L2_NORM)) / sqrt(Float(o_width*i_width))
+		XCTAssert(!isnan(rmseLogsigma))
+		XCTAssert(!isinf(rmseLogsigma))
 		
-		if 1e-3 < rmseLogvariance {
-			print("logvariance a")
-			dump(dstLogvariance_la)
-			print("logvariance b")
-			dump(obsLogvariance_la)
-			XCTFail("RMSE: \(rmseLogvariance)")
+		if 1e-3 < rmseLogsigma {
+			print("logsigma a")
+			dump(dstLogsigma_la)
+			print("logsigma b")
+			dump(obsLogsigma_la)
+			XCTFail("RMSE: \(rmseLogsigma)")
 		}
 		
 	}
