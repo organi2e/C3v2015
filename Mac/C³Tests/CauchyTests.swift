@@ -30,7 +30,7 @@ class CauchyTests: XCTestCase {
 		art.resize(rows: rows, cols: cols)
 		art.adjust(mu: d_mu, sigma: d_sigma)
 		
-		let eps: Float = 1.0
+		let eps: Float = 0.5
 		let K: Int = rows * cols
 		
 		let eye: float2x2 = float2x2(diagonal: float2(1))
@@ -43,7 +43,7 @@ class CauchyTests: XCTestCase {
 
 		art.shuffle()
 		
-		for k in 0..<256 {
+		for k in 0..<1024 {
 			
 
 			let value: la_object_t = context.toLAObject(art.value, rows: rows*cols, cols: 1)
