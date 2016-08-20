@@ -30,8 +30,8 @@ class CellTests: XCTestCase {
 		if context.searchCell(label: "I").isEmpty || context.searchCell(label: "O").isEmpty {
 			do {
 				let I: Cell = try context.newCell(width: 4, label: "I")
-				let H: Cell = try context.newCell(width: 64, recur: false, buffer: false, label: "H")
-				let G: Cell = try context.newCell(width: 64, recur: false, buffer: false, label: "G")
+				let H: Cell = try context.newCell(width: 256, recur: false, buffer: false, label: "H")
+				let G: Cell = try context.newCell(width: 256, recur: false, buffer: false, label: "G")
 				let O: Cell = try context.newCell(width: 4, label: "O")
 				
 				try context.chainCell(output: O, input: G)
@@ -70,7 +70,7 @@ class CellTests: XCTestCase {
 						I.active = ID
 
 						O.collect()
-						I.correct(eps: 1/16.0)
+						I.correct(eps: 1/64.0)
 						
 					}
 					
