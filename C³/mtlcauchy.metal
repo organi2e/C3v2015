@@ -22,5 +22,6 @@ kernel void cauchyShuffle(device float4 * const value [[ buffer(0) ]],
 						  device const short4 * const seed [[ buffer(3) ]],
 						  uint const n [[ thread_position_in_grid ]],
 						  uint const N [[ threads_per_grid ]]) {
-	value[n] = mu[n] + sigma[n] * tanpi((float4(seed[n])+0.5)/32768.0);
+	float4 u = (float4(seed[n])+0.5)/65536.0;
+	value[n] = mu[n] + sigma[n] * tanpi(u);
 }

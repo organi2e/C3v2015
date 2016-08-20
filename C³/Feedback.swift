@@ -19,18 +19,6 @@ extension Feedback {
 	@NSManaged private var cell: Cell
 }
 extension Feedback {
-	override func setup() {
-		super.setup()
-		
-		assert(rows==cols)
-		/*
-		gradient.mean = la_matrix_from_splat(la_splat_from_float(0, Config.ATTR), rows, rows * cols)
-		assert(gradient.mean.status==LA_SUCCESS&&gradient.mean.rows==rows&&gradient.mean.cols==rows*cols)
-		
-		gradient.variance = la_matrix_from_splat(la_splat_from_float(0, Config.ATTR), rows, rows * cols)
-		assert(gradient.variance.status==LA_SUCCESS&&gradient.variance.rows==rows&&gradient.variance.cols==rows*cols)
-		*/
-	}
 }
 extension Feedback {
 	func collect() -> (MTLBuffer, MTLBuffer, MTLBuffer) {

@@ -41,6 +41,10 @@ class GaussTests: XCTestCase {
 
 		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), 1, value)
 		
+		let fp = fopen("/tmp/gauss.raw", "wb")
+		fwrite(cache, sizeof(Float), cache.count, fp)
+		fclose(fp)
+		
 		vDSP_meanv(UnsafePointer<Float>(cache), 1, &ymean, vDSP_Length(rows*cols))
 		XCTAssert(!isnan(ymean))
 		XCTAssert(!isinf(ymean))
@@ -67,6 +71,8 @@ class GaussTests: XCTestCase {
 				print(cache[$0*rows..<$0*rows+cols])
 			}
 		}
+		
+		
 		
 	}
 }

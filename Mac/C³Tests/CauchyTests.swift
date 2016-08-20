@@ -7,6 +7,7 @@
 //
 import Accelerate
 import XCTest
+import simd
 @testable import C3
 
 class CauchyTests: XCTestCase {
@@ -28,25 +29,37 @@ class CauchyTests: XCTestCase {
 		
 		art.resize(rows: rows, cols: cols)
 		art.adjust(mu: d_mu, sigma: d_sigma)
-		art.setup()
 		
-		var e_mu: Float = 1.0
-		var e_gamma: Float = 1.0
-		let eps: Float = 1.0/16.0
+		let eps: Float = 1.0
 		let K: Int = rows * cols
 		
+		let eye: float2x2 = float2x2(diagonal: float2(1))
+		
+		var est: float2 = float2(1)
+		var H: float2x2 = eye
+		
+		var p_est: float2 = est
+		var p_delta: float2 = float2(0)
+
 		art.shuffle()
 		
-		for _ in 0..<4096 {
+		for k in 0..<256 {
 			
+
 			let value: la_object_t = context.toLAObject(art.value, rows: rows*cols, cols: 1)
 			
-			context.join()
-			
 			let X: [Float] = [Float](count: rows*cols, repeatedValue: 0.0)
+
+			context.join()
+			art.shuffle()
+			
 			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(X), 1, value)
 			
-			art.shuffle()
+			if k == 0 {
+				let fp = fopen("/tmp/cauchy.raw", "wb")
+				fwrite(X, sizeof(Float), X.count, fp)
+				fclose(fp)
+			}
 			
 			var mean: Float = 0
 			
@@ -55,33 +68,56 @@ class CauchyTests: XCTestCase {
 			let B: [Float] = [Float](count: K, repeatedValue: 0)
 			let C: [Float] = [Float](count: K, repeatedValue: 0)
 			
-			vDSP_vsadd(X, 1, [-e_mu], UnsafeMutablePointer<Float>(U), 1, vDSP_Length(K))
+			vDSP_vsadd(X, 1, [-est.x], UnsafeMutablePointer<Float>(U), 1, vDSP_Length(K))
 			vDSP_vsq(U, 1, UnsafeMutablePointer<Float>(B), 1, vDSP_Length(K))
-			vDSP_vsadd(B, 1, [e_gamma*e_gamma], UnsafeMutablePointer<Float>(B), 1, vDSP_Length(K))
+			vDSP_vsadd(B, 1, [est.y*est.y], UnsafeMutablePointer<Float>(B), 1, vDSP_Length(K))
 			
-			vDSP_vsmul(U, 1, [2.0*e_mu], UnsafeMutablePointer<Float>(A), 1, vDSP_Length(K))
+			vDSP_vsmul(U, 1, [2.0*est.x], UnsafeMutablePointer<Float>(A), 1, vDSP_Length(K))
 			vDSP_vdiv(B, 1, A, 1, UnsafeMutablePointer<Float>(C), 1, vDSP_Length(K))
 			vDSP_meanv(C, 1, &mean, vDSP_Length(K))
 			
-			e_mu = e_mu + eps * mean
+			var delta: float2 = float2(0)
 			
-			vDSP_svdiv([2.0*e_gamma], B, 1, UnsafeMutablePointer<Float>(C), 1, vDSP_Length(K))
+			delta.x = mean
+			
+			vDSP_svdiv([2.0*est.y], B, 1, UnsafeMutablePointer<Float>(C), 1, vDSP_Length(K))
 			vDSP_meanv(C, 1, &mean, vDSP_Length(K))
 			
-			e_gamma = e_gamma + eps * ( 1 / e_gamma - mean )
+			delta.y = 1 / est.y - mean
+			
+			let s: float2 = est - p_est
+			let y: float2 = delta - p_delta
+			let m: Float = dot(y, s)
+			
+			if 1e-8 < abs(m) {//BFGS
+				let rho: Float = 1.0 / m
+				let S: float2x2 = float2x2([s, float2(0)])
+				let Y: float2x2 = float2x2(rows: [y, float2(0)])
+				let A: float2x2 = eye - rho * S * Y
+				let B: float2x2 = A.transpose
+				let C: float2x2 = S * S.transpose
+				H = A * H * B + C
+				delta = -H * delta
+			}
+			
+			p_est = est
+			p_delta = delta
+			
+			est = est + eps * delta
+			est = abs(est)
 			
 		}
 		
-		XCTAssert(!isinf(e_mu))
-		XCTAssert(!isinf(e_mu))
-		if abs(log(e_mu)-log(d_mu)) > 0.1 {
-			XCTFail("\(e_mu) vs \(d_mu)")
+		XCTAssert(!isinf(est.x))
+		XCTAssert(!isinf(est.x))
+		if abs(log(est.x)-log(d_mu)) > 0.1 {
+			XCTFail("\(est.x) vs \(d_mu)")
 		}
 		
-		XCTAssert(!isinf(e_gamma))
-		XCTAssert(!isinf(e_gamma))
-		if abs(log(e_gamma)-log(d_sigma)) > 0.5 {
-			XCTFail("\(e_gamma) vs \(d_sigma)")
+		XCTAssert(!isinf(est.y))
+		XCTAssert(!isinf(est.y))
+		if abs(log(est.y)-log(d_sigma)) > 0.5 {
+			XCTFail("\(est.y) vs \(d_sigma)")
 		}
 		
 	}
