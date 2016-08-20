@@ -50,6 +50,7 @@ extension Art {
 			mu = context.newBuffer(length: sizeof(Float)*rows*cols, options: .StorageModePrivate)
 			sigma = context.newBuffer(length: sizeof(Float)*rows*cols, options: .StorageModePrivate)
 			
+			
 			logmu = context.newBuffer(data: logmudata, options: .CPUCacheModeDefaultCache)
 			setPrimitiveValue(NSData(bytesNoCopy: logmu.contents(), length: logmu.length, freeWhenDone: false), forKey: Art.logmukey)
 			
@@ -161,6 +162,14 @@ extension Art {
 	}
 	internal static func adjust(let context context: Context, let logmu: MTLBuffer, let logsigma: MTLBuffer, let parameter: (Float, Float), let rows: Int, let cols: Int) {
 		assert(rows*cols%4==0)
+		func schedule() {
+			willChangeValueForKey(logmukey)
+			willChangeValueForKey(logsigmakey)
+		}
+		func complete() {
+			didChangeValueForKey(logmukey)
+			didChangeValueForKey(logsigmakey)
+		}
 		context.newComputeCommand(function: adjustKernel) {
 			$0.setBuffer(logmu, offset: 0, atIndex: 0)
 			$0.setBuffer(logsigma, offset: 0, atIndex: 1)
