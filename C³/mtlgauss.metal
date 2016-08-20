@@ -8,29 +8,20 @@
 
 #include <metal_stdlib>
 using namespace metal;
+
+float4 gaussPDF(float4 const, float4 const, float const);
+
+float4 gaussPDF(float4 const mu, float4 const sigma, float const M_PI) {
+	float4 v = mu / sigma;
+	return exp(-0.5*v*v)*rsqrt(2.0*M_PI)/sigma;
+}
+
 kernel void gaussShuffle(device float4 * const value [[ buffer(0) ]],
-						 device const float4 * const mean [[ buffer(1) ]],
-						 device const float4 * const variance [[ buffer(2) ]],
+						 device const float4 * const mu [[ buffer(1) ]],
+						 device const float4 * const sigma [[ buffer(2) ]],
 						 device const ushort4 * const seed [[ buffer(3) ]],
 						 uint const n [[ thread_position_in_grid ]],
 						 uint const N [[ threads_per_grid ]]) {
 	float4 u = (float4(seed[n]) + 1.0) / 65536.0;
-	value[n] = mean[n] + float4(cospi(2.0*u.xy), sinpi(2.0*u.xy)).xzyw * sqrt(-2.0*variance[n]*log(u.zw).xxyy);
-}
-kernel void gaussRefresh(device float4 * const mean [[ buffer(0) ]],
-						 device float4 * const variance [[ buffer(1) ]],
-						 device const float4 * const logmean [[ buffer(2) ]],
-						 device const float4 * const logvariance [[ buffer(3) ]],
-						 uint const n [[ thread_position_in_grid  ]],
-						 uint const N [[ threads_per_grid  ]]) {
-	mean[n] = tanh(logmean[n]);
-	variance[n] = log(1.0+exp(logvariance[n]));
-}
-kernel void gaussAdjust(device float4 * const logmean [[ buffer(0) ]],
-						 device float4 * const logvariance [[ buffer(1) ]],
-						 constant const float2 & params [[ buffer(2) ]],
-						 uint const n [[ thread_position_in_grid  ]],
-						 uint const N [[ threads_per_grid  ]]) {
-	logmean[n] = params.x;
-	logvariance[n] = params.y;
+	value[n] = mu[n] + sigma[n] * float4(cospi(2.0*u.xy), sinpi(2.0*u.xy)).xzyw * sqrt(-2.0*log(u.zw).xxyy);
 }

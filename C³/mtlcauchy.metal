@@ -8,9 +8,19 @@
 
 #include <metal_stdlib>
 using namespace metal;
-float4 cauchyGradient(float4 const, float4 const, float const);
-float4 cauchyGradient(float4 const mu, float4 const sigma, float const M_PI) {
-	return sigma / ( mu * mu + sigma * sigma ) / M_PI;
+
+float4 cauchyPDF(float4 const, float4 const, float const);
+float4 cauchyCDF(float4 const, float4 const, float const);
+
+float4 cauchyPDF(float4 const mu, float4 const sigma, float const pi) {
+	float4 p = sigma / ( mu * mu + sigma * sigma ) / pi;
+	float4 f = cauchyCDF(mu, sigma, pi);
+	float4 c = 1.0 - f;
+	return p;
+}
+
+float4 cauchyCDF(float4 const mu, float4 const sigma, float const pi) {
+	return atan(mu/sigma)/pi + 0.5;
 }
 
 kernel void cauchyShuffle(device float4 * const value [[ buffer(0) ]],
