@@ -8,13 +8,22 @@
 
 #include <metal_stdlib>
 using namespace metal;
+
+float4 artMu(float4 const);
+float4 artMuInverse(float4 const);
+float4 artMuGradient(float4 const);
+
+float4 artSigma(float4 const);
+float4 artSigmaInverse(float4 const);
+float4 artSigmaGradient(float4 const);
+
 kernel void edgeCollect(device float4 * level_value [[ buffer(0) ]],
-						device float4 * level_mean [[ buffer(1) ]],
-						device float4 * level_variance [[ buffer(2) ]],
+						device float4 * level_mu [[ buffer(1) ]],
+						device float4 * level_sigma [[ buffer(2) ]],
 						
 						device const float4x4 * const edge_value [[ buffer(3) ]],
-						device const float4x4 * const edge_mean [[ buffer(4) ]],
-						device const float4x4 * const edge_variance [[ buffer(5) ]],
+						device const float4x4 * const edge_mu [[ buffer(4) ]],
+						device const float4x4 * const edge_sigma [[ buffer(5) ]],
 						
 						device const float4 * const input_state [[ buffer(6) ]],
 						
@@ -27,15 +36,15 @@ kernel void edgeCollect(device float4 * level_value [[ buffer(0) ]],
 						uint const G [[ threadgroups_per_grid ]],
 						
 						threadgroup float4 * const th_value [[ threadgroup(0) ]],
-						threadgroup float4 * const th_mean [[ threadgroup(1) ]],
-						threadgroup float4 * const th_variance [[ threadgroup(2) ]])
+						threadgroup float4 * const th_mu [[ threadgroup(1) ]],
+						threadgroup float4 * const th_sigma [[ threadgroup(2) ]])
 {
 	uint const M = dim.x;
 	uint const N = dim.y;
 	
 	float4 value = 0.0;
-	float4 mean = 0.0;
-	float4 variance = 0.0;
+	float4 mu = 0.0;
+	float4 sigma = 0.0;
 	
 	uint const rows = g;
 	for ( uint k = 0, K = N ; k < K ; k += T ) {
@@ -44,42 +53,42 @@ kernel void edgeCollect(device float4 * level_value [[ buffer(0) ]],
 			float4 const state = input_state [ cols ];
 			uint const idx = cols * M + rows;
 			value += edge_value[idx] * ( state );
-			mean += edge_mean[idx] * ( state );
-			variance += edge_variance[idx] * ( state * state );
+			mu += edge_mu[idx] * ( state );
+			sigma += edge_sigma[idx] * ( state * state );
 		}
 	}
 	
 	th_value[t] = value;
-	th_mean[t] = mean;
-	th_variance[t] = variance;
+	th_mu[t] = mu;
+	th_sigma[t] = sigma;
 	
 	uint offset = T;
 	while ( offset >>= 1 ) {
 		threadgroup_barrier ( mem_flags :: mem_threadgroup );
 		if ( t < offset ) {
 			th_value [ t ] += th_value [ offset + t ];
-			th_mean [ t ] += th_mean [ offset + t ];
-			th_variance [ t ] += th_variance [ offset + t ];
+			th_mu [ t ] += th_mu [ offset + t ];
+			th_sigma [ t ] += th_sigma [ offset + t ];
 		};
 	}
 	
 	if ( !t ) {
 		level_value [ rows ] = *th_value;
-		level_mean [ rows ] = *th_mean;
-		level_variance [ rows ] = *th_variance;
+		level_mu [ rows ] = *th_mu;
+		level_sigma [ rows ] = *th_sigma;
 	}
 	
 }
 kernel void edgeCorrectFF(device float4 * const input_error [[ buffer(0) ]],
-						  device float4x4 * const edge_logmean [[ buffer(1) ]],
-						  device float4x4 * const edge_logvariance [[ buffer(2) ]],
+						  device float4x4 * const edge_logmu [[ buffer(1) ]],
+						  device float4x4 * const edge_logsigma [[ buffer(2) ]],
 						  device const float4 * const input_state [[ buffer(3) ]],
 						  device const float4x4 * const edge_value [[ buffer(4) ]],
-						  device const float4x4 * const edge_mean [[ buffer(5) ]],
-						  device const float4x4 * const edge_variance [[ buffer(6) ]],
+						  device const float4x4 * const edge_mu [[ buffer(5) ]],
+						  device const float4x4 * const edge_sigma [[ buffer(6) ]],
 						  device const float4 * const delta_value [[ buffer(7) ]],
-						  device const float4 * const delta_mean [[ buffer(8) ]],
-						  device const float4 * const delta_variance [[ buffer(9) ]],
+						  device const float4 * const delta_mu [[ buffer(8) ]],
+						  device const float4 * const delta_sigma [[ buffer(9) ]],
 						  constant const float & eps [[ buffer(10) ]],
 						  constant const uint2 & dim [[ buffer(11) ]],
 						  threadgroup float4 * const accumulator [[ threadgroup(0) ]],
@@ -105,44 +114,47 @@ kernel void edgeCorrectFF(device float4 * const input_error [[ buffer(0) ]],
 		if ( rows < M ) {
 			
 			float4 const value = delta_value[rows];
-			float4 const mean = delta_mean[rows];
-			float4 const variance = delta_variance[rows];
+			float4 const mu = delta_mu[rows];
+			float4 const sigma = delta_sigma[rows];
 			
 			uint const idx = cols * M + rows;
 			
-			float4x4 dm = float4x4(mean, mean, mean, mean);
-			float4x4 const jm = edge_mean[idx];
+			error += value * edge_value[idx];
+			//error += ( mu * edge_mu[ idx ] );
+			//error += ( sigma * edge_sigma[ idx ] ) * 2.0 * state;
+
+			float4x4 dm = float4x4(mu, mu, mu, mu);
+			float4x4 const jm = edge_mu[idx];
 			/*
 			dm[0] *= state.x;
 			dm[1] *= state.y;
 			dm[2] *= state.z;
 			dm[3] *= state.w;
-			*/
-			dm[0] *= ( 1.0 - jm[0] * jm[0] ) * state.x;
-			dm[1] *= ( 1.0 - jm[1] * jm[1] ) * state.y;
-			dm[2] *= ( 1.0 - jm[2] * jm[2] ) * state.z;
-			dm[3] *= ( 1.0 - jm[3] * jm[3] ) * state.w;
+			 */
 			
-			edge_logmean[idx] += eps * dm;
+			dm[0] *= artMuGradient(jm[0]) * state[0];
+			dm[1] *= artMuGradient(jm[1]) * state[1];
+			dm[2] *= artMuGradient(jm[2]) * state[2];
+			dm[3] *= artMuGradient(jm[3]) * state[3];
 			
-			float4x4 dv = float4x4(variance, variance, variance, variance);
-			float4x4 const jv = edge_variance[idx];
+			edge_logmu[idx] += eps * dm;
+			
+			float4x4 ds = float4x4(sigma, sigma, sigma, sigma);
+			float4x4 const js = edge_sigma[idx];
 			/*
 			dv[0] *= power.x;
 			dv[1] *= power.y;
 			dv[2] *= power.z;
 			dv[3] *= power.w;
-			*/
-			dv[0] *= ( 1.0 - exp ( - jv[0]) ) * power.x;
-			dv[1] *= ( 1.0 - exp ( - jv[1]) ) * power.y;
-			dv[2] *= ( 1.0 - exp ( - jv[2]) ) * power.z;
-			dv[3] *= ( 1.0 - exp ( - jv[3]) ) * power.w;
+			 */
 			
-			edge_logvariance[idx] += eps * dv;
+			ds[0] *= artSigmaGradient(js[0]) * power[0];
+			ds[1] *= artSigmaGradient(js[1]) * power[1];
+			ds[2] *= artSigmaGradient(js[2]) * power[2];
+			ds[3] *= artSigmaGradient(js[3]) * power[3];
 			
-			error += value * edge_value[idx];
-			//error += ( mean * edge_mean[ idx ] );
-			//error += ( variance * edge_variance[ idx ] ) * 2.0 * state;
+			edge_logsigma[idx] += eps * ds;
+			
 		}
 	}
 	
@@ -161,11 +173,11 @@ kernel void edgeCorrectFF(device float4 * const input_error [[ buffer(0) ]],
 }
 /*
 kernel void edgeCollect(device float4 * level_value [[ buffer(0) ]],
-						device float4 * level_mean [[ buffer(1) ]],
-						device float4 * level_variance [[ buffer(2) ]],
+						device float4 * level_mu [[ buffer(1) ]],
+						device float4 * level_sigma [[ buffer(2) ]],
 						device const float4 * const edge_value [[ buffer(3) ]],
-						device const float4 * const edge_mean [[ buffer(4) ]],
-						device const float4 * const edge_variance [[ buffer(5) ]],
+						device const float4 * const edge_mu [[ buffer(4) ]],
+						device const float4 * const edge_sigma [[ buffer(5) ]],
 						device const float4 * const state [[ buffer(6) ]],
 						constant const uint & M [[ buffer(7) ]],
 						constant const uint & N [[ buffer(8) ]],
@@ -179,8 +191,8 @@ kernel void edgeCollect(device float4 * level_value [[ buffer(0) ]],
 	uint const row = g * T + t;
 	
 	float4 value = float4(0.0);
-	float4 mean = float4(0.0);
-	float4 variance = float4(0.0);
+	float4 mu = float4(0.0);
+	float4 sigma = float4(0.0);
 	
 	for( uint i = 0, I = ( N - 1 ) / T + 1 ; i < I ; ++ i ) {
 		
@@ -201,18 +213,18 @@ kernel void edgeCollect(device float4 * level_value [[ buffer(0) ]],
 						 mask_edge[3] ? edge_value[indx_edge[3]] : 0.0
 				);
 			
-			mean += th_state[k] *
-				float4x4(mask_edge[0] ? edge_mean[indx_edge[0]] : 0.0,
-						 mask_edge[1] ? edge_mean[indx_edge[1]] : 0.0,
-						 mask_edge[2] ? edge_mean[indx_edge[2]] : 0.0,
-						 mask_edge[3] ? edge_mean[indx_edge[3]] : 0.0
+			mu += th_state[k] *
+				float4x4(mask_edge[0] ? edge_mu[indx_edge[0]] : 0.0,
+						 mask_edge[1] ? edge_mu[indx_edge[1]] : 0.0,
+						 mask_edge[2] ? edge_mu[indx_edge[2]] : 0.0,
+						 mask_edge[3] ? edge_mu[indx_edge[3]] : 0.0
 				);
 			
-			variance += th_state[k] * th_state[k] *
-				float4x4(mask_edge[0] ? edge_variance[indx_edge[0]] : 0.0,
-						 mask_edge[1] ? edge_variance[indx_edge[1]] : 0.0,
-						 mask_edge[2] ? edge_variance[indx_edge[2]] : 0.0,
-						 mask_edge[3] ? edge_variance[indx_edge[3]] : 0.0
+			sigma += th_state[k] * th_state[k] *
+				float4x4(mask_edge[0] ? edge_sigma[indx_edge[0]] : 0.0,
+						 mask_edge[1] ? edge_sigma[indx_edge[1]] : 0.0,
+						 mask_edge[2] ? edge_sigma[indx_edge[2]] : 0.0,
+						 mask_edge[3] ? edge_sigma[indx_edge[3]] : 0.0
 				);
 			
 		}
@@ -220,8 +232,8 @@ kernel void edgeCollect(device float4 * level_value [[ buffer(0) ]],
 	}
 	if ( row < M ) {
 		level_value[row] = value;
-		level_mean[row] = mean;
-		level_variance[row] = variance;
+		level_mu[row] = mu;
+		level_sigma[row] = sigma;
 	}
 }
 */

@@ -10,6 +10,7 @@ import Metal
 import CoreData
 
 internal class Cauchy: Art {
+	
 }
 extension Cauchy {
 	internal override class var shuffleKernel: String { return "cauchyShuffle" }

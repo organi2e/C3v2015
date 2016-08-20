@@ -44,7 +44,6 @@ class CauchyTests: XCTestCase {
 		art.shuffle()
 		
 		for k in 0..<1024 {
-			
 
 			let value: la_object_t = context.toLAObject(art.value, rows: rows*cols, cols: 1)
 			

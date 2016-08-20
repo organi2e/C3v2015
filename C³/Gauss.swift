@@ -10,11 +10,11 @@ import Metal
 import CoreData
 
 internal class Gauss: Art {
+
+}
+extension Gauss {
 	internal override class var shuffleKernel: String { return "gaussShuffle" }
-	var mean:MTLBuffer { return mu }
-	var variance: MTLBuffer { return sigma }
-	var logmean: MTLBuffer { return logmu }
-	var logvariance: MTLBuffer { return logsigma }
-	static var logmeankey: String = ""
-	static var logvariancekey: String = ""
+}
+extension Gauss {
+
 }
