@@ -121,7 +121,7 @@ kernel void edgeCorrectFF(device float4 * const input_error [[ buffer(0) ]],
 			
 			error += value * edge_value[idx];
 			//error += ( mu * edge_mu[ idx ] );
-			//error += ( sigma * edge_sigma[ idx ] ) * 2.0 * state;
+			//error += ( sigma * edge_sigma[ idx ] );
 
 			float4x4 dm = float4x4(mu, mu, mu, mu);
 			float4x4 const jm = edge_mu[idx];
