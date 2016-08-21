@@ -49,14 +49,14 @@ public class Cell: NSManagedObject {
 	
 	private struct Level {
 		let value: MTLBuffer
-		let mean: MTLBuffer
-		let variance: MTLBuffer
+		let mu: MTLBuffer
+		let sigma: MTLBuffer
 	}
 	
 	private struct Delta {
 		let value: MTLBuffer
-		let mean: MTLBuffer
-		let variance: MTLBuffer
+		let mu: MTLBuffer
+		let sigma: MTLBuffer
 	}
 	
 	private var states: RingBuffer<State> = RingBuffer<State>(array: [])
@@ -113,15 +113,15 @@ extension Cell {
 			levels = RingBuffer<Level>(array: (0..<count).map{(_)in
 				return Level(
 					value: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
-					mean: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
-					variance: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
+					mu: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
+					sigma: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
 				)
 			})
 			deltas = RingBuffer<Delta>(array: (0..<count).map{(_)in
 				return Delta(
 					value: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
-					mean: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
-					variance: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
+					mu: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
+					sigma: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
 				)
 			})
 		
@@ -142,25 +142,25 @@ extension Cell {
 			
 			states.progress()
 			
-			let newState: MTLBuffer = states.new.value
-			let newTrain: MTLBuffer = states.new.train
-			let newError: MTLBuffer = states.new.error
+			let state: MTLBuffer = states.new.value
+			let train: MTLBuffer = states.new.train
+			let error: MTLBuffer = states.new.error
 			
 			levels.progress()
 			
-			let newValue: MTLBuffer = levels.new.value
-			let newMean: MTLBuffer = levels.new.mean
-			let newVariance: MTLBuffer = levels.new.variance
+			let value: MTLBuffer = levels.new.value
+			let mu: MTLBuffer = levels.new.mu
+			let sigma: MTLBuffer = levels.new.sigma
 
 			context.newBlitCommand {
 
-				$0.fillBuffer(newState, range: NSRange(location: 0, length: newState.length), value: 0)
-				$0.fillBuffer(newTrain, range: NSRange(location: 0, length: newTrain.length), value: 0)
-				$0.fillBuffer(newError, range: NSRange(location: 0, length: newError.length), value: 0)
+				$0.fillBuffer(state, range: NSRange(location: 0, length: state.length), value: 0)
+				$0.fillBuffer(train, range: NSRange(location: 0, length: train.length), value: 0)
+				$0.fillBuffer(error, range: NSRange(location: 0, length: error.length), value: 0)
 				
-				$0.fillBuffer(newValue, range: NSRange(location: 0, length: newValue.length), value: 0)
-				$0.fillBuffer(newMean, range: NSRange(location: 0, length: newMean.length), value: 0)
-				$0.fillBuffer(newVariance, range: NSRange(location: 0, length: newVariance.length), value: 0)
+				$0.fillBuffer(value, range: NSRange(location: 0, length: value.length), value: 0)
+				$0.fillBuffer(mu, range: NSRange(location: 0, length: mu.length), value: 0)
+				$0.fillBuffer(sigma, range: NSRange(location: 0, length: sigma.length), value: 0)
 				
 			}
 			
@@ -176,14 +176,14 @@ extension Cell {
 			
 			deltas.progress()
 			
-			let newValue: MTLBuffer = deltas.new.value
-			let newMean: MTLBuffer = deltas.new.mean
-			let newVariance: MTLBuffer = deltas.new.variance
+			let value: MTLBuffer = deltas.new.value
+			let mu: MTLBuffer = deltas.new.mu
+			let sigma: MTLBuffer = deltas.new.sigma
 			
 			context.newBlitCommand {
-				$0.fillBuffer(newValue, range: NSRange(location: 0, length: newValue.length), value: 0)
-				$0.fillBuffer(newMean, range: NSRange(location: 0, length: newMean.length), value: 0)
-				$0.fillBuffer(newVariance, range: NSRange(location: 0, length: newVariance.length), value: 0)
+				$0.fillBuffer(value, range: NSRange(location: 0, length: value.length), value: 0)
+				$0.fillBuffer(mu, range: NSRange(location: 0, length: mu.length), value: 0)
+				$0.fillBuffer(sigma, range: NSRange(location: 0, length: sigma.length), value: 0)
 			}
 			
 		} else {
@@ -230,9 +230,9 @@ extension Cell {
 			} else if let context: Context = managedObjectContext as? Context {
 				
 				input.forEach {
-					$0.collect(level: (levels.new.value, levels.new.mean, levels.new.variance), visit: visit.union([self]))
+					$0.collect(level: (levels.new.value, levels.new.mu, levels.new.sigma), visit: visit.union([self]))
 				}
-				bias.collect(level: (levels.new.value, levels.new.mean, levels.new.variance))
+				bias.collect(level: (levels.new.value, levels.new.mu, levels.new.sigma))
 				self.dynamicType.activate(context: context,
 				                          state: states.new.value,
 				                          level: levels.new.value,
@@ -248,11 +248,11 @@ extension Cell {
 	}
 	public func correct(let eps eps: Float, let visit: Set<Cell>=[]) -> (MTLBuffer, MTLBuffer, MTLBuffer) {
 		if visit.contains(self) {
-			return(deltas.old.value, deltas.old.mean, deltas.old.variance)
+			return(deltas.old.value, deltas.old.mu, deltas.old.sigma)
 			
 		} else {
 			if ready.contains(.Delta) {
-				return(deltas.new.value, deltas.new.mean, deltas.new.variance)
+				return(deltas.new.value, deltas.new.mu, deltas.new.sigma)
 				
 			} else if ready.contains(.State) {
 				if let context: Context = managedObjectContext as? Context {
@@ -271,13 +271,13 @@ extension Cell {
 						
 					}
 					self.dynamicType.derivate(context: context,
-					                          delta: (deltas.new.value, deltas.new.mean, deltas.new.variance),
-					                          level: (levels.new.value, levels.new.mean, levels.new.variance),
+					                          delta: (deltas.new.value, deltas.new.mu, deltas.new.sigma),
+					                          level: (levels.new.value, levels.new.mu, levels.new.sigma),
 					                          error: states.new.error,
 					                          width: width)
 					ready.insert(.Delta)
 					
-					bias.correctFF(eps: eps, delta: (deltas.new.mean, deltas.new.variance))
+					bias.correctFF(eps: eps, delta: (deltas.new.mu, deltas.new.sigma))
 					
 				} else {
 					assertionFailure(Context.Error.InvalidContext.rawValue)
@@ -285,7 +285,7 @@ extension Cell {
 				}
 			}
 		}
-		return(deltas.new.value, deltas.new.mean, deltas.new.variance)
+		return(deltas.new.value, deltas.new.mu, deltas.new.sigma)
 	}
 }
 extension Cell {

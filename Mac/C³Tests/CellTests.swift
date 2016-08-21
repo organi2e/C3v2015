@@ -15,7 +15,7 @@ class CellTests: XCTestCase {
 	static let f: Bool = false
 	static let T: Bool = true
 	
-	let rate: Float = 1 / 64.0
+	let rate: Float = 1 / 4.0
 	
 	//let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f]]
 	//let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,f,T,T], [f,T,f,f]]
@@ -58,12 +58,12 @@ class CellTests: XCTestCase {
 				I: Cell = context.searchCell(label: "I").last,
 				O: Cell = context.searchCell(label: "O").last
 			{
-				(0..<64).forEach {
+				(0..<256).forEach {
 					
 					let ID: [Bool] = IS[$0%IS.count]
 					let OD: [Bool] = OS[$0%OS.count]
 					
-					(0..<16).forEach {(let iter: Int)in
+					(0..<64).forEach {(let iter: Int)in
 						
 						O.iClear()
 						I.oClear()
@@ -93,7 +93,7 @@ class CellTests: XCTestCase {
 			I: Cell = context.searchCell(label: "I").last,
 			O: Cell = context.searchCell(label: "O").last
 		{
-			(0..<4).forEach {
+			(0..<16).forEach {
 				let ID: [Bool] = IS[$0%IS.count]
 				let OD: [Bool] = OS[$0%OS.count]
 				var DC: [Int] = [Int](count: 10, repeatedValue: 0)
