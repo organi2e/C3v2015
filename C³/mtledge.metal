@@ -52,9 +52,9 @@ kernel void edgeCollect(device float4 * level_value [[ buffer(0) ]],
 		if ( cols < K ) {
 			float4 const state = input_state [ cols ];
 			uint const idx = cols * M + rows;
-			value += edge_value[idx] * ( state );
-			mu += edge_mu[idx] * ( state );
-			sigma += edge_sigma[idx] * ( state * state );
+			value += edge_value[idx] * state;
+			mu += edge_mu[idx] * state;
+			sigma += edge_sigma[idx] * state;
 		}
 	}
 	
