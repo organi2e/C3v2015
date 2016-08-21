@@ -233,8 +233,10 @@ extension Cell {
 					$0.collect(level: (levels.new.value, levels.new.mean, levels.new.variance), visit: visit.union([self]))
 				}
 				bias.collect(level: (levels.new.value, levels.new.mean, levels.new.variance))
-				
-				Cell.activate(context: context, state: states.new.value, level: levels.new.value, width: width)
+				self.dynamicType.activate(context: context,
+				                          state: states.new.value,
+				                          level: levels.new.value,
+				                          width: width)
 				ready.insert(.State)
 				
 			} else {
@@ -256,11 +258,11 @@ extension Cell {
 				if let context: Context = managedObjectContext as? Context {
 
 					if ready.contains(.Train) {
-						Cell.difference(context: context,
-						                error: states.new.error,
-						                train: states.new.train,
-						                state: states.new.value,
-						                width: width)
+						self.dynamicType.difference(context: context,
+						                            error: states.new.error,
+						                            train: states.new.train,
+						                            state: states.new.value,
+						                            width: width)
 					
 					} else {
 						output.forEach {
@@ -268,11 +270,11 @@ extension Cell {
 						}
 						
 					}
-					Cell.derivate(context: context,
-					              delta: (deltas.new.value, deltas.new.mean, deltas.new.variance),
-					              level: (levels.new.value, levels.new.mean, levels.new.variance),
-					              error: states.new.error,
-					              width: width)
+					self.dynamicType.derivate(context: context,
+					                          delta: (deltas.new.value, deltas.new.mean, deltas.new.variance),
+					                          level: (levels.new.value, levels.new.mean, levels.new.variance),
+					                          error: states.new.error,
+					                          width: width)
 					ready.insert(.Delta)
 					
 					bias.correctFF(eps: eps, delta: (deltas.new.mean, deltas.new.variance))
@@ -370,8 +372,11 @@ extension Cell {
 	}
 }
 extension Cell {
+	internal class var differenceKernel: String { return "cellDifference" }
+	internal class var activateKernel: String { return "cellActivate" }
+	internal class var derivateKernel: String { return "cellDerivate" }
 	internal static func difference(let context context: Context, let error: MTLBuffer, let train: MTLBuffer, let state: MTLBuffer, let width: Int) {
-		context.newComputeCommand(function: "cellDifference") {
+		context.newComputeCommand(function: differenceKernel) {
 			$0.setBuffer(error, offset: 0, atIndex: 0)
 			$0.setBuffer(train, offset: 0, atIndex: 1)
 			$0.setBuffer(state, offset: 0, atIndex: 2)
@@ -379,14 +384,14 @@ extension Cell {
 		}
 	}
 	internal static func activate(let context context: Context, let state: MTLBuffer, let level: MTLBuffer, let width: Int) {
-		context.newComputeCommand(function: "cellActivate") {
+		context.newComputeCommand(function: activateKernel) {
 			$0.setBuffer(state, offset: 0, atIndex: 0)
 			$0.setBuffer(level, offset: 0, atIndex: 1)
 			$0.dispatchThreadgroups(MTLSize(width: width/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}
 	}
 	internal static func derivate(let context context: Context, let delta: (MTLBuffer, MTLBuffer, MTLBuffer), let level: (MTLBuffer, MTLBuffer, MTLBuffer), let error: MTLBuffer, let width: Int) {
-		context.newComputeCommand(function: "cellDerivate") {
+		context.newComputeCommand(function: derivateKernel) {
 			$0.setBuffer(delta.0, offset: 0, atIndex: 0)
 			$0.setBuffer(delta.1, offset: 0, atIndex: 1)
 			$0.setBuffer(delta.2, offset: 0, atIndex: 2)

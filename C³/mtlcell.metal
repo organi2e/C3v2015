@@ -7,10 +7,11 @@
 //
 
 #include<metal_stdlib>
-#include<metal_math>
 using namespace metal;
 
+float4 gaussCDF(float4 const, float4 const, float const);
 float4 gaussPDF(float4 const, float4 const, float const);
+float4 cauchyCDF(float4 const, float4 const, float const);
 float4 cauchyPDF(float4 const, float4 const, float const);
 
 kernel void cellActivate(device float4 * const state [[ buffer(0) ]],
@@ -31,8 +32,10 @@ kernel void cellDerivate(device float4 * const delta_value [[ buffer(0) ]],
 						 uint const n [[ thread_position_in_grid ]],
 						 uint const N [[ threads_per_grid ]]
 						 ) {
-	float4 const gradient = cauchyPDF(level_mu[n], level_sigma[n], M_PI);
-	float4 const error = sign(state_error[n]);
+	float4 const pdf = cauchyPDF ( level_mu [ n ], level_sigma [ n ], M_PI);
+	float4 const cdf = cauchyCDF ( level_mu [ n ], level_sigma [ n ], M_PI);
+	float4 const gradient = pdf / cdf / ( 1.0 - cdf );
+	float4 const error = sign ( state_error [ n ] );
 	float4 const delta = gradient * error;
 	delta_value[n] = delta;
 	delta_mu[n] = delta;
