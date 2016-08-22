@@ -87,7 +87,89 @@ class BiasTests: XCTestCase {
 		}
 		
 	}
-	func testCorrectFF() {
+	func testGradientEye() {
+		let rows: Int = 16
+		let cols: Int = 16
+		let mu: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows*cols)
+		let sigma: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows*cols)
+		Bias.gradientEye(context: context, grad: (mu, sigma), rows: rows, cols: cols)
+		let mu_la: la_object_t = context.toLAObject(mu, rows: rows, cols: cols)
+		let sigma_la: la_object_t = context.toLAObject(sigma, rows: rows, cols: cols)
+		context.join()
+		let rand: la_object_t = la_matrix_from_float_buffer((0..<rows*cols).map{(_)in Float(arc4random())}, la_count_t(rows), la_count_t(cols), la_count_t(cols), NOHINT, ATTR)
+		XCTAssert(0<la_norm_as_float(la_difference(rand, la_matrix_product(mu_la, rand)), la_norm_t(LA_L2_NORM)))
+		XCTAssert(0<la_norm_as_float(la_difference(rand, la_matrix_product(sigma_la, rand)), la_norm_t(LA_L2_NORM)))
+	}
+	func testCorrect() {
+		
+		let η: Float = 0.5
+		
+		let i_width: Int = 16
+		let o_width: Int = 16
+		
+		var logμ: [Float] = (0..<i_width).map{(_)in (Float(arc4random())+1.0)/(Float(UInt32.max)+1.0)}
+		var logσ: [Float] = (0..<i_width).map{(_)in (Float(arc4random())+1.0)/(Float(UInt32.max)+1.0)}
+		
+		let μ: [Float] = logμ.map{$0}
+		let σ: [Float] = logσ.map{log(1.0+exp($0))}
+		
+		let Δμ: [Float] = (0..<o_width).map{(_)in (Float(arc4random())+1.0)/(Float(UInt32.max)+1.0)}
+		let Δσ: [Float] = (0..<o_width).map{(_)in (Float(arc4random())+1.0)/(Float(UInt32.max)+1.0)}
+		
+		let dμ: [Float] = (0..<o_width*i_width).map{(_)in (Float(arc4random())+1.0)/(Float(UInt32.max)+1.0)}
+		let dσ: [Float] = (0..<o_width*i_width).map{(_)in (Float(arc4random())+1.0)/(Float(UInt32.max)+1.0)}
+		
+		let logμ_mtl: MTLBuffer = context.fromRowMajorMatrix(logμ, rows: i_width, cols: 1)
+		let logσ_mtl: MTLBuffer = context.fromRowMajorMatrix(logσ, rows: i_width, cols: 1)
+		
+		let μ_mtl: MTLBuffer = context.fromRowMajorMatrix(μ, rows: i_width, cols: 1)
+		let σ_mtl: MTLBuffer = context.fromRowMajorMatrix(σ, rows:i_width, cols: 1)
+		
+		let Δμ_mtl: MTLBuffer = context.fromRowMajorMatrix(Δμ, rows: o_width, cols: 1)
+		let Δσ_mtl: MTLBuffer = context.fromRowMajorMatrix(Δσ, rows: o_width, cols: 1)
+		
+		let dμ_mtl: MTLBuffer = context.fromRowMajorMatrix(dμ, rows: o_width, cols: i_width)
+		let dσ_mtl: MTLBuffer = context.fromRowMajorMatrix(dσ, rows: o_width, cols: i_width)
+		
+		for i in 0..<i_width {
+			var m: Float = 0
+			var s: Float = 0
+			for o in 0..<o_width {
+				m += dμ[o*i_width+i] * Δμ[o]
+				s += dσ[o*i_width+i] * Δσ[o]
+			}
+			logμ[i] += η * m
+			logσ[i] += η * ( 1 - exp(-σ[i]) ) * s
+		}
+		
+		Bias.correct(context: context, η: η, bias: (logμ_mtl, logσ_mtl, μ_mtl, σ_mtl), grad: (dμ_mtl, dσ_mtl), Δ: (Δμ_mtl, Δσ_mtl), rows: o_width, cols: i_width)
+		
+		let dstLogμ: [Float] = context.toRowMajorMatrix(logμ_mtl, rows: i_width, cols: 1)
+		let dstLogσ: [Float] = context.toRowMajorMatrix(logσ_mtl, rows: i_width, cols: 1)
+		
+		context.join()
+		
+		let μRMSE: Float = zip(logμ, dstLogμ).map { ( $0.0 - $0.1 ) * ( $0.0 - $0.1 ) }.reduce(0) { $0.0 + $0.1 } / Float(i_width)
+		
+		XCTAssert(!isinf(μRMSE))
+		XCTAssert(!isnan(μRMSE))
+		
+		if 1e-7 < μRMSE {
+			XCTFail("muRMSE: \(μRMSE)")
+		}
+		
+		let σRMSE: Float = zip(logσ, dstLogσ).map { ( $0.0 - $0.1 ) * ( $0.0 - $0.1 ) }.reduce(0) { $0.0 + $0.1 } / Float(i_width)
+		
+		XCTAssert(!isinf(σRMSE))
+		XCTAssert(!isnan(σRMSE))
+		
+		if 1e-7 < σRMSE {
+			XCTFail("muRMSE: \(σRMSE)")
+		}
+		
+	}
+	/*
+	func testCorrectLightWeight() {
 		guard let bias: Bias = context.new() else {
 			XCTFail()
 			return
@@ -112,7 +194,7 @@ class BiasTests: XCTestCase {
 		let mtl_mu: MTLBuffer = context.newBuffer(dMu, options: .StorageModePrivate)
 		let mtl_sigma: MTLBuffer = context.newBuffer(dSigma, options: .StorageModePrivate)
 		
-		bias.correctFF(eps: eps, delta: (mtl_mu, mtl_sigma))
+		bias.correct(eps: eps, delta: (mtl_mu, mtl_sigma))
 		bias.refresh()
 		
 		let srcMu: la_object_t = context.toLAObject(bias.mu, rows: rows, cols: cols)
@@ -140,4 +222,5 @@ class BiasTests: XCTestCase {
 		}
 				
 	}
+*/
 }

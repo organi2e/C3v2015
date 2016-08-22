@@ -11,27 +11,6 @@ import Accelerate
 import Metal
 import CoreData
 
-private struct RingBuffer<T> {
-	private var cursor: Int
-	private let buffer: [T]
-	mutating func progress() {
-		cursor = ( cursor + 1 ) % length
-	}
-	init(let array: [T]) {
-		cursor = 0
-		buffer = array
-	}
-	var new: T {
-		return buffer[(cursor+length-0)%length]
-	}
-	var old: T {
-		return buffer[(cursor+length-1)%length]
-	}
-	var length: Int {
-		return buffer.count
-	}
-}
-
 public class Cell: NSManagedObject {
 	
 	private enum Ready {
@@ -129,14 +108,12 @@ extension Cell {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
 		
 		}
-		
-		refresh()
-		forget()
-		
+		iRefresh()
+		oRefresh()
 	}
 }
 extension Cell {
-	internal func refresh() {
+	internal func iRefresh() {
 		
 		if let context: Context = managedObjectContext as? Context where 0 < width {
 			
@@ -170,7 +147,7 @@ extension Cell {
 		}
 		bias.refresh()
 	}
-	private func forget() {
+	private func oRefresh() {
 		
 		if let context: Context = managedObjectContext as? Context where 0 < width {
 			
@@ -200,7 +177,7 @@ extension Cell {
 				$0.shuffle()
 				$0.input.iClear(ignore.union([self]))
 			}
-			refresh()
+			iRefresh()
 			ready.remove(.State)
 		}
 	}
@@ -212,7 +189,7 @@ extension Cell {
 				$0.refresh()
 				$0.output.oClear(ignore.union([self]))
 			}
-			forget()
+			oRefresh()
 			ready.remove(.Delta)
 		}
 	}
@@ -246,7 +223,7 @@ extension Cell {
 		}
 		return states.new.value
 	}
-	public func correct(let eps eps: Float, let visit: Set<Cell>=[]) -> (MTLBuffer, MTLBuffer, MTLBuffer) {
+	public func correct(let η η: Float, let visit: Set<Cell>=[]) -> (MTLBuffer, MTLBuffer, MTLBuffer) {
 		if visit.contains(self) {
 			return(deltas.old.value, deltas.old.mu, deltas.old.sigma)
 			
@@ -266,7 +243,7 @@ extension Cell {
 					
 					} else {
 						output.forEach {
-							$0.correct(error: states.new.error, eps: eps, state: states.new.value, visit: visit.union([self]))
+							$0.correct(error: states.new.error, η: η, state: states.new.value, visit: visit.union([self]))
 						}
 						
 					}
@@ -277,7 +254,7 @@ extension Cell {
 					                          width: width)
 					ready.insert(.Delta)
 					
-					bias.correctFF(eps: eps, delta: (deltas.new.mu, deltas.new.sigma))
+					bias.correct(η: η, Δ: (deltas.new.mu, deltas.new.sigma))
 					
 				} else {
 					assertionFailure(Context.Error.InvalidContext.rawValue)
@@ -321,6 +298,10 @@ extension Cell {
 				context.newBlitCommand(sync: true) {
 					$0.copyFromBuffer(value, sourceOffset: 0, toBuffer: cache, destinationOffset: 0, size: size)
 				}
+				UnsafeMutableBufferPointer<Float>(start: UnsafeMutablePointer<Float>(cache.contents()), count: width).forEach {
+					assert(!isnan($0))
+					assert(!isinf($0))
+				}
 				defer { cache.setPurgeableState(.Empty) }
 				return UnsafeMutableBufferPointer<Float>(start: UnsafeMutablePointer<Float>(cache.contents()), count: width).map{Bool($0)}
 			} else {
@@ -361,6 +342,10 @@ extension Cell {
 				context.newBlitCommand(sync: true) {
 					$0.copyFromBuffer(train, sourceOffset: 0, toBuffer: cache, destinationOffset: 0, size: size)
 				}
+				UnsafeMutableBufferPointer<Float>(start: UnsafeMutablePointer<Float>(cache.contents()), count: width).forEach {
+					assert(!isnan($0))
+					assert(!isinf($0))
+				}
 				defer { cache.setPurgeableState(.Empty) }
 				return UnsafeMutableBufferPointer<Float>(start: UnsafeMutablePointer<Float>(cache.contents()), count: width).map{Bool($0)}
 			} else {
@@ -369,6 +354,9 @@ extension Cell {
 			}
 			return [Bool](count: width, repeatedValue: false)
 		}
+	}
+	public var isRecurrent: Bool {
+		return feedback != nil || decay != nil
 	}
 }
 extension Cell {

@@ -13,6 +13,19 @@ class BlasTests: XCTestCase {
 	let NOHINT: la_hint_t = la_hint_t(LA_NO_HINT)
 	let ATTR: la_attribute_t = la_attribute_t(LA_DEFAULT_ATTRIBUTES)
 	let context: Context = try!Context()
+	func testArray() {
+		let rows: Int = 128
+		let cols: Int = 128
+		let src: [Float] = (0..<rows*cols).map {(_)in (Float(arc4random())+1) / (Float(UInt32.max)+1)}
+		
+		let matrix: MTLBuffer = context.fromRowMajorMatrix(src, rows: rows, cols: cols)
+		let dst: [Float] = context.toRowMajorMatrix(matrix, rows: rows, cols: cols)
+		
+		context.join()
+		
+		XCTAssert(dst.elementsEqual(src))
+		
+	}
 	/*
 	func testShuffle() {
 		let rows: Int = 8

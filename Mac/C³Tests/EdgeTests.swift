@@ -165,9 +165,9 @@ class EdgeTests: XCTestCase {
 			sigma: context.fromLAObject(edge_la.sigma)
 		)
 		
-		let eps: Float = 0.5
+		let η: Float = 0.5
 		
-		Edge.correctFF(context: context, eps: eps, error: error_mtl, edge: edge_mtl, state: state_mtl, delta: delta_mtl, rows: o_width, cols: i_width)
+		Edge.correctFF(context: context, η: η, error: error_mtl, edge: edge_mtl, state: state_mtl, Δ: delta_mtl, rows: o_width, cols: i_width)
 		
 		let obsError_la: la_object_t = context.toLAObject(error_mtl, rows: i_width, cols: 1)
 		
@@ -182,8 +182,8 @@ class EdgeTests: XCTestCase {
 				//accum += delta.mu[o] * edge.mu[o * i_width + i]
 				//accum += delta.sigma[o] * edge.sigma[o * i_width + i] * 2.0 * state[i]
 				
-				logmu[ o * i_width + i ] += eps * muGrad ( mu[o*i_width+i] ) * ( state[i] ) * delta.mu[o]
-				logsigma[ o * i_width + i ] += eps * sigmaGrad ( sigma[o*i_width+i] ) * ( state[i] * state[i] ) * delta.sigma[o]
+				logmu[ o * i_width + i ] += η * muGrad ( mu[o*i_width+i] ) * ( state[i] ) * delta.mu[o]
+				logsigma[ o * i_width + i ] += η * sigmaGrad ( sigma[o*i_width+i] ) * ( state[i] * state[i] ) * delta.sigma[o]
 				
 			}
 			error[i] = accum

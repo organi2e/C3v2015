@@ -88,6 +88,7 @@
 		875DD1A51D66B26100A5C250 /* mtlcauchy.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = mtlcauchy.metal; path = "C³/mtlcauchy.metal"; sourceTree = "<group>"; };
 		875DD1AD1D66DF9E00A5C250 /* Art.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Art.swift; path = "C³/Art.swift"; sourceTree = "<group>"; };
 		875DD1B01D66E4D000A5C250 /* mtlart.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = mtlart.metal; path = "C³/mtlart.metal"; sourceTree = "<group>"; };
+		875DD1B71D6AD89500A5C250 /* Misc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Misc.swift; path = "C³/Misc.swift"; sourceTree = "<group>"; };
 		87799A601D41BF200088B9E7 /* math.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = math.metal; path = NLA/math.metal; sourceTree = "<group>"; };
 		878985B71D050D42002C2A8D /* C3.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = C3.xcdatamodel; sourceTree = "<group>"; };
 		878985B81D050D42002C2A8D /* Cell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Cell.swift; path = "C³/Cell.swift"; sourceTree = "<group>"; };
@@ -189,6 +190,7 @@
 				87BCEBF91D4D746400FC3099 /* Gauss.swift */,
 				87BCEBFA1D4D75A500FC3099 /* Bias.swift */,
 				87A42CBC1D4F5CD5008D9708 /* Feedback.swift */,
+				875DD1B71D6AD89500A5C250 /* Misc.swift */,
 				870EA91B1D54AD77008C3380 /* mtlblas.metal */,
 				870EA9241D54AD9A008C3380 /* mtlrand.metal */,
 				870EA9251D54ADB3008C3380 /* mtlmath.metal */,

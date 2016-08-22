@@ -43,15 +43,15 @@
     </entity>
     <entity name="Gauss" representedClassName="C3.Gauss" parentEntity="Art" syncable="YES"/>
     <elements>
+        <element name="Art" positionX="45" positionY="180" width="128" height="105"/>
         <element name="Bias" positionX="54" positionY="189" width="128" height="60"/>
         <element name="Blob" positionX="36" positionY="171" width="128" height="75"/>
+        <element name="Cauchy" positionX="36" positionY="171" width="128" height="45"/>
         <element name="Cell" positionX="36" positionY="117" width="128" height="165"/>
         <element name="Decay" positionX="36" positionY="171" width="128" height="105"/>
         <element name="Dict" positionX="18" positionY="81" width="128" height="75"/>
         <element name="Edge" positionX="54" positionY="108" width="128" height="75"/>
         <element name="Feedback" positionX="36" positionY="171" width="128" height="60"/>
         <element name="Gauss" positionX="36" positionY="171" width="128" height="45"/>
-        <element name="Cauchy" positionX="36" positionY="171" width="128" height="45"/>
-        <element name="Art" positionX="45" positionY="180" width="128" height="105"/>
     </elements>
 </model>

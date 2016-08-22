@@ -15,12 +15,12 @@ class CellTests: XCTestCase {
 	static let f: Bool = false
 	static let T: Bool = true
 	
-	let rate: Float = 1 / 4.0
+	let η: Float = 1 / 2.0
 	
 	//let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f]]
-	//let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,f,T,T], [f,T,f,f]]
+	let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,f,T,T], [f,T,f,f]]
 	//let IS: [[Bool]] = [[T,T,T,f], [T,T,f,T], [T,T,f,f], [T,f,T,T]]
-	let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [f,f,T,f]]
+	//let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [f,f,T,f]]
 	let OS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f]]
 	
 	//let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [f,f,T,f],[f,f,f,T], [f,f,T,f], [f,T,f,f], [f,f,T,f]]
@@ -32,12 +32,12 @@ class CellTests: XCTestCase {
 		if context.searchCell(label: "I").isEmpty || context.searchCell(label: "O").isEmpty {
 			do {
 				let I: Cell = try context.newCell(width: 4, label: "I")
-				let H: Cell = try context.newCell(width: 1024, recur: false, buffer: false, label: "H")
-				let G: Cell = try context.newCell(width: 1024, recur: false, buffer: false, label: "G")
+				let H: Cell = try context.newCell(width: 16, recur: false, buffer: false, label: "H")
+				let G: Cell = try context.newCell(width: 16, recur: false, buffer: false, label: "G")
 				let O: Cell = try context.newCell(width: 4, label: "O")
 				
 				try context.chainCell(output: O, input: G)
-				try context.chainCell(output: H, input: G)
+				//	try context.chainCell(output: H, input: G)
 				try context.chainCell(output: G, input: H)
 				try context.chainCell(output: H, input: I)
 				
@@ -63,7 +63,7 @@ class CellTests: XCTestCase {
 					let ID: [Bool] = IS[$0%IS.count]
 					let OD: [Bool] = OS[$0%OS.count]
 					
-					(0..<64).forEach {(let iter: Int)in
+					(0..<16).forEach {(let iter: Int)in
 						
 						O.iClear()
 						I.oClear()
@@ -72,7 +72,7 @@ class CellTests: XCTestCase {
 						I.active = ID
 
 						O.collect()
-						I.correct(eps: rate)
+						I.correct(η: η)
 						
 					}
 					

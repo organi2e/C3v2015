@@ -55,8 +55,8 @@ public class Context: NSManagedObjectContext {
 		}
 	}
 	
-	var computePipelines: [String: MTLComputePipelineState]
-	var renderPipelines: [String: [MTLPixelFormat:MTLRenderPipelineState]]
+	var computePipelineCache: [String: MTLComputePipelineState]
+	var renderPipelineCache: [String: [MTLPixelFormat:MTLRenderPipelineState]]
 	
 	private let mtl: MTL
 	private let storage: NSURL?
@@ -69,8 +69,8 @@ public class Context: NSManagedObjectContext {
 		
 		mtl = try MTL(device: device)
 		storage = storageurl
-		computePipelines = [:]
-		renderPipelines = [:]
+		computePipelineCache = [:]
+		renderPipelineCache = [:]
 		
 		super.init(concurrencyType: .PrivateQueueConcurrencyType)
 		
@@ -97,8 +97,8 @@ public class Context: NSManagedObjectContext {
 			fatalError(Error.Metal.NoDeviceFound.description)
 		}
 		mtl = newmtl
-		computePipelines = [:]
-		renderPipelines = [:]
+		computePipelineCache = [:]
+		renderPipelineCache = [:]
 		super.init(coder: aDecoder)
 		guard let url: NSURL = Config.bundle.URLForResource(Config.coredata.name, withExtension: Config.coredata.ext) else {
 			fatalError(Error.CoreData.NoModelFound.description)
@@ -125,7 +125,7 @@ extension Context {
 	}
 	public func newRenderCommand(let sync sync: Bool = false, let layer: CAMetalLayer, let shader: (String, String), let color: (Double, Double, Double, Double) = (0,0,0,0), let schedule: (()->())? = nil, let complete: (()->())? = nil, let configure: (MTLRenderCommandEncoder->())) -> Bool {
 		let key: String = "\(shader.0),\(shader.1)"
-		if renderPipelines.indexForKey(key) == nil {
+		if renderPipelineCache.indexForKey(key) == nil {
 			let descriptor: MTLRenderPipelineDescriptor = MTLRenderPipelineDescriptor()
 			if let vert: MTLFunction = mtl.functions[shader.0] {
 				descriptor.vertexFunction = vert
@@ -135,13 +135,13 @@ extension Context {
 			}
 			descriptor.colorAttachments[0].pixelFormat = layer.pixelFormat
 			if let pipeline: MTLRenderPipelineState = try?mtl.device.newRenderPipelineStateWithDescriptor(descriptor) {
-				if renderPipelines.indexForKey(key) == nil {
-					renderPipelines.updateValue([:], forKey: key)
+				if renderPipelineCache.indexForKey(key) == nil {
+					renderPipelineCache.updateValue([:], forKey: key)
 				}
-				renderPipelines[key]?[layer.pixelFormat] = pipeline
+				renderPipelineCache[key]?[layer.pixelFormat] = pipeline
 			}
 		}
-		if let pipeline: MTLRenderPipelineState = renderPipelines[key]?[layer.pixelFormat], let drawable: CAMetalDrawable = layer.nextDrawable() {
+		if let pipeline: MTLRenderPipelineState = renderPipelineCache[key]?[layer.pixelFormat], let drawable: CAMetalDrawable = layer.nextDrawable() {
 			
 			let descriptor: MTLRenderPassDescriptor = MTLRenderPassDescriptor()
 			descriptor.colorAttachments[0].texture = drawable.texture
@@ -176,16 +176,16 @@ extension Context {
 		return true
 	}
 	internal func newComputeCommand ( let sync sync: Bool = false, let function name: String, let schedule: (()->())? = nil, let complete: (()->())? = nil, let configure: (MTLComputeCommandEncoder->())) -> Bool {
-		if computePipelines.indexForKey(name) == nil {
+		if computePipelineCache.indexForKey(name) == nil {
 			guard let function: MTLFunction = mtl.functions[name] else {
 				assertionFailure(name)
 				return false
 			}
 			if let pipeline: MTLComputePipelineState = try?mtl.device.newComputePipelineStateWithFunction(function) {
-				computePipelines.updateValue(pipeline, forKey: name)
+				computePipelineCache.updateValue(pipeline, forKey: name)
 			}
 		}
-		if let pipeline: MTLComputePipelineState = computePipelines[name] {
+		if let pipeline: MTLComputePipelineState = computePipelineCache[name] {
 			let command: MTLCommandBuffer = mtl.queue.commandBuffer()
 			if let schedule: ()->() = schedule {
 				command.addScheduledHandler {(_)in
@@ -263,6 +263,32 @@ extension Context {
 	public func newBuffer(let buffer: [Float], let options: MTLResourceOptions = .CPUCacheModeDefaultCache ) -> MTLBuffer {
 		return mtl.device.newBufferWithBytes(buffer, length: sizeof(Float)*buffer.count, options: options)
 	}
+	internal func fromRowMajorMatrix(let buffer: [Float], let rows: Int, let cols: Int, let options: MTLResourceOptions = .CPUCacheModeDefaultCache) -> MTLBuffer {
+		assert(0<rows)
+		assert(0<cols)
+		if rows * cols == buffer.count {
+			if rows == 1 || cols == 1 {
+				return newBuffer(buffer, options: options)
+			} else {
+				let result: MTLBuffer = newBuffer(length: sizeof(Float)*rows*cols, options: options)
+				let cache: MTLBuffer = newBuffer(buffer, options: .CPUCacheModeDefaultCache)
+				let group: MTLSize = MTLSize(width: cols/4, height: rows/4, depth: 1)
+				let local: MTLSize = MTLSize(width: 1, height: 1, depth: 1)
+				newComputeCommand(function: "fromRowMajorMatrix", complete: { cache.setPurgeableState(.Empty) }) {
+					$0.setBuffer(result, offset: 0, atIndex: 0)
+					$0.setBuffer(cache, offset: 0, atIndex: 1)
+					$0.setBytes([UInt32(rows/4)], length: sizeof(UInt32), atIndex: 2)
+					$0.setBytes([UInt32(cols/4)], length: sizeof(UInt32), atIndex: 3)
+					$0.dispatchThreadgroups(group, threadsPerThreadgroup: local)
+				}
+				return result
+			}
+		} else {
+			assertionFailure()
+			
+		}
+		return newBuffer(length: sizeof(Float)*rows*cols, options: options)
+	}
 	internal func fromLAObject(let matrix: la_object_t, let options: MTLResourceOptions = .CPUCacheModeDefaultCache) -> MTLBuffer {
 		let rows: Int = Int(la_matrix_rows(matrix))
 		let cols: Int = Int(la_matrix_cols(matrix))
@@ -286,8 +312,8 @@ extension Context {
 			
 		} else {
 			let semaphore: dispatch_semaphore_t = dispatch_semaphore_create(0)
-			let result: MTLBuffer = mtl.device.newBufferWithLength(sizeof(Float)*rows*cols, options: options)
-			let cache: MTLBuffer = mtl.device.newBufferWithLength(sizeof(Float)*rows*cols, options: .CPUCacheModeDefaultCache)
+			let result: MTLBuffer = newBuffer(length: sizeof(Float)*rows*cols, options: options)
+			let cache: MTLBuffer = newBuffer(length: sizeof(Float)*rows*cols, options: .CPUCacheModeDefaultCache)
 			performBlock {
 				la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache.contents()), la_count_t(cols), matrix)
 				dispatch_semaphore_signal(semaphore)
@@ -304,6 +330,38 @@ extension Context {
 			return result
 		
 		}
+	}
+	internal func toRowMajorMatrix(let buffer: MTLBuffer, let rows: Int, let cols: Int) -> [Float] {
+		assert(0<rows)
+		assert(0<cols)
+		var result: [Float] = [Float](count: rows*cols, repeatedValue: 0)
+		if buffer.length == sizeof(Float) * rows * cols {
+			let cache: MTLBuffer = newBuffer(length: sizeof(Float)*rows*cols, options: .CPUCacheModeDefaultCache)
+			func complete() {
+				NSData(bytesNoCopy: cache.contents(), length: cache.length, freeWhenDone: false).getBytes(UnsafeMutablePointer<Void>(result), length: sizeof(Float)*result.count)
+				cache.setPurgeableState(.Empty)
+			}
+			if rows == 1 || cols == 1 {
+				newBlitCommand(sync: true, complete: complete) {
+					$0.copyFromBuffer(buffer, sourceOffset: 0, toBuffer: cache, destinationOffset: 0, size: sizeof(Float)*rows*cols)
+				}
+			} else {
+				let group: MTLSize = MTLSize(width: cols/4, height: rows/4, depth: 1)
+				let local: MTLSize = MTLSize(width: 1, height: 1, depth: 1)
+				newComputeCommand(function: "toRowMajorMatrix", complete: complete) {
+					$0.setBuffer(cache, offset: 0, atIndex: 0)
+					$0.setBuffer(buffer, offset: 0, atIndex: 1)
+					$0.setBytes([UInt32(rows/4)], length: sizeof(UInt32), atIndex: 2)
+					$0.setBytes([UInt32(cols/4)], length: sizeof(UInt32), atIndex: 3)
+					$0.dispatchThreadgroups(group, threadsPerThreadgroup: local)
+				}
+			}
+			
+		} else {
+			assertionFailure()
+			
+		}
+		return result
 	}
 	internal func toLAObject(let buffer: MTLBuffer, let rows: Int, let cols: Int, let attribute: la_attribute_t = Config.ATTR) -> la_object_t {
 		let pool: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*rows*cols))
