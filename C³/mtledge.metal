@@ -103,7 +103,6 @@ kernel void edgeCorrectFF(device float4 * const input_error [[ buffer(0) ]],
 	uint const cols = g;
 	
 	float4 const state = input_state [ cols ];
-	float4 const power = state * state;
 	
 	float4 error = 0.0;
 	
@@ -121,16 +120,10 @@ kernel void edgeCorrectFF(device float4 * const input_error [[ buffer(0) ]],
 			
 			error += value * edge_value[idx];
 			//error += ( mu * edge_mu[ idx ] );
-			//error += ( sigma * edge_sigma[ idx ] ) * 2.0 * state;
+			//error += ( sigma * edge_sigma[ idx ] );
 
 			float4x4 dm = float4x4(mu, mu, mu, mu);
 			float4x4 const jm = edge_mu[idx];
-			/*
-			dm[0] *= state.x;
-			dm[1] *= state.y;
-			dm[2] *= state.z;
-			dm[3] *= state.w;
-			 */
 			
 			dm[0] *= artMuGradient(jm[0]) * state[0];
 			dm[1] *= artMuGradient(jm[1]) * state[1];
@@ -141,17 +134,11 @@ kernel void edgeCorrectFF(device float4 * const input_error [[ buffer(0) ]],
 			
 			float4x4 ds = float4x4(sigma, sigma, sigma, sigma);
 			float4x4 const js = edge_sigma[idx];
-			/*
-			dv[0] *= power.x;
-			dv[1] *= power.y;
-			dv[2] *= power.z;
-			dv[3] *= power.w;
-			 */
 			
-			ds[0] *= artSigmaGradient(js[0]) * power[0];
-			ds[1] *= artSigmaGradient(js[1]) * power[1];
-			ds[2] *= artSigmaGradient(js[2]) * power[2];
-			ds[3] *= artSigmaGradient(js[3]) * power[3];
+			ds[0] *= artSigmaGradient(js[0]) * state[0];
+			ds[1] *= artSigmaGradient(js[1]) * state[1];
+			ds[2] *= artSigmaGradient(js[2]) * state[2];
+			ds[3] *= artSigmaGradient(js[3]) * state[3];
 			
 			edge_logsigma[idx] += eps * ds;
 			

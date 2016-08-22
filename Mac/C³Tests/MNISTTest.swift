@@ -55,7 +55,7 @@ class MNISTTests: XCTestCase {
 						I.active = ID
 							
 						O.collect()
-						I.correct(eps: 1/64.0)
+						I.correct(η: 1/64.0)
 							
 						//O.active[0..<10].enumerate().forEach { cnt[$0.0] = cnt[$0.0] + Int($0.1) }
 					}

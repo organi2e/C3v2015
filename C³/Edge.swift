@@ -29,8 +29,8 @@ extension Edge {
 		}
 		
 	}
-	internal func correct(let error error: MTLBuffer, let eps: Float, let state: MTLBuffer, let visit: Set<Cell>) {
-		let delta: (MTLBuffer, MTLBuffer, MTLBuffer) = output.correct(eps: eps, visit: visit)
+	internal func correct(let error error: MTLBuffer, let η: Float, let state: MTLBuffer, let visit: Set<Cell>) {
+		let Δ: (MTLBuffer, MTLBuffer, MTLBuffer) = output.correct(η: η, visit: visit)
 		if let context: Context = managedObjectContext as? Context {
 			func schedule() {
 				willChangeValueForKey(self.dynamicType.logmukey)
@@ -40,7 +40,7 @@ extension Edge {
 				didChangeValueForKey(self.dynamicType.logsigmakey)
 				didChangeValueForKey(self.dynamicType.logmukey)
 			}
-			self.dynamicType.correctFF(context: context, eps: eps, error: error, edge: (logmu, logsigma, value, mu, sigma), state: state, delta: delta, rows: rows, cols: cols, schedule: schedule, complete: complete)
+			self.dynamicType.correctFF(context: context, η: η, error: error, edge: (logmu, logsigma, value, mu, sigma), state: state, Δ: Δ, rows: rows, cols: cols, schedule: schedule, complete: complete)
 
 		} else {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
@@ -73,7 +73,7 @@ extension Edge {
 			
 		}
 	}
-	internal static func correctFF(let context context: Context, let eps: Float, let error: MTLBuffer, let edge: (MTLBuffer, MTLBuffer, MTLBuffer, MTLBuffer, MTLBuffer), let state: MTLBuffer, let delta: (MTLBuffer, MTLBuffer, MTLBuffer), let rows: Int, let cols: Int, let bs: Int = 4, let schedule: (()->())?=nil, let complete:(()->())?=nil) {
+	internal static func correctFF(let context context: Context, let η: Float, let error: MTLBuffer, let edge: (MTLBuffer, MTLBuffer, MTLBuffer, MTLBuffer, MTLBuffer), let state: MTLBuffer, let Δ: (MTLBuffer, MTLBuffer, MTLBuffer), let rows: Int, let cols: Int, let bs: Int = 4, let schedule: (()->())?=nil, let complete:(()->())?=nil) {
 		context.newComputeCommand(function: correctFFKernel, schedule: schedule, complete: complete) {
 			$0.setBuffer(error, offset: 0, atIndex: 0)
 			$0.setBuffer(edge.0, offset: 0, atIndex: 1)
@@ -82,10 +82,10 @@ extension Edge {
 			$0.setBuffer(edge.2, offset: 0, atIndex: 4)
 			$0.setBuffer(edge.3, offset: 0, atIndex: 5)
 			$0.setBuffer(edge.4, offset: 0, atIndex: 6)
-			$0.setBuffer(delta.0, offset: 0, atIndex: 7)
-			$0.setBuffer(delta.1, offset: 0, atIndex: 8)
-			$0.setBuffer(delta.2, offset: 0, atIndex: 9)
-			$0.setBytes([eps], length: sizeof(Float), atIndex: 10)
+			$0.setBuffer(Δ.0, offset: 0, atIndex: 7)
+			$0.setBuffer(Δ.1, offset: 0, atIndex: 8)
+			$0.setBuffer(Δ.2, offset: 0, atIndex: 9)
+			$0.setBytes([η], length: sizeof(Float), atIndex: 10)
 			$0.setBytes([uint(rows/4), uint(cols/4)], length: 2*sizeof(uint), atIndex: 11)
 			$0.setThreadgroupMemoryLength(sizeof(Float)*4*bs, atIndex: 0)
 			$0.dispatchThreadgroups(MTLSize(width: cols/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: bs, height: 1, depth: 1))

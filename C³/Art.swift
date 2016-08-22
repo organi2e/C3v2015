@@ -10,10 +10,10 @@ import Metal
 import CoreData
 
 internal class Art: NSManagedObject {
-	internal private(set) var value: MTLBuffer!
+	internal private(set) var value: MTLBuffer!//χ, x
 	internal private(set) var uniform: MTLBuffer!
-	internal private(set) var mu: MTLBuffer!
-	internal private(set) var sigma: MTLBuffer!
+	internal private(set) var mu: MTLBuffer!//μ
+	internal private(set) var sigma: MTLBuffer!//σ
 	internal private(set) var logmu: MTLBuffer!
 	internal private(set) var logsigma: MTLBuffer!
 }

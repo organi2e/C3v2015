@@ -17,12 +17,12 @@ float4 artSigma(float4 const);
 float4 artSigmaInverse(float4 const);
 float4 artSigmaGradient(float4 const);
 
-kernel void biasCollect(device float4 * level_value [[ buffer(0) ]],
-						device float4 * level_mu [[ buffer(1) ]],
-						device float4 * level_sigma [[ buffer(2) ]],
-						device const float4 * bias_value [[ buffer(3) ]],
-						device const float4 * bias_mu [[ buffer(4) ]],
-						device const float4 * bias_sigma [[ buffer(5) ]],
+kernel void biasCollect(device float4 * const level_value [[ buffer(0) ]],
+						device float4 * const level_mu [[ buffer(1) ]],
+						device float4 * const level_sigma [[ buffer(2) ]],
+						device const float4 * const bias_value [[ buffer(3) ]],
+						device const float4 * const bias_mu [[ buffer(4) ]],
+						device const float4 * const bias_sigma [[ buffer(5) ]],
 						uint const n [[ thread_position_in_grid ]],
 						uint const N [[ threads_per_grid ]]
 						) {
@@ -30,28 +30,73 @@ kernel void biasCollect(device float4 * level_value [[ buffer(0) ]],
 	level_mu[n] += bias_mu[n];
 	level_sigma[n] += bias_sigma[n];
 }
-kernel void biasCorrectFF(device float4 * bias_logmu [[ buffer(0) ]],
-						  device float4 * bias_logsigma [[ buffer(1) ]],
-						  device const float4 * bias_mu [[ buffer(2) ]],
-						  device const float4 * bias_sigma [[ buffer(3) ]],
-						  device const float4 * delta_mu [[ buffer(4) ]],
-						  device const float4 * delta_sigma [[ buffer(5) ]],
-						  constant const float & eps [[ buffer(6) ]],
-						  uint const n [[ thread_position_in_grid ]],
-						  uint const N [[ threads_per_grid ]]
-						  ) {
+kernel void biasCorrect(device float4 * const bias_logmu [[ buffer(0) ]],
+						device float4 * const bias_logsigma [[ buffer(1) ]],
+						device const float4 * const bias_mu [[ buffer(2) ]],
+						device const float4 * const bias_sigma [[ buffer(3) ]],
+						device const float4x4 * const gradient_mu [[ buffer(4) ]],
+						device const float4x4 * const gradient_sigma [[ buffer(5) ]],
+						device const float4 * const delta_mu [[ buffer(6) ]],
+						device const float4 * const delta_sigma [[ buffer(7) ]],
+						constant const uint2 & dim [[ buffer(8) ]],
+						constant const float & eps [[ buffer(9) ]],
+						threadgroup float4 * const accum_mu [[ threadgroup(0) ]],
+						threadgroup float4 * const accum_sigma [[ threadgroup(1) ]],
+						uint const g [[ threadgroup_position_in_grid ]],
+						uint const G [[ threadgroups_per_grid ]],
+						uint const t [[ thread_position_in_threadgroup ]],
+						uint const T [[ threads_per_threadgroup ]]) {
+	
+	uint const M = dim.x;
+	uint const n = g;
+	
+	float4 mu = float4(0);
+	float4 sigma = float4(0);
+	
+	for ( uint k = 0 ; k < M ; k += T ) {
+		uint const m = k + t;
+		if ( m < M ) {
+			uint const idx = n * M + m;
+			mu += delta_mu[m] * gradient_mu[idx];
+			sigma += delta_sigma[m] * gradient_sigma[idx];
+		}
+	}
+	
+	accum_mu[t] = mu;
+	accum_sigma[t] = sigma;
+	
+	uint offset = T;
+	while ( offset >>= 1 ) {
+		threadgroup_barrier ( mem_flags :: mem_threadgroup );
+		if ( t < offset ) {
+			accum_mu[t] += accum_mu[t+offset];
+			accum_sigma[t] += accum_sigma[t+offset];
+		}
+	}
+	
+	if ( !t ) {
+		bias_logmu[n] += eps * artMuGradient(bias_mu[n]) * * accum_mu;
+		bias_logsigma[n] += eps * artSigmaGradient(bias_sigma[n]) * * accum_sigma;
+	}
+	
+}
+kernel void biasGradientEye(device float4x4 * const gradient_mu [[ buffer(0) ]],
+							device float4x4 * const gradient_sigma [[ buffer(1) ]],
+							uint const t [[ thread_position_in_grid ]],
+							uint const T [[ threads_per_grid ]]) {
+	gradient_mu[t*T+t] = float4x4(1.0);
+	gradient_sigma[t*T+t] = float4x4(1.0);
+}
+kernel void biasCorrectLightWeight(device float4 * const bias_logmu [[ buffer(0) ]],
+								   device float4 * const bias_logsigma [[ buffer(1) ]],
+								   device const float4 * const bias_mu [[ buffer(2) ]],
+								   device const float4 * const bias_sigma [[ buffer(3) ]],
+								   device const float4 * const delta_mu [[ buffer(4) ]],
+								   device const float4 * const delta_sigma [[ buffer(5) ]],
+								   constant const float & eps [[ buffer(6) ]],
+								   uint const n [[ thread_position_in_grid ]],
+								   uint const N [[ threads_per_grid ]]
+								   ) {
 	bias_logmu[n] += eps * artMuGradient(bias_mu[n]) * delta_mu[n];
 	bias_logsigma[n] += eps * artSigmaGradient(bias_sigma[n]) * delta_sigma[n];
-}
-kernel void biasCorrectFB(device float4 * bias_mean [[ buffer(0) ]],
-						  device float4 * bias_logvariance [[ buffer(1) ]],
-						  constant const float & eps [[ buffer(2) ]],
-						  device const float4 * delta_mean [[ buffer(3) ]],
-						  device const float4 * delta_variance [[ buffer(4) ]],
-						  device const float4 * bias_variance [[ buffer(5) ]],
-						  uint const n [[ thread_position_in_grid ]],
-						  uint const N [[ threads_per_grid ]]
-						  ) {
-	bias_mean[n] += eps * delta_mean[n];
-	bias_logvariance[n] -= ( 0.5 * eps ) * delta_variance[n] * bias_variance[n];
 }
