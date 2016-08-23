@@ -104,6 +104,10 @@
 		875DD1E51D6C619700A5C250 /* data_batch_4.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = data_batch_4.bin; path = "CIFAR10/cifar-10-batches-bin/data_batch_4.bin"; sourceTree = "<group>"; };
 		875DD1E61D6C619700A5C250 /* data_batch_5.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = data_batch_5.bin; path = "CIFAR10/cifar-10-batches-bin/data_batch_5.bin"; sourceTree = "<group>"; };
 		875DD1E71D6C619700A5C250 /* test_batch.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = test_batch.bin; path = "CIFAR10/cifar-10-batches-bin/test_batch.bin"; sourceTree = "<group>"; };
+		875DD2081D6C6DAA00A5C250 /* t10k-images-idx3-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "t10k-images-idx3-ubyte"; path = "MNIST/t10k-images-idx3-ubyte"; sourceTree = "<group>"; };
+		875DD2091D6C6DAA00A5C250 /* t10k-labels-idx1-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "t10k-labels-idx1-ubyte"; path = "MNIST/t10k-labels-idx1-ubyte"; sourceTree = "<group>"; };
+		875DD20A1D6C6DAA00A5C250 /* train-images-idx3-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "train-images-idx3-ubyte"; path = "MNIST/train-images-idx3-ubyte"; sourceTree = "<group>"; };
+		875DD20B1D6C6DAA00A5C250 /* train-labels-idx1-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "train-labels-idx1-ubyte"; path = "MNIST/train-labels-idx1-ubyte"; sourceTree = "<group>"; };
 		87799A601D41BF200088B9E7 /* math.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = math.metal; path = NLA/math.metal; sourceTree = "<group>"; };
 		878985B71D050D42002C2A8D /* C3.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = C3.xcdatamodel; sourceTree = "<group>"; };
 		878985B81D050D42002C2A8D /* Cell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Cell.swift; path = "C³/Cell.swift"; sourceTree = "<group>"; };
@@ -115,10 +119,6 @@
 		878C7A5E1D01AE4D002CDFD1 /* Mac.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Mac.xcodeproj; path = Mac/Mac.xcodeproj; sourceTree = "<group>"; };
 		878C7A681D01AE5E002CDFD1 /* iOS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = iOS.xcodeproj; path = iOS/iOS.xcodeproj; sourceTree = "<group>"; };
 		878C7AC11D01AF60002CDFD1 /* MNIST.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MNIST.swift; path = MNIST/MNIST.swift; sourceTree = "<group>"; };
-		878C7AC21D01AF60002CDFD1 /* t10k-images.idx3-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "t10k-images.idx3-ubyte"; path = "MNIST/t10k-images.idx3-ubyte"; sourceTree = "<group>"; };
-		878C7AC31D01AF60002CDFD1 /* t10k-labels.idx1-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "t10k-labels.idx1-ubyte"; path = "MNIST/t10k-labels.idx1-ubyte"; sourceTree = "<group>"; };
-		878C7AC41D01AF60002CDFD1 /* train-images.idx3-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "train-images.idx3-ubyte"; path = "MNIST/train-images.idx3-ubyte"; sourceTree = "<group>"; };
-		878C7AC51D01AF60002CDFD1 /* train-labels.idx1-ubyte */ = {isa = PBXFileReference; lastKnownFileType = file; name = "train-labels.idx1-ubyte"; path = "MNIST/train-labels.idx1-ubyte"; sourceTree = "<group>"; };
 		87A42CBC1D4F5CD5008D9708 /* Feedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Feedback.swift; path = "C³/Feedback.swift"; sourceTree = "<group>"; };
 		87BC8D861D55D0EF004510EF /* mtlbias.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = mtlbias.metal; path = "C³/mtlbias.metal"; sourceTree = "<group>"; };
 		87BC8D921D55E05C004510EF /* mtledge.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = mtledge.metal; path = "C³/mtledge.metal"; sourceTree = "<group>"; };
@@ -240,11 +240,11 @@
 		878C7A6C1D01AE7D002CDFD1 /* MNIST */ = {
 			isa = PBXGroup;
 			children = (
+				875DD2081D6C6DAA00A5C250 /* t10k-images-idx3-ubyte */,
+				875DD2091D6C6DAA00A5C250 /* t10k-labels-idx1-ubyte */,
+				875DD20A1D6C6DAA00A5C250 /* train-images-idx3-ubyte */,
+				875DD20B1D6C6DAA00A5C250 /* train-labels-idx1-ubyte */,
 				878C7AC11D01AF60002CDFD1 /* MNIST.swift */,
-				878C7AC21D01AF60002CDFD1 /* t10k-images.idx3-ubyte */,
-				878C7AC31D01AF60002CDFD1 /* t10k-labels.idx1-ubyte */,
-				878C7AC41D01AF60002CDFD1 /* train-images.idx3-ubyte */,
-				878C7AC51D01AF60002CDFD1 /* train-labels.idx1-ubyte */,
 			);
 			name = MNIST;
 			sourceTree = "<group>";
