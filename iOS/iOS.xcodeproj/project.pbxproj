@@ -13,7 +13,6 @@
 		875DD2281D6C75E700A5C250 /* t10k-labels-idx1-ubyte in Resources */ = {isa = PBXBuildFile; fileRef = 875DD2271D6C75E700A5C250 /* t10k-labels-idx1-ubyte */; };
 		875DD22A1D6C75EB00A5C250 /* train-images-idx3-ubyte in Resources */ = {isa = PBXBuildFile; fileRef = 875DD2291D6C75EB00A5C250 /* train-images-idx3-ubyte */; };
 		875DD22C1D6C75EE00A5C250 /* train-labels-idx1-ubyte in Resources */ = {isa = PBXBuildFile; fileRef = 875DD22B1D6C75EE00A5C250 /* train-labels-idx1-ubyte */; };
-		875DD2351D6C760900A5C250 /* CIFAR10.h in Headers */ = {isa = PBXBuildFile; fileRef = 875DD2341D6C760900A5C250 /* CIFAR10.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		875DD23B1D6C761000A5C250 /* CIFAR10.swift in Sources */ = {isa = PBXBuildFile; fileRef = 875DD23A1D6C761000A5C250 /* CIFAR10.swift */; };
 		875DD23D1D6C761600A5C250 /* batches.meta.txt in Resources */ = {isa = PBXBuildFile; fileRef = 875DD23C1D6C761600A5C250 /* batches.meta.txt */; };
 		875DD23F1D6C761800A5C250 /* data_batch_1.bin in Resources */ = {isa = PBXBuildFile; fileRef = 875DD23E1D6C761800A5C250 /* data_batch_1.bin */; };
@@ -22,9 +21,12 @@
 		875DD2451D6C762300A5C250 /* data_batch_4.bin in Resources */ = {isa = PBXBuildFile; fileRef = 875DD2441D6C762300A5C250 /* data_batch_4.bin */; };
 		875DD2471D6C762600A5C250 /* data_batch_5.bin in Resources */ = {isa = PBXBuildFile; fileRef = 875DD2461D6C762600A5C250 /* data_batch_5.bin */; };
 		875DD2491D6C762A00A5C250 /* test_batch.bin in Resources */ = {isa = PBXBuildFile; fileRef = 875DD2481D6C762A00A5C250 /* test_batch.bin */; };
-		875DD2521D6C764500A5C250 /* C3.h in Headers */ = {isa = PBXBuildFile; fileRef = 875DD2511D6C764500A5C250 /* C3.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		875DD2591D6C764600A5C250 /* C3.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 875DD24F1D6C764500A5C250 /* C3.framework */; };
-		875DD25E1D6C764600A5C250 /* C3Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 875DD25D1D6C764600A5C250 /* C3Tests.swift */; };
+		875DD2661D6C8CF500A5C250 /* CIFAR10.h in Headers */ = {isa = PBXBuildFile; fileRef = 875DD2341D6C760900A5C250 /* CIFAR10.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		875DD26B1D6C8D4E00A5C250 /* C³.h in Headers */ = {isa = PBXBuildFile; fileRef = 875DD2691D6C8D4E00A5C250 /* C³.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		875DD26C1D6C8D4E00A5C250 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 875DD26A1D6C8D4E00A5C250 /* Info.plist */; };
+		875DD2701D6C8D7E00A5C250 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 875DD26E1D6C8D7E00A5C250 /* Info.plist */; };
+		875DD2711D6C8D9300A5C250 /* C³Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 875DD26D1D6C8D7E00A5C250 /* C³Tests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -58,11 +60,11 @@
 		875DD2461D6C762600A5C250 /* data_batch_5.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = data_batch_5.bin; path = "../../CIFAR10/cifar-10-batches-bin/data_batch_5.bin"; sourceTree = "<group>"; };
 		875DD2481D6C762A00A5C250 /* test_batch.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = test_batch.bin; path = "../../CIFAR10/cifar-10-batches-bin/test_batch.bin"; sourceTree = "<group>"; };
 		875DD24F1D6C764500A5C250 /* C3.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = C3.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		875DD2511D6C764500A5C250 /* C3.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = C3.h; sourceTree = "<group>"; };
-		875DD2531D6C764500A5C250 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		875DD2581D6C764600A5C250 /* C3Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = C3Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		875DD25D1D6C764600A5C250 /* C3Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = C3Tests.swift; sourceTree = "<group>"; };
-		875DD25F1D6C764600A5C250 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		875DD2691D6C8D4E00A5C250 /* C³.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "C³.h"; path = "C³/C³.h"; sourceTree = SOURCE_ROOT; };
+		875DD26A1D6C8D4E00A5C250 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = "C³/Info.plist"; sourceTree = SOURCE_ROOT; };
+		875DD26D1D6C8D7E00A5C250 /* C³Tests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "C³Tests.swift"; path = "C³Tests/C³Tests.swift"; sourceTree = SOURCE_ROOT; };
+		875DD26E1D6C8D7E00A5C250 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = "C³Tests/Info.plist"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -140,21 +142,23 @@
 			path = CIFAR10;
 			sourceTree = "<group>";
 		};
-		875DD2501D6C764500A5C250 /* C3 */ = {
+		875DD2501D6C764500A5C250 /* C³ */ = {
 			isa = PBXGroup;
 			children = (
-				875DD2511D6C764500A5C250 /* C3.h */,
-				875DD2531D6C764500A5C250 /* Info.plist */,
+				875DD2691D6C8D4E00A5C250 /* C³.h */,
+				875DD26A1D6C8D4E00A5C250 /* Info.plist */,
 			);
+			name = "C³";
 			path = C3;
 			sourceTree = "<group>";
 		};
-		875DD25C1D6C764600A5C250 /* C3Tests */ = {
+		875DD25C1D6C764600A5C250 /* C³Tests */ = {
 			isa = PBXGroup;
 			children = (
-				875DD25D1D6C764600A5C250 /* C3Tests.swift */,
-				875DD25F1D6C764600A5C250 /* Info.plist */,
+				875DD26D1D6C8D7E00A5C250 /* C³Tests.swift */,
+				875DD26E1D6C8D7E00A5C250 /* Info.plist */,
 			);
+			name = "C³Tests";
 			path = C3Tests;
 			sourceTree = "<group>";
 		};
@@ -163,8 +167,8 @@
 			children = (
 				875DD21C1D6C75D000A5C250 /* MNIST */,
 				875DD2331D6C760900A5C250 /* CIFAR10 */,
-				875DD2501D6C764500A5C250 /* C3 */,
-				875DD25C1D6C764600A5C250 /* C3Tests */,
+				875DD2501D6C764500A5C250 /* C³ */,
+				875DD25C1D6C764600A5C250 /* C³Tests */,
 				875DD21B1D6C75D000A5C250 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -176,9 +180,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				875DD2521D6C764500A5C250 /* C3.h in Headers */,
 				875DD21E1D6C75D000A5C250 /* MNIST.h in Headers */,
-				875DD2351D6C760900A5C250 /* CIFAR10.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -186,6 +188,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				875DD2661D6C8CF500A5C250 /* CIFAR10.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -193,6 +196,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				875DD26B1D6C8D4E00A5C250 /* C³.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -205,8 +209,8 @@
 			buildPhases = (
 				875DD2151D6C75CF00A5C250 /* Sources */,
 				875DD2161D6C75CF00A5C250 /* Frameworks */,
-				875DD2171D6C75CF00A5C250 /* Headers */,
 				875DD2181D6C75CF00A5C250 /* Resources */,
+				875DD2171D6C75CF00A5C250 /* Headers */,
 			);
 			buildRules = (
 			);
@@ -348,6 +352,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				875DD2701D6C8D7E00A5C250 /* Info.plist in Resources */,
+				875DD26C1D6C8D4E00A5C250 /* Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -388,7 +394,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				875DD25E1D6C764600A5C250 /* C3Tests.swift in Sources */,
+				875DD2711D6C8D9300A5C250 /* C³Tests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

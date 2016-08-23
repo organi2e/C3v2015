@@ -49,6 +49,7 @@
 		875DD20F1D6C6DBD00A5C250 /* t10k-labels-idx1-ubyte in Resources */ = {isa = PBXBuildFile; fileRef = 875DD20E1D6C6DBD00A5C250 /* t10k-labels-idx1-ubyte */; };
 		875DD2111D6C6DC100A5C250 /* train-images-idx3-ubyte in Resources */ = {isa = PBXBuildFile; fileRef = 875DD2101D6C6DC100A5C250 /* train-images-idx3-ubyte */; };
 		875DD2131D6C6DC400A5C250 /* train-labels-idx1-ubyte in Resources */ = {isa = PBXBuildFile; fileRef = 875DD2121D6C6DC400A5C250 /* train-labels-idx1-ubyte */; };
+		875DD2681D6C8D1200A5C250 /* C³.h in Headers */ = {isa = PBXBuildFile; fileRef = 87B1FD2C1D05467800981CF4 /* C³.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		876A4B561D066EDC00D32E1B /* EdgeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 876A4B551D066EDC00D32E1B /* EdgeTests.swift */; };
 		87799A6A1D41C0920088B9E7 /* math.metal in Sources */ = {isa = PBXBuildFile; fileRef = 87799A691D41C0920088B9E7 /* math.metal */; };
 		878C7A921D01AF05002CDFD1 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878C7A911D01AF05002CDFD1 /* AppDelegate.swift */; };
@@ -534,6 +535,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				875DD2681D6C8D1200A5C250 /* C³.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
