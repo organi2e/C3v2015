@@ -2,7 +2,7 @@
 is Chained-Cubic-Cell (previous abbrev.) or Chained-Cauchy-Cell (current abbrev.).  
 An implementation of probabilistic multi-layered perceptron.  
   
-All connection weights and biases are [random variable](https://wikipedia.org/wiki/Random_variable) depending on [Stable distribution](https://wikipedia.org/wiki/Stable_distribution).   
+All connection weights and biases are [random variable](https://wikipedia.org/wiki/Random_variable) depending on [Stable distribution](https://wikipedia.org/wiki/Stable_distribution) in this model.   
 The signal propagation gets randomly determined and the unit randomly fires.  
 [Cauchy distribution](https://wikipedia.org/wiki/Cauchy_distribution) is employed for current implementation.   
   
