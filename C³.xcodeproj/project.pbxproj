@@ -21,6 +21,13 @@
 			remoteGlobalIDString = 87591AF51D3C45E500BD9248;
 			remoteInfo = ComputerTests;
 		};
+		875DD1E91D6C619700A5C250 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 878C7A5E1D01AE4D002CDFD1 /* Mac.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 875DD1D71D6C5FC800A5C250;
+			remoteInfo = CIFAR10;
+		};
 		878C7AB91D01AF25002CDFD1 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 878C7A5E1D01AE4D002CDFD1 /* Mac.xcodeproj */;
@@ -89,6 +96,14 @@
 		875DD1AD1D66DF9E00A5C250 /* Art.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Art.swift; path = "C³/Art.swift"; sourceTree = "<group>"; };
 		875DD1B01D66E4D000A5C250 /* mtlart.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = mtlart.metal; path = "C³/mtlart.metal"; sourceTree = "<group>"; };
 		875DD1B71D6AD89500A5C250 /* Misc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Misc.swift; path = "C³/Misc.swift"; sourceTree = "<group>"; };
+		875DD1D11D6C5F7E00A5C250 /* CIFAR10.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CIFAR10.swift; path = CIFAR10/CIFAR10.swift; sourceTree = "<group>"; };
+		875DD1E11D6C619600A5C250 /* batches.meta.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = batches.meta.txt; path = "CIFAR10/cifar-10-batches-bin/batches.meta.txt"; sourceTree = "<group>"; };
+		875DD1E21D6C619600A5C250 /* data_batch_1.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = data_batch_1.bin; path = "CIFAR10/cifar-10-batches-bin/data_batch_1.bin"; sourceTree = "<group>"; };
+		875DD1E31D6C619700A5C250 /* data_batch_2.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = data_batch_2.bin; path = "CIFAR10/cifar-10-batches-bin/data_batch_2.bin"; sourceTree = "<group>"; };
+		875DD1E41D6C619700A5C250 /* data_batch_3.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = data_batch_3.bin; path = "CIFAR10/cifar-10-batches-bin/data_batch_3.bin"; sourceTree = "<group>"; };
+		875DD1E51D6C619700A5C250 /* data_batch_4.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = data_batch_4.bin; path = "CIFAR10/cifar-10-batches-bin/data_batch_4.bin"; sourceTree = "<group>"; };
+		875DD1E61D6C619700A5C250 /* data_batch_5.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = data_batch_5.bin; path = "CIFAR10/cifar-10-batches-bin/data_batch_5.bin"; sourceTree = "<group>"; };
+		875DD1E71D6C619700A5C250 /* test_batch.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = test_batch.bin; path = "CIFAR10/cifar-10-batches-bin/test_batch.bin"; sourceTree = "<group>"; };
 		87799A601D41BF200088B9E7 /* math.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = math.metal; path = NLA/math.metal; sourceTree = "<group>"; };
 		878985B71D050D42002C2A8D /* C3.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = C3.xcdatamodel; sourceTree = "<group>"; };
 		878985B81D050D42002C2A8D /* Cell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Cell.swift; path = "C³/Cell.swift"; sourceTree = "<group>"; };
@@ -138,6 +153,21 @@
 			name = Computer;
 			sourceTree = "<group>";
 		};
+		875DD1C81D6C5F6D00A5C250 /* CIFAR10 */ = {
+			isa = PBXGroup;
+			children = (
+				875DD1E11D6C619600A5C250 /* batches.meta.txt */,
+				875DD1E21D6C619600A5C250 /* data_batch_1.bin */,
+				875DD1E31D6C619700A5C250 /* data_batch_2.bin */,
+				875DD1E41D6C619700A5C250 /* data_batch_3.bin */,
+				875DD1E51D6C619700A5C250 /* data_batch_4.bin */,
+				875DD1E61D6C619700A5C250 /* data_batch_5.bin */,
+				875DD1E71D6C619700A5C250 /* test_batch.bin */,
+				875DD1D11D6C5F7E00A5C250 /* CIFAR10.swift */,
+			);
+			name = CIFAR10;
+			sourceTree = "<group>";
+		};
 		878C7A501D01AE2E002CDFD1 = {
 			isa = PBXGroup;
 			children = (
@@ -145,6 +175,7 @@
 				878C7A681D01AE5E002CDFD1 /* iOS.xcodeproj */,
 				878C7A6B1D01AE66002CDFD1 /* C³ */,
 				878C7A6C1D01AE7D002CDFD1 /* MNIST */,
+				875DD1C81D6C5F6D00A5C250 /* CIFAR10 */,
 				87591ADC1D3C451300BD9248 /* Computer */,
 				87C516A81D3F680100E3F36B /* NLA */,
 			);
@@ -161,6 +192,7 @@
 				87591B081D3C45F300BD9248 /* ComputerTests.xctest */,
 				87C516CB1D3F728C00E3F36B /* NLA.framework */,
 				87C516CD1D3F728C00E3F36B /* NLATests.xctest */,
+				875DD1EA1D6C619700A5C250 /* CIFAR10.framework */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -277,6 +309,13 @@
 			fileType = wrapper.cfbundle;
 			path = ComputerTests.xctest;
 			remoteRef = 87591B071D3C45F300BD9248 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		875DD1EA1D6C619700A5C250 /* CIFAR10.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = CIFAR10.framework;
+			remoteRef = 875DD1E91D6C619700A5C250 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 		878C7ABA1D01AF25002CDFD1 /* C3.framework */ = {
