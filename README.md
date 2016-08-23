@@ -11,4 +11,4 @@ The common of learning law is similar to general neural network and backpropagat
 They however employ several improved techniques such as sign propagation for binary statement.  
 
 This is implemented with [Metal](https://developer.apple.com/library/mac/documentation/Metal/Reference/MetalFrameworkReference/) and [Core Data](https://developer.apple.com/library/watchos/documentation/Cocoa/Conceptual/CoreData/).  
-The computation isaccelerated by [GPGPU](https://wikipedia.org/wiki/General-purpose_computing_on_graphics_processing_units) and the learnt weight and their layers' relationships get automatically stored with [ORM](https://wikipedia.org/wiki/Object-relational_mapping).  
+The computation isaccelerated by [GPGPU](https://wikipedia.org/wiki/General-purpose_computing_on_graphics_processing_units)   and the learnt weight and their layers' relationships get automatically stored with [ORM](https://wikipedia.org/wiki/Object-relational_mapping).  
