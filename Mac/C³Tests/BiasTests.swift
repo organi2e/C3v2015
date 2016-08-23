@@ -34,30 +34,30 @@ class BiasTests: XCTestCase {
 		let rows: Int = 256
 		let cols: Int = 1
 		
-		let value: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows*cols, options: .StorageModePrivate)
-		let mu: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows*cols, options: .StorageModePrivate)
-		let sigma: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows*cols, options: .StorageModePrivate)
+		let χ: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows*cols, options: .StorageModePrivate)
+		let μ: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows*cols, options: .StorageModePrivate)
+		let σ: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows*cols, options: .StorageModePrivate)
 		
 		context.newBlitCommand {(let encoder: MTLBlitCommandEncoder)in
-			[value, mu, sigma].forEach {
+			[χ, μ, σ].forEach {
 				encoder.fillBuffer($0, range: NSRange(location: 0, length: $0.length), value: 0)
 			}
 		}
 		
 		bias.resize(rows: rows, cols: cols)
-		bias.adjust(mu: 0.5, sigma: 1.0)
+		bias.adjust(μ: 0.5, σ: 1.0)
 		bias.refresh()
 		bias.shuffle()
-		bias.collect(level: (value, mu, sigma))
+		bias.collect(level: (χ, μ, σ))
 		
-		let srcValue: la_object_t = context.toLAObject(bias.value, rows: rows, cols: cols)
-		let dstValue: la_object_t = context.toLAObject(value, rows: rows, cols: cols)
+		let srcValue: la_object_t = context.toLAObject(bias.χ, rows: rows, cols: cols)
+		let dstValue: la_object_t = context.toLAObject(χ, rows: rows, cols: cols)
 		
-		let srcMu: la_object_t = context.toLAObject(bias.mu, rows: rows, cols: cols)
-		let dstMu: la_object_t = context.toLAObject(mu, rows: rows, cols: cols)
+		let srcMu: la_object_t = context.toLAObject(bias.μ, rows: rows, cols: cols)
+		let dstMu: la_object_t = context.toLAObject(μ, rows: rows, cols: cols)
 		
-		let srcSigma: la_object_t = context.toLAObject(bias.sigma, rows: rows, cols: cols)
-		let dstSigma: la_object_t = context.toLAObject(sigma, rows: rows, cols: cols)
+		let srcSigma: la_object_t = context.toLAObject(bias.σ, rows: rows, cols: cols)
+		let dstSigma: la_object_t = context.toLAObject(σ, rows: rows, cols: cols)
 		
 		context.join()
 		

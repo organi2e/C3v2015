@@ -35,6 +35,7 @@
 		875DD1AF1D66DFB700A5C250 /* Art.swift in Sources */ = {isa = PBXBuildFile; fileRef = 875DD1AE1D66DFB700A5C250 /* Art.swift */; };
 		875DD1B21D66E4DF00A5C250 /* mtlart.metal in Sources */ = {isa = PBXBuildFile; fileRef = 875DD1B11D66E4DF00A5C250 /* mtlart.metal */; };
 		875DD1C11D6AD8A900A5C250 /* Misc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 875DD1C01D6AD8A900A5C250 /* Misc.swift */; };
+		875DD1C31D6C11B600A5C250 /* ArtTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 875DD1C21D6C11B600A5C250 /* ArtTests.swift */; };
 		876A4B561D066EDC00D32E1B /* EdgeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 876A4B551D066EDC00D32E1B /* EdgeTests.swift */; };
 		87799A6A1D41C0920088B9E7 /* math.metal in Sources */ = {isa = PBXBuildFile; fileRef = 87799A691D41C0920088B9E7 /* math.metal */; };
 		878C7A921D01AF05002CDFD1 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878C7A911D01AF05002CDFD1 /* AppDelegate.swift */; };
@@ -171,6 +172,7 @@
 		875DD1AE1D66DFB700A5C250 /* Art.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Art.swift; path = "../../C³/Art.swift"; sourceTree = "<group>"; };
 		875DD1B11D66E4DF00A5C250 /* mtlart.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = mtlart.metal; path = "../../C³/mtlart.metal"; sourceTree = "<group>"; };
 		875DD1C01D6AD8A900A5C250 /* Misc.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Misc.swift; path = "../../C³/Misc.swift"; sourceTree = "<group>"; };
+		875DD1C21D6C11B600A5C250 /* ArtTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ArtTests.swift; sourceTree = "<group>"; };
 		876A4B551D066EDC00D32E1B /* EdgeTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EdgeTests.swift; sourceTree = "<group>"; };
 		87799A691D41C0920088B9E7 /* math.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = math.metal; path = ../../NLA/math.metal; sourceTree = "<group>"; };
 		878C7A8F1D01AF05002CDFD1 /* sandbox.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = sandbox.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -417,6 +419,7 @@
 				87B9C0261D49249900534528 /* MNISTTest.swift */,
 				87D8B4051D4B6E590010EA4F /* BlasTests.swift */,
 				875DD1A81D66B47E00A5C250 /* CauchyTests.swift */,
+				875DD1C21D6C11B600A5C250 /* ArtTests.swift */,
 			);
 			path = "C³Tests";
 			sourceTree = "<group>";
@@ -837,6 +840,7 @@
 				873BFCAA1D4359BE00F61B4B /* GaussTests.swift in Sources */,
 				876A4B561D066EDC00D32E1B /* EdgeTests.swift in Sources */,
 				87B9C0271D49249900534528 /* MNISTTest.swift in Sources */,
+				875DD1C31D6C11B600A5C250 /* ArtTests.swift in Sources */,
 				87B1FD3C1D0546FC00981CF4 /* BiasTests.swift in Sources */,
 				8719AE4D1D38BBE500F8DCA4 /* CellTests.swift in Sources */,
 				87D8B4061D4B6E590010EA4F /* BlasTests.swift in Sources */,

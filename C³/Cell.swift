@@ -242,7 +242,7 @@ extension Cell {
 					
 					} else {
 						output.forEach {
-							$0.correct(error: states.new.error, η: η, state: states.new.value, visit: visit.union([self]))
+							$0.correct(δ: states.new.error, η: η, state: states.new.value, visit: visit.union([self]))
 						}
 						
 					}

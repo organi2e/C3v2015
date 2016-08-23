@@ -10,21 +10,20 @@ import Metal
 import CoreData
 
 internal class Art: NSManagedObject {
-	internal private(set) var value: MTLBuffer!//χ, x
-	internal private(set) var uniform: MTLBuffer!
-	internal private(set) var mu: MTLBuffer!//μ
-	internal private(set) var sigma: MTLBuffer!//σ
-	internal private(set) var logmu: MTLBuffer!
-	internal private(set) var logsigma: MTLBuffer!
+	internal private(set) var χ: MTLBuffer!
+	internal private(set) var μ: MTLBuffer!
+	internal private(set) var σ: MTLBuffer!
+	internal private(set) var logμ: MTLBuffer!
+	internal private(set) var logσ: MTLBuffer!
 }
 
 extension Art {
 	@NSManaged internal private(set) var rows: Int
 	@NSManaged internal private(set) var cols: Int
-	@NSManaged private var logmudata: NSData
-	@NSManaged private var logsigmadata: NSData
-	@nonobjc internal static let logmukey: String = "logmudata"
-	@nonobjc internal static let logsigmakey: String = "logsigmadata"
+	@NSManaged private var logmu: NSData
+	@NSManaged private var logsigma: NSData
+	@nonobjc internal static let logμkey: String = "logmu"
+	@nonobjc internal static let logσkey: String = "logsigma"
 }
 
 extension Art {
@@ -44,18 +43,16 @@ extension Art {
 		
 		if let context: Context = managedObjectContext as? Context {
 			
-			value = context.newBuffer(length: sizeof(Float)*rows*cols, options: .StorageModePrivate)
-			uniform = context.newBuffer(length: sizeof(UInt16)*rows*cols, options: .CPUCacheModeWriteCombined)
+			χ = context.newBuffer(length: sizeof(Float)*rows*cols, options: .StorageModePrivate)
 			
-			mu = context.newBuffer(length: sizeof(Float)*rows*cols, options: .StorageModePrivate)
-			sigma = context.newBuffer(length: sizeof(Float)*rows*cols, options: .StorageModePrivate)
+			μ = context.newBuffer(length: sizeof(Float)*rows*cols, options: .StorageModePrivate)
+			σ = context.newBuffer(length: sizeof(Float)*rows*cols, options: .StorageModePrivate)
 			
+			logμ = context.newBuffer(data: logmu, options: .CPUCacheModeDefaultCache)
+			setPrimitiveValue(NSData(bytesNoCopy: logμ.contents(), length: logμ.length, freeWhenDone: false), forKey: self.dynamicType.logμkey)
 			
-			logmu = context.newBuffer(data: logmudata, options: .CPUCacheModeDefaultCache)
-			setPrimitiveValue(NSData(bytesNoCopy: logmu.contents(), length: logmu.length, freeWhenDone: false), forKey: Art.logmukey)
-			
-			logsigma = context.newBuffer(data: logsigmadata, options: .CPUCacheModeDefaultCache)
-			setPrimitiveValue(NSData(bytesNoCopy: logsigma.contents(), length: logsigma.length, freeWhenDone: false), forKey: Art.logsigmakey)
+			logσ = context.newBuffer(data: logsigma, options: .CPUCacheModeDefaultCache)
+			setPrimitiveValue(NSData(bytesNoCopy: logσ.contents(), length: logσ.length, freeWhenDone: false), forKey: self.dynamicType.logσkey)
 			
 			refresh()
 			
@@ -67,7 +64,7 @@ extension Art {
 	}
 	internal func shuffle() {
 		if let context: Context = managedObjectContext as? Context where 0 < rows && 0 < cols {
-			self.dynamicType.shuffle(context: context, value: value, mu: mu, sigma: sigma, uniform: uniform, rows: rows, cols: cols)
+			self.dynamicType.shuffle(context: context, χ: χ, μ: μ, σ: σ, rows: rows, cols: cols)
 			
 		} else {
 			assertionFailure("\(Context.Error.InvalidContext.rawValue) or rows:\(rows), cols: \(cols)")
@@ -76,16 +73,16 @@ extension Art {
 	}
 	internal func refresh() {
 		if let context: Context = managedObjectContext as? Context where 0 < rows && 0 < cols {
-			self.dynamicType.refresh(context: context, mu: mu, sigma: sigma, logmu: logmu, logsigma: logsigma, rows: rows, cols: cols)
+			self.dynamicType.refresh(context: context, μ: μ, σ: σ, logμ: logμ, logσ: logσ, rows: rows, cols: cols)
 			
 		} else {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
 			
 		}
 	}
-	internal func adjust(let mu mu: Float, let sigma: Float) {
+	internal func adjust(let μ μ: Float, let σ: Float) {
 		if let context: Context = managedObjectContext as? Context where 0 < rows && 0 < cols {
-			self.dynamicType.adjust(context: context, logmu: logmu, logsigma: logsigma, parameter: (mu, sigma), rows: rows, cols: cols)
+			self.dynamicType.adjust(context: context, logμ: logμ, logσ: logσ, parameter: (μ, σ), rows: rows, cols: cols)
 			
 		} else {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
@@ -98,8 +95,8 @@ extension Art {
 		rows = r
 		cols = c
 		
-		logmudata = NSData(bytes: [Float](count: rows*cols, repeatedValue: 0), length: sizeof(Float)*rows*cols)
-		logsigmadata = NSData(bytes: [Float](count: rows*cols, repeatedValue: 0), length: sizeof(Float)*rows*cols)
+		logmu = NSData(bytes: [Float](count: rows*cols, repeatedValue: 0), length: sizeof(Float)*rows*cols)
+		logsigma = NSData(bytes: [Float](count: rows*cols, repeatedValue: 0), length: sizeof(Float)*rows*cols)
 		
 		setup()
 		
@@ -107,8 +104,8 @@ extension Art {
 	internal func dump(let label: String? = nil) {
 		if let context: Context = managedObjectContext as? Context where 0 < rows && 0 < cols {
 			
-			let logm: la_object_t = context.toLAObject(logmu, rows: rows, cols: cols)
-			let logs: la_object_t = context.toLAObject(logsigma, rows: rows, cols: cols)
+			let logm: la_object_t = context.toLAObject(logμ, rows: rows, cols: cols)
+			let logs: la_object_t = context.toLAObject(logσ, rows: rows, cols: cols)
 			
 			let cache: [Float] = [Float](count: rows*cols, repeatedValue: 0)
 			
@@ -118,14 +115,14 @@ extension Art {
 			
 			context.join()
 			
-			print(Art.logmukey)
+			print(Art.logμkey)
 			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), la_count_t(cols), logm)
 			(0..<rows).forEach {
 				print(cache[$0*cols..<($0+1)*cols])
 			}
 			
 			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), la_count_t(cols), logs)
-			print(Art.logsigmakey)
+			print(Art.logσkey)
 			(0..<rows).forEach {
 				print(cache[$0*cols..<($0+1)*cols])
 			}
@@ -138,41 +135,59 @@ extension Art {
 extension Art {
 	internal class var shuffleKernel: String { return "artShuffle" }
 	internal class var refreshKernel: String { return "artRefresh" }
+	internal class var uniformKernel: String { return "artUniform" }
 	internal class var adjustKernel: String { return "artAdjust" }
-	internal static func shuffle(let context context: Context, let value: MTLBuffer, let mu: MTLBuffer, let sigma: MTLBuffer, let uniform: MTLBuffer, let rows: Int, let cols: Int) {
+	internal static func uniform(let context context: Context, let χ: MTLBuffer, let rows: Int, let cols: Int, let bs: Int = 64) {
+		let φ: [uint] = [uint](count: 4*bs, repeatedValue: 0)
+		arc4random_buf(UnsafeMutablePointer<Void>(φ), sizeof(uint)*φ.count)
+		context.newComputeCommand(function: uniformKernel) {
+			$0.setBuffer(χ, offset: 0, atIndex: 0)
+			$0.setBytes(φ, length: sizeof(uint)*φ.count, atIndex: 1)
+			$0.setBytes([uint(13), uint(17), uint(5), uint(rows*cols/4)], length: sizeof(uint)*4, atIndex: 2)
+			$0.dispatchThreadgroups(MTLSize(width: bs, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
+		}
+	}
+	internal static func shuffle(let context context: Context, let χ: MTLBuffer, let μ: MTLBuffer, let σ: MTLBuffer, let rows: Int, let cols: Int, let bs: Int = 64) {
 		assert(rows*cols%4==0)
-		arc4random_buf(uniform.contents(), uniform.length)
+		let φ: [uint] = [uint](count: 4*bs, repeatedValue: 0)
+		arc4random_buf(UnsafeMutablePointer<Void>(φ), sizeof(uint)*φ.count)
+		context.newComputeCommand(function: uniformKernel) {
+			$0.setBuffer(χ, offset: 0, atIndex: 0)
+			$0.setBytes(φ, length: sizeof(uint)*φ.count, atIndex: 1)
+			$0.setBytes([uint(13), uint(17), uint(5), uint(rows*cols/4)], length: sizeof(uint)*4, atIndex: 2)
+			$0.dispatchThreadgroups(MTLSize(width: bs, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
+		}
 		context.newComputeCommand(function: shuffleKernel) {
-			$0.setBuffer(value, offset: 0, atIndex: 0)
-			$0.setBuffer(mu, offset: 0, atIndex: 1)
-			$0.setBuffer(sigma, offset: 0, atIndex: 2)
-			$0.setBuffer(uniform, offset: 0, atIndex: 3)
+			$0.setBuffer(χ, offset: 0, atIndex: 0)
+			$0.setBuffer(μ, offset: 0, atIndex: 1)
+			$0.setBuffer(σ, offset: 0, atIndex: 2)
+			$0.setBuffer(χ, offset: 0, atIndex: 3)
 			$0.dispatchThreadgroups(MTLSize(width: rows*cols/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}
 	}
-	internal static func refresh(let context context: Context, let mu: MTLBuffer, let sigma: MTLBuffer, let logmu: MTLBuffer, let logsigma: MTLBuffer, let rows: Int, let cols: Int) {
+	internal static func refresh(let context context: Context, let μ: MTLBuffer, let σ: MTLBuffer, let logμ: MTLBuffer, let logσ: MTLBuffer, let rows: Int, let cols: Int) {
 		assert(rows*cols%4==0)
 		context.newComputeCommand(function: refreshKernel) {
-			$0.setBuffer(mu, offset: 0, atIndex: 0)
-			$0.setBuffer(sigma, offset: 0, atIndex: 1)
-			$0.setBuffer(logmu, offset: 0, atIndex: 2)
-			$0.setBuffer(logsigma, offset: 0, atIndex: 3)
+			$0.setBuffer(μ, offset: 0, atIndex: 0)
+			$0.setBuffer(σ, offset: 0, atIndex: 1)
+			$0.setBuffer(logμ, offset: 0, atIndex: 2)
+			$0.setBuffer(logσ, offset: 0, atIndex: 3)
 			$0.dispatchThreadgroups(MTLSize(width: rows*cols/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}
 	}
-	internal static func adjust(let context context: Context, let logmu: MTLBuffer, let logsigma: MTLBuffer, let parameter: (Float, Float), let rows: Int, let cols: Int) {
+	internal static func adjust(let context context: Context, let logμ: MTLBuffer, let logσ: MTLBuffer, let parameter: (Float, Float), let rows: Int, let cols: Int) {
 		assert(rows*cols%4==0)
 		func schedule() {
-			willChangeValueForKey(logmukey)
-			willChangeValueForKey(logsigmakey)
+			willChangeValueForKey(logμkey)
+			willChangeValueForKey(logσkey)
 		}
 		func complete() {
-			didChangeValueForKey(logsigmakey)
-			didChangeValueForKey(logmukey)
+			didChangeValueForKey(logσkey)
+			didChangeValueForKey(logμkey)
 		}
 		context.newComputeCommand(function: adjustKernel) {
-			$0.setBuffer(logmu, offset: 0, atIndex: 0)
-			$0.setBuffer(logsigma, offset: 0, atIndex: 1)
+			$0.setBuffer(logμ, offset: 0, atIndex: 0)
+			$0.setBuffer(logσ, offset: 0, atIndex: 1)
 			$0.setBytes([parameter.0, parameter.1], length: sizeof(Float)*2, atIndex: 2)
 			$0.dispatchThreadgroups(MTLSize(width: rows*cols/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}

@@ -167,7 +167,7 @@ class EdgeTests: XCTestCase {
 		
 		let η: Float = 0.5
 		
-		Edge.correctFF(context: context, η: η, error: error_mtl, edge: edge_mtl, state: state_mtl, Δ: delta_mtl, rows: o_width, cols: i_width)
+		Edge.correctFF(context: context, η: η, δ: error_mtl, edge: edge_mtl, state: state_mtl, Δ: delta_mtl, rows: o_width, cols: i_width)
 		
 		let obsError_la: la_object_t = context.toLAObject(error_mtl, rows: i_width, cols: 1)
 		
