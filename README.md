@@ -1,5 +1,5 @@
 # C³ framework
-is Chained-Cubic-Cell (previous abbrev.) or Chained-Cauchy-Cell (current abbrev..)  
+is Chained-Cubic-Cell (previous abbrev.) or Chained-Cauchy-Cell (current abbrev.).  
 An implementation of probabilistic multi-layered perceptron.  
   
 All connection weights and biases depend on [Stable distribution](https://wikipedia.org/wiki/Stable_distribution).   
