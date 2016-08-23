@@ -5,7 +5,7 @@ All connection weights and biases depend on [Stable distribution](https://wikipe
 The signal propagation gets randomly determined.  
 [Cauchy distribution](https://wikipedia.org/wiki/Cauchy_distribution) is employed for current implementation.   
   
-Their units can take only binary states, 0 and 1, meaning NOT FIRED and FIRED,   
+Their units can take only binary states, 0 and 1, meaning "not fired" and "fired",   
 similat to general multi-layered perceptron.  
 The common of learning law is similar to the [BP](https://wikipedia.org/wiki/Backpropagation) and [RTRL](https://en.wikipedia.org/wiki/Backpropagation) for general neural networks.  
 They however employ several improved techniques such as sign propagation for binary unit.  
