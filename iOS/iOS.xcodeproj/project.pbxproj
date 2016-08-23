@@ -673,7 +673,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				INFOPLIST_FILE = C3/Info.plist;
+				INFOPLIST_FILE = "$(SRCROOT)/C³/Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
@@ -726,7 +726,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				INFOPLIST_FILE = C3/Info.plist;
+				INFOPLIST_FILE = "$(SRCROOT)/C³/Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
@@ -855,6 +855,7 @@
 				875DD2211D6C75D000A5C250 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		875DD2371D6C760900A5C250 /* Build configuration list for PBXNativeTarget "CIFAR10" */ = {
 			isa = XCConfigurationList;
@@ -863,6 +864,7 @@
 				875DD2391D6C760900A5C250 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		875DD2601D6C764600A5C250 /* Build configuration list for PBXNativeTarget "C3" */ = {
 			isa = XCConfigurationList;
@@ -871,6 +873,7 @@
 				875DD2621D6C764600A5C250 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		875DD2631D6C764600A5C250 /* Build configuration list for PBXNativeTarget "C3Tests" */ = {
 			isa = XCConfigurationList;
@@ -879,6 +882,7 @@
 				875DD2651D6C764600A5C250 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		878C7A651D01AE5E002CDFD1 /* Build configuration list for PBXProject "iOS" */ = {
 			isa = XCConfigurationList;
