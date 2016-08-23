@@ -13,33 +13,27 @@ import CoreData
 public class Cell: NSManagedObject {
 	
 	private enum Ready {
-		case State
-		case Delta
-		case Train
+		case ψ
+		case ϰ
+		case δ
 	}
 	private var ready: Set<Ready> = Set<Ready>()
 	
-	private struct State {
-		let train: MTLBuffer
-		let value: MTLBuffer
-		let error: MTLBuffer
+	private struct Deterministic {
+		let ψ: MTLBuffer
+		let ϰ: MTLBuffer
+		let δ: MTLBuffer
 	}
 	
-	private struct Level {
-		let value: MTLBuffer
-		let mu: MTLBuffer
-		let sigma: MTLBuffer
+	private struct Probabilistic {
+		let χ: MTLBuffer
+		let μ: MTLBuffer
+		let σ: MTLBuffer
 	}
 	
-	private struct Delta {
-		let value: MTLBuffer
-		let mu: MTLBuffer
-		let sigma: MTLBuffer
-	}
-	
-	private var states: RingBuffer<State> = RingBuffer<State>(array: [])
-	private var levels: RingBuffer<Level> = RingBuffer<Level>(array: [])
-	private var deltas: RingBuffer<Delta> = RingBuffer<Delta>(array: [])
+	private var Υ: RingBuffer<Deterministic> = RingBuffer<Deterministic>(array: [])
+	private var Φ: RingBuffer<Probabilistic> = RingBuffer<Probabilistic>(array: [])
+	private var Δ: RingBuffer<Probabilistic> = RingBuffer<Probabilistic>(array: [])
 	
 }
 
@@ -81,25 +75,25 @@ extension Cell {
 			
 			let count: Int = 2
 			
-			states = RingBuffer<State>(array: (0..<count).map{(_)in
-				return State(
-					train: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
-					value: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
-					error: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
+			Υ = RingBuffer<Deterministic>(array: (0..<count).map{(_)in
+				return Deterministic(
+					ψ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
+					ϰ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
+					δ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
 				)
 			})
-			levels = RingBuffer<Level>(array: (0..<count).map{(_)in
-				return Level(
-					value: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
-					mu: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
-					sigma: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
+			Φ = RingBuffer<Probabilistic>(array: (0..<count).map{(_)in
+				return Probabilistic(
+					χ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
+					μ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
+					σ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
 				)
 			})
-			deltas = RingBuffer<Delta>(array: (0..<count).map{(_)in
-				return Delta(
-					value: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
-					mu: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
-					sigma: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
+			Δ = RingBuffer<Probabilistic>(array: (0..<count).map{(_)in
+				return Probabilistic(
+					χ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
+					μ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
+					σ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
 				)
 			})
 		
@@ -116,27 +110,27 @@ extension Cell {
 		
 		if let context: Context = managedObjectContext as? Context where 0 < width {
 			
-			states.progress()
+			Υ.progress()
 			
-			let state: MTLBuffer = states.new.value
-			let train: MTLBuffer = states.new.train
-			let error: MTLBuffer = states.new.error
+			let ψ: MTLBuffer = Υ.new.ψ
+			let ϰ: MTLBuffer = Υ.new.ϰ
+			let δ: MTLBuffer = Υ.new.δ
 			
-			levels.progress()
+			Φ.progress()
 			
-			let value: MTLBuffer = levels.new.value
-			let mu: MTLBuffer = levels.new.mu
-			let sigma: MTLBuffer = levels.new.sigma
+			let χ: MTLBuffer = Φ.new.χ
+			let μ: MTLBuffer = Φ.new.μ
+			let σ: MTLBuffer = Φ.new.σ
 
 			context.newBlitCommand {
-
-				$0.fillBuffer(state, range: NSRange(location: 0, length: state.length), value: 0)
-				$0.fillBuffer(train, range: NSRange(location: 0, length: train.length), value: 0)
-				$0.fillBuffer(error, range: NSRange(location: 0, length: error.length), value: 0)
 				
-				$0.fillBuffer(value, range: NSRange(location: 0, length: value.length), value: 0)
-				$0.fillBuffer(mu, range: NSRange(location: 0, length: mu.length), value: 0)
-				$0.fillBuffer(sigma, range: NSRange(location: 0, length: sigma.length), value: 0)
+				$0.fillBuffer(ψ, range: NSRange(location: 0, length: ψ.length), value: 0)
+				$0.fillBuffer(ϰ, range: NSRange(location: 0, length: ϰ.length), value: 0)
+				$0.fillBuffer(δ, range: NSRange(location: 0, length: δ.length), value: 0)
+				
+				$0.fillBuffer(χ, range: NSRange(location: 0, length: χ.length), value: 0)
+				$0.fillBuffer(μ, range: NSRange(location: 0, length: μ.length), value: 0)
+				$0.fillBuffer(σ, range: NSRange(location: 0, length: σ.length), value: 0)
 				
 			}
 			
@@ -150,16 +144,16 @@ extension Cell {
 		
 		if let context: Context = managedObjectContext as? Context where 0 < width {
 			
-			deltas.progress()
+			Δ.progress()
 			
-			let value: MTLBuffer = deltas.new.value
-			let mu: MTLBuffer = deltas.new.mu
-			let sigma: MTLBuffer = deltas.new.sigma
+			let χ: MTLBuffer = Δ.new.χ
+			let μ: MTLBuffer = Δ.new.μ
+			let σ: MTLBuffer = Δ.new.σ
 			
 			context.newBlitCommand {
-				$0.fillBuffer(value, range: NSRange(location: 0, length: value.length), value: 0)
-				$0.fillBuffer(mu, range: NSRange(location: 0, length: mu.length), value: 0)
-				$0.fillBuffer(sigma, range: NSRange(location: 0, length: sigma.length), value: 0)
+				$0.fillBuffer(χ, range: NSRange(location: 0, length: χ.length), value: 0)
+				$0.fillBuffer(μ, range: NSRange(location: 0, length: μ.length), value: 0)
+				$0.fillBuffer(σ, range: NSRange(location: 0, length: σ.length), value: 0)
 			}
 			
 		} else {
@@ -171,89 +165,89 @@ extension Cell {
 	public func iClear(let ignore: Set<Cell>=[]) {
 		if ignore.contains(self) {
 			
-		} else if ready.contains(.State) {
+		} else if ready.contains(.ϰ) {
 			input.forEach {
 				$0.shuffle()
 				$0.input.iClear(ignore.union([self]))
 			}
 			iRefresh()
-			ready.remove(.State)
+			ready.remove(.ϰ)
 		}
 	}
 	public func oClear(let ignore: Set<Cell>=[]) {
 		if ignore.contains(self) {
 		
-		} else if ready.contains(.Delta) {
+		} else if ready.contains(.δ) {
 			output.forEach {
 				$0.refresh()
 				$0.output.oClear(ignore.union([self]))
 			}
 			oRefresh()
-			ready.remove(.Delta)
+			ready.remove(.δ)
 		}
+		ready.remove(.ψ)
 	}
 	
 	public func collect(let visit visit: Set<Cell>=[]) -> MTLBuffer {
 		
 		if visit.contains(self) {
-			return states.old.value
+			return Υ.old.ϰ
 			
 		} else {
 			
-			if ready.contains(.State) {
-				return states.new.value
+			if ready.contains(.ϰ) {
+				return Υ.new.ϰ
 				
 			} else if let context: Context = managedObjectContext as? Context {
 				
 				input.forEach {
-					$0.collect(level: (levels.new.value, levels.new.mu, levels.new.sigma), visit: visit.union([self]))
+					$0.collect(Φ: (Φ.new.χ, Φ.new.μ, Φ.new.σ), visit: visit.union([self]))
 				}
-				bias.collect(level: (levels.new.value, levels.new.mu, levels.new.sigma))
+				bias.collect(level: (Φ.new.χ, Φ.new.μ, Φ.new.σ))
 				self.dynamicType.activate(context: context,
-				                          state: states.new.value,
-				                          level: levels.new.value,
+				                          Υ: Υ.new.ϰ,
+				                          Φ: Φ.new.χ,
 				                          width: width)
-				ready.insert(.State)
+				ready.insert(.ϰ)
 				
 			} else {
 				assertionFailure(Context.Error.InvalidContext.rawValue)
 				
 			}
 		}
-		return states.new.value
+		return Υ.new.ϰ
 	}
 	public func correct(let η η: Float, let visit: Set<Cell>=[]) -> (MTLBuffer, MTLBuffer, MTLBuffer) {
 		if visit.contains(self) {
-			return(deltas.old.value, deltas.old.mu, deltas.old.sigma)
+			return(Δ.old.χ, Δ.old.μ, Δ.old.σ)
 			
 		} else {
-			if ready.contains(.Delta) {
-				return(deltas.new.value, deltas.new.mu, deltas.new.sigma)
+			if ready.contains(.δ) {
+				return(Δ.new.χ, Δ.new.μ, Δ.new.σ)
 				
-			} else if ready.contains(.State) {
+			} else if ready.contains(.ϰ) {
 				if let context: Context = managedObjectContext as? Context {
 
-					if ready.contains(.Train) {
+					if ready.contains(.ψ) {
 						self.dynamicType.difference(context: context,
-						                            error: states.new.error,
-						                            train: states.new.train,
-						                            state: states.new.value,
+						                            δ: Υ.new.δ,
+						                            ψ: Υ.new.ψ,
+						                            ϰ: Υ.new.ϰ,
 						                            width: width)
 					
 					} else {
 						output.forEach {
-							$0.correct(δ: states.new.error, η: η, state: states.new.value, visit: visit.union([self]))
+							$0.correct(δ: Υ.new.δ, η: η, ϰ: Υ.new.ϰ, visit: visit.union([self]))
 						}
 						
 					}
 					self.dynamicType.derivate(context: context,
-					                          delta: (deltas.new.value, deltas.new.mu, deltas.new.sigma),
-					                          level: (levels.new.value, levels.new.mu, levels.new.sigma),
-					                          error: states.new.error,
+					                          Δ: (Δ.new.χ, Δ.new.μ, Δ.new.σ),
+					                          Φ: (Φ.new.χ, Φ.new.μ, Φ.new.σ),
+					                          δ: Υ.new.δ,
 					                          width: width)
-					ready.insert(.Delta)
-					
-					bias.correct(η: η, Δ: (deltas.new.mu, deltas.new.sigma))
+					bias.correct(η: η, Δ: (Δ.new.μ, Δ.new.σ))
+					ready.insert(.δ)
 					
 				} else {
 					assertionFailure(Context.Error.InvalidContext.rawValue)
@@ -261,7 +255,7 @@ extension Cell {
 				}
 			}
 		}
-		return(deltas.new.value, deltas.new.mu, deltas.new.sigma)
+		return(Δ.new.χ, Δ.new.μ, Δ.new.σ)
 	}
 }
 extension Cell {
@@ -269,7 +263,7 @@ extension Cell {
 		set {
 			if let context: Context = managedObjectContext as? Context {
 				let cache: MTLBuffer = context.newBuffer((0..<width).map{$0<newValue.count ? newValue[$0] ? 1:0:0}, options: .StorageModePrivate)
-				let value: MTLBuffer = states.new.value
+				let value: MTLBuffer = Υ.new.ϰ
 				let size: Int = sizeof(Float) * width
 				
 				assert(size==cache.length)
@@ -278,7 +272,7 @@ extension Cell {
 				context.newBlitCommand(complete: { cache.setPurgeableState(.Empty) }) {
 					$0.copyFromBuffer(cache, sourceOffset: 0, toBuffer: value, destinationOffset: 0, size: size)
 				}
-				ready.insert(.State)
+				ready.insert(.ϰ)
 			} else {
 				assertionFailure(Context.Error.InvalidContext.rawValue)
 				
@@ -288,7 +282,7 @@ extension Cell {
 			collect()
 			if let context: Context = managedObjectContext as? Context {
 				let cache: MTLBuffer = context.newBuffer(length: sizeof(Float)*width, options: .CPUCacheModeDefaultCache)
-				let value: MTLBuffer = states.new.value
+				let value: MTLBuffer = Υ.new.ϰ
 				let size: Int = sizeof(Float) * width
 				
 				assert(size==cache.length)
@@ -314,7 +308,7 @@ extension Cell {
 		set {
 			if let context: Context = managedObjectContext as? Context {
 				let cache: MTLBuffer = context.newBuffer((0..<width).map{$0<newValue.count ? newValue[$0] ? 1:0:0}, options: .StorageModePrivate)
-				let train: MTLBuffer = states.new.train
+				let train: MTLBuffer = Υ.new.ψ
 				let size: Int = sizeof(Float) * width
 				
 				assert(size==cache.length)
@@ -323,7 +317,7 @@ extension Cell {
 				context.newBlitCommand(complete: { cache.setPurgeableState(.Empty) }) {
 					$0.copyFromBuffer(cache, sourceOffset: 0, toBuffer: train, destinationOffset: 0, size: size)
 				}
-				ready.insert(.Train)
+				ready.insert(.ψ)
 			} else {
 				assertionFailure(Context.Error.InvalidContext.rawValue)
 				
@@ -332,7 +326,7 @@ extension Cell {
 		get {
 			if let context: Context = managedObjectContext as? Context {
 				let cache: MTLBuffer = context.newBuffer(length: sizeof(Float)*width, options: .CPUCacheModeDefaultCache)
-				let train: MTLBuffer = states.new.train
+				let train: MTLBuffer = Υ.new.ψ
 				let size: Int = sizeof(Float) * width
 				
 				assert(size==cache.length)
@@ -362,38 +356,38 @@ extension Cell {
 	internal class var differenceKernel: String { return "cellDifference" }
 	internal class var activateKernel: String { return "cellActivate" }
 	internal class var derivateKernel: String { return "cellDerivate" }
-	internal static func difference(let context context: Context, let error: MTLBuffer, let train: MTLBuffer, let state: MTLBuffer, let width: Int) {
+	internal static func difference(let context context: Context, let δ: MTLBuffer, let ψ: MTLBuffer, let ϰ: MTLBuffer, let width: Int) {
 		context.newComputeCommand(function: differenceKernel) {
-			$0.setBuffer(error, offset: 0, atIndex: 0)
-			$0.setBuffer(train, offset: 0, atIndex: 1)
-			$0.setBuffer(state, offset: 0, atIndex: 2)
+			$0.setBuffer(δ, offset: 0, atIndex: 0)
+			$0.setBuffer(ψ, offset: 0, atIndex: 1)
+			$0.setBuffer(ϰ, offset: 0, atIndex: 2)
 			$0.dispatchThreadgroups(MTLSize(width: width/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}
 	}
-	internal static func activate(let context context: Context, let state: MTLBuffer, let level: MTLBuffer, let width: Int) {
+	internal static func activate(let context context: Context, let Υ: MTLBuffer, let Φ: MTLBuffer, let width: Int) {
 		context.newComputeCommand(function: activateKernel) {
-			$0.setBuffer(state, offset: 0, atIndex: 0)
-			$0.setBuffer(level, offset: 0, atIndex: 1)
+			$0.setBuffer(Υ, offset: 0, atIndex: 0)
+			$0.setBuffer(Φ, offset: 0, atIndex: 1)
 			$0.dispatchThreadgroups(MTLSize(width: width/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}
 	}
-	internal static func derivate(let context context: Context, let delta: (MTLBuffer, MTLBuffer, MTLBuffer), let level: (MTLBuffer, MTLBuffer, MTLBuffer), let error: MTLBuffer, let width: Int) {
+	internal static func derivate(let context context: Context, let Δ: (MTLBuffer, MTLBuffer, MTLBuffer), let Φ: (MTLBuffer, MTLBuffer, MTLBuffer), let δ: MTLBuffer, let width: Int) {
 		context.newComputeCommand(function: derivateKernel) {
-			$0.setBuffer(delta.0, offset: 0, atIndex: 0)
-			$0.setBuffer(delta.1, offset: 0, atIndex: 1)
-			$0.setBuffer(delta.2, offset: 0, atIndex: 2)
-			$0.setBuffer(level.0, offset: 0, atIndex: 3)
-			$0.setBuffer(level.1, offset: 0, atIndex: 4)
-			$0.setBuffer(level.2, offset: 0, atIndex: 5)
-			$0.setBuffer(error, offset: 0, atIndex: 6)
+			$0.setBuffer(Δ.0, offset: 0, atIndex: 0)
+			$0.setBuffer(Δ.1, offset: 0, atIndex: 1)
+			$0.setBuffer(Δ.2, offset: 0, atIndex: 2)
+			$0.setBuffer(Φ.0, offset: 0, atIndex: 3)
+			$0.setBuffer(Φ.1, offset: 0, atIndex: 4)
+			$0.setBuffer(Φ.2, offset: 0, atIndex: 5)
+			$0.setBuffer(δ, offset: 0, atIndex: 6)
 			$0.setBytes([Float(M_PI)], length: sizeof(Float), atIndex: 7)
 			$0.dispatchThreadgroups(MTLSize(width: width/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}
 	}
-	internal static func forget(let context context: Context, let error: MTLBuffer, let rate: Float, let width: Int) {
+	internal static func forget(let context context: Context, let error: MTLBuffer, let λ: Float, let width: Int) {
 		context.newComputeCommand(function: "cellForget") {
 			$0.setBuffer(error, offset: 0, atIndex: 0)
-			$0.setBytes([rate], length: sizeof(Float), atIndex: 1)
+			$0.setBytes([λ], length: sizeof(Float), atIndex: 1)
 			$0.dispatchThreadgroups(MTLSize(width: width/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}
 	}
@@ -408,11 +402,11 @@ extension Context {
 		cell.attribute = [:]
 		cell.input = Set<Edge>()
 		cell.output = Set<Edge>()
+		cell.setup()
 		try input.forEach {
 			try newEdge(output: cell, input: $0)
 		}
-		cell.bias = try newBias(width: cell.width)
-		cell.setup()
+		try newBias(output: cell)
 		return cell
 	}
 	public func searchCell( let width width: Int? = nil, let label: String? = nil ) -> [Cell] {
