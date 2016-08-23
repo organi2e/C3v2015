@@ -20,21 +20,21 @@ class GaussTests: XCTestCase {
 			return
 		}
 		
-		let dmean: Float = Float(arc4random_uniform(256))/128.0-1.0
-		let dvariance: Float = Float(1+arc4random_uniform(1024))/256.0
+		let dμ: Float = Float(arc4random_uniform(256))/128.0-1.0
+		let dσ: Float = Float(1+arc4random_uniform(1024))/256.0
 		
-		var ymean: Float = 0.0
-		var yvariance: Float = 0.0
+		var yμ: Float = 0.0
+		var yσ: Float = 0.0
 		
 		let rows: Int = 1024//4*Int(1+arc4random_uniform(256))
 		let cols: Int = 1024//4*Int(1+arc4random_uniform(256))
 		
 		gauss.resize(rows: rows, cols: cols)
-		gauss.adjust(mu: dmean, sigma: dvariance)
+		gauss.adjust(μ: dμ, σ: dσ)
 		
 		gauss.shuffle()
 		
-		let value: la_object_t = context.toLAObject(gauss.value, rows: rows*cols, cols: 1)
+		let value: la_object_t = context.toLAObject(gauss.χ, rows: rows*cols, cols: 1)
 		let cache: [Float] = [Float](count: rows*cols, repeatedValue: 0.0)
 		
 		context.join()
@@ -45,28 +45,28 @@ class GaussTests: XCTestCase {
 		fwrite(cache, sizeof(Float), cache.count, fp)
 		fclose(fp)
 		
-		vDSP_meanv(UnsafePointer<Float>(cache), 1, &ymean, vDSP_Length(rows*cols))
-		XCTAssert(!isnan(ymean))
-		XCTAssert(!isinf(ymean))
+		vDSP_meanv(UnsafePointer<Float>(cache), 1, &yμ, vDSP_Length(rows*cols))
+		XCTAssert(!isnan(yμ))
+		XCTAssert(!isinf(yμ))
 		
 		var dump: Bool = false
 		
-		if 1e-1 < abs(log(ymean)-log(dmean)) {
+		if 1e-2 < abs(log(yμ)-log(dμ)) {
 			dump = true
-			XCTFail("mean: \(ymean) vs \(dmean)")
+			XCTFail("mean: \(yμ) vs \(dμ)")
 		}
 		
-		vDSP_vsadd(UnsafePointer<Float>(cache), 1, [-ymean], UnsafeMutablePointer<Float>(cache), 1, vDSP_Length(rows*cols))
-		vDSP_rmsqv(UnsafePointer<Float>(cache), 1, &yvariance, vDSP_Length(rows*cols))
-		XCTAssert(!isnan(yvariance))
-		XCTAssert(!isinf(yvariance))
+		vDSP_vsadd(UnsafePointer<Float>(cache), 1, [-yμ], UnsafeMutablePointer<Float>(cache), 1, vDSP_Length(rows*cols))
+		vDSP_rmsqv(UnsafePointer<Float>(cache), 1, &yσ, vDSP_Length(rows*cols))
+		XCTAssert(!isnan(yσ))
+		XCTAssert(!isinf(yσ))
 		
-		if 1e-1 < abs(2.0*log(yvariance)-log(dvariance)) {
+		if 1e-2 < abs(log(yσ)-log(dσ)) {
 			dump = true
-			XCTFail("var.: \(yvariance) vs \(dvariance)")
+			XCTFail("var.: \(yσ) vs \(dσ)")
 		}
 		
-		if false {
+		if dump {
 			(0..<rows).forEach {
 				print(cache[$0*rows..<$0*rows+cols])
 			}

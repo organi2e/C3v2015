@@ -19,9 +19,9 @@ float4 gaussPDF(float4 const mu, float4 const sigma, float const M_PI) {
 kernel void gaussShuffle(device float4 * const value [[ buffer(0) ]],
 						 device const float4 * const mu [[ buffer(1) ]],
 						 device const float4 * const sigma [[ buffer(2) ]],
-						 device const ushort4 * const seed [[ buffer(3) ]],
+						 device const float4 * const uniform [[ buffer(3) ]],
 						 uint const n [[ thread_position_in_grid ]],
 						 uint const N [[ threads_per_grid ]]) {
-	float4 u = (float4(seed[n]) + 1.0) / 65536.0;
+	float4 u = uniform[n];
 	value[n] = mu[n] + sigma[n] * float4(cospi(2.0*u.xy), sinpi(2.0*u.xy)).xzyw * sqrt(-2.0*log(u.zw).xxyy);
 }

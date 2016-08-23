@@ -2,8 +2,8 @@
 <model userDefinedModelVersionIdentifier="" type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="10174" systemVersion="15G31" minimumToolsVersion="Xcode 7.0">
     <entity name="Art" isAbstract="YES" syncable="YES">
         <attribute name="cols" attributeType="Integer 64" syncable="YES"/>
-        <attribute name="logmudata" attributeType="Binary" allowsExternalBinaryDataStorage="YES" syncable="YES"/>
-        <attribute name="logsigmadata" attributeType="Binary" allowsExternalBinaryDataStorage="YES" syncable="YES"/>
+        <attribute name="logmu" attributeType="Binary" allowsExternalBinaryDataStorage="YES" syncable="YES"/>
+        <attribute name="logsigma" attributeType="Binary" allowsExternalBinaryDataStorage="YES" syncable="YES"/>
         <attribute name="rows" attributeType="Integer 64" syncable="YES"/>
     </entity>
     <entity name="Bias" representedClassName="C3.Bias" parentEntity="Cauchy" syncable="YES">

@@ -24,7 +24,7 @@ extension Feedback {
 	func collect() -> (MTLBuffer, MTLBuffer, MTLBuffer) {
 		//let state: la_object_t = cell.state.past.value
 		return(
-			value, value, value
+			χ, χ, χ
 		)
 	}
 	func correct(let eps eps: Float, let mean deltamean: la_object_t, let variance deltavariance: la_object_t, let state: la_object_t, let dydv: la_object_t, let lambda: la_object_t? = nil) {

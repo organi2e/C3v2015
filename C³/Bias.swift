@@ -37,7 +37,7 @@ extension Bias {
 	}
 	internal func collect(let level level: (MTLBuffer, MTLBuffer, MTLBuffer)) {
 		if let context: Context = managedObjectContext as? Context {
-			self.dynamicType.collect(context: context, level: level, bias: (value, mu, sigma), rows: rows, cols: cols)
+			self.dynamicType.collect(context: context, level: level, bias: (χ, μ, σ), rows: rows, cols: cols)
 			
 		} else {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
@@ -47,19 +47,19 @@ extension Bias {
 	internal func correct(let η η: Float, let Δ: (MTLBuffer, MTLBuffer)) {
 		if let context: Context = managedObjectContext as? Context {
 			func schedule() {
-				willChangeValueForKey(self.dynamicType.logmukey)
-				willChangeValueForKey(self.dynamicType.logsigmakey)
+				willChangeValueForKey(self.dynamicType.logμkey)
+				willChangeValueForKey(self.dynamicType.logσkey)
 			}
 			func complete() {
-				didChangeValueForKey(self.dynamicType.logsigmakey)
-				didChangeValueForKey(self.dynamicType.logmukey)
+				didChangeValueForKey(self.dynamicType.logσkey)
+				didChangeValueForKey(self.dynamicType.logμkey)
 			}
 			if 0 < grads.length {
 				grads.progress()
 				self.dynamicType.gradientEye(context: context, grad: (grads.new.μ, grads.new.σ), rows: rows, cols: cols)
-				self.dynamicType.correct(context: context, η: η, bias: (logmu, logsigma, mu, sigma), grad: (grads.new.μ, grads.new.σ), Δ: Δ, rows: rows, cols: cols, schedule: schedule, complete: complete)
+				self.dynamicType.correct(context: context, η: η, bias: (logμ, logσ, μ, σ), grad: (grads.new.μ, grads.new.σ), Δ: Δ, rows: rows, cols: cols, schedule: schedule, complete: complete)
 			} else {
-				self.dynamicType.correctLightWeight(context: context, η: η, bias: (logmu, logsigma, mu, sigma), Δ: Δ, rows: rows, cols: cols, schedule: schedule, complete: complete)
+				self.dynamicType.correctLightWeight(context: context, η: η, bias: (logμ, logσ, μ, σ), Δ: Δ, rows: rows, cols: cols, schedule: schedule, complete: complete)
 			}
 			
 		} else {

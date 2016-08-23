@@ -21,14 +21,14 @@ class CauchyTests: XCTestCase {
 			return
 		}
 		
-		let d_mu: Float = Float(arc4random_uniform(1024))/64.0
-		let d_sigma: Float = Float(256+arc4random_uniform(256))/256.0
+		let dμ: Float = Float(arc4random_uniform(1024))/64.0
+		let dσ: Float = Float(256+arc4random_uniform(256))/256.0
 		
 		let rows: Int = 64//*Int(1+arc4random_uniform(256))
 		let cols: Int = 64//*Int(1+arc4random_uniform(256))
 		
 		art.resize(rows: rows, cols: cols)
-		art.adjust(mu: d_mu, sigma: d_sigma)
+		art.adjust(μ: dμ, σ: dσ)
 		
 		let eps: Float = 0.5
 		let K: Int = rows * cols
@@ -45,14 +45,14 @@ class CauchyTests: XCTestCase {
 		
 		for k in 0..<1024 {
 
-			let value: la_object_t = context.toLAObject(art.value, rows: rows*cols, cols: 1)
+			let χ: la_object_t = context.toLAObject(art.χ, rows: rows*cols, cols: 1)
 			
 			let X: [Float] = [Float](count: rows*cols, repeatedValue: 0.0)
 
 			context.join()
 			art.shuffle()
 			
-			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(X), 1, value)
+			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(X), 1, χ)
 			
 			if k == 0 {
 				let fp = fopen("/tmp/cauchy.raw", "wb")
@@ -108,15 +108,15 @@ class CauchyTests: XCTestCase {
 		}
 		
 		XCTAssert(!isinf(est.x))
-		XCTAssert(!isinf(est.x))
-		if abs(log(est.x)-log(d_mu)) > 0.1 {
-			XCTFail("\(est.x) vs \(d_mu)")
+		XCTAssert(!isnan(est.x))
+		if abs(log(est.x)-log(dμ)) > 0.1 {
+			XCTFail("\(est.x) vs \(dμ)")
 		}
 		
 		XCTAssert(!isinf(est.y))
-		XCTAssert(!isinf(est.y))
-		if abs(log(est.y)-log(d_sigma)) > 0.5 {
-			XCTFail("\(est.y) vs \(d_sigma)")
+		XCTAssert(!isnan(est.y))
+		if abs(log(est.y)-log(dσ)) > 0.5 {
+			XCTFail("\(est.y) vs \(dσ)")
 		}
 		
 	}

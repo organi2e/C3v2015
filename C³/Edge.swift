@@ -21,7 +21,7 @@ extension Edge {
 	func collect(let level level: (MTLBuffer, MTLBuffer, MTLBuffer), let visit: Set<Cell>) {
 		let state: MTLBuffer = input.collect(visit: visit)
 		if let context: Context = managedObjectContext as? Context {
-			self.dynamicType.collect(context: context, level: level, edge: (value, mu, sigma), state: state, rows: rows, cols: cols)
+			self.dynamicType.collect(context: context, level: level, edge: (χ, μ, σ), state: state, rows: rows, cols: cols)
 			
 		} else {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
@@ -29,18 +29,18 @@ extension Edge {
 		}
 		
 	}
-	internal func correct(let error error: MTLBuffer, let η: Float, let state: MTLBuffer, let visit: Set<Cell>) {
+	internal func correct(let δ δ: MTLBuffer, let η: Float, let state: MTLBuffer, let visit: Set<Cell>) {
 		let Δ: (MTLBuffer, MTLBuffer, MTLBuffer) = output.correct(η: η, visit: visit)
 		if let context: Context = managedObjectContext as? Context {
 			func schedule() {
-				willChangeValueForKey(self.dynamicType.logmukey)
-				willChangeValueForKey(self.dynamicType.logsigmakey)
+				willChangeValueForKey(self.dynamicType.logμkey)
+				willChangeValueForKey(self.dynamicType.logσkey)
 			}
 			func complete() {
-				didChangeValueForKey(self.dynamicType.logsigmakey)
-				didChangeValueForKey(self.dynamicType.logmukey)
+				didChangeValueForKey(self.dynamicType.logσkey)
+				didChangeValueForKey(self.dynamicType.logμkey)
 			}
-			self.dynamicType.correctFF(context: context, η: η, error: error, edge: (logmu, logsigma, value, mu, sigma), state: state, Δ: Δ, rows: rows, cols: cols, schedule: schedule, complete: complete)
+			self.dynamicType.correctFF(context: context, η: η, δ: δ, edge: (logμ, logσ, χ, μ, σ), state: state, Δ: Δ, rows: rows, cols: cols, schedule: schedule, complete: complete)
 
 		} else {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
@@ -63,7 +63,7 @@ extension Edge {
 			$0.setBuffer(edge.2, offset: 0, atIndex: 5)
 			$0.setBuffer(state, offset: 0, atIndex: 6)
 			
-			$0.setBytes([uint(rows/4), uint(cols/4)], length: 2*sizeof(uint), atIndex: 7)
+			$0.setBytes([uint(rows/4), uint(cols/4)], length: sizeof(uint)*2, atIndex: 7)
 			
 			$0.setThreadgroupMemoryLength(sizeof(Float)*4*4*bs, atIndex: 0)
 			$0.setThreadgroupMemoryLength(sizeof(Float)*4*4*bs, atIndex: 1)
@@ -73,9 +73,9 @@ extension Edge {
 			
 		}
 	}
-	internal static func correctFF(let context context: Context, let η: Float, let error: MTLBuffer, let edge: (MTLBuffer, MTLBuffer, MTLBuffer, MTLBuffer, MTLBuffer), let state: MTLBuffer, let Δ: (MTLBuffer, MTLBuffer, MTLBuffer), let rows: Int, let cols: Int, let bs: Int = 4, let schedule: (()->())?=nil, let complete:(()->())?=nil) {
+	internal static func correctFF(let context context: Context, let η: Float, let δ: MTLBuffer, let edge: (MTLBuffer, MTLBuffer, MTLBuffer, MTLBuffer, MTLBuffer), let state: MTLBuffer, let Δ: (MTLBuffer, MTLBuffer, MTLBuffer), let rows: Int, let cols: Int, let bs: Int = 4, let schedule: (()->())?=nil, let complete:(()->())?=nil) {
 		context.newComputeCommand(function: correctFFKernel, schedule: schedule, complete: complete) {
-			$0.setBuffer(error, offset: 0, atIndex: 0)
+			$0.setBuffer(δ, offset: 0, atIndex: 0)
 			$0.setBuffer(edge.0, offset: 0, atIndex: 1)
 			$0.setBuffer(edge.1, offset: 0, atIndex: 2)
 			$0.setBuffer(state, offset: 0, atIndex: 3)
@@ -99,7 +99,7 @@ extension Context {
 			throw Error.CoreData.InsertionFails(entity: Cell.className())
 		}
 		edge.resize(rows: output.width, cols: input.width)
-		edge.adjust(mu: 0, sigma: 1/Float(input.width))//Xavier's initial value
+		edge.adjust(μ: 0, σ: 1/Float(input.width))
 		edge.output = output
 		edge.input = input
 		return edge
