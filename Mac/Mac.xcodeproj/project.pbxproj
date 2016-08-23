@@ -37,7 +37,7 @@
 		875DD1C11D6AD8A900A5C250 /* Misc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 875DD1C01D6AD8A900A5C250 /* Misc.swift */; };
 		875DD1C31D6C11B600A5C250 /* ArtTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 875DD1C21D6C11B600A5C250 /* ArtTests.swift */; };
 		875DD1DA1D6C5FC800A5C250 /* CIFAR10.h in Headers */ = {isa = PBXBuildFile; fileRef = 875DD1D91D6C5FC800A5C250 /* CIFAR10.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		875DD1E01D6C5FDF00A5C250 /* CIFAR10.swift in Frameworks */ = {isa = PBXBuildFile; fileRef = 875DD1DF1D6C5FDF00A5C250 /* CIFAR10.swift */; };
+		875DD1E01D6C5FDF00A5C250 /* CIFAR10.swift in Sources */ = {isa = PBXBuildFile; fileRef = 875DD1DF1D6C5FDF00A5C250 /* CIFAR10.swift */; };
 		875DD1EC1D6C61A100A5C250 /* data_batch_1.bin in Resources */ = {isa = PBXBuildFile; fileRef = 875DD1EB1D6C61A100A5C250 /* data_batch_1.bin */; };
 		875DD1EE1D6C61A400A5C250 /* data_batch_2.bin in Resources */ = {isa = PBXBuildFile; fileRef = 875DD1ED1D6C61A400A5C250 /* data_batch_2.bin */; };
 		875DD1F01D6C61A600A5C250 /* data_batch_3.bin in Resources */ = {isa = PBXBuildFile; fileRef = 875DD1EF1D6C61A600A5C250 /* data_batch_3.bin */; };
@@ -273,7 +273,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				875DD1E01D6C5FDF00A5C250 /* CIFAR10.swift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -888,6 +887,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				875DD1E01D6C5FDF00A5C250 /* CIFAR10.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

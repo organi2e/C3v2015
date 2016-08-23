@@ -9,10 +9,13 @@ T10K_IMAGE="t10k-labels-idx1-ubyte"
 
 pushd $(dirname $0)
 
-curl "${DIR}/${TRAIN_IMAGE}.gz" | gunzip > "${TRAIN_IMAGE}"
-curl "${DIR}/${TRAIN_LABEL}.gz" | gunzip > "${TRAIN_LABEL}"
-
-curl "${DIR}/${T10K_IMAGE}.gz" | gunzip > "${T10K_IMAGE}"
-curl "${DIR}/${T10K_LABEL}.gz" | gunzip > "${T10K_LABEL}"
+for FILE in $TRAIN_LABEL $TRAIN_IMAGE $T10K_LABEL $T10K_IMAGE;
+do
+	if [ ! -e $FILE ];
+	then
+		curl "${DIR}/${FILE}.gz" | gunzip > "${FILE}" 
+		echo "${DIR}/${FILE}"
+	fi
+done
 
 popd

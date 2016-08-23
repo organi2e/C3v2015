@@ -5,27 +5,32 @@
 //  Created by Kota Nakano on 5/23/16.
 //
 //
-import Metal
 import Foundation
-public class Image {
-	public let rows: Int
-	public let cols: Int
-	public let label: UInt8
-	public let pixel: [UInt8]
-	private init(let pixel: [UInt8], let label: UInt8, let rows: Int, let cols: Int) {
-		self.label = label
-		self.pixel = pixel
-		self.rows = rows
-		self.cols = cols
+public class MNIST {
+	public struct Image {
+		public let rows: Int
+		public let cols: Int
+		public let label: UInt8
+		public let pixel: [UInt8]
+		public var bgra: [UInt8] {
+			return(0..<rows*cols).map{[pixel[$0], pixel[$0], pixel[$0], 255]}.reduce([]){$0.0+$0.1}
+		}
+		public var meta: String {
+			return String(label)
+		}
+		private init(let pixel: [UInt8], let label: UInt8, let rows: Int, let cols: Int) {
+			self.label = label
+			self.pixel = pixel
+			self.rows = rows
+			self.cols = cols
+		}
 	}
 	private static func load(let image image: String, let label: String) -> [Image] {
-		var result: [Image] = []
 		func dataFromBundle(let path: String) -> NSData? {
-			var result: NSData?
-			if let url: NSURL = NSBundle(forClass: Image.self).URLForResource(path, withExtension: nil), data: NSData = NSData(contentsOfURL: url) {
-				result = data
+			if let url: NSURL = NSBundle(forClass: MNIST.self).URLForResource(path, withExtension: nil), data: NSData = NSData(contentsOfURL: url) {
+				return data
 			}
-			return result
+			return nil
 		}
 		if let data: NSData = dataFromBundle(image) where sizeof(UInt32)*4<data.length {
 			let(headdata, bodydata) = data.split(sizeof(UInt32)*4)
@@ -42,14 +47,14 @@ public class Image {
 				if length == labelsbody.count {
 					let pixels: [[UInt8]] = pixelsbody.chunk(rows*cols)
 					let labels: [UInt8] = labelsbody
-					result = zip(pixels, labels).map{Image(pixel: $0, label: $1, rows: rows, cols: cols)}
+					return zip(pixels, labels).map { Image(pixel: $0, label: $1, rows: rows, cols: cols) }
 				}
 			}
 		}
-		return result
+		return []
 	}
-	public static let train: [Image] = Image.load(image: "train-images.idx3-ubyte", label: "train-labels.idx1-ubyte")
-	public static let t10k: [Image] = Image.load(image: "t10k-images.idx3-ubyte", label: "t10k-labels.idx1-ubyte")
+	public static let train: [Image] = MNIST.load(image: "train-images.idx3-ubyte", label: "train-labels.idx1-ubyte")
+	public static let t10k: [Image] = MNIST.load(image: "t10k-images.idx3-ubyte", label: "t10k-labels.idx1-ubyte")
 }
 extension NSData {
 	func split(let cursor: Int) -> (NSData, NSData){
