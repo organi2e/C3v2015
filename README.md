@@ -1,5 +1,7 @@
 # C³ framework
 is Chained-Cubic-Cell (previous abbrev.) or Chained-Cauchy-Cell (current abbrev.).  
+  
+#### Abstract
 An implementation of probabilistic multi-layered perceptron.  
   
 All connection weights and biases are [random variable](https://wikipedia.org/wiki/Random_variable) depending on [Stable distribution](https://wikipedia.org/wiki/Stable_distribution) in this model.   
