@@ -2,7 +2,8 @@
 C³, Chained-Cauchy-Cell.  
 An implementation of probabilistic multi-layered perceptron.  
 All connection weights and biases depend on [Stable distribution](https://wikipedia.org/wiki/Stable_distribution).   
-In current case, they depend on [Cauchy distribution](https://wikipedia.org/wiki/Cauchy_distribution).   
+The signal propagation gets randomly determined.  
+In current implementation, they depend on [Cauchy distribution](https://wikipedia.org/wiki/Cauchy_distribution).   
   
 Their cells can take only binary states, 0 and 1, meaning NOT FIRED and FIRED,   
 similat to general multi-layered perceptron.  
