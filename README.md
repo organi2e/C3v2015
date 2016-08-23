@@ -1,5 +1,5 @@
 # C³ framework
-is Chained-Cubic-Cell(origin) or Chained-Cauchy-Cell(current).  
+is Chained-Cubic-Cell (origin) or Chained-Cauchy-Cell (current).  
 An implementation of probabilistic multi-layered perceptron.  
 All connection weights and biases depend on [Stable distribution](https://wikipedia.org/wiki/Stable_distribution).   
 The signal propagation gets randomly determined.  
