@@ -7,7 +7,7 @@ In current implementation, [Cauchy distribution](https://wikipedia.org/wiki/Cauc
   
 Their cells can take only binary states, 0 and 1, meaning NOT FIRED and FIRED,   
 similat to general multi-layered perceptron.  
-The common of learning law similar to the [BP](https://wikipedia.org/wiki/Backpropagation) and [RTRL](https://en.wikipedia.org/wiki/Backpropagation) for general neural networks.  
+The common of learning law is similar to the [BP](https://wikipedia.org/wiki/Backpropagation) and [RTRL](https://en.wikipedia.org/wiki/Backpropagation) for general neural networks.  
 They however employ several improved techniques such as sign propagation for binary statement.  
 
 This framework employes [Metal](https://developer.apple.com/library/mac/documentation/Metal/Reference/MetalFrameworkReference/) and [Core Data](https://developer.apple.com/library/watchos/documentation/Cocoa/Conceptual/CoreData/).  
