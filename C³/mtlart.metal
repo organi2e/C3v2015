@@ -45,21 +45,21 @@ kernel void artUniform(device float4 * const value [[ buffer(0) ]],
 	uint const b = param.y;
 	uint const c = param.z;
 	uint const K = param.w;
-	uint4 seq = select(seeds[t], 0xffffffff, seeds[t]==0);//avoid 0
+	uint4 seq = select(seeds[t], -1, seeds[t]==0);//avoid 0
 	for ( uint k = t ; k < K ; k += T ) {
 		seq ^= seq >> a;
 		seq ^= seq << b;
 		seq ^= seq >> c;
-		value[k] = float4(seq)/4294967296.0;//0 < , < 1
+		value[k] = float4(seq)/4294967296.0;
 	}
 }
 kernel void artShuffle(device float4 * const value [[ buffer(0) ]],
 					   device const float4 * const mu [[ buffer(1) ]],
 					   device const float4 * const sigma [[ buffer(2) ]],
-					   device const float4 * const seed [[ buffer(3) ]],
+					   device const float4 * const uniform [[ buffer(3) ]],
 					   uint const n [[ thread_position_in_grid ]],
 					   uint const N [[ threads_per_grid ]]) {
-	value[n] = mu[n] + sigma[n] * seed[n];
+	value[n] = mu[n] + sigma[n] * uniform[n];
 }
 kernel void artRefresh(device float4 * const mu [[ buffer(0) ]],
 					   device float4 * const sigma [[ buffer(1) ]],

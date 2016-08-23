@@ -15,7 +15,7 @@ class CellTests: XCTestCase {
 	static let f: Bool = false
 	static let T: Bool = true
 	
-	let η: Float = 1 / 2.0
+	let η: Float = 1 / 16.0
 	
 	//let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f]]
 	let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,f,T,T], [f,T,f,f]]
@@ -32,8 +32,8 @@ class CellTests: XCTestCase {
 		if context.searchCell(label: "I").isEmpty || context.searchCell(label: "O").isEmpty {
 			do {
 				let I: Cell = try context.newCell(width: 4, label: "I")
-				let H: Cell = try context.newCell(width: 16, recur: false, buffer: false, label: "H")
-				let G: Cell = try context.newCell(width: 16, recur: false, buffer: false, label: "G")
+				let H: Cell = try context.newCell(width: 64, recur: false, buffer: false, label: "H")
+				let G: Cell = try context.newCell(width: 64, recur: false, buffer: false, label: "G")
 				let O: Cell = try context.newCell(width: 4, label: "O")
 				
 				try context.chainCell(output: O, input: G)
@@ -58,7 +58,7 @@ class CellTests: XCTestCase {
 				I: Cell = context.searchCell(label: "I").last,
 				O: Cell = context.searchCell(label: "O").last
 			{
-				(0..<256).forEach {
+				(0..<1024).forEach {
 					
 					let ID: [Bool] = IS[$0%IS.count]
 					let OD: [Bool] = OS[$0%OS.count]

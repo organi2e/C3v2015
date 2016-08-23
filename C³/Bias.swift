@@ -126,11 +126,13 @@ extension Bias {
 	}
 }
 extension Context {
-	internal func newBias(let width width: Int) throws -> Bias {
+	internal func newBias(let output output: Cell) throws -> Bias {
 		guard let bias: Bias = new() else {
 			throw Error.CoreData.InsertionFails(entity: Bias.className())
 		}
-		bias.resize(rows: width, cols: 1)
+		bias.resize(rows: output.width, cols: 1)
+		bias.cell = output
+		bias.setup()
 		return bias
 	}
 }

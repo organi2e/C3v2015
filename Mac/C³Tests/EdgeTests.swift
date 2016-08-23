@@ -69,7 +69,7 @@ class EdgeTests: XCTestCase {
 		)
 
 		measureBlock {
-			Edge.collect(context: self.context, level: level_mtl, edge: edge_mtl, state: state_mtl, rows: rows, cols: cols)
+			Edge.collect(context: self.context, Φ: level_mtl, edge: edge_mtl, ϰ: state_mtl, rows: rows, cols: cols)
 			self.context.join()
 		}
 		
@@ -103,7 +103,7 @@ class EdgeTests: XCTestCase {
 		}
 		
 	}
-	func testCorrectFF() {
+	func testCorrectLightWeight() {
 		
 		let o_width: Int = 4 * Int(1+arc4random_uniform(255))
 		let i_width: Int = 4 * Int(1+arc4random_uniform(255))
@@ -167,7 +167,7 @@ class EdgeTests: XCTestCase {
 		
 		let η: Float = 0.5
 		
-		Edge.correctFF(context: context, η: η, δ: error_mtl, edge: edge_mtl, state: state_mtl, Δ: delta_mtl, rows: o_width, cols: i_width)
+		Edge.correctLightWeight(context: context, η: η, δ: error_mtl, edge: edge_mtl, ϰ: state_mtl, Δ: delta_mtl, rows: o_width, cols: i_width)
 		
 		let obsError_la: la_object_t = context.toLAObject(error_mtl, rows: i_width, cols: 1)
 		

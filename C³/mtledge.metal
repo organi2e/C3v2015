@@ -79,23 +79,23 @@ kernel void edgeCollect(device float4 * level_value [[ buffer(0) ]],
 	}
 	
 }
-kernel void edgeCorrectFF(device float4 * const input_error [[ buffer(0) ]],
-						  device float4x4 * const edge_logmu [[ buffer(1) ]],
-						  device float4x4 * const edge_logsigma [[ buffer(2) ]],
-						  device const float4 * const input_state [[ buffer(3) ]],
-						  device const float4x4 * const edge_value [[ buffer(4) ]],
-						  device const float4x4 * const edge_mu [[ buffer(5) ]],
-						  device const float4x4 * const edge_sigma [[ buffer(6) ]],
-						  device const float4 * const delta_value [[ buffer(7) ]],
-						  device const float4 * const delta_mu [[ buffer(8) ]],
-						  device const float4 * const delta_sigma [[ buffer(9) ]],
-						  constant const float & eps [[ buffer(10) ]],
-						  constant const uint2 & dim [[ buffer(11) ]],
-						  threadgroup float4 * const accumulator [[ threadgroup(0) ]],
-						  uint const g [[ threadgroup_position_in_grid ]],
-						  uint const G [[ threadgroups_per_grid ]],
-						  uint const t [[ thread_position_in_threadgroup ]],
-						  uint const T [[ threads_per_threadgroup ]])
+kernel void edgeCorrectLightWeight(device float4 * const input_error [[ buffer(0) ]],
+								   device float4x4 * const edge_logmu [[ buffer(1) ]],
+								   device float4x4 * const edge_logsigma [[ buffer(2) ]],
+								   device const float4 * const input_state [[ buffer(3) ]],
+								   device const float4x4 * const edge_value [[ buffer(4) ]],
+								   device const float4x4 * const edge_mu [[ buffer(5) ]],
+								   device const float4x4 * const edge_sigma [[ buffer(6) ]],
+								   device const float4 * const delta_value [[ buffer(7) ]],
+								   device const float4 * const delta_mu [[ buffer(8) ]],
+								   device const float4 * const delta_sigma [[ buffer(9) ]],
+								   constant const float & eps [[ buffer(10) ]],
+								   constant const uint2 & dim [[ buffer(11) ]],
+								   threadgroup float4 * const accumulator [[ threadgroup(0) ]],
+								   uint const g [[ threadgroup_position_in_grid ]],
+								   uint const G [[ threadgroups_per_grid ]],
+								   uint const t [[ thread_position_in_threadgroup ]],
+								   uint const T [[ threads_per_threadgroup ]])
 {
 	uint const M = dim.x;
 	//uint const N = dim.y;
