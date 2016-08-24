@@ -79,9 +79,7 @@ extension Cell {
 
 extension Cell {
 	internal func setup(let context: Context) {
-		
 		let count: Int = 2
-		
 		Υ = RingBuffer<Deterministic>(array: (0..<count).map{(_)in
 			return Deterministic(
 				ψ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
@@ -174,6 +172,7 @@ extension Cell {
 			iRefresh()
 		}
 	}
+	
 	public func oClear() {
 		if ready.contains(.δ) {
 			ready.remove(.δ)
@@ -186,28 +185,28 @@ extension Cell {
 	}
 	
 	public func collect() -> MTLBuffer {
-		if ready.contains(.ϰ) {
-			return Υ.new.ϰ
-		} else if let context: Context = managedObjectContext as? Context {
-			ready.insert(.ϰ)
-			input.forEach {
-				$0.collect(Φ: (Φ.new.χ, Φ.new.μ, Φ.new.σ))
+		if let context: Context = managedObjectContext as? Context {
+			if !ready.contains(.ϰ) {
+				ready.insert(.ϰ)
+				input.forEach {
+					$0.collect(Φ: (Φ.new.χ, Φ.new.μ, Φ.new.σ))
+				}
+				bias.collect(level: (Φ.new.χ, Φ.new.μ, Φ.new.σ))
+				self.dynamicType.activate(context: context,
+				                          Υ: Υ.new.ϰ,
+				                          Φ: Φ.new.χ,
+				                          width: width)
 			}
-			bias.collect(level: (Φ.new.χ, Φ.new.μ, Φ.new.σ))
-			self.dynamicType.activate(context: context,
-			                          Υ: Υ.new.ϰ,
-			                          Φ: Φ.new.χ,
-			                          width: width)
 		} else {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
 		}
 		return Υ.new.ϰ
 	}
+	
 	public func correct(let η η: Float, let visit: Set<Cell>=[]) -> (MTLBuffer, MTLBuffer, MTLBuffer) {
-		if ready.contains(.δ) {
-			return(Δ.new.χ, Δ.new.μ, Δ.new.σ)
-		} else if ready.contains(.ϰ) {
-			if let context: Context = managedObjectContext as? Context {
+		if let context: Context = managedObjectContext as? Context {
+			if !ready.contains(.δ) {
+				ready.insert(.δ)
 				if ready.contains(.ψ) {
 					self.dynamicType.difference(context: context,
 					                            δ: Υ.new.δ,
@@ -225,10 +224,9 @@ extension Cell {
 				                          δ: Υ.new.δ,
 				                          width: width)
 				bias.correct(η: η, Δ: (Δ.new.μ, Δ.new.σ))
-				ready.insert(.δ)
-			} else {
-				assertionFailure(Context.Error.InvalidContext.rawValue)
 			}
+		} else {
+			assertionFailure(Context.Error.InvalidContext.rawValue)
 		}
 		return(Δ.new.χ, Δ.new.μ, Δ.new.σ)
 	}

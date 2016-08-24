@@ -14,8 +14,8 @@ class BlasTests: XCTestCase {
 	let ATTR: la_attribute_t = la_attribute_t(LA_DEFAULT_ATTRIBUTES)
 	let context: Context = try!Context()
 	func testArray() {
-		let rows: Int = 128
-		let cols: Int = 128
+		let rows: Int = 1024
+		let cols: Int = 1024
 		let src: [Float] = (0..<rows*cols).map {(_)in (Float(arc4random())+1) / (Float(UInt32.max)+1)}
 		
 		let matrix: MTLBuffer = context.fromRowMajorMatrix(src, rows: rows, cols: cols)
@@ -71,10 +71,9 @@ class BlasTests: XCTestCase {
 		}
 	}
 	*/
-	/*
-	func testCPUGEMV() {
-		let rows: Int = 256
-		let cols: Int = 256
+	func testGEMVLA() {
+		let rows: Int = 1024
+		let cols: Int = 1024
 		
 		let LA: la_object_t = la_matrix_from_float_buffer((0..<rows*cols).map{(_)in Float(arc4random_uniform(256))/Float(128.0)-1.0}, la_count_t(rows), la_count_t(cols), la_count_t(cols), NOHINT, ATTR)
 		let LB: la_object_t = la_matrix_from_float_buffer((0..<rows).map{(_)in Float(arc4random_uniform(256))/Float(128.0)-1.0}, la_count_t(rows), la_count_t(1), la_count_t(1), NOHINT, ATTR)
@@ -89,11 +88,11 @@ class BlasTests: XCTestCase {
 		}
 		
 	}
-	func testCPUGEMM() {
+	func testGEMMLA() {
 		
-		let M: Int = 200
-		let K: Int = 400
-		let N: Int = 800
+		let M: Int = 1024
+		let K: Int = 1024
+		let N: Int = 1024
 		
 		let LA: la_object_t = la_matrix_from_float_buffer((0..<M*K).map{(_)in Float(arc4random_uniform(256))/128.0-1.0}, la_count_t(M), la_count_t(K), la_count_t(K), NOHINT, ATTR)
 		let LB: la_object_t = la_matrix_from_float_buffer((0..<K*N).map{(_)in Float(arc4random_uniform(256))/128.0-1.0}, la_count_t(K), la_count_t(N), la_count_t(N), NOHINT, ATTR)
@@ -101,24 +100,23 @@ class BlasTests: XCTestCase {
 		let cache: [Float] = [Float](count: M*N, repeatedValue: 0.0)
 		
 		measureBlock {
-			(0..<4).forEach {(_)in
+			(0..<16).forEach {(_)in
 				let LC: la_object_t = la_matrix_product(LA, LB)
 				la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), la_count_t(N), LC)
 			}
 		}
 	}
-	*/
-	func testMTLOuter() {
-		let rows: Int = 4 * Int(1+arc4random_uniform(256))
-		let cols: Int = 4 * Int(1+arc4random_uniform(256))
+	func testOuterMTL() {
+		let rows: Int = 1024
+		let cols: Int = 1024
 		
 		let LA: la_object_t = la_matrix_from_float_buffer((0..<rows).map{(_)in Float(arc4random_uniform(256))/Float(128.0)-1.0}, la_count_t(rows), la_count_t(1), la_count_t(1), NOHINT, ATTR)
 		let LB: la_object_t = la_matrix_from_float_buffer((0..<cols).map{(_)in Float(arc4random_uniform(256))/Float(128.0)-1.0}, la_count_t(cols), la_count_t(1), la_count_t(1), NOHINT, ATTR)
 		let LC: la_object_t = la_matrix_product(LA, la_transpose(LB))
 		
-		let MA: MTLBuffer = context.fromLAObject(LA)
-		let MB: MTLBuffer = context.fromLAObject(LB)
-		let MC: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows*cols)
+		let MA: MTLBuffer = context.fromLAObject(LA, options: .StorageModePrivate)
+		let MB: MTLBuffer = context.fromLAObject(LB, options: .StorageModePrivate)
+		let MC: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows*cols, options: .StorageModePrivate)
 		
 		let bs: Int = 64
 		
@@ -126,7 +124,7 @@ class BlasTests: XCTestCase {
 		let local: MTLSize = MTLSize(width: bs, height: 1, depth: 1)
 		
 		measureBlock {
-			(0..<4).forEach {(_)in
+			(0..<16).forEach {(_)in
 				self.context.newComputeCommand(function: "outer") {
 					$0.setBuffer(MC, offset: 0, atIndex: 0)
 					$0.setBuffer(MA, offset: 0, atIndex: 1)
@@ -155,18 +153,18 @@ class BlasTests: XCTestCase {
 		}
 		
 	}
-	func testMTLGEMM() {
-		let M: Int = 4 * Int(1+arc4random_uniform(256))
-		let K: Int = 4 * Int(1+arc4random_uniform(256))
-		let N: Int = 4 * Int(1+arc4random_uniform(256))
+	func testGEMMMTL() {
+		let M: Int = 1024
+		let K: Int = 1024
+		let N: Int = 1024
 		
 		let LA: la_object_t = la_matrix_from_float_buffer((0..<M*K).map{(_)in Float(arc4random_uniform(256))/128.0-1.0}, la_count_t(M), la_count_t(K), la_count_t(K), NOHINT, ATTR)
 		let LB: la_object_t = la_matrix_from_float_buffer((0..<K*N).map{(_)in Float(arc4random_uniform(256))/128.0-1.0}, la_count_t(K), la_count_t(N), la_count_t(N), NOHINT, ATTR)
 		let LC: la_object_t = la_matrix_product(LA, LB)
 		
-		let MA: MTLBuffer = context.fromLAObject(LA)
-		let MB: MTLBuffer = context.fromLAObject(LB)
-		let MC: MTLBuffer = context.newBuffer(length: sizeof(Float)*M*N)
+		let MA: MTLBuffer = context.fromLAObject(LA, options: .StorageModePrivate)
+		let MB: MTLBuffer = context.fromLAObject(LB, options: .StorageModePrivate)
+		let MC: MTLBuffer = context.newBuffer(length: sizeof(Float)*M*N, options: .StorageModePrivate)
 		
 		let bs: Int = 16
 		
@@ -179,8 +177,8 @@ class BlasTests: XCTestCase {
 					$0.setBuffer(MC, offset: 0, atIndex: 0)
 					$0.setBuffer(MA, offset: 0, atIndex: 1)
 					$0.setBuffer(MB, offset: 0, atIndex: 2)
-					$0.setBytes([UInt32(M/4), UInt32(K/4), UInt32(N/4), UInt32(bs)], length: 4*sizeof(UInt32), atIndex: 3)
-					$0.setBytes([Float(1.0),Float(0.0)], length: 2*sizeof(Float), atIndex: 4)
+					$0.setBytes([uint(M/4), uint(K/4), uint(N/4), uint(bs)], length: 4*sizeof(uint), atIndex: 3)
+					$0.setBytes([Float(1.0),Float(0.0)], length: sizeof(Float)*2, atIndex: 4)
 					$0.setThreadgroupMemoryLength(sizeof(Float)*16*bs*bs, atIndex: 0)
 					$0.setThreadgroupMemoryLength(sizeof(Float)*16*bs*bs, atIndex: 1)
 					$0.dispatchThreadgroups(group, threadsPerThreadgroup: local)
@@ -192,35 +190,36 @@ class BlasTests: XCTestCase {
 		let CC: la_object_t = context.toLAObject(MC, rows: M, cols: N)
 		context.join()
 		
-		
 		let E: la_object_t = la_difference(LC, CC)
 		let rmse: Float = la_norm_as_float(E, la_norm_t(LA_L2_NORM))
 		XCTAssert(!isnan(rmse))
 		XCTAssert(!isinf(rmse))
 		if 1e-5 < rmse {
+			/*
 			let cache: [Float] = [Float](count: M*N, repeatedValue: 0.0)
 			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), la_count_t(N), E)
 			for row in 0..<M {
 				print(cache[row*N..<row*N+N])
 			}
+			*/
 			XCTFail("RMSE: \(rmse)")
 		}
 		
 
 		
 	}
-	func testMTLGEMVT() {
+	func testGEMVTMTL() {
 		
-		let rows: Int = 4 * Int(1+arc4random_uniform(256))
-		let cols: Int = 4 * Int(1+arc4random_uniform(256))
+		let rows: Int = 1024
+		let cols: Int = 0124
 		
 		let LA: la_object_t = la_matrix_from_float_buffer((0..<rows*cols).map{(_)in Float(arc4random_uniform(256))/Float(128.0)-1.0}, la_count_t(rows), la_count_t(cols), la_count_t(cols), NOHINT, ATTR)
 		let LB: la_object_t = la_matrix_from_float_buffer((0..<rows).map{(_)in Float(arc4random_uniform(256))/Float(128.0)-1.0}, la_count_t(rows), la_count_t(1), la_count_t(1), NOHINT, ATTR)
 		let LC: la_object_t = la_matrix_product(la_transpose(LA), LB)
 		
-		let MA: MTLBuffer = context.fromLAObject(LA)
-		let MB: MTLBuffer = context.fromLAObject(LB)
-		let MC: MTLBuffer = context.newBuffer(length: sizeof(Float)*cols)
+		let MA: MTLBuffer = context.fromLAObject(LA, options: .StorageModePrivate)
+		let MB: MTLBuffer = context.fromLAObject(LB, options: .StorageModePrivate)
+		let MC: MTLBuffer = context.newBuffer(length: sizeof(Float)*cols, options: .CPUCacheModeDefaultCache)
 		
 		let bs: Int = 64
 		
@@ -250,22 +249,22 @@ class BlasTests: XCTestCase {
 		let rmse: Float = la_norm_as_float(E, la_norm_t(LA_L2_NORM))
 		XCTAssert(!isnan(rmse))
 		XCTAssert(!isinf(rmse))
-		if 1e-9 < rmse {
+		if 1e-8 < rmse {
 			XCTFail("RMSE: \(rmse)")
 		}
 	}
-	func testMTLGEMV() {
+	func testGEMVMTL() {
 		
-		let rows: Int = 4 * Int(1+arc4random_uniform(256))
-		let cols: Int = 4 * Int(1+arc4random_uniform(256))
+		let rows: Int = 1024
+		let cols: Int = 1024
 		
 		let LA: la_object_t = la_matrix_from_float_buffer((0..<rows*cols).map{(_)in Float(arc4random_uniform(256))/Float(128.0)-1.0}, la_count_t(rows), la_count_t(cols), la_count_t(cols), NOHINT, ATTR)
 		let LB: la_object_t = la_matrix_from_float_buffer((0..<cols).map{(_)in Float(arc4random_uniform(256))/Float(128.0)-1.0}, la_count_t(cols), la_count_t(1), la_count_t(1), NOHINT, ATTR)
 		let LC: la_object_t = la_matrix_product(LA, LB)
 		
-		let MA: MTLBuffer = context.fromLAObject(LA)
-		let MB: MTLBuffer = context.fromLAObject(LB)
-		let MC: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows)
+		let MA: MTLBuffer = context.fromLAObject(LA, options: .StorageModePrivate)
+		let MB: MTLBuffer = context.fromLAObject(LB, options: .StorageModePrivate)
+		let MC: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows, options: .CPUCacheModeDefaultCache)
 		
 		let bs: Int = 64
 		
@@ -278,7 +277,7 @@ class BlasTests: XCTestCase {
 					$0.setBuffer(MC, offset: 0, atIndex: 0)
 					$0.setBuffer(MA, offset: 0, atIndex: 1)
 					$0.setBuffer(MB, offset: 0, atIndex: 2)
-					$0.setBytes([UInt32(rows/4), UInt32(cols/4)], length: 2*sizeof(UInt32), atIndex: 3)
+					$0.setBytes([uint(rows/4), uint(cols/4)], length: sizeof(uint)*2, atIndex: 3)
 					$0.setBytes([Float(1.0), Float(0.0)], length: 2*sizeof(Float), atIndex: 4)
 					$0.setThreadgroupMemoryLength(sizeof(Float)*16*bs, atIndex: 0)
 					$0.dispatchThreadgroups(group, threadsPerThreadgroup: local)
@@ -294,7 +293,7 @@ class BlasTests: XCTestCase {
 		let rmse: Float = la_norm_as_float(E, la_norm_t(LA_L2_NORM))
 		XCTAssert(!isnan(rmse))
 		XCTAssert(!isinf(rmse))
-		if 1e-9 < rmse {
+		if 1e-8 < rmse {
 			XCTFail("RMSE: \(rmse)")
 		}
 	}

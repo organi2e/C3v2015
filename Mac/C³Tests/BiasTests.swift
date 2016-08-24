@@ -27,63 +27,66 @@ class BiasTests: XCTestCase {
 	let L2: la_norm_t = la_norm_t(LA_L2_NORM)
 	
 	func testCollect() {
-		guard let bias: Bias = context.new() else {
-			XCTFail()
-			return
-		}
-		let rows: Int = 256
-		let cols: Int = 1
+		let width: Int = 256
 		
-		let χ: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows*cols, options: .StorageModePrivate)
-		let μ: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows*cols, options: .StorageModePrivate)
-		let σ: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows*cols, options: .StorageModePrivate)
+		let bias_χ: MTLBuffer = context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
+		let bias_μ: MTLBuffer = context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
+		let bias_σ: MTLBuffer = context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
+		let bias_logμ: MTLBuffer = context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
+		let bias_logσ: MTLBuffer = context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
+		
+		let level_χ: MTLBuffer = context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
+		let level_μ: MTLBuffer = context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
+		let level_σ: MTLBuffer = context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
 		
 		context.newBlitCommand {(let encoder: MTLBlitCommandEncoder)in
-			[χ, μ, σ].forEach {
+			[level_χ, level_μ, level_σ].forEach {
 				encoder.fillBuffer($0, range: NSRange(location: 0, length: $0.length), value: 0)
 			}
 		}
 		
-		//bias.resize(rows: rows, cols: cols)
-		bias.adjust(μ: 0.5, σ: 1.0)
-		bias.refresh()
-		bias.shuffle()
-		bias.collect(level: (χ, μ, σ))
+		let μ: Float = 0.5
+		let σ: Float = 0.5
 		
-		let srcValue: la_object_t = context.toLAObject(bias.χ, rows: rows, cols: cols)
-		let dstValue: la_object_t = context.toLAObject(χ, rows: rows, cols: cols)
+		Bias.adjust(context: context, logμ: bias_logμ, logσ: bias_logσ, parameter: (μ, σ))
+		Bias.refresh(context: context, μ: bias_μ, σ: bias_σ, logμ: bias_logμ, logσ: bias_logσ)
+		Bias.shuffle(context: context, χ: bias_χ, μ: bias_μ, σ: bias_σ)
+		Bias.collect(context: context, level: (level_χ, level_μ, level_σ), bias: (bias_χ, bias_μ, level_σ), width: width)
 		
-		let srcMu: la_object_t = context.toLAObject(bias.μ, rows: rows, cols: cols)
-		let dstMu: la_object_t = context.toLAObject(μ, rows: rows, cols: cols)
+		let srcχ: la_object_t = context.toLAObject(bias_χ, rows: width, cols: 1)
+		let dstχ: la_object_t = context.toLAObject(level_χ, rows: width, cols: 1)
 		
-		let srcSigma: la_object_t = context.toLAObject(bias.σ, rows: rows, cols: cols)
-		let dstSigma: la_object_t = context.toLAObject(σ, rows: rows, cols: cols)
+		let srcμ: la_object_t = context.toLAObject(bias_μ, rows: width, cols: 1)
+		let dstμ: la_object_t = context.toLAObject(level_μ, rows: width, cols: 1)
+		
+		let srcσ: la_object_t = context.toLAObject(level_σ, rows: width, cols: 1)
+		let dstσ: la_object_t = context.toLAObject(level_σ, rows: width, cols: 1)
 		
 		context.join()
 		
-		let errValue: Float = la_norm_as_float(la_difference(srcValue, dstValue), L2)
-		let errMu: Float = la_norm_as_float(la_difference(srcMu, dstMu), L2)
-		let errSigma: Float = la_norm_as_float(la_difference(srcSigma, dstSigma), L2)
+		let errχ: Float = la_norm_as_float(la_difference(srcχ, dstχ), L2)
+		let errμ: Float = la_norm_as_float(la_difference(srcμ, dstμ), L2)
+		let errσ: Float = la_norm_as_float(la_difference(srcσ, dstσ), L2)
 
-		XCTAssert(!isinf(errValue))
-		XCTAssert(!isnan(errValue))
+		XCTAssert(!isinf(errχ))
+		XCTAssert(!isnan(errχ))
 		
-		if 1e-7 < errValue {
-			XCTFail("\(errValue)")
+		if 1e-7 < errχ {
+			XCTFail("\(errχ)")
 		}
 		
-		XCTAssert(!isinf(errMu))
-		XCTAssert(!isnan(errMu))
+		XCTAssert(!isinf(errμ))
+		XCTAssert(!isnan(errμ))
 		
-		if 1e-7 < errMu {
-			XCTFail("\(errMu)")
+		if 1e-7 < errμ {
+			XCTFail("\(errμ)")
 		}
 		
-		XCTAssert(!isinf(errSigma))
-		XCTAssert(!isnan(errSigma))
+		XCTAssert(!isinf(errσ))
+		XCTAssert(!isnan(errσ))
 		
-		if 1e-7 < errSigma {
-			XCTFail("\(errSigma)")
+		if 1e-7 < errσ {
+			XCTFail("\(errσ)")
 		}
 		
 	}

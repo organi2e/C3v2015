@@ -62,32 +62,36 @@ extension Art {
 		
 	}
 	internal func shuffle() {
-		if let context: Context = managedObjectContext as? Context where 0 < logmu.length && 0 < logsigma.length {
+		if let context: Context = managedObjectContext as? Context {
+			willAccess()
 			self.dynamicType.shuffle(context: context, χ: χ, μ: μ, σ: σ)
+			didAccess()
 		} else {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
 		}
 	}
 	internal func refresh() {
-		if let context: Context = managedObjectContext as? Context where 0 < logmu.length && 0 < logsigma.length {
+		if let context: Context = managedObjectContext as? Context {
+			willAccess()
 			self.dynamicType.refresh(context: context, μ: μ, σ: σ, logμ: logμ, logσ: logσ)
+			didAccess()
 		} else {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
 		}
 	}
 	internal func adjust(let μ μ: Float, let σ: Float) {
-		if let context: Context = managedObjectContext as? Context where 0 < logmu.length && 0 < logsigma.length {
+		if let context: Context = managedObjectContext as? Context {
+			willAccess()
 			self.dynamicType.adjust(context: context, logμ: logμ, logσ: logσ, parameter: (μ, σ))
+			didAccess()
 		} else {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
 		}
 		refresh()
 	}
 	internal func resize(let count count: Int) {
-		
 		logmu = NSData(bytes: [Float](count: count, repeatedValue: 0), length: sizeof(Float)*count)
 		logsigma = NSData(bytes: [Float](count: count, repeatedValue: 0), length: sizeof(Float)*count)
-		
 		if let context: Context = managedObjectContext as? Context {
 			setup(context)
 		} else {

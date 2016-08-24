@@ -27,7 +27,7 @@ class CauchyTests: XCTestCase {
 		let rows: Int = 64//*Int(1+arc4random_uniform(256))
 		let cols: Int = 64//*Int(1+arc4random_uniform(256))
 		
-		//art.resize(rows: rows, cols: cols)
+		art.resize(count: rows*cols)
 		art.adjust(μ: dμ, σ: dσ)
 		
 		let eps: Float = 0.5
@@ -107,12 +107,14 @@ class CauchyTests: XCTestCase {
 			
 		}
 		
+		XCTAssert(0<est.x)
 		XCTAssert(!isinf(est.x))
 		XCTAssert(!isnan(est.x))
 		if abs(log(est.x)-log(dμ)) > 0.1 {
 			XCTFail("\(est.x) vs \(dμ)")
 		}
 		
+		XCTAssert(0<est.y)
 		XCTAssert(!isinf(est.y))
 		XCTAssert(!isnan(est.y))
 		if abs(log(est.y)-log(dσ)) > 0.5 {
