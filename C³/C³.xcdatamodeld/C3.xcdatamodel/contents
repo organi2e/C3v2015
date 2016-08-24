@@ -25,9 +25,7 @@
         <relationship name="output" toMany="YES" deletionRule="Cascade" destinationEntity="Edge" inverseName="input" inverseEntity="Edge" syncable="YES"/>
     </entity>
     <entity name="Decay" representedClassName="C3.Decay" syncable="YES">
-        <attribute name="cols" attributeType="Integer 64" minValueString="1" syncable="YES"/>
-        <attribute name="rows" attributeType="Integer 64" minValueString="1" syncable="YES"/>
-        <attribute name="siglambdadata" attributeType="Binary" allowsExternalBinaryDataStorage="YES" syncable="YES"/>
+        <attribute name="loglambda" attributeType="Binary" allowsExternalBinaryDataStorage="YES" syncable="YES"/>
         <relationship name="cell" maxCount="1" deletionRule="Nullify" destinationEntity="Cell" inverseName="decay" inverseEntity="Cell" syncable="YES"/>
     </entity>
     <entity name="Dict" representedClassName="C3.Dict" syncable="YES">
@@ -48,7 +46,7 @@
         <element name="Blob" positionX="36" positionY="171" width="128" height="75"/>
         <element name="Cauchy" positionX="36" positionY="171" width="128" height="45"/>
         <element name="Cell" positionX="36" positionY="117" width="128" height="165"/>
-        <element name="Decay" positionX="36" positionY="171" width="128" height="105"/>
+        <element name="Decay" positionX="36" positionY="171" width="128" height="75"/>
         <element name="Dict" positionX="18" positionY="81" width="128" height="75"/>
         <element name="Edge" positionX="54" positionY="108" width="128" height="75"/>
         <element name="Feedback" positionX="36" positionY="171" width="128" height="60"/>

@@ -178,12 +178,12 @@ class EdgeTests: XCTestCase {
 			var accum: Float = 0.0
 			for o in 0..<o_width {
 				
-				accum += delta.value[o] * edge.value[o * i_width + i]
-				//accum += delta.mu[o] * edge.mu[o * i_width + i]
-				//accum += delta.sigma[o] * edge.sigma[o * i_width + i] * 2.0 * state[i]
+				//accum += delta.value[o] * edge.value[o * i_width + i]
+				accum += delta.mu[o] * edge.mu[o * i_width + i]
+				accum += delta.sigma[o] * edge.sigma[o * i_width + i]
 				
 				logmu[ o * i_width + i ] += η * muGrad ( mu[o*i_width+i] ) * ( state[i] ) * delta.mu[o]
-				logsigma[ o * i_width + i ] += η * sigmaGrad ( sigma[o*i_width+i] ) * ( state[i] * state[i] ) * delta.sigma[o]
+				logsigma[ o * i_width + i ] += η * sigmaGrad ( sigma[o*i_width+i] ) * ( state[i] ) * delta.sigma[o]
 				
 			}
 			error[i] = accum

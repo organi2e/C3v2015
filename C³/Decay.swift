@@ -5,14 +5,14 @@
 //  Created by Kota Nakano on 7/31/16.
 //
 //
+import Metal
 import CoreData
 internal class Decay: NSManagedObject {
-	
+	private var λ: MTLBuffer!
+	private var logλ: MTLBuffer!
 }
 extension Decay {
-	@NSManaged internal private(set) var rows: UInt
-	@NSManaged internal private(set) var cols: UInt
-	@NSManaged private var siglambdadata: NSData
+	@NSManaged private var loglambda: NSData
 	@NSManaged private var cell: Cell
 }
 extension Decay {
@@ -20,25 +20,22 @@ extension Decay {
 		super.awakeFromFetch()
 		setup()
 	}
+	override func awakeFromSnapshotEvents(flags: NSSnapshotEventType) {
+		super.awakeFromSnapshotEvents(flags)
+		setup()
+	}
 }
 extension Decay {
 	
-	static private let siglambdadatakey: String = "siglambdadata"
+	@nonobjc internal static let logλkey: String = "loglambda"
 	
-	internal func setup() {
-		/*
-		setPrimitiveValue(NSData(data: siglambdadata), forKey: Decay.siglambdadatakey)
-		assert(siglambdadata.length==sizeof(Float)*Int(rows*cols))
-		
-		siglambda = la_matrix_from_float_buffer(UnsafeMutablePointer<Float>(siglambdadata.bytes), rows, cols, cols, Config.HINT, Config.ATTR)
-		assert(siglambda.status==LA_SUCCESS&&siglambda.rows==rows&&siglambda.cols==cols)
-		
-		lambda = la_matrix_from_splat(la_splat_from_float(0, Config.ATTR), rows, cols)
-		assert(lambda.status==LA_SUCCESS&&lambda.rows==rows&&lambda.cols==cols)
-		
-		gradient = la_matrix_from_splat(la_splat_from_float(0, Config.ATTR), rows, rows * cols)
-		assert(gradient.status==LA_SUCCESS&&gradient.rows==rows&&gradient.cols==rows * cols)
-		*/
+	private func setup() {
+		if let context: Context = managedObjectContext as? Context {
+			let width: Int = cell.width
+			λ = context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
+			logλ = context.newBuffer(data: loglambda, options: .CPUCacheModeDefaultCache)
+			setPrimitiveValue(NSData(bytesNoCopy: logλ.contents(), length: logλ.length, freeWhenDone: false), forKey: self.dynamicType.logλkey)
+		} 
 		refresh()
 		
 	}

@@ -47,15 +47,12 @@ kernel void edgeCollect(device float4 * level_value [[ buffer(0) ]],
 	float4 sigma = 0.0;
 	
 	uint const rows = g;
-	for ( uint k = 0, K = N ; k < K ; k += T ) {
-		uint const cols = k + t;
-		if ( cols < K ) {
-			float4 const state = input_state [ cols ];
-			uint const idx = cols * M + rows;
-			value += edge_value[idx] * state;
-			mu += edge_mu[idx] * state;
-			sigma += edge_sigma[idx] * state;
-		}
+	for ( uint cols = t ; cols < N ; cols += T ) {
+		float4 const state = input_state [ cols ];
+		uint const idx = cols * M + rows;
+		value += edge_value[idx] * state;
+		mu += edge_mu[idx] * state;
+		sigma += edge_sigma[idx] * state;
 	}
 	
 	th_value[t] = value;
@@ -106,43 +103,37 @@ kernel void edgeCorrectLightWeight(device float4 * const input_error [[ buffer(0
 	
 	float4 error = 0.0;
 	
-	for( uint k = 0, K = M ; k < K ; k += T ) {
+	for( uint rows = t ; rows < M ; rows += T ) {
 		
-		uint const rows = k + t;
+		//float4 const value = delta_value[rows];
+		float4 const mu = delta_mu[rows];
+		float4 const sigma = delta_sigma[rows];
 		
-		if ( rows < M ) {
+		uint const idx = cols * M + rows;
+		
+		//error += value * edge_value[idx];
+		error += ( mu * edge_mu[ idx ] );
+		error += ( sigma * edge_sigma[ idx ] );
+		
+		float4x4 dm = float4x4(mu, mu, mu, mu);
+		float4x4 const jm = edge_mu[idx];
+		
+		dm[0] *= artMuGradient(jm[0]) * state[0];
+		dm[1] *= artMuGradient(jm[1]) * state[1];
+		dm[2] *= artMuGradient(jm[2]) * state[2];
+		dm[3] *= artMuGradient(jm[3]) * state[3];
+		
+		edge_logmu[idx] += eps * dm;
+		
+		float4x4 ds = float4x4(sigma, sigma, sigma, sigma);
+		float4x4 const js = edge_sigma[idx];
 			
-			float4 const value = delta_value[rows];
-			float4 const mu = delta_mu[rows];
-			float4 const sigma = delta_sigma[rows];
+		ds[0] *= artSigmaGradient(js[0]) * state[0];
+		ds[1] *= artSigmaGradient(js[1]) * state[1];
+		ds[2] *= artSigmaGradient(js[2]) * state[2];
+		ds[3] *= artSigmaGradient(js[3]) * state[3];
 			
-			uint const idx = cols * M + rows;
-			
-			error += value * edge_value[idx];
-			//error += ( mu * edge_mu[ idx ] );
-			//error += ( sigma * edge_sigma[ idx ] );
-
-			float4x4 dm = float4x4(mu, mu, mu, mu);
-			float4x4 const jm = edge_mu[idx];
-			
-			dm[0] *= artMuGradient(jm[0]) * state[0];
-			dm[1] *= artMuGradient(jm[1]) * state[1];
-			dm[2] *= artMuGradient(jm[2]) * state[2];
-			dm[3] *= artMuGradient(jm[3]) * state[3];
-			
-			edge_logmu[idx] += eps * dm;
-			
-			float4x4 ds = float4x4(sigma, sigma, sigma, sigma);
-			float4x4 const js = edge_sigma[idx];
-			
-			ds[0] *= artSigmaGradient(js[0]) * state[0];
-			ds[1] *= artSigmaGradient(js[1]) * state[1];
-			ds[2] *= artSigmaGradient(js[2]) * state[2];
-			ds[3] *= artSigmaGradient(js[3]) * state[3];
-			
-			edge_logsigma[idx] += eps * ds;
-			
-		}
+		edge_logsigma[idx] += eps * ds;
 	}
 	
 	accumulator[t] = error;
@@ -154,7 +145,7 @@ kernel void edgeCorrectLightWeight(device float4 * const input_error [[ buffer(0
 			accumulator [ t ] += accumulator [ t + offset ];
 		}
 	}
-	if ( t == 0 ) {
+	if ( !t ) {
 		input_error [ cols ] = *accumulator;
 	}
 }

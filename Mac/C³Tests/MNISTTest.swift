@@ -43,7 +43,7 @@ class MNISTTests: XCTestCase {
 				O: Cell = context.searchCell(width: 16,	label: "MNIST_O").last
 			{
 				try (0..<65536).forEach {
-					let image: Image = Image.train[Int(arc4random_uniform(UInt32(Image.train.count)))]
+					let image: MNIST.Image = MNIST.train[Int(arc4random_uniform(UInt32(MNIST.train.count)))]
 					let ID: [Bool] = image.pixel.map{ 128 < $0 }
 					let OD: [Bool] = (0..<10).map{ $0 == image.label }
 					//var cnt: [Int] = [Int](count: 10, repeatedValue: 0)
@@ -82,7 +82,7 @@ class MNISTTests: XCTestCase {
 				O: Cell = context.searchCell(width: 16, label: "MNIST_O").last
 			{
 				(0..<64).forEach {
-					let image: Image = Image.t10k[Int(arc4random_uniform(UInt32(Image.t10k.count)))]
+					let image: MNIST.Image = MNIST.t10k[Int(arc4random_uniform(UInt32(MNIST.t10k.count)))]
 					let ID: [Bool] = image.pixel.map{ 128 < $0 }
 					let OD: [Bool] = (0..<10).map{ $0 == image.label }
 					var cnt: [Int] = [Int](count: 10, repeatedValue: 0)

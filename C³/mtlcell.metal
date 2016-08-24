@@ -39,7 +39,7 @@ kernel void cellDerivate(device float4 * const delta_value [[ buffer(0) ]],
 	float4 const delta = gradient * error;
 	delta_value[n] = delta;
 	delta_mu[n] = delta;
-	delta_sigma[n] = - 0.5 * delta * level_mu[n] / level_sigma[n];
+	delta_sigma[n] = - delta * level_mu[n] / level_sigma[n];
 }
 kernel void cellDifference(device float4 * const error [[ buffer(0) ]],
 						   device const float4 * const train [[ buffer(1) ]],

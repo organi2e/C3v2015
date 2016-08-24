@@ -24,11 +24,9 @@ kernel void gemvt(device float4 * y [[ buffer(0) ]],
 	
 	uint const rows = g;
 	float4 vector = 0.0;
-	for ( uint i = 0, I = N ; i < I ; i += T ) {
-		uint const cols = i + t;
-		if ( cols < N ) {
-			vector +=  x[cols] * A[rows*N+cols];
-		}
+	for ( uint i = t, I = N ; i < I ; i += T ) {
+		uint const cols = i;
+		vector +=  x[cols] * A[rows*N+cols];
 	}
 	accumulator[t] = vector;
 	
@@ -58,11 +56,9 @@ kernel void gemv(device float4 * y [[ buffer(0) ]],
 	uint const rows = g;
 
 	float4 vector = 0.0;
-	for ( uint i = 0, I = N ; i < I ; i += T ) {
-		uint const cols = i + t;
-		if ( cols < N ) {
-			vector += A[cols*M+rows] * x[cols];
-		}
+	for ( uint i = t, I = N ; i < I ; i += T ) {
+		uint const cols = i;
+		vector += A[cols*M+rows] * x[cols];
 	}
 	accumulator[t] = vector;
 	
@@ -140,14 +136,12 @@ kernel void outer(device float4x4 * const C [[ buffer(0) ]],
 	//uint const N = dim.y;
 	uint const cols = g;
 	float4 const b = B[cols];
-	for( uint k = 0, K = M ; k < K ; k += T ) {
-		uint const rows = k + t;
-		if ( rows < M ) {
-			float4 const a = A [ rows ];
-			uint const idx = cols * M + rows;
-			float4x4 const c = float4x4(a*b.x, a*b.y, a*b.z, a*b.w);
-			C[idx] = w.x * c + w.y * C[idx];
-		}
+	for( uint k = t, K = M ; k < K ; k += T ) {
+		uint const rows = k;
+		float4 const a = A [ rows ];
+		uint const idx = cols * M + rows;
+		float4x4 const c = float4x4(a*b.x, a*b.y, a*b.z, a*b.w);
+		C[idx] = w.x * c + w.y * C[idx];
 	}
 }
 kernel void sub(device float4 * c [[ buffer(0) ]],

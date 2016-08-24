@@ -36,6 +36,7 @@ float4 artSigmaInverse(float4 const y) {
 float4 artSigmaGradient(float4 const y) {
 	return 1.0 - exp(-y);
 }
+
 kernel void artUniform(device float4 * const value [[ buffer(0) ]],
 					   constant uint4 * const seeds [[ buffer(1) ]],
 					   constant uint4 const & param [[ buffer(2) ]],

@@ -31,7 +31,7 @@ class ViewController: NSViewController {
 			-1, 1,
 		]
 		
-		let image: Image = Image.t10k[Int(arc4random_uniform(UInt32(Image.t10k.count)))]
+		let image: MNIST.Image = MNIST.t10k[Int(arc4random_uniform(UInt32(MNIST.t10k.count)))]
 		let img: [UInt8] = image.pixel
 		let width: Int = image.cols
 		let height: Int = image.rows
