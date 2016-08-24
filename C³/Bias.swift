@@ -16,7 +16,7 @@ internal class Bias: Cauchy {
 }
 
 extension Bias {
-	@NSManaged internal var output: Cell
+	@NSManaged private var output: Cell
 	
 }
 
@@ -119,18 +119,14 @@ extension Bias {
 		}
 	}
 }
-extension Bias {
-	private func bind(let output o: Cell) {
-		output = o
-		resize(count: output.width)
-	}
-}
 extension Context {
 	internal func newBias(let output output: Cell) throws -> Bias {
 		guard let bias: Bias = new() else {
 			throw Error.CoreData.InsertionFails(entity: Bias.className())
 		}
-		bias.bind(output: output)
+		bias.output = output
+		bias.resize(count: output.width)
+		bias.adjust(μ: 0, σ: 1.0)
 		return bias
 	}
 }

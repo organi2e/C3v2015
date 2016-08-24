@@ -13,8 +13,8 @@ internal class Edge: Cauchy {
 }
 
 extension Edge {
-	@NSManaged internal var input: Cell
-	@NSManaged internal var output: Cell
+	@NSManaged private var input: Cell
+	@NSManaged private var output: Cell
 }
 
 extension Edge {
@@ -37,6 +37,12 @@ extension Edge {
 		} else {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
 		}
+	}
+	internal func iClear(let ignore: Set<Cell>) {
+		input.iClear(ignore)
+	}
+	internal func oClear(let ignore: Set<Cell>) {
+		output.oClear(ignore)
 	}
 }
 extension Edge {

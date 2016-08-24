@@ -51,11 +51,19 @@ extension Cell {
 extension Cell {
 	public override func awakeFromFetch() {
 		super.awakeFromFetch()
-		setup()
+		if let context: Context = managedObjectContext as? Context {
+			setup(context)
+		}  else {
+			assertionFailure(Context.Error.InvalidContext.rawValue)
+		}
 	}
 	public override func awakeFromSnapshotEvents(flags: NSSnapshotEventType) {
 		super.awakeFromSnapshotEvents(flags)
-		setup()
+		if let context: Context = managedObjectContext as? Context {
+			setup(context)
+		}  else {
+			assertionFailure(Context.Error.InvalidContext.rawValue)
+		}
 	}
 }
 
@@ -69,38 +77,31 @@ extension Cell {
 }
 
 extension Cell {
-	internal func setup() {
+	internal func setup(let context: Context) {
 		
-		if let context: Context = managedObjectContext as? Context {
-			
-			let count: Int = 2
-			
-			Υ = RingBuffer<Deterministic>(array: (0..<count).map{(_)in
-				return Deterministic(
-					ψ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
-					ϰ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
-					δ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
-				)
-			})
-			Φ = RingBuffer<Probabilistic>(array: (0..<count).map{(_)in
-				return Probabilistic(
-					χ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
-					μ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
-					σ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
-				)
-			})
-			Δ = RingBuffer<Probabilistic>(array: (0..<count).map{(_)in
-				return Probabilistic(
-					χ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
-					μ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
-					σ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
-				)
-			})
+		let count: Int = 2
 		
-		} else {
-			assertionFailure(Context.Error.InvalidContext.rawValue)
-		
-		}
+		Υ = RingBuffer<Deterministic>(array: (0..<count).map{(_)in
+			return Deterministic(
+				ψ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
+				ϰ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
+				δ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
+			)
+		})
+		Φ = RingBuffer<Probabilistic>(array: (0..<count).map{(_)in
+			return Probabilistic(
+				χ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
+				μ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
+				σ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
+			)
+		})
+		Δ = RingBuffer<Probabilistic>(array: (0..<count).map{(_)in
+			return Probabilistic(
+				χ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
+				μ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
+				σ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
+			)
+		})
 		iRefresh()
 		oRefresh()
 	}
@@ -168,7 +169,7 @@ extension Cell {
 		} else if ready.contains(.ϰ) {
 			input.forEach {
 				$0.shuffle()
-				$0.input.iClear(ignore.union([self]))
+				$0.iClear(ignore.union([self]))
 			}
 			iRefresh()
 			ready.remove(.ϰ)
@@ -180,7 +181,7 @@ extension Cell {
 		} else if ready.contains(.δ) {
 			output.forEach {
 				$0.refresh()
-				$0.output.oClear(ignore.union([self]))
+				$0.oClear(ignore.union([self]))
 			}
 			oRefresh()
 			ready.remove(.δ)
@@ -402,7 +403,7 @@ extension Context {
 		cell.attribute = [:]
 		cell.input = Set<Edge>()
 		cell.output = Set<Edge>()
-		cell.setup()
+		cell.setup(self)
 		try input.forEach {
 			try newEdge(output: cell, input: $0)
 		}
@@ -425,9 +426,11 @@ extension Context {
 			try newEdge(output: output, input: input)
 		}
 	}
+	/*
 	public func unchainCell(let output output: Cell, let input: Cell) {
 		output.input.filter{ $0.input === input }.forEach {
 			deleteObject($0)
 		}
 	}
+	*/
 }
