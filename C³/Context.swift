@@ -264,36 +264,32 @@ extension Context {
 		return mtl.device.newBufferWithBytes(buffer, length: sizeof(Float)*buffer.count, options: options)
 	}
 	internal func fromRowMajorMatrix(let buffer: [Float], let rows: Int, let cols: Int, let options: MTLResourceOptions = .CPUCacheModeDefaultCache) -> MTLBuffer {
-		assert(0<rows)
-		assert(0<cols)
-		if rows * cols == buffer.count {
-			if rows == 1 || cols == 1 {
-				return newBuffer(buffer, options: options)
-			} else {
-				let result: MTLBuffer = newBuffer(length: sizeof(Float)*rows*cols, options: options)
-				let cache: MTLBuffer = newBuffer(buffer, options: .CPUCacheModeDefaultCache)
-				let group: MTLSize = MTLSize(width: cols/4, height: rows/4, depth: 1)
-				let local: MTLSize = MTLSize(width: 1, height: 1, depth: 1)
-				newComputeCommand(function: "fromRowMajorMatrix", complete: { cache.setPurgeableState(.Empty) }) {
-					$0.setBuffer(result, offset: 0, atIndex: 0)
-					$0.setBuffer(cache, offset: 0, atIndex: 1)
-					$0.setBytes([uint(cols/4), uint(rows/4)], length: sizeof(uint)*2, atIndex: 2)
-					$0.dispatchThreadgroups(group, threadsPerThreadgroup: local)
-				}
-				return result
-			}
+		assert(rows*cols==buffer.count)
+		if rows == 1 || cols == 1 {
+			return newBuffer(buffer, options: options)
 		} else {
-			assertionFailure()
-			
+			let result: MTLBuffer = newBuffer(length: sizeof(Float)*rows*cols, options: options)
+			let cache: MTLBuffer = newBuffer(buffer, options: .StorageModePrivate)
+			let group: MTLSize = MTLSize(width: cols/4, height: rows/4, depth: 1)
+			let local: MTLSize = MTLSize(width: 1, height: 1, depth: 1)
+			newComputeCommand(function: "fromRowMajorMatrix", complete: { cache.setPurgeableState(.Empty) }) {
+				$0.setBuffer(result, offset: 0, atIndex: 0)
+				$0.setBuffer(cache, offset: 0, atIndex: 1)
+				$0.setBytes([uint(cols/4), uint(rows/4)], length: sizeof(uint)*2, atIndex: 2)
+				$0.dispatchThreadgroups(group, threadsPerThreadgroup: local)
+			}
+			return result
 		}
-		return newBuffer(length: sizeof(Float)*rows*cols, options: options)
 	}
 	internal func fromLAObject(let matrix: la_object_t, let options: MTLResourceOptions = .CPUCacheModeDefaultCache) -> MTLBuffer {
 		let rows: Int = Int(la_matrix_rows(matrix))
 		let cols: Int = Int(la_matrix_cols(matrix))
+		return fromRowMajorMatrix(matrix.eval, rows: rows, cols: cols)
+		/*
 		let result: MTLBuffer = newBuffer(length: sizeof(Float)*rows*cols, options: options)
-		let cache: MTLBuffer = newBuffer(length: sizeof(Float)*rows*cols, options: .CPUCacheModeWriteCombined)
+		let cache: MTLBuffer = newBuffer(length: sizeof(Float)*rows*cols, options: .CPUCacheModeDefaultCache)
 		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache.contents()), la_count_t(cols), matrix)
+		cache.didModifyRange(NSRange(location: 0, length: cache.length))
 		if rows * cols == 0 {
 			assertionFailure()
 		}
@@ -312,6 +308,7 @@ extension Context {
 			}
 		}
 		return result
+		*/
 	}
 	internal func toRowMajorMatrix(let buffer: MTLBuffer, let rows: Int, let cols: Int) -> [Float] {
 		assert(0<rows)
