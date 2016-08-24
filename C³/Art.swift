@@ -43,17 +43,17 @@ extension Art {
 		
 		if let context: Context = managedObjectContext as? Context {
 			
-			χ = context.newBuffer(length: sizeof(Float)*rows*cols, options: .StorageModePrivate)
-			
-			μ = context.newBuffer(length: sizeof(Float)*rows*cols, options: .StorageModePrivate)
-			σ = context.newBuffer(length: sizeof(Float)*rows*cols, options: .StorageModePrivate)
-			
 			logμ = context.newBuffer(data: logmu, options: .CPUCacheModeDefaultCache)
 			setPrimitiveValue(NSData(bytesNoCopy: logμ.contents(), length: logμ.length, freeWhenDone: false), forKey: self.dynamicType.logμkey)
 			
 			logσ = context.newBuffer(data: logsigma, options: .CPUCacheModeDefaultCache)
 			setPrimitiveValue(NSData(bytesNoCopy: logσ.contents(), length: logσ.length, freeWhenDone: false), forKey: self.dynamicType.logσkey)
+
+			μ = context.newBuffer(length: logμ.length, options: .StorageModePrivate)
+			σ = context.newBuffer(length: logσ.length, options: .StorageModePrivate)
 			
+			χ = context.newBuffer(length: max(logμ.length, logσ.length), options: .StorageModePrivate)
+
 			refresh()
 			
 		} else {
@@ -64,7 +64,7 @@ extension Art {
 	}
 	internal func shuffle() {
 		if let context: Context = managedObjectContext as? Context where 0 < rows && 0 < cols {
-			self.dynamicType.shuffle(context: context, χ: χ, μ: μ, σ: σ, rows: rows, cols: cols)
+			self.dynamicType.shuffle(context: context, χ: χ, μ: μ, σ: σ)
 			
 		} else {
 			assertionFailure("\(Context.Error.InvalidContext.rawValue) or rows:\(rows), cols: \(cols)")
@@ -147,14 +147,16 @@ extension Art {
 			$0.dispatchThreadgroups(MTLSize(width: bs, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}
 	}
-	internal static func shuffle(let context context: Context, let χ: MTLBuffer, let μ: MTLBuffer, let σ: MTLBuffer, let rows: Int, let cols: Int, let bs: Int = 64) {
-		assert(rows*cols%4==0)
+	internal static func shuffle(let context context: Context, let χ: MTLBuffer, let μ: MTLBuffer, let σ: MTLBuffer, let bs: Int = 64) {
+		assert(χ.length==μ.length)
+		assert(χ.length==σ.length)
+		let count: Int = χ.length / sizeof(Float)
 		let φ: [uint] = [uint](count: 4*bs, repeatedValue: 0)
 		arc4random_buf(UnsafeMutablePointer<Void>(φ), sizeof(uint)*φ.count)
 		context.newComputeCommand(function: uniformKernel) {
 			$0.setBuffer(χ, offset: 0, atIndex: 0)
 			$0.setBytes(φ, length: sizeof(uint)*φ.count, atIndex: 1)
-			$0.setBytes([uint(13), uint(17), uint(5), uint(rows*cols/4)], length: sizeof(uint)*4, atIndex: 2)
+			$0.setBytes([uint(13), uint(17), uint(5), uint(count/4)], length: sizeof(uint)*4, atIndex: 2)
 			$0.dispatchThreadgroups(MTLSize(width: bs, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}
 		context.newComputeCommand(function: shuffleKernel) {
@@ -162,7 +164,7 @@ extension Art {
 			$0.setBuffer(μ, offset: 0, atIndex: 1)
 			$0.setBuffer(σ, offset: 0, atIndex: 2)
 			$0.setBuffer(χ, offset: 0, atIndex: 3)
-			$0.dispatchThreadgroups(MTLSize(width: rows*cols/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
+			$0.dispatchThreadgroups(MTLSize(width: count/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}
 	}
 	internal static func refresh(let context context: Context, let μ: MTLBuffer, let σ: MTLBuffer, let logμ: MTLBuffer, let logσ: MTLBuffer, let rows: Int, let cols: Int) {
@@ -177,14 +179,6 @@ extension Art {
 	}
 	internal static func adjust(let context context: Context, let logμ: MTLBuffer, let logσ: MTLBuffer, let parameter: (Float, Float), let rows: Int, let cols: Int) {
 		assert(rows*cols%4==0)
-		func schedule() {
-			willChangeValueForKey(logμkey)
-			willChangeValueForKey(logσkey)
-		}
-		func complete() {
-			didChangeValueForKey(logσkey)
-			didChangeValueForKey(logμkey)
-		}
 		context.newComputeCommand(function: adjustKernel) {
 			$0.setBuffer(logμ, offset: 0, atIndex: 0)
 			$0.setBuffer(logσ, offset: 0, atIndex: 1)

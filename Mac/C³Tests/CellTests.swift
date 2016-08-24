@@ -58,7 +58,7 @@ class CellTests: XCTestCase {
 				I: Cell = context.searchCell(label: "I").last,
 				O: Cell = context.searchCell(label: "O").last
 			{
-				(0..<1024).forEach {
+				(0..<256).forEach {
 					
 					let ID: [Bool] = IS[$0%IS.count]
 					let OD: [Bool] = OS[$0%OS.count]
