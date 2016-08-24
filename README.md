@@ -1,4 +1,4 @@
-# C³ framework
+# C³ framework![C3-̶P̶O̶](https://upload.wikimedia.org/wikipedia/en/5/5c/C-3PO_droid.png "C3-̶P̶O̶")
 is Chained-Cubic-Cell (previous abbrev.) or Chained-Cauchy-Cell (current abbrev.).  
   
 #### Abstract
