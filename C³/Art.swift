@@ -20,8 +20,8 @@ internal class Art: NSManagedObject {
 extension Art {
 	@NSManaged private var logmu: NSData
 	@NSManaged private var logsigma: NSData
-	@nonobjc internal static let logμkey: String = "logmu"
-	@nonobjc internal static let logσkey: String = "logsigma"
+	private static let logμkey: String = "logmu"
+	private static let logσkey: String = "logsigma"
 }
 
 extension Art {
@@ -64,28 +64,22 @@ extension Art {
 	internal func shuffle() {
 		if let context: Context = managedObjectContext as? Context where 0 < logmu.length && 0 < logsigma.length {
 			self.dynamicType.shuffle(context: context, χ: χ, μ: μ, σ: σ)
-			
 		} else {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
-			
 		}
 	}
 	internal func refresh() {
 		if let context: Context = managedObjectContext as? Context where 0 < logmu.length && 0 < logsigma.length {
 			self.dynamicType.refresh(context: context, μ: μ, σ: σ, logμ: logμ, logσ: logσ)
-			
 		} else {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
-			
 		}
 	}
 	internal func adjust(let μ μ: Float, let σ: Float) {
 		if let context: Context = managedObjectContext as? Context where 0 < logmu.length && 0 < logsigma.length {
 			self.dynamicType.adjust(context: context, logμ: logμ, logσ: logσ, parameter: (μ, σ))
-			
 		} else {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
-			
 		}
 		refresh()
 	}
@@ -96,7 +90,17 @@ extension Art {
 		
 		if let context: Context = managedObjectContext as? Context {
 			setup(context)
+		} else {
+			assertionFailure(Context.Error.InvalidContext.rawValue)
 		}
+	}
+	internal func willChange() {
+		willChangeValueForKey(self.dynamicType.logμkey)
+		willChangeValueForKey(self.dynamicType.logσkey)
+	}
+	internal func didChange() {
+		didChangeValueForKey(self.dynamicType.logσkey)
+		didChangeValueForKey(self.dynamicType.logμkey)
 	}
 	/*
 	internal func dump(let label: String? = nil) {
@@ -136,13 +140,14 @@ extension Art {
 	internal class var refreshKernel: String { return "artRefresh" }
 	internal class var uniformKernel: String { return "artUniform" }
 	internal class var adjustKernel: String { return "artAdjust" }
-	internal static func uniform(let context context: Context, let χ: MTLBuffer, let rows: Int, let cols: Int, let bs: Int = 64) {
+	internal static func uniform(let context context: Context, let χ: MTLBuffer, let bs: Int = 64) {
+		let count: Int = χ.length / sizeof(Float)
 		let φ: [uint] = [uint](count: 4*bs, repeatedValue: 0)
 		arc4random_buf(UnsafeMutablePointer<Void>(φ), sizeof(uint)*φ.count)
 		context.newComputeCommand(function: uniformKernel) {
 			$0.setBuffer(χ, offset: 0, atIndex: 0)
 			$0.setBytes(φ, length: sizeof(uint)*φ.count, atIndex: 1)
-			$0.setBytes([uint(13), uint(17), uint(5), uint(rows*cols/4)], length: sizeof(uint)*4, atIndex: 2)
+			$0.setBytes([uint(13), uint(17), uint(5), uint(count/4)], length: sizeof(uint)*4, atIndex: 2)
 			$0.dispatchThreadgroups(MTLSize(width: bs, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}
 	}

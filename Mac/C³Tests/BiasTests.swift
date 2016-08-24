@@ -98,8 +98,8 @@ class BiasTests: XCTestCase {
 		let sigma_la: la_object_t = context.toLAObject(sigma, rows: rows, cols: cols)
 		context.join()
 		let rand: la_object_t = la_matrix_from_float_buffer((0..<rows*cols).map{(_)in Float(arc4random())}, la_count_t(rows), la_count_t(cols), la_count_t(cols), NOHINT, ATTR)
-		XCTAssert(0<la_norm_as_float(la_difference(rand, la_matrix_product(mu_la, rand)), la_norm_t(LA_L2_NORM)))
-		XCTAssert(0<la_norm_as_float(la_difference(rand, la_matrix_product(sigma_la, rand)), la_norm_t(LA_L2_NORM)))
+		XCTAssert(0==la_norm_as_float(la_difference(rand, la_matrix_product(mu_la, rand)), la_norm_t(LA_L2_NORM)))
+		XCTAssert(0==la_norm_as_float(la_difference(rand, la_matrix_product(sigma_la, rand)), la_norm_t(LA_L2_NORM)))
 	}
 	func testCorrect() {
 		

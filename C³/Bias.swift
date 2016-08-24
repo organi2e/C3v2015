@@ -47,20 +47,12 @@ extension Bias {
 	internal func correct(let η η: Float, let Δ: (MTLBuffer, MTLBuffer)) {
 		if let context: Context = managedObjectContext as? Context {
 			let width: Int = output.width
-			func schedule() {
-				willChangeValueForKey(self.dynamicType.logμkey)
-				willChangeValueForKey(self.dynamicType.logσkey)
-			}
-			func complete() {
-				didChangeValueForKey(self.dynamicType.logσkey)
-				didChangeValueForKey(self.dynamicType.logμkey)
-			}
 			if 0 < grads.length {
 				grads.progress()
 				self.dynamicType.gradientEye(context: context, grad: (grads.new.μ, grads.new.σ), width: output.width)
-				self.dynamicType.correct(context: context, η: η, bias: (logμ, logσ, μ, σ), grad: (grads.new.μ, grads.new.σ), Δ: Δ, width: width, schedule: schedule, complete: complete)
+				self.dynamicType.correct(context: context, η: η, bias: (logμ, logσ, μ, σ), grad: (grads.new.μ, grads.new.σ), Δ: Δ, width: width, schedule: willChange, complete: didChange)
 			} else {
-				self.dynamicType.correctLightWeight(context: context, η: η, bias: (logμ, logσ, μ, σ), Δ: Δ, width: width, schedule: schedule, complete: complete)
+				self.dynamicType.correctLightWeight(context: context, η: η, bias: (logμ, logσ, μ, σ), Δ: Δ, width: width, schedule: willChange, complete: didChange)
 			}
 			
 		} else {

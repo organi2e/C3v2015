@@ -43,7 +43,7 @@ class ArtTests: XCTestCase {
 		
 		measureBlock {
 			(0..<64).forEach {(_)in
-				Art.uniform(context: self.context, χ: buffer, rows: self.rows, cols: self.cols, bs: 64)
+				Art.uniform(context: self.context, χ: buffer, bs: 64)
 			}
 			self.context.join()
 		}

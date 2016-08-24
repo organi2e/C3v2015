@@ -24,31 +24,18 @@ extension Edge {
 			let rows: Int = output.width
 			let cols: Int = input.width
 			self.dynamicType.collect(context: context, Φ: Φ, edge: (χ, μ, σ), ϰ: ϰ, rows: rows, cols: cols)
-			
 		} else {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
-			
 		}
-		
 	}
 	internal func correct(let δ δ: MTLBuffer, let η: Float, let ϰ: MTLBuffer, let visit: Set<Cell>) {
 		let Δ: (MTLBuffer, MTLBuffer, MTLBuffer) = output.correct(η: η, visit: visit)
 		if let context: Context = managedObjectContext as? Context {
-			func schedule() {
-				willChangeValueForKey(self.dynamicType.logμkey)
-				willChangeValueForKey(self.dynamicType.logσkey)
-			}
-			func complete() {
-				didChangeValueForKey(self.dynamicType.logσkey)
-				didChangeValueForKey(self.dynamicType.logμkey)
-			}
 			let rows: Int = output.width
 			let cols: Int = input.width
-			self.dynamicType.correctLightWeight(context: context, η: η, δ: δ, edge: (logμ, logσ, χ, μ, σ), ϰ: ϰ, Δ: Δ, rows: rows, cols: cols, schedule: schedule, complete: complete)
-
+			self.dynamicType.correctLightWeight(context: context, η: η, δ: δ, edge: (logμ, logσ, χ, μ, σ), ϰ: ϰ, Δ: Δ, rows: rows, cols: cols, schedule: willChange, complete: didChange)
 		} else {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
-			
 		}
 	}
 }
@@ -102,11 +89,10 @@ extension Context {
 		guard let edge: Edge = new() else {
 			throw Error.CoreData.InsertionFails(entity: Cell.className())
 		}
-		edge.resize(count: output.width*input.width)
-		edge.adjust(μ: 0, σ: 1/Float(input.width))
 		edge.output = output
 		edge.input = input
-		edge.setup(self)
+		edge.resize(count: output.width*input.width)
+		edge.adjust(μ: 0, σ: 1/Float(input.width))
 		return edge
 	}
 }
