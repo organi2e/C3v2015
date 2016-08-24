@@ -15,7 +15,7 @@ class CellTests: XCTestCase {
 	static let f: Bool = false
 	static let T: Bool = true
 	
-	let η: Float = 1 / 16.0
+	let η: Float = 1 / 64.0
 	
 	//let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f]]
 	//let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,f,T,T], [f,T,f,f]]

@@ -98,9 +98,17 @@ extension Art {
 		willChangeValueForKey(self.dynamicType.logμkey)
 		willChangeValueForKey(self.dynamicType.logσkey)
 	}
+	internal func willAccess() {
+		willAccessValueForKey(self.dynamicType.logμkey)
+		willAccessValueForKey(self.dynamicType.logσkey)
+	}
 	internal func didChange() {
 		didChangeValueForKey(self.dynamicType.logσkey)
 		didChangeValueForKey(self.dynamicType.logμkey)
+	}
+	internal func didAccess() {
+		didAccessValueForKey(self.dynamicType.logμkey)
+		didAccessValueForKey(self.dynamicType.logσkey)
 	}
 	/*
 	internal func dump(let label: String? = nil) {

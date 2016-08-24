@@ -17,6 +17,7 @@ public class Cell: NSManagedObject {
 		case ϰ
 		case δ
 	}
+	
 	private var ready: Set<Ready> = Set<Ready>()
 	
 	private struct Deterministic {
@@ -139,7 +140,7 @@ extension Cell {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
 		
 		}
-		bias.refresh()
+		bias.shuffle()
 	}
 	private func oRefresh() {
 		
@@ -161,6 +162,7 @@ extension Cell {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
 		
 		}
+		bias.refresh()
 	}
 	
 	public func iClear() {
