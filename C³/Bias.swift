@@ -54,7 +54,7 @@ extension Bias {
 			}
 			if 0 < grads.length {
 				grads.progress()
-				self.dynamicType.gradientEye(context: context, grad: (grads.new.μ, grads.new.σ), rows: rows, cols: cols)
+				self.dynamicType.gradientEye(context: context, grad: (grads.new.μ, grads.new.σ))
 				self.dynamicType.correct(context: context, η: η, bias: (logμ, logσ, μ, σ), grad: (grads.new.μ, grads.new.σ), Δ: Δ, rows: rows, cols: cols, schedule: schedule, complete: complete)
 			} else {
 				self.dynamicType.correctLightWeight(context: context, η: η, bias: (logμ, logσ, μ, σ), Δ: Δ, rows: rows, cols: cols, schedule: schedule, complete: complete)
@@ -111,7 +111,9 @@ extension Bias {
 			$0.dispatchThreadgroups(MTLSize(width: rows*cols/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}
 	}
-	internal static func gradientEye(let context context: Context, let grad: (MTLBuffer, MTLBuffer), let rows: Int, let cols: Int) {
+	internal static func gradientEye(let context context: Context, let grad: (MTLBuffer, MTLBuffer)) {
+		assert(grad.0.length==grad.1.length)
+		let count: Int = min(grad.0.length, grad.1.length) / sizeof(Float)
 		context.newBlitCommand {
 			$0.fillBuffer(grad.0, range: NSRange(location: 0, length: grad.0.length), value: 0)
 			$0.fillBuffer(grad.1, range: NSRange(location: 0, length: grad.1.length), value: 0)
@@ -119,8 +121,14 @@ extension Bias {
 		context.newComputeCommand(function: gradientEyeKerel) {
 			$0.setBuffer(grad.0, offset: 0, atIndex: 0)
 			$0.setBuffer(grad.1, offset: 0, atIndex: 1)
-			$0.dispatchThreadgroups(MTLSize(width: rows*cols/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
+			$0.dispatchThreadgroups(MTLSize(width: count/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}
+	}
+}
+extension Bias {
+	private func bind(let output o: Cell) {
+		cell = o
+		resize(rows: cell.width, cols: 1)
 	}
 }
 extension Context {
@@ -128,9 +136,7 @@ extension Context {
 		guard let bias: Bias = new() else {
 			throw Error.CoreData.InsertionFails(entity: Bias.className())
 		}
-		bias.resize(rows: output.width, cols: 1)
-		bias.cell = output
-		bias.setup(self)
+		bias.bind(output: output)
 		return bias
 	}
 }
