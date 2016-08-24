@@ -18,8 +18,8 @@ extension Edge {
 }
 
 extension Edge {
-	func collect(let Φ Φ: (MTLBuffer, MTLBuffer, MTLBuffer), let visit: Set<Cell>) {
-		let ϰ: MTLBuffer = input.collect(visit: visit)
+	func collect(let Φ Φ: (MTLBuffer, MTLBuffer, MTLBuffer)) {
+		let ϰ: MTLBuffer = input.collect()
 		if let context: Context = managedObjectContext as? Context {
 			let rows: Int = output.width
 			let cols: Int = input.width
@@ -28,8 +28,8 @@ extension Edge {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
 		}
 	}
-	internal func correct(let δ δ: MTLBuffer, let η: Float, let ϰ: MTLBuffer, let visit: Set<Cell>) {
-		let Δ: (MTLBuffer, MTLBuffer, MTLBuffer) = output.correct(η: η, visit: visit)
+	internal func correct(let δ δ: MTLBuffer, let η: Float, let ϰ: MTLBuffer) {
+		let Δ: (MTLBuffer, MTLBuffer, MTLBuffer) = output.correct(η: η)
 		if let context: Context = managedObjectContext as? Context {
 			let rows: Int = output.width
 			let cols: Int = input.width
@@ -38,11 +38,13 @@ extension Edge {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
 		}
 	}
-	internal func iClear(let ignore: Set<Cell>) {
-		input.iClear(ignore)
+	internal func iClear() {
+		shuffle()
+		input.iClear()
 	}
-	internal func oClear(let ignore: Set<Cell>) {
-		output.oClear(ignore)
+	internal func oClear() {
+		refresh()
+		output.oClear()
 	}
 }
 extension Edge {

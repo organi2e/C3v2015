@@ -163,97 +163,69 @@ extension Cell {
 		}
 	}
 	
-	public func iClear(let ignore: Set<Cell>=[]) {
-		if ignore.contains(self) {
-			
-		} else if ready.contains(.ϰ) {
+	public func iClear() {
+		if ready.contains(.ϰ) {
+			ready.remove(.ϰ)
 			input.forEach {
-				$0.shuffle()
-				$0.iClear(ignore.union([self]))
+				$0.iClear()
 			}
 			iRefresh()
-			ready.remove(.ϰ)
 		}
 	}
-	public func oClear(let ignore: Set<Cell>=[]) {
-		if ignore.contains(self) {
-		
-		} else if ready.contains(.δ) {
+	public func oClear() {
+		if ready.contains(.δ) {
+			ready.remove(.δ)
 			output.forEach {
-				$0.refresh()
-				$0.oClear(ignore.union([self]))
+				$0.oClear()
 			}
 			oRefresh()
-			ready.remove(.δ)
 		}
 		ready.remove(.ψ)
 	}
 	
-	public func collect(let visit visit: Set<Cell>=[]) -> MTLBuffer {
-		
-		if visit.contains(self) {
-			return Υ.old.ϰ
-			
-		} else {
-			
-			if ready.contains(.ϰ) {
-				return Υ.new.ϰ
-				
-			} else if let context: Context = managedObjectContext as? Context {
-				
-				input.forEach {
-					$0.collect(Φ: (Φ.new.χ, Φ.new.μ, Φ.new.σ), visit: visit.union([self]))
-				}
-				bias.collect(level: (Φ.new.χ, Φ.new.μ, Φ.new.σ))
-				self.dynamicType.activate(context: context,
-				                          Υ: Υ.new.ϰ,
-				                          Φ: Φ.new.χ,
-				                          width: width)
-				ready.insert(.ϰ)
-				
-			} else {
-				assertionFailure(Context.Error.InvalidContext.rawValue)
-				
+	public func collect() -> MTLBuffer {
+		if ready.contains(.ϰ) {
+			return Υ.new.ϰ
+		} else if let context: Context = managedObjectContext as? Context {
+			ready.insert(.ϰ)
+			input.forEach {
+				$0.collect(Φ: (Φ.new.χ, Φ.new.μ, Φ.new.σ))
 			}
+			bias.collect(level: (Φ.new.χ, Φ.new.μ, Φ.new.σ))
+			self.dynamicType.activate(context: context,
+			                          Υ: Υ.new.ϰ,
+			                          Φ: Φ.new.χ,
+			                          width: width)
+		} else {
+			assertionFailure(Context.Error.InvalidContext.rawValue)
 		}
 		return Υ.new.ϰ
 	}
 	public func correct(let η η: Float, let visit: Set<Cell>=[]) -> (MTLBuffer, MTLBuffer, MTLBuffer) {
-		if visit.contains(self) {
-			return(Δ.old.χ, Δ.old.μ, Δ.old.σ)
-			
-		} else {
-			if ready.contains(.δ) {
-				return(Δ.new.χ, Δ.new.μ, Δ.new.σ)
-				
-			} else if ready.contains(.ϰ) {
-				if let context: Context = managedObjectContext as? Context {
-
-					if ready.contains(.ψ) {
-						self.dynamicType.difference(context: context,
-						                            δ: Υ.new.δ,
-						                            ψ: Υ.new.ψ,
-						                            ϰ: Υ.new.ϰ,
-						                            width: width)
-					
-					} else {
-						output.forEach {
-							$0.correct(δ: Υ.new.δ, η: η, ϰ: Υ.new.ϰ, visit: visit.union([self]))
-						}
-						
-					}
-					self.dynamicType.derivate(context: context,
-					                          Δ: (Δ.new.χ, Δ.new.μ, Δ.new.σ),
-					                          Φ: (Φ.new.χ, Φ.new.μ, Φ.new.σ),
-					                          δ: Υ.new.δ,
-					                          width: width)
-					bias.correct(η: η, Δ: (Δ.new.μ, Δ.new.σ))
-					ready.insert(.δ)
-					
+		if ready.contains(.δ) {
+			return(Δ.new.χ, Δ.new.μ, Δ.new.σ)
+		} else if ready.contains(.ϰ) {
+			if let context: Context = managedObjectContext as? Context {
+				if ready.contains(.ψ) {
+					self.dynamicType.difference(context: context,
+					                            δ: Υ.new.δ,
+					                            ψ: Υ.new.ψ,
+					                            ϰ: Υ.new.ϰ,
+					                            width: width)
 				} else {
-					assertionFailure(Context.Error.InvalidContext.rawValue)
-					
+					output.forEach {
+						$0.correct(δ: Υ.new.δ, η: η, ϰ: Υ.new.ϰ)
+					}
 				}
+				self.dynamicType.derivate(context: context,
+				                          Δ: (Δ.new.χ, Δ.new.μ, Δ.new.σ),
+				                          Φ: (Φ.new.χ, Φ.new.μ, Φ.new.σ),
+				                          δ: Υ.new.δ,
+				                          width: width)
+				bias.correct(η: η, Δ: (Δ.new.μ, Δ.new.σ))
+				ready.insert(.δ)
+			} else {
+				assertionFailure(Context.Error.InvalidContext.rawValue)
 			}
 		}
 		return(Δ.new.χ, Δ.new.μ, Δ.new.σ)
