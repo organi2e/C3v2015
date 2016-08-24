@@ -29,7 +29,7 @@ class GaussTests: XCTestCase {
 		let rows: Int = 1024//4*Int(1+arc4random_uniform(256))
 		let cols: Int = 1024//4*Int(1+arc4random_uniform(256))
 		
-		gauss.resize(rows: rows, cols: cols)
+		gauss.resize(count: rows*cols)
 		gauss.adjust(μ: dμ, σ: dσ)
 		
 		gauss.shuffle()

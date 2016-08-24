@@ -59,7 +59,7 @@ extension Context {
 		guard let feedback: Feedback = new() else {
 			throw Error.CoreData.InsertionFails(entity: Feedback.className())
 		}
-		feedback.resize(rows: width, cols: width)
+		feedback.resize(count: width*width)
 		return feedback
 	}
 	

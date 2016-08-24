@@ -44,7 +44,7 @@ class BiasTests: XCTestCase {
 			}
 		}
 		
-		bias.resize(rows: rows, cols: cols)
+		//bias.resize(rows: rows, cols: cols)
 		bias.adjust(μ: 0.5, σ: 1.0)
 		bias.refresh()
 		bias.shuffle()
@@ -143,7 +143,7 @@ class BiasTests: XCTestCase {
 			logσ[i] += η * ( 1 - exp(-σ[i]) ) * s
 		}
 		
-		Bias.correct(context: context, η: η, bias: (logμ_mtl, logσ_mtl, μ_mtl, σ_mtl), grad: (dμ_mtl, dσ_mtl), Δ: (Δμ_mtl, Δσ_mtl), rows: o_width, cols: i_width)
+		Bias.correct(context: context, η: η, bias: (logμ_mtl, logσ_mtl, μ_mtl, σ_mtl), grad: (dμ_mtl, dσ_mtl), Δ: (Δμ_mtl, Δσ_mtl), width: o_width)
 		
 		let dstLogμ: [Float] = context.toRowMajorMatrix(logμ_mtl, rows: i_width, cols: 1)
 		let dstLogσ: [Float] = context.toRowMajorMatrix(logσ_mtl, rows: i_width, cols: 1)

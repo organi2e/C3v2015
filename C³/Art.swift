@@ -18,8 +18,6 @@ internal class Art: NSManagedObject {
 }
 
 extension Art {
-	@NSManaged internal private(set) var rows: Int
-	@NSManaged internal private(set) var cols: Int
 	@NSManaged private var logmu: NSData
 	@NSManaged private var logsigma: NSData
 	@nonobjc internal static let logμkey: String = "logmu"
@@ -64,7 +62,7 @@ extension Art {
 		
 	}
 	internal func shuffle() {
-		if let context: Context = managedObjectContext as? Context where 0 < rows && 0 < cols {
+		if let context: Context = managedObjectContext as? Context where 0 < logmu.length && 0 < logsigma.length {
 			self.dynamicType.shuffle(context: context, χ: χ, μ: μ, σ: σ)
 			
 		} else {
@@ -73,7 +71,7 @@ extension Art {
 		}
 	}
 	internal func refresh() {
-		if let context: Context = managedObjectContext as? Context where 0 < rows && 0 < cols {
+		if let context: Context = managedObjectContext as? Context where 0 < logmu.length && 0 < logsigma.length {
 			self.dynamicType.refresh(context: context, μ: μ, σ: σ, logμ: logμ, logσ: logσ)
 			
 		} else {
@@ -82,7 +80,7 @@ extension Art {
 		}
 	}
 	internal func adjust(let μ μ: Float, let σ: Float) {
-		if let context: Context = managedObjectContext as? Context where 0 < rows && 0 < cols {
+		if let context: Context = managedObjectContext as? Context where 0 < logmu.length && 0 < logsigma.length {
 			self.dynamicType.adjust(context: context, logμ: logμ, logσ: logσ, parameter: (μ, σ))
 			
 		} else {
@@ -91,18 +89,16 @@ extension Art {
 		}
 		refresh()
 	}
-	internal func resize(let rows r: Int, let cols c: Int ) {
+	internal func resize(let count count: Int) {
 		
-		rows = r
-		cols = c
-		
-		logmu = NSData(bytes: [Float](count: rows*cols, repeatedValue: 0), length: sizeof(Float)*r*c)
-		logsigma = NSData(bytes: [Float](count: rows*cols, repeatedValue: 0), length: sizeof(Float)*r*c)
+		logmu = NSData(bytes: [Float](count: count, repeatedValue: 0), length: sizeof(Float)*count)
+		logsigma = NSData(bytes: [Float](count: count, repeatedValue: 0), length: sizeof(Float)*count)
 		
 		if let context: Context = managedObjectContext as? Context {
 			setup(context)
 		}
 	}
+	/*
 	internal func dump(let label: String? = nil) {
 		if let context: Context = managedObjectContext as? Context where 0 < rows && 0 < cols {
 			
@@ -133,6 +129,7 @@ extension Art {
 			
 		}
 	}
+	*/
 }
 extension Art {
 	internal class var shuffleKernel: String { return "artShuffle" }

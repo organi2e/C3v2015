@@ -27,7 +27,7 @@ class CauchyTests: XCTestCase {
 		let rows: Int = 64//*Int(1+arc4random_uniform(256))
 		let cols: Int = 64//*Int(1+arc4random_uniform(256))
 		
-		art.resize(rows: rows, cols: cols)
+		//art.resize(rows: rows, cols: cols)
 		art.adjust(μ: dμ, σ: dσ)
 		
 		let eps: Float = 0.5

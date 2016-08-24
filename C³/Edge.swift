@@ -102,7 +102,7 @@ extension Context {
 		guard let edge: Edge = new() else {
 			throw Error.CoreData.InsertionFails(entity: Cell.className())
 		}
-		edge.resize(rows: output.width, cols: input.width)
+		edge.resize(count: output.width*input.width)
 		edge.adjust(μ: 0, σ: 1/Float(input.width))
 		edge.output = output
 		edge.input = input
