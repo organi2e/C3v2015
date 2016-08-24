@@ -88,11 +88,12 @@ class BiasTests: XCTestCase {
 		
 	}
 	func testGradientEye() {
+		let width: Int = 16
 		let rows: Int = 16
 		let cols: Int = 16
 		let mu: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows*cols)
 		let sigma: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows*cols)
-		Bias.gradientEye(context: context, grad: (mu, sigma), rows: rows, cols: cols)
+		Bias.gradientEye(context: context, grad: (mu, sigma), width: width)
 		let mu_la: la_object_t = context.toLAObject(mu, rows: rows, cols: cols)
 		let sigma_la: la_object_t = context.toLAObject(sigma, rows: rows, cols: cols)
 		context.join()

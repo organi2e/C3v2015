@@ -16,14 +16,14 @@ internal class Bias: Cauchy {
 }
 
 extension Bias {
-	@NSManaged internal var cell: Cell
+	@NSManaged internal var output: Cell
 	
 }
 
 extension Bias {
 	internal override func setup(let context: Context) {
 		super.setup(context)
-		if cell.isRecurrent {
+		if output.isRecurrent {
 			let length: Int = 2
 			grads = RingBuffer<grad>(array: (0..<length).map{(_)in
 				grad(
@@ -54,7 +54,7 @@ extension Bias {
 			}
 			if 0 < grads.length {
 				grads.progress()
-				self.dynamicType.gradientEye(context: context, grad: (grads.new.μ, grads.new.σ))
+				self.dynamicType.gradientEye(context: context, grad: (grads.new.μ, grads.new.σ), width: output.width)
 				self.dynamicType.correct(context: context, η: η, bias: (logμ, logσ, μ, σ), grad: (grads.new.μ, grads.new.σ), Δ: Δ, rows: rows, cols: cols, schedule: schedule, complete: complete)
 			} else {
 				self.dynamicType.correctLightWeight(context: context, η: η, bias: (logμ, logσ, μ, σ), Δ: Δ, rows: rows, cols: cols, schedule: schedule, complete: complete)
@@ -111,9 +111,8 @@ extension Bias {
 			$0.dispatchThreadgroups(MTLSize(width: rows*cols/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}
 	}
-	internal static func gradientEye(let context context: Context, let grad: (MTLBuffer, MTLBuffer)) {
+	internal static func gradientEye(let context context: Context, let grad: (MTLBuffer, MTLBuffer), let width: Int) {
 		assert(grad.0.length==grad.1.length)
-		let count: Int = min(grad.0.length, grad.1.length) / sizeof(Float)
 		context.newBlitCommand {
 			$0.fillBuffer(grad.0, range: NSRange(location: 0, length: grad.0.length), value: 0)
 			$0.fillBuffer(grad.1, range: NSRange(location: 0, length: grad.1.length), value: 0)
@@ -121,14 +120,14 @@ extension Bias {
 		context.newComputeCommand(function: gradientEyeKerel) {
 			$0.setBuffer(grad.0, offset: 0, atIndex: 0)
 			$0.setBuffer(grad.1, offset: 0, atIndex: 1)
-			$0.dispatchThreadgroups(MTLSize(width: count/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
+			$0.dispatchThreadgroups(MTLSize(width: width/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}
 	}
 }
 extension Bias {
 	private func bind(let output o: Cell) {
-		cell = o
-		resize(rows: cell.width, cols: 1)
+		output = o
+		resize(rows: output.width, cols: 1)
 	}
 }
 extension Context {

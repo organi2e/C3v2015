@@ -21,6 +21,8 @@ extension Edge {
 	func collect(let Φ Φ: (MTLBuffer, MTLBuffer, MTLBuffer), let visit: Set<Cell>) {
 		let ϰ: MTLBuffer = input.collect(visit: visit)
 		if let context: Context = managedObjectContext as? Context {
+			let rows: Int = output.width
+			let cols: Int = input.width
 			self.dynamicType.collect(context: context, Φ: Φ, edge: (χ, μ, σ), ϰ: ϰ, rows: rows, cols: cols)
 			
 		} else {
@@ -40,6 +42,8 @@ extension Edge {
 				didChangeValueForKey(self.dynamicType.logσkey)
 				didChangeValueForKey(self.dynamicType.logμkey)
 			}
+			let rows: Int = output.width
+			let cols: Int = input.width
 			self.dynamicType.correctLightWeight(context: context, η: η, δ: δ, edge: (logμ, logσ, χ, μ, σ), ϰ: ϰ, Δ: Δ, rows: rows, cols: cols, schedule: schedule, complete: complete)
 
 		} else {

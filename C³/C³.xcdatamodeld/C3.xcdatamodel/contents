@@ -7,7 +7,7 @@
         <attribute name="rows" attributeType="Integer 64" syncable="YES"/>
     </entity>
     <entity name="Bias" representedClassName="C3.Bias" parentEntity="Cauchy" syncable="YES">
-        <relationship name="cell" maxCount="1" deletionRule="Nullify" destinationEntity="Cell" inverseName="bias" inverseEntity="Cell" syncable="YES"/>
+        <relationship name="output" maxCount="1" deletionRule="Nullify" destinationEntity="Cell" inverseName="bias" inverseEntity="Cell" syncable="YES"/>
     </entity>
     <entity name="Blob" representedClassName="C3.Blob" syncable="YES">
         <attribute name="data" attributeType="Binary" syncable="YES"/>
@@ -18,7 +18,7 @@
         <attribute name="attribute" transient="YES" attributeType="Transformable" syncable="YES"/>
         <attribute name="label" attributeType="String" indexed="YES" syncable="YES"/>
         <attribute name="width" attributeType="Integer 64" minValueString="0" syncable="YES"/>
-        <relationship name="bias" maxCount="1" deletionRule="Cascade" destinationEntity="Bias" inverseName="cell" inverseEntity="Bias" syncable="YES"/>
+        <relationship name="bias" maxCount="1" deletionRule="Cascade" destinationEntity="Bias" inverseName="output" inverseEntity="Bias" syncable="YES"/>
         <relationship name="decay" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="Decay" inverseName="cell" inverseEntity="Decay" syncable="YES"/>
         <relationship name="feedback" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="Feedback" inverseName="cell" inverseEntity="Feedback" syncable="YES"/>
         <relationship name="input" toMany="YES" deletionRule="Cascade" destinationEntity="Edge" inverseName="output" inverseEntity="Edge" syncable="YES"/>
