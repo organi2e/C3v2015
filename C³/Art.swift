@@ -68,7 +68,7 @@ extension Art {
 			self.dynamicType.shuffle(context: context, χ: χ, μ: μ, σ: σ)
 			
 		} else {
-			assertionFailure("\(Context.Error.InvalidContext.rawValue) or rows:\(rows), cols: \(cols)")
+			assertionFailure(Context.Error.InvalidContext.rawValue)
 			
 		}
 	}
@@ -83,7 +83,7 @@ extension Art {
 	}
 	internal func adjust(let μ μ: Float, let σ: Float) {
 		if let context: Context = managedObjectContext as? Context where 0 < rows && 0 < cols {
-			self.dynamicType.adjust(context: context, logμ: logμ, logσ: logσ, parameter: (μ, σ), rows: rows, cols: cols)
+			self.dynamicType.adjust(context: context, logμ: logμ, logσ: logσ, parameter: (μ, σ))
 			
 		} else {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
@@ -96,8 +96,8 @@ extension Art {
 		rows = r
 		cols = c
 		
-		logmu = NSData(bytes: [Float](count: rows*cols, repeatedValue: 0), length: sizeof(Float)*rows*cols)
-		logsigma = NSData(bytes: [Float](count: rows*cols, repeatedValue: 0), length: sizeof(Float)*rows*cols)
+		logmu = NSData(bytes: [Float](count: rows*cols, repeatedValue: 0), length: sizeof(Float)*r*c)
+		logsigma = NSData(bytes: [Float](count: rows*cols, repeatedValue: 0), length: sizeof(Float)*r*c)
 		
 		if let context: Context = managedObjectContext as? Context {
 			setup(context)
@@ -181,13 +181,14 @@ extension Art {
 			$0.dispatchThreadgroups(MTLSize(width: count/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}
 	}
-	internal static func adjust(let context context: Context, let logμ: MTLBuffer, let logσ: MTLBuffer, let parameter: (Float, Float), let rows: Int, let cols: Int) {
-		assert(rows*cols%4==0)
+	internal static func adjust(let context context: Context, let logμ: MTLBuffer, let logσ: MTLBuffer, let parameter: (Float, Float)) {
+		assert(logμ.length==logσ.length)
+		let count: Int = min(logμ.length, logσ.length) / sizeof(Float)
 		context.newComputeCommand(function: adjustKernel) {
 			$0.setBuffer(logμ, offset: 0, atIndex: 0)
 			$0.setBuffer(logσ, offset: 0, atIndex: 1)
 			$0.setBytes([parameter.0, parameter.1], length: sizeof(Float)*2, atIndex: 2)
-			$0.dispatchThreadgroups(MTLSize(width: rows*cols/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
+			$0.dispatchThreadgroups(MTLSize(width: count/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}
 	}
 }
