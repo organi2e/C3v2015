@@ -102,7 +102,7 @@ extension Context {
 		edge.adjust(μ: 0, σ: 1/Float(input.width))
 		edge.output = output
 		edge.input = input
-		edge.setup()
+		edge.setup(self)
 		return edge
 	}
 }

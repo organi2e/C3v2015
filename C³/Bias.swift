@@ -21,18 +21,16 @@ extension Bias {
 }
 
 extension Bias {
-	internal override func setup() {
-		super.setup()
-		if let context: Context = managedObjectContext as? Context {
-			if cell.isRecurrent {
-				let length: Int = 2
-				grads = RingBuffer<grad>(array: (0..<length).map{(_)in
-					grad(
-						μ: context.newBuffer(length: sizeof(Float)*rows*cols, options: .StorageModePrivate),
-						σ: context.newBuffer(length: sizeof(Float)*rows*cols, options: .StorageModePrivate)
-					)
-				})
-			}
+	internal override func setup(let context: Context) {
+		super.setup(context)
+		if cell.isRecurrent {
+			let length: Int = 2
+			grads = RingBuffer<grad>(array: (0..<length).map{(_)in
+				grad(
+					μ: context.newBuffer(length: sizeof(Float)*rows*cols, options: .StorageModePrivate),
+					σ: context.newBuffer(length: sizeof(Float)*rows*cols, options: .StorageModePrivate)
+				)
+			})
 		}
 	}
 	internal func collect(let level level: (MTLBuffer, MTLBuffer, MTLBuffer)) {
@@ -132,7 +130,7 @@ extension Context {
 		}
 		bias.resize(rows: output.width, cols: 1)
 		bias.cell = output
-		bias.setup()
+		bias.setup(self)
 		return bias
 	}
 }
