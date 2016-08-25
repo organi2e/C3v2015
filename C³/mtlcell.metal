@@ -32,14 +32,16 @@ kernel void cellDerivate(device float4 * const delta_value [[ buffer(0) ]],
 						 uint const n [[ thread_position_in_grid ]],
 						 uint const N [[ threads_per_grid ]]
 						 ) {
-	float4 const pdf = cauchyPDF ( level_mu [ n ], level_sigma [ n ], M_PI);
-	float4 const cdf = cauchyCDF ( level_mu [ n ], level_sigma [ n ], M_PI);
+	float4 const mu = level_mu[n];
+	float4 const sigma = level_sigma[n];
+	float4 const pdf = cauchyPDF ( mu, sigma, M_PI);
+	float4 const cdf = cauchyCDF ( mu, sigma, M_PI);
 	float4 const gradient = pdf / cdf / ( 1.0 - cdf );
-	float4 const error = sign ( state_error [ n ] );
+	float4 const error = sign ( state_error[n] );
 	float4 const delta = gradient * error;
 	delta_value[n] = delta;
 	delta_mu[n] = delta;
-	delta_sigma[n] = - delta * level_mu[n] / level_sigma[n];
+	delta_sigma[n] = - delta * mu / sigma;
 }
 kernel void cellDifference(device float4 * const error [[ buffer(0) ]],
 						   device const float4 * const train [[ buffer(1) ]],

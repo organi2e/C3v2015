@@ -86,7 +86,7 @@ kernel void edgeCorrectLightWeight(device float4 * const input_error [[ buffer(0
 								   device const float4 * const delta_value [[ buffer(7) ]],
 								   device const float4 * const delta_mu [[ buffer(8) ]],
 								   device const float4 * const delta_sigma [[ buffer(9) ]],
-								   constant const float & eps [[ buffer(10) ]],
+								   constant const float & eta [[ buffer(10) ]],
 								   constant const uint2 & dim [[ buffer(11) ]],
 								   threadgroup float4 * const accumulator [[ threadgroup(0) ]],
 								   uint const g [[ threadgroup_position_in_grid ]],
@@ -115,25 +115,17 @@ kernel void edgeCorrectLightWeight(device float4 * const input_error [[ buffer(0
 		error += ( mu * edge_mu[ idx ] );
 		error += ( sigma * edge_sigma[ idx ] );
 		
-		float4x4 dm = float4x4(mu, mu, mu, mu);
 		float4x4 const jm = edge_mu[idx];
+		edge_logmu[idx] += eta * float4x4(state[0] * artMuGradient(jm[0]) * mu,
+										  state[1] * artMuGradient(jm[1]) * mu,
+										  state[2] * artMuGradient(jm[2]) * mu,
+										  state[3] * artMuGradient(jm[3]) * mu);
 		
-		dm[0] *= artMuGradient(jm[0]) * state[0];
-		dm[1] *= artMuGradient(jm[1]) * state[1];
-		dm[2] *= artMuGradient(jm[2]) * state[2];
-		dm[3] *= artMuGradient(jm[3]) * state[3];
-		
-		edge_logmu[idx] += eps * dm;
-		
-		float4x4 ds = float4x4(sigma, sigma, sigma, sigma);
 		float4x4 const js = edge_sigma[idx];
-			
-		ds[0] *= artSigmaGradient(js[0]) * state[0];
-		ds[1] *= artSigmaGradient(js[1]) * state[1];
-		ds[2] *= artSigmaGradient(js[2]) * state[2];
-		ds[3] *= artSigmaGradient(js[3]) * state[3];
-			
-		edge_logsigma[idx] += eps * ds;
+		edge_logsigma[idx] += eta * float4x4(state[0] * artSigmaGradient(js[0]) * sigma,
+											 state[1] * artSigmaGradient(js[1]) * sigma,
+											 state[2] * artSigmaGradient(js[2]) * sigma,
+											 state[3] * artSigmaGradient(js[3]) * sigma);
 	}
 	
 	accumulator[t] = error;
@@ -146,7 +138,7 @@ kernel void edgeCorrectLightWeight(device float4 * const input_error [[ buffer(0
 		}
 	}
 	if ( !t ) {
-		input_error [ cols ] = *accumulator;
+		input_error [ cols ] = * accumulator;
 	}
 }
 /*
