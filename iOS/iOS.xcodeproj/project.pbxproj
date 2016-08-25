@@ -1090,6 +1090,7 @@
 				87D3F1741D6CB0B600FA8C80 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

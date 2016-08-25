@@ -7,6 +7,20 @@
 	objects = {
 
 /* Begin PBXContainerItemProxy section */
+		874347C31D6EF8EE00B54F70 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 878C7A5E1D01AE4D002CDFD1 /* Mac.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 8743479D1D6EF8E400B54F70;
+			remoteInfo = CL3;
+		};
+		874347C51D6EF8EE00B54F70 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 878C7A5E1D01AE4D002CDFD1 /* Mac.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 874347A61D6EF8E500B54F70;
+			remoteInfo = CL3Tests;
+		};
 		875DD1E91D6C619700A5C250 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 878C7A5E1D01AE4D002CDFD1 /* Mac.xcodeproj */;
@@ -94,6 +108,11 @@
 		8719AE591D3DE0BB00F8DCA4 /* mtlComputerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = mtlComputerTests.swift; path = Computer/mtlComputerTests.swift; sourceTree = "<group>"; };
 		873934A91D42FCF800888988 /* Blob.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Blob.swift; path = "C³/Blob.swift"; sourceTree = "<group>"; };
 		8740E9161D409B7F0026D1CA /* special.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = special.metal; path = NLA/special.metal; sourceTree = "<group>"; };
+		874347C71D6EF90500B54F70 /* Context.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = Context.c; path = CL3/Context.c; sourceTree = "<group>"; };
+		874347C81D6EF90500B54F70 /* Context.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Context.h; path = CL3/Context.h; sourceTree = "<group>"; };
+		874347D01D6F013600B54F70 /* Bridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = Bridge.m; path = CL3/Bridge.m; sourceTree = "<group>"; };
+		874347D11D6F014200B54F70 /* Bridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Bridge.h; path = CL3/Bridge.h; sourceTree = "<group>"; };
+		874347D61D6F023B00B54F70 /* clblas.cl */ = {isa = PBXFileReference; explicitFileType = text; name = clblas.cl; path = CL3/clblas.cl; sourceTree = "<group>"; };
 		874F0BC41D3FC4C0005A2B62 /* AsyncValue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AsyncValue.swift; path = NLA/AsyncValue.swift; sourceTree = "<group>"; };
 		87591AE11D3C45C400BD9248 /* blas.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = blas.metal; path = Computer/blas.metal; sourceTree = "<group>"; };
 		87591AE21D3C45C400BD9248 /* Buffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Buffer.swift; path = Computer/Buffer.swift; sourceTree = "<group>"; };
@@ -150,6 +169,18 @@
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
+		874347B51D6EF8EE00B54F70 /* CL3 */ = {
+			isa = PBXGroup;
+			children = (
+				874347C71D6EF90500B54F70 /* Context.c */,
+				874347C81D6EF90500B54F70 /* Context.h */,
+				874347D01D6F013600B54F70 /* Bridge.m */,
+				874347D11D6F014200B54F70 /* Bridge.h */,
+				874347D61D6F023B00B54F70 /* clblas.cl */,
+			);
+			name = CL3;
+			sourceTree = "<group>";
+		};
 		87591ADC1D3C451300BD9248 /* Computer */ = {
 			isa = PBXGroup;
 			children = (
@@ -189,6 +220,7 @@
 				878C7A5E1D01AE4D002CDFD1 /* Mac.xcodeproj */,
 				878C7A681D01AE5E002CDFD1 /* iOS.xcodeproj */,
 				878C7A6B1D01AE66002CDFD1 /* C³ */,
+				874347B51D6EF8EE00B54F70 /* CL3 */,
 				878C7A6C1D01AE7D002CDFD1 /* MNIST */,
 				875DD1C81D6C5F6D00A5C250 /* CIFAR10 */,
 				87591ADC1D3C451300BD9248 /* Computer */,
@@ -205,6 +237,8 @@
 				878C7ABC1D01AF25002CDFD1 /* C3Tests.xctest */,
 				878C7AC01D01AF25002CDFD1 /* MNIST.framework */,
 				875DD1EA1D6C619700A5C250 /* CIFAR10.framework */,
+				874347C41D6EF8EE00B54F70 /* CL3.framework */,
+				874347C61D6EF8EE00B54F70 /* CL3Tests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -315,6 +349,20 @@
 /* End PBXProject section */
 
 /* Begin PBXReferenceProxy section */
+		874347C41D6EF8EE00B54F70 /* CL3.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = CL3.framework;
+			remoteRef = 874347C31D6EF8EE00B54F70 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		874347C61D6EF8EE00B54F70 /* CL3Tests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = CL3Tests.xctest;
+			remoteRef = 874347C51D6EF8EE00B54F70 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
 		875DD1EA1D6C619700A5C250 /* CIFAR10.framework */ = {
 			isa = PBXReferenceProxy;
 			fileType = wrapper.framework;
