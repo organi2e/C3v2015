@@ -154,6 +154,7 @@ class BlasTests: XCTestCase {
 		
 	}
 	func testGEMMMTL() {
+		
 		let M: Int = 1024
 		let K: Int = 1024
 		let N: Int = 1024
@@ -211,7 +212,7 @@ class BlasTests: XCTestCase {
 	func testGEMVTMTL() {
 		
 		let rows: Int = 1024
-		let cols: Int = 0124
+		let cols: Int = 1024
 		
 		let LA: la_object_t = la_matrix_from_float_buffer((0..<rows*cols).map{(_)in Float(arc4random_uniform(256))/Float(128.0)-1.0}, la_count_t(rows), la_count_t(cols), la_count_t(cols), NOHINT, ATTR)
 		let LB: la_object_t = la_matrix_from_float_buffer((0..<rows).map{(_)in Float(arc4random_uniform(256))/Float(128.0)-1.0}, la_count_t(rows), la_count_t(1), la_count_t(1), NOHINT, ATTR)
