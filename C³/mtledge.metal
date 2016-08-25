@@ -76,6 +76,26 @@ kernel void edgeCollect(device float4 * level_value [[ buffer(0) ]],
 	}
 	
 }
+kernel void edgeGradientInitialize(device float4x4 * const mu [[ buffer(0) ]],
+								   device float4x4 * const sigma [[ buffer(1) ]],
+								   device const float4 * const input [[ buffer(2) ]],
+								   constant const uint2 & dim [[ buffer(3) ]],
+								   uint const g [[ threadgroup_position_in_grid ]],
+								   uint const G [[ threadgroups_per_grid ]],
+								   uint const t [[ thread_position_in_threadgroup ]],
+								   uint const T [[ threads_per_threadgroup ]]) {
+	uint const I = dim.x;
+	uint const J = dim.y, j = g;
+	float4x4 value = float4x4(0.0);
+	value[t] = input[j];
+	value = transpose(value);
+	for ( uint i = 0 ; i < I ; ++ i ) {
+		uint const k = i * T + t;
+		uint const idx = ( ( k * J ) + j ) * I + i;
+		mu[idx] = value;
+		sigma[idx] = value;
+	}
+}
 kernel void edgeCorrectLightWeight(device float4 * const input_error [[ buffer(0) ]],
 								   device float4x4 * const edge_logmu [[ buffer(1) ]],
 								   device float4x4 * const edge_logsigma [[ buffer(2) ]],
@@ -103,15 +123,15 @@ kernel void edgeCorrectLightWeight(device float4 * const input_error [[ buffer(0
 	
 	for( uint m = t ; m < M ; m += T ) {
 		
-		float4 const value = delta_value[m];
+		//float4 const value = delta_value[m];
 		float4 const mu = delta_mu[m];
 		float4 const sigma = delta_sigma[m];
 		
 		uint const idx = n * M + m;
 		
-		error += value * edge_value[idx];
-		//error += ( mu * edge_mu[ idx ] );
-		//error += ( sigma * edge_sigma[ idx ] );
+		//error += value * edge_value[idx];
+		error += ( mu * edge_mu[ idx ] );
+		error += ( sigma * edge_sigma[ idx ] );
 		
 		float4x4 const jm = edge_mu[idx];
 		edge_logmu[idx] += eta * float4x4(state[0] * artMuGradient(jm[0]) * mu,

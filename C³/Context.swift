@@ -6,9 +6,9 @@
 //
 //
 import Accelerate
-import Metal
-import Cocoa
 import CoreData
+import Metal
+import MetalKit
 
 public class Context: NSManagedObjectContext {
 	

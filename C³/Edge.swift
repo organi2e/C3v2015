@@ -49,6 +49,7 @@ extension Edge {
 }
 extension Edge {
 	internal class var collectKernel: String { return "edgeCollect" }
+	internal class var gradientInitializeKernel: String { return "edgeGradientInitialize" }
 	internal class var correctLightWeightKernel: String { return "edgeCorrectLightWeight" }
 	internal static func collect(let context context: Context, let Φ: (MTLBuffer, MTLBuffer, MTLBuffer), let edge: (MTLBuffer, MTLBuffer, MTLBuffer), let ϰ: MTLBuffer, let rows: Int, let cols: Int, let bs: Int = 64) {
 		
@@ -90,7 +91,18 @@ extension Edge {
 			$0.dispatchThreadgroups(MTLSize(width: cols/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: bs, height: 1, depth: 1))
 		}
 	}
-
+	internal static func gradientInitialize(let context context: Context, let edge: (μ: MTLBuffer, σ: MTLBuffer), let input: MTLBuffer, let rows: Int, let cols: Int) {
+		assert(edge.μ.length==sizeof(Float)*rows*rows*cols)
+		assert(edge.σ.length==sizeof(Float)*rows*rows*cols)
+		assert(input.length==sizeof(Float)*cols)
+		context.newComputeCommand(function: gradientInitializeKernel) {
+			$0.setBuffer(edge.μ, offset: 0, atIndex: 0)
+			$0.setBuffer(edge.σ, offset: 0, atIndex: 1)
+			$0.setBuffer(input, offset: 0, atIndex: 2)
+			$0.setBytes([uint(rows/4), uint(cols/4)], length: sizeof(uint)*2, atIndex: 3)
+			$0.dispatchThreadgroups(MTLSize(width: cols/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 4, height: 1, depth: 1))
+		}
+	}
 }
 extension Context {
 	internal func newEdge(let output output: Cell, let input: Cell) throws -> Edge {

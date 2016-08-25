@@ -103,6 +103,47 @@ class EdgeTests: XCTestCase {
 		}
 		
 	}
+	func testGradient() {
+		
+		let o_width: Int = 4 * Int(1+arc4random_uniform(63))
+		let i_width: Int = 4 * Int(1+arc4random_uniform(63))
+
+		let srcχ: [Float] = (0..<i_width).map{(_)in Float(arc4random())}
+		var srcμ: [Float] = [Float](count: o_width*o_width*i_width, repeatedValue: 0)
+		var srcσ: [Float] = [Float](count: o_width*o_width*i_width, repeatedValue: 0)
+		
+		let input: MTLBuffer = context.newBuffer(srcχ)
+		let edgeμ: MTLBuffer = context.newBuffer(srcμ)
+		let edgeσ: MTLBuffer = context.newBuffer(srcσ)
+		
+		measureBlock {
+			Edge.gradientInitialize(context: self.context, edge: (edgeμ, edgeσ), input: input, rows: o_width, cols: i_width)
+			self.context.join()
+		}
+		let dstμ: [Float] = context.toRowMajorMatrix(edgeμ, rows: o_width, cols: i_width*o_width)
+		let dstσ: [Float] = context.toRowMajorMatrix(edgeσ, rows: o_width, cols: i_width*o_width)
+		
+		for k in 0..<o_width {
+			for j in 0..<i_width {
+				for i in 0..<o_width {
+					srcμ[((k*o_width)+i)*i_width+j] = i == k ? srcχ[j] : 0
+					srcσ[((k*o_width)+i)*i_width+j] = i == k ? srcχ[j] : 0
+				}
+			}
+		}
+
+		context.join()
+		
+		let rmseμ: Float = la_norm_as_float(la_difference(la_matrix_from_float_buffer(srcμ, la_count_t(o_width*o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, ATTR), la_matrix_from_float_buffer(dstμ, la_count_t(o_width*o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, ATTR)), la_norm_t(LA_L2_NORM))
+		let rmseσ: Float = la_norm_as_float(la_difference(la_matrix_from_float_buffer(srcσ, la_count_t(o_width*o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, ATTR), la_matrix_from_float_buffer(dstσ, la_count_t(o_width*o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, ATTR)), la_norm_t(LA_L2_NORM))
+		
+		XCTAssert(rmseμ<1e-7)
+		XCTAssert(rmseσ<1e-7)
+		
+		XCTAssert(srcμ.elementsEqual(dstμ))
+		XCTAssert(srcσ.elementsEqual(dstσ))
+		
+	}
 	func testCorrectLightWeight() {
 		
 		let o_width: Int = 4 * Int(1+arc4random_uniform(255))

@@ -16,9 +16,9 @@ class CL3Tests: XCTestCase {
 	
 	func testLA() {
 		
-		let I: Int = 256
-		let J: Int = 256
-		let K: Int = 256
+		let I: Int = 1024
+		let J: Int = 1024
+		let K: Int = 1024
 		
 		let a: [Float] = (0..<I*J).map {(_)in Float(arc4random())/Float(UInt32.max) }
 		let b: [Float] = (0..<J*K).map {(_)in Float(arc4random())/Float(UInt32.max) }
