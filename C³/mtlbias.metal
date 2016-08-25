@@ -39,7 +39,7 @@ kernel void biasCorrect(device float4 * const bias_logmu [[ buffer(0) ]],
 						device const float4 * const delta_mu [[ buffer(6) ]],
 						device const float4 * const delta_sigma [[ buffer(7) ]],
 						constant const uint2 & dim [[ buffer(8) ]],
-						constant const float & eps [[ buffer(9) ]],
+						constant const float & eta [[ buffer(9) ]],
 						threadgroup float4 * const accum_mu [[ threadgroup(0) ]],
 						threadgroup float4 * const accum_sigma [[ threadgroup(1) ]],
 						uint const g [[ threadgroup_position_in_grid ]],
@@ -53,13 +53,10 @@ kernel void biasCorrect(device float4 * const bias_logmu [[ buffer(0) ]],
 	float4 mu = float4(0);
 	float4 sigma = float4(0);
 	
-	for ( uint k = 0 ; k < M ; k += T ) {
-		uint const m = k + t;
-		if ( m < M ) {
-			uint const idx = n * M + m;
-			mu += delta_mu[m] * gradient_mu[idx];
-			sigma += delta_sigma[m] * gradient_sigma[idx];
-		}
+	for ( uint m = t ; m < M ; m += T ) {
+		uint const idx = n * M + m;
+		mu += delta_mu[m] * gradient_mu[idx];
+		sigma += delta_sigma[m] * gradient_sigma[idx];
 	}
 	
 	accum_mu[t] = mu;
@@ -75,8 +72,8 @@ kernel void biasCorrect(device float4 * const bias_logmu [[ buffer(0) ]],
 	}
 	
 	if ( !t ) {
-		bias_logmu[n] += eps * artMuGradient(bias_mu[n]) * * accum_mu;
-		bias_logsigma[n] += eps * artSigmaGradient(bias_sigma[n]) * * accum_sigma;
+		bias_logmu[n] += eta * artMuGradient(bias_mu[n]) * * accum_mu;
+		bias_logsigma[n] += eta * artSigmaGradient(bias_sigma[n]) * * accum_sigma;
 	}
 	
 }
@@ -93,10 +90,10 @@ kernel void biasCorrectLightWeight(device float4 * const bias_logmu [[ buffer(0)
 								   device const float4 * const bias_sigma [[ buffer(3) ]],
 								   device const float4 * const delta_mu [[ buffer(4) ]],
 								   device const float4 * const delta_sigma [[ buffer(5) ]],
-								   constant const float & eps [[ buffer(6) ]],
+								   constant const float & eta [[ buffer(6) ]],
 								   uint const n [[ thread_position_in_grid ]],
 								   uint const N [[ threads_per_grid ]]
 								   ) {
-	bias_logmu[n] += eps * artMuGradient(bias_mu[n]) * delta_mu[n];
-	bias_logsigma[n] += eps * artSigmaGradient(bias_sigma[n]) * delta_sigma[n];
+	bias_logmu[n] += eta * artMuGradient(bias_mu[n]) * delta_mu[n];
+	bias_logsigma[n] += eta * artSigmaGradient(bias_sigma[n]) * delta_sigma[n];
 }

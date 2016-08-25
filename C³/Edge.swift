@@ -62,7 +62,7 @@ extension Edge {
 			$0.setBuffer(edge.2, offset: 0, atIndex: 5)
 			$0.setBuffer(ϰ, offset: 0, atIndex: 6)
 			
-			$0.setBytes([uint(rows/4), uint(cols/4)], length: sizeof(uint)*2, atIndex: 7)
+			$0.setBytes([uint(cols/4), uint(rows/4)], length: sizeof(uint)*2, atIndex: 7)
 			
 			$0.setThreadgroupMemoryLength(sizeof(Float)*4*4*bs, atIndex: 0)
 			$0.setThreadgroupMemoryLength(sizeof(Float)*4*4*bs, atIndex: 1)
@@ -85,7 +85,7 @@ extension Edge {
 			$0.setBuffer(Δ.1, offset: 0, atIndex: 8)
 			$0.setBuffer(Δ.2, offset: 0, atIndex: 9)
 			$0.setBytes([η], length: sizeof(Float), atIndex: 10)
-			$0.setBytes([uint(rows/4), uint(cols/4)], length: 2*sizeof(uint), atIndex: 11)
+			$0.setBytes([uint(cols/4), uint(rows/4)], length: 2*sizeof(uint), atIndex: 11)
 			$0.setThreadgroupMemoryLength(sizeof(Float)*4*bs, atIndex: 0)
 			$0.dispatchThreadgroups(MTLSize(width: cols/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: bs, height: 1, depth: 1))
 		}

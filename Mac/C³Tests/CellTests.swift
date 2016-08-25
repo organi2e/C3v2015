@@ -17,8 +17,8 @@ class CellTests: XCTestCase {
 	
 	let η: Float = 1 / 16.0
 	
-	let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f]]
-	//let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,f,T,T], [f,T,f,f]]
+	//let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f]]
+	let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,f,T,T], [f,T,f,f]]
 	//let IS: [[Bool]] = [[T,T,T,f], [T,T,f,T], [T,T,f,f], [T,f,T,T]]
 	//let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [f,f,T,f]]
 	let OS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f]]
@@ -36,9 +36,9 @@ class CellTests: XCTestCase {
 				let G: Cell = try context.newCell(width: 64, recur: false, buffer: false, label: "G")
 				let O: Cell = try context.newCell(width: 4, label: "O")
 				
-				try context.chainCell(output: O, input: H)
+				try context.chainCell(output: O, input: G)
 				//try context.chainCell(output: H, input: G)
-				//try context.chainCell(output: G, input: H)
+				try context.chainCell(output: G, input: H)
 				try context.chainCell(output: H, input: I)
 				
 				try context.save()
