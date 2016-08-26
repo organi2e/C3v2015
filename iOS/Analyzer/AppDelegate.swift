@@ -7,7 +7,7 @@
 //
 
 import UIKit
-
+import Accelerate
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
