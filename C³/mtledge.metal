@@ -104,16 +104,27 @@ kernel void edgeCorrect(device float4 * const edge_logmu [[ buffer(0) ]],
 						uint3 const t [[ thread_position_in_threadgroup ]],
 						uint3 const T [[ threads_per_threadgroup ]]) {
 	
-	uint const I = dim.x, i = g.x;
-	uint const J = dim.y, j = g.y;
+	uint const I = G.y, i = g.y;
+	uint const J = G.x, j = g.x;
 	
 	float4 sum_mu = 0;
 	float4 sum_sigma = 0;
 	
 	for ( uint k = t.z, K = I ; k < K ; k += T.z ) {
-		uint const idx = i + I * ( j + J * k );
-		sum_mu += delta_mu[k] * grad_mu[idx];
-		sum_sigma += delta_sigma[k] * grad_sigma[idx];
+		
+		uint4 const ks = k * 4 + uint4(0, 1, 2, 3);
+		uint4 const idx = i + I * ( j + J * ks );
+		
+		sum_mu += delta_mu[ks[0]] * grad_mu[idx[0]];
+		sum_mu += delta_mu[ks[1]] * grad_mu[idx[1]];
+		sum_mu += delta_mu[ks[2]] * grad_mu[idx[2]];
+		sum_mu += delta_mu[ks[3]] * grad_mu[idx[3]];
+		
+		sum_sigma += delta_sigma[ks[0]] * grad_sigma[idx[0]];
+		sum_sigma += delta_sigma[ks[1]] * grad_sigma[idx[1]];
+		sum_sigma += delta_sigma[ks[2]] * grad_sigma[idx[2]];
+		sum_sigma += delta_sigma[ks[3]] * grad_sigma[idx[3]];
+		
 	}
 	
 	accumulator_mu[t.z] = sum_mu;
