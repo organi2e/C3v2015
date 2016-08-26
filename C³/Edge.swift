@@ -84,12 +84,29 @@ extension Edge {
 			
 		}
 	}
-	internal static func correctLightWeight(let context context: Context, let η: Float, let edge: (MTLBuffer, MTLBuffer, MTLBuffer, MTLBuffer), let input: MTLBuffer, let delta: (MTLBuffer, MTLBuffer), let rows: Int, let cols: Int, let bs: Int = 4, let schedule: (()->())?=nil, let complete:(()->())?=nil) {
+	internal static func correct(let context context: Context, let η: Float, let edge: (logμ: MTLBuffer, logσ: MTLBuffer, μ: MTLBuffer, σ: MTLBuffer), let gradient: (μ: MTLBuffer, σ: MTLBuffer), let delta: (μ: MTLBuffer, σ: MTLBuffer), let rows: Int, let cols: Int, let bs: Int = 64, let schedule: (()->())?=nil, let complete:(()->())?=nil) {
+		context.newComputeCommand(function: correctKernel, schedule: schedule, complete: complete) {
+			$0.setBuffer(edge.logμ, offset: 0, atIndex: 0)
+			$0.setBuffer(edge.logσ, offset: 0, atIndex: 1)
+			$0.setBuffer(edge.μ, offset: 0, atIndex: 2)
+			$0.setBuffer(edge.σ, offset: 0, atIndex: 3)
+			$0.setBuffer(gradient.μ, offset: 0, atIndex: 4)
+			$0.setBuffer(gradient.σ, offset: 0, atIndex: 5)
+			$0.setBuffer(delta.μ, offset: 0, atIndex: 6)
+			$0.setBuffer(delta.σ, offset: 0, atIndex: 7)
+			$0.setBytes([η], length: sizeof(Float), atIndex: 8)
+			$0.setBytes([uint(rows/4), uint(cols/4)], length: sizeof(uint)*2, atIndex: 9)
+			$0.setThreadgroupMemoryLength(sizeof(Float)*4*4*bs, atIndex: 0)
+			$0.setThreadgroupMemoryLength(sizeof(Float)*4*4*bs, atIndex: 1)
+			$0.dispatchThreadgroups(MTLSize(width: rows/4, height: cols/4, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: bs))
+		}
+	}
+	internal static func correctLightWeight(let context context: Context, let η: Float, let edge: (logμ: MTLBuffer, logσ: MTLBuffer, μ: MTLBuffer, σ: MTLBuffer), let input: MTLBuffer, let delta: (μ: MTLBuffer, σ: MTLBuffer), let rows: Int, let cols: Int, let schedule: (()->())?=nil, let complete:(()->())?=nil) {
 		context.newComputeCommand(function: correctLightWeightKernel, schedule: schedule, complete: complete) {
-			$0.setBuffer(edge.0, offset: 0, atIndex: 0)
-			$0.setBuffer(edge.1, offset: 0, atIndex: 1)
-			$0.setBuffer(edge.2, offset: 0, atIndex: 2)
-			$0.setBuffer(edge.3, offset: 0, atIndex: 3)
+			$0.setBuffer(edge.logμ, offset: 0, atIndex: 0)
+			$0.setBuffer(edge.logσ, offset: 0, atIndex: 1)
+			$0.setBuffer(edge.μ, offset: 0, atIndex: 2)
+			$0.setBuffer(edge.σ, offset: 0, atIndex: 3)
 			$0.setBuffer(input, offset: 0, atIndex: 4)
 			$0.setBuffer(delta.0, offset: 0, atIndex: 5)
 			$0.setBuffer(delta.1, offset: 0, atIndex: 6)
