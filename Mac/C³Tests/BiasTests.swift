@@ -91,37 +91,46 @@ class BiasTests: XCTestCase {
 		
 	}
 	func testGradientEye() {
-		let width: Int = 16
-		let rows: Int = 16
-		let cols: Int = 16
-		let mu: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows*cols)
-		let sigma: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows*cols)
-		Bias.gradientEye(context: context, grad: (mu, sigma), width: width)
-		let mu_la: la_object_t = context.newLaObjectFromBuffer(mu, rows: rows, cols: cols)
-		let sigma_la: la_object_t = context.newLaObjectFromBuffer(sigma, rows: rows, cols: cols)
+		let width: Int = 4
+		
+		var mu: [Float] = (0..<width*width).map{(_)in Float(arc4random())/Float(UInt32.max)}
+		var sigma: [Float] = (0..<width*width).map{(_)in Float(arc4random())/Float(UInt32.max)}
+		
+		let mu_mtl: MTLBuffer = context.newBuffer(mu)
+		let sigma_mtl: MTLBuffer = context.newBuffer(sigma)
+		
+		Bias.gradientInitialize(context: context, grad: (mu_mtl, sigma_mtl), width: width)
+		
+		mu = context.newBufferFromBuffer(mu_mtl)
+		sigma = context.newBufferFromBuffer(sigma_mtl)
+		
 		context.join()
-		let rand: la_object_t = la_matrix_from_float_buffer((0..<rows*cols).map{(_)in Float(arc4random())}, la_count_t(rows), la_count_t(cols), la_count_t(cols), NOHINT, ATTR)
-		XCTAssert(0==la_norm_as_float(la_difference(rand, la_matrix_product(mu_la, rand)), la_norm_t(LA_L2_NORM)))
-		XCTAssert(0==la_norm_as_float(la_difference(rand, la_matrix_product(sigma_la, rand)), la_norm_t(LA_L2_NORM)))
+		
+		let mu_la: la_object_t = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(mu), la_count_t(width), la_count_t(width), la_count_t(width), NOHINT, nil, ATTR)
+		let sigma_la: la_object_t = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(sigma), la_count_t(width), la_count_t(width), la_count_t(width), NOHINT, nil, ATTR)
+		
+		let rand: la_object_t = la_matrix_from_float_buffer((0..<width*width).map{(_)in Float(arc4random())}, la_count_t(width), la_count_t(width), la_count_t(width), NOHINT, ATTR)
+		XCTAssert(0==la_norm_as_float(la_difference(rand, la_matrix_product(la_transpose(mu_la), rand)), la_norm_t(LA_L2_NORM)))
+		XCTAssert(0==la_norm_as_float(la_difference(rand, la_matrix_product(la_transpose(sigma_la), rand)), la_norm_t(LA_L2_NORM)))
 	}
 	func testCorrect() {
 		
 		let η: Float = 0.5
 		
-		let i_width: Int = 16
-		let o_width: Int = 16
+		let i_width: Int = 8
+		let o_width: Int = 8
 		
-		var logμ: [Float] = (0..<i_width).map{(_)in (Float(arc4random())+1.0)/(Float(UInt32.max)+1.0)}
-		var logσ: [Float] = (0..<i_width).map{(_)in (Float(arc4random())+1.0)/(Float(UInt32.max)+1.0)}
+		var logμ: [Float] = (0..<i_width).map{(_)in 0.0+1.0*(Float(arc4random())+1.0)/(Float(UInt32.max)+1.0)}
+		var logσ: [Float] = (0..<i_width).map{(_)in 0.0+1.0*(Float(arc4random())+1.0)/(Float(UInt32.max)+1.0)}
 		
 		let μ: [Float] = logμ.map{$0}
 		let σ: [Float] = logσ.map{log(1.0+exp($0))}
 		
-		let Δμ: [Float] = (0..<o_width).map{(_)in (Float(arc4random())+1.0)/(Float(UInt32.max)+1.0)}
-		let Δσ: [Float] = (0..<o_width).map{(_)in (Float(arc4random())+1.0)/(Float(UInt32.max)+1.0)}
+		let Δμ: [Float] = (0..<o_width).map{(_)in 0.0+1.0*(Float(arc4random())+1.0)/(Float(UInt32.max)+1.0)}
+		let Δσ: [Float] = (0..<o_width).map{(_)in 0.0+1.0*(Float(arc4random())+1.0)/(Float(UInt32.max)+1.0)}
 		
-		let dμ: [Float] = (0..<o_width*i_width).map{(_)in (Float(arc4random())+1.0)/(Float(UInt32.max)+1.0)}
-		let dσ: [Float] = (0..<o_width*i_width).map{(_)in (Float(arc4random())+1.0)/(Float(UInt32.max)+1.0)}
+		let dμ: [Float] = (0..<o_width*i_width).map{(_)in 1.0+0.0*(Float(arc4random())+1.0)/(Float(UInt32.max)+1.0)}
+		let dσ: [Float] = (0..<o_width*i_width).map{(_)in 1.0+0.0*(Float(arc4random())+1.0)/(Float(UInt32.max)+1.0)}
 		
 		let logμ_mtl: MTLBuffer = context.newBufferFromRowMajorMatrix(logμ, rows: i_width, cols: 1)
 		let logσ_mtl: MTLBuffer = context.newBufferFromRowMajorMatrix(logσ, rows: i_width, cols: 1)
@@ -159,6 +168,8 @@ class BiasTests: XCTestCase {
 		XCTAssert(!isnan(μRMSE))
 		
 		if 1e-7 < μRMSE {
+			print(dstLogμ)
+			print(logμ)
 			XCTFail("muRMSE: \(μRMSE)")
 		}
 		

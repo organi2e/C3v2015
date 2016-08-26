@@ -263,6 +263,18 @@ extension Context {
 	public func newBuffer(let buffer: [Float], let options: MTLResourceOptions = .CPUCacheModeDefaultCache ) -> MTLBuffer {
 		return mtl.device.newBufferWithBytes(buffer, length: sizeof(Float)*buffer.count, options: options)
 	}
+	internal func newBufferFromBuffer(let buffer: MTLBuffer) -> [Float] {
+		let result: [Float] = [Float](count: buffer.length/sizeof(Float), repeatedValue: 0)
+		let cache: MTLBuffer = newBuffer(length: buffer.length, options: .CPUCacheModeDefaultCache)
+		func complete() {
+			NSData(bytesNoCopy: cache.contents(), length: cache.length, freeWhenDone: false).getBytes(UnsafeMutablePointer<Void>(result), length: sizeof(Float)*result.count)
+			cache.setPurgeableState(.Empty)
+		}
+		newBlitCommand(complete: complete) {
+			$0.copyFromBuffer(buffer, sourceOffset: 0, toBuffer: cache, destinationOffset: 0, size: min(buffer.length, cache.length))
+		}
+		return result
+	}
 	internal func newBufferFromRowMajorMatrix(let buffer: [Float], let rows: Int, let cols: Int, let options: MTLResourceOptions = .CPUCacheModeDefaultCache) -> MTLBuffer {
 		assert(rows*cols==buffer.count)
 		if rows == 1 || cols == 1 {

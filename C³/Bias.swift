@@ -23,7 +23,7 @@ extension Bias {
 extension Bias {
 	internal override func setup(let context: Context) {
 		super.setup(context)
-		if output.isRecurrent {
+		if false {
 			let width: Int = output.width
 			let length: Int = 2
 			grads = RingBuffer<grad>(array: (0..<length).map{(_)in
@@ -32,6 +32,20 @@ extension Bias {
 					σ: context.newBuffer(length: sizeof(Float)*width*width, options: .StorageModePrivate)
 				)
 			})
+		}
+	}
+	internal override func refresh() {
+		super.refresh()
+		if 0 < grads.length {
+			grads.progress()
+			if let context: Context = managedObjectContext as? Context {
+				let μ: MTLBuffer = grads.new.μ
+				let σ: MTLBuffer = grads.new.σ
+				context.newBlitCommand {
+					$0.fillBuffer(μ, range: NSRange(location: 0, length: μ.length), value: 0)
+					$0.fillBuffer(σ, range: NSRange(location: 0, length: σ.length), value: 0)
+				}
+			}
 		}
 	}
 	internal func collect(let level level: (MTLBuffer, MTLBuffer, MTLBuffer)) {
@@ -48,8 +62,7 @@ extension Bias {
 		if let context: Context = managedObjectContext as? Context {
 			let width: Int = output.width
 			if 0 < grads.length {
-				grads.progress()
-				self.dynamicType.gradientEye(context: context, grad: (grads.new.μ, grads.new.σ), width: output.width)
+				self.dynamicType.gradientInitialize(context: context, grad: (grads.new.μ, grads.new.σ), width: output.width)
 				self.dynamicType.correct(context: context, η: η, bias: (logμ, logσ, μ, σ), grad: (grads.new.μ, grads.new.σ), Δ: Δ, width: width, schedule: willChange, complete: didChange)
 			} else {
 				self.dynamicType.correctLightWeight(context: context, η: η, bias: (logμ, logσ, μ, σ), Δ: Δ, width: width, schedule: willChange, complete: didChange)
@@ -65,7 +78,7 @@ extension Bias {
 	internal class var collectKernel: String { return "biasCollect" }
 	internal class var correctKernel: String { return "biasCorrect" }
 	internal class var correctLightWeightKernel: String { return "biasCorrectLightWeight" }
-	internal class var gradientEyeKerel: String { return "biasGradientEye" }
+	internal class var gradientEyeKerel: String { return "biasGradientInitialize" }
 	internal static func collect(let context context: Context, let level: (MTLBuffer, MTLBuffer, MTLBuffer), let bias: (MTLBuffer, MTLBuffer, MTLBuffer), let width: Int) {
 		context.newComputeCommand(function: collectKernel) {
 			$0.setBuffer(level.0, offset: 0, atIndex: 0)
@@ -106,7 +119,7 @@ extension Bias {
 			$0.dispatchThreadgroups(MTLSize(width: width/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}
 	}
-	internal static func gradientEye(let context context: Context, let grad: (MTLBuffer, MTLBuffer), let width: Int) {
+	internal static func gradientInitialize(let context context: Context, let grad: (MTLBuffer, MTLBuffer), let width: Int) {
 		assert(grad.0.length==grad.1.length)
 		context.newBlitCommand {
 			$0.fillBuffer(grad.0, range: NSRange(location: 0, length: grad.0.length), value: 0)
@@ -115,7 +128,7 @@ extension Bias {
 		context.newComputeCommand(function: gradientEyeKerel) {
 			$0.setBuffer(grad.0, offset: 0, atIndex: 0)
 			$0.setBuffer(grad.1, offset: 0, atIndex: 1)
-			$0.dispatchThreadgroups(MTLSize(width: width/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
+			$0.dispatchThreadgroups(MTLSize(width: width/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 4, height: 1, depth: 1))
 		}
 	}
 }

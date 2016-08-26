@@ -99,9 +99,9 @@ kernel void edgeCorrect(device float4x4 * const edge_logmu [[ buffer(0) ]],
 	float4x4 sum_mu = float4x4(0.0);
 	float4x4 sum_sigma = float4x4(0.0);
 	
-	for ( uint k = t.z, K = I ; k < K ; k += T.z ) {
+	for ( uint k = t.z, K = 4 * I ; k < K ; k += 4 * T.z ) {
 		
-		uint4 const idx = ( ( k * 4 + uint4(0,1,2,3)) * J + j ) * I + i;
+		uint4 const idx = ( ( k + uint4(0,1,2,3)) * J + j ) * I + i;
 		
 		sum_mu += delta_mu[k][0] * grad_mu[idx[0]];
 		sum_mu += delta_mu[k][1] * grad_mu[idx[1]];

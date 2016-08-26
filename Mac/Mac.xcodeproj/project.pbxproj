@@ -104,13 +104,6 @@
 			remoteGlobalIDString = 87B1FD001D05461100981CF4;
 			remoteInfo = "C³";
 		};
-		87B1FD0E1D05461200981CF4 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 878C7A581D01AE4D002CDFD1 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 878C7A8E1D01AF05002CDFD1;
-			remoteInfo = sandbox;
-		};
 		87B1FD141D05461200981CF4 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 878C7A581D01AE4D002CDFD1 /* Project object */;
@@ -619,7 +612,6 @@
 			);
 			dependencies = (
 				87B1FD0D1D05461200981CF4 /* PBXTargetDependency */,
-				87B1FD0F1D05461200981CF4 /* PBXTargetDependency */,
 			);
 			name = C3Tests;
 			productName = "C³Tests";
@@ -896,11 +888,6 @@
 			isa = PBXTargetDependency;
 			target = 87B1FD001D05461100981CF4 /* C3 */;
 			targetProxy = 87B1FD0C1D05461200981CF4 /* PBXContainerItemProxy */;
-		};
-		87B1FD0F1D05461200981CF4 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 878C7A8E1D01AF05002CDFD1 /* sandbox */;
-			targetProxy = 87B1FD0E1D05461200981CF4 /* PBXContainerItemProxy */;
 		};
 		87B1FD151D05461200981CF4 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -1773,6 +1760,7 @@
 				874347AF1D6EF8E500B54F70 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		874347B31D6EF8E500B54F70 /* Build configuration list for PBXNativeTarget "CL3Tests" */ = {
 			isa = XCConfigurationList;
@@ -1781,6 +1769,7 @@
 				874347B11D6EF8E500B54F70 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		875DD1DE1D6C5FC800A5C250 /* Build configuration list for PBXNativeTarget "CIFAR10" */ = {
 			isa = XCConfigurationList;

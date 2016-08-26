@@ -9,7 +9,11 @@ import Metal
 import CoreData
 
 internal class Edge: Cauchy {
-	
+	struct grad {
+		let μ: MTLBuffer
+		let σ: MTLBuffer
+	}
+	var grads: RingBuffer<grad> = RingBuffer<grad>(array: [])
 }
 
 extension Edge {
@@ -18,7 +22,35 @@ extension Edge {
 }
 
 extension Edge {
-	func collect(let Φ level: (MTLBuffer, MTLBuffer, MTLBuffer), let ignore: Set<Cell>) {
+	internal override func setup(context: Context) {
+		super.setup(context)
+		if false {
+			let rows: Int = output.width
+			let cols: Int = input.width
+			let length: Int = 2
+			grads = RingBuffer<grad>(array: (0..<length).map{(_)in
+				grad(
+					μ: context.newBuffer(length: sizeof(Float)*rows*rows*cols, options: .StorageModePrivate),
+					σ: context.newBuffer(length: sizeof(Float)*rows*rows*cols, options: .StorageModePrivate)
+				)
+			})
+		}
+	}
+	internal override func refresh() {
+		super.refresh()
+		if 0 < grads.length {
+			grads.progress()
+			if let context: Context = managedObjectContext as? Context {
+				let μ: MTLBuffer = grads.new.μ
+				let σ: MTLBuffer = grads.new.σ
+				context.newBlitCommand {
+					$0.fillBuffer(μ, range: NSRange(location: 0, length: μ.length), value: 0)
+					$0.fillBuffer(σ, range: NSRange(location: 0, length: σ.length), value: 0)
+				}
+			}
+		}
+	}
+	internal func collect(let Φ level: (MTLBuffer, MTLBuffer, MTLBuffer), let ignore: Set<Cell>) {
 		let state: MTLBuffer = input.collect(ignore)
 		if let context: Context = managedObjectContext as? Context {
 			let rows: Int = output.width
@@ -29,12 +61,17 @@ extension Edge {
 		}
 	}
 	internal func correct(let η η: Float, let δ: MTLBuffer, let ϰ: MTLBuffer, let ignore: Set<Cell>) {
-		let Δ: (MTLBuffer, MTLBuffer, MTLBuffer) = output.correct(η: η, ignore: ignore)
+		let Δ: (χ: MTLBuffer, μ: MTLBuffer, σ: MTLBuffer) = output.correct(η: η, ignore: ignore)
 		if let context: Context = managedObjectContext as? Context {
 			let rows: Int = output.width
 			let cols: Int = input.width
-			self.dynamicType.backpropagation(context: context, error: δ, edge: χ, delta: Δ.0, rows: rows, cols: cols)
-			self.dynamicType.correctLightWeight(context: context, η: η, edge: (logμ, logσ, μ, σ), input: ϰ, delta: (Δ.1, Δ.2), rows: rows, cols: cols, schedule: willChange, complete: didChange)
+			self.dynamicType.backpropagation(context: context, error: δ, edge: χ, delta: Δ.χ, rows: rows, cols: cols)
+			if 0 < grads.length {
+				self.dynamicType.gradientInitialize(context: context, grad: (μ: grads.new.μ, σ: grads.new.σ), input: ϰ, rows: rows, cols: cols)
+				self.dynamicType.correct(context: context, η: η, edge: (logμ, logσ, μ, σ), grad: (μ: grads.new.μ, σ: grads.new.σ), delta: (Δ.μ, Δ.σ), rows: rows, cols: cols, schedule: willChange, complete: didChange)
+			} else {
+				self.dynamicType.correctLightWeight(context: context, η: η, edge: (logμ, logσ, μ, σ), input: ϰ, delta: (Δ.μ, Δ.σ), rows: rows, cols: cols, schedule: willChange, complete: didChange)
+			}
 		} else {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
 		}
