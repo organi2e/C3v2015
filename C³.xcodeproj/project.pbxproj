@@ -260,6 +260,7 @@
 			children = (
 				878985B61D050D42002C2A8D /* C³.xcdatamodeld */,
 				875DD1AD1D66DF9E00A5C250 /* Art.swift */,
+				87BCEBFA1D4D75A500FC3099 /* Bias.swift */,
 				873934A91D42FCF800888988 /* Blob.swift */,
 				878985B81D050D42002C2A8D /* Cell.swift */,
 				878985B91D050D42002C2A8D /* Config.swift */,
@@ -271,7 +272,6 @@
 				87D18E341D3F18BB00982020 /* La.swift */,
 				87BCEBF01D4D745900FC3099 /* Decay.swift */,
 				87BCEBF91D4D746400FC3099 /* Gauss.swift */,
-				87BCEBFA1D4D75A500FC3099 /* Bias.swift */,
 				87A42CBC1D4F5CD5008D9708 /* Feedback.swift */,
 				875DD1B71D6AD89500A5C250 /* Misc.swift */,
 				870EA91B1D54AD77008C3380 /* mtlblas.metal */,

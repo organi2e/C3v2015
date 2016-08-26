@@ -33,12 +33,12 @@ class CellTests: XCTestCase {
 			do {
 				let I: Cell = try context.newCell(width: 4, label: "I")
 				let H: Cell = try context.newCell(width: 64, recur: false, buffer: false, label: "H")
-				//let G: Cell = try context.newCell(width: 64, recur: false, buffer: false, label: "G")
+				let G: Cell = try context.newCell(width: 64, recur: false, buffer: false, label: "G")
 				let O: Cell = try context.newCell(width: 4, label: "O")
 				
-				try context.chainCell(output: O, input: H)
+				try context.chainCell(output: O, input: G)
 				//try context.chainCell(output: H, input: G)
-				//try context.chainCell(output: G, input: H)
+				try context.chainCell(output: G, input: H)
 				try context.chainCell(output: H, input: I)
 				
 				try context.save()
