@@ -127,9 +127,22 @@ kernel void edgeCorrect(device float4x4 * const edge_logmu [[ buffer(0) ]],
 	}
 	
 	if ( !t.z ) {
-		uint const idx = j * I + i;
-		edge_logmu[idx] += eta;
 		
+		uint const idx = j * I + i;
+		
+		float4x4 const delta_mu_cache = *accumulator_mu;
+		float4x4 const mu_cache = edge_mu[idx];
+		edge_logmu[idx] += eta * float4x4(artMuGradient(mu_cache[0]) * delta_mu_cache[0],
+										  artMuGradient(mu_cache[1]) * delta_mu_cache[1],
+										  artMuGradient(mu_cache[2]) * delta_mu_cache[2],
+										  artMuGradient(mu_cache[3]) * delta_mu_cache[3]);
+		
+		float4x4 const delta_sigma_cache = *accumulator_sigma;
+		float4x4 const sigma_cache = edge_sigma[idx];
+		edge_logsigma[idx] += eta * float4x4(artSigmaGradient(sigma_cache[0]) * delta_sigma_cache[0],
+											 artSigmaGradient(sigma_cache[1]) * delta_sigma_cache[1],
+											 artSigmaGradient(sigma_cache[2]) * delta_sigma_cache[2],
+											 artSigmaGradient(sigma_cache[3]) * delta_sigma_cache[3]);
 	}
 }
 kernel void edgeCorrectLightWeight(device float4x4 * const edge_logmu [[ buffer(0) ]],
@@ -149,22 +162,23 @@ kernel void edgeCorrectLightWeight(device float4x4 * const edge_logmu [[ buffer(
 	float4 const grad_mu = input_state[n];
 	float4 const grad_sigma = input_state[n];
 	
-	float4 const mu = delta_mu[m];
-	float4 const sigma = delta_sigma[m];
+	float4 const delta_mu_cache = delta_mu[m];
+	float4 const delta_sigma_cache = delta_sigma[m];
 		
 	uint const idx = n * M + m;
 	
-	float4x4 const jm = edge_mu[idx];
-	edge_logmu[idx] += eta * float4x4(grad_mu[0] * artMuGradient(jm[0]) * mu,
-									  grad_mu[1] * artMuGradient(jm[1]) * mu,
-									  grad_mu[2] * artMuGradient(jm[2]) * mu,
-									  grad_mu[3] * artMuGradient(jm[3]) * mu);
+	float4x4 const mu_cache = edge_mu[idx];
+	edge_logmu[idx] += eta * float4x4(artMuGradient(mu_cache[0]) * grad_mu[0] * delta_mu_cache,
+									  artMuGradient(mu_cache[1]) * grad_mu[1] * delta_mu_cache,
+									  artMuGradient(mu_cache[2]) * grad_mu[2] * delta_mu_cache,
+									  artMuGradient(mu_cache[3]) * grad_mu[3] * delta_mu_cache);
 	
-	float4x4 const js = edge_sigma[idx];
-	edge_logsigma[idx] += eta * float4x4(grad_sigma[0] * artSigmaGradient(js[0]) * sigma,
-										 grad_sigma[1] * artSigmaGradient(js[1]) * sigma,
-										 grad_sigma[2] * artSigmaGradient(js[2]) * sigma,
-										 grad_sigma[3] * artSigmaGradient(js[3]) * sigma);
+	float4x4 const sigma_cache = edge_sigma[idx];
+	edge_logsigma[idx] += eta * float4x4(artSigmaGradient(sigma_cache[0]) * grad_sigma[0] * delta_sigma_cache,
+										 artSigmaGradient(sigma_cache[1]) * grad_sigma[1] * delta_sigma_cache,
+										 artSigmaGradient(sigma_cache[2]) * grad_sigma[2] * delta_sigma_cache,
+										 artSigmaGradient(sigma_cache[3]) * grad_sigma[3] * delta_sigma_cache);
+	
 }
 kernel void edgeGradientInitialize(device float4x4 * const mu [[ buffer(0) ]],
 								   device float4x4 * const sigma [[ buffer(1) ]],

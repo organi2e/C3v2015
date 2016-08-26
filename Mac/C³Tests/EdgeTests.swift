@@ -125,7 +125,7 @@ class EdgeTests: XCTestCase {
 		let edgeσ: MTLBuffer = context.newBuffer(srcσ)
 		
 		measureBlock {
-			Edge.gradientInitialize(context: self.context, edge: (edgeμ, edgeσ), input: input, rows: o_width, cols: i_width)
+			Edge.gradientInitialize(context: self.context, grad: (edgeμ, edgeσ), input: input, rows: o_width, cols: i_width)
 			self.context.join()
 		}
 		let dstμ: [Float] = context.toRowMajorMatrix(edgeμ, rows: o_width, cols: i_width*o_width)
@@ -152,10 +152,84 @@ class EdgeTests: XCTestCase {
 		XCTAssert(srcσ.elementsEqual(dstσ))
 		
 	}
+	
+	func testCorrect() {
+		
+		let o_width: Int = 16
+		let i_width: Int = 16
+		
+		let η: Float = 0.5
+		
+		let state: [Float] = uniform(i_width)
+		
+		var logμ: [Float] = [Float](count: o_width*i_width, repeatedValue: 0)
+		var logσ: [Float] = [Float](count: o_width*i_width, repeatedValue: 0)
+		
+		let μ: [Float] = [Float](count: o_width*i_width, repeatedValue: 0)
+		let σ: [Float] = [Float](count: o_width*i_width, repeatedValue: 0)
+		
+		let gradμ: [Float] = [Float](count: o_width*o_width*i_width, repeatedValue: 0)
+		let gradσ: [Float] = [Float](count: o_width*o_width*i_width, repeatedValue: 0)
+		
+		let deltaμ: [Float] = uniform(o_width)
+		let deltaσ: [Float] = uniform(o_width)
+		
+		let input: MTLBuffer = context.fromRowMajorMatrix(state, rows: i_width, cols: 1)
+		
+		let edge = (
+			logμ: context.fromRowMajorMatrix(logμ, rows: o_width, cols: i_width),
+			logσ: context.fromRowMajorMatrix(logσ, rows: o_width, cols: i_width),
+			μ: context.fromRowMajorMatrix(μ, rows: o_width, cols: i_width),
+			σ: context.fromRowMajorMatrix(σ, rows: o_width, cols: i_width)
+		)
+		let grad = (
+			μ: context.fromRowMajorMatrix(gradμ, rows: o_width, cols: o_width*i_width),
+			σ: context.fromRowMajorMatrix(gradσ, rows: o_width, cols: o_width*i_width)
+		)
+		let delta = (
+			μ: context.fromRowMajorMatrix(deltaμ, rows: o_width, cols: 1),
+			σ: context.fromRowMajorMatrix(deltaσ, rows: o_width, cols: 1)
+		)
+		
+		Edge.gradientInitialize(context: context, grad: grad, input: input, rows: o_width, cols: i_width)
+		Edge.correct(context: context, η: η, edge: edge, grad: grad, delta: delta, rows: o_width, cols: i_width)
+		
+		for i in 0..<o_width {
+			for o in 0..<i_width {
+				logμ[ o * i_width + i ] += η * μGrad ( μ[o*i_width+i] ) * ( state[i] ) * deltaμ[o]
+				logσ[ o * i_width + i ] += η * σGrad ( σ[o*i_width+i] ) * ( state[i] ) * deltaσ[o]
+			}
+		}
+		
+		let srcμ: la_object_t = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logμ), la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, nil, ATTR)
+		let dstμ: la_object_t = context.toLAObject(edge.logμ, rows: o_width, cols: i_width)
+
+		let srcσ: la_object_t = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logσ), la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, nil, ATTR)
+		let dstσ: la_object_t = context.toLAObject(edge.logσ, rows: o_width, cols: i_width)
+		
+		context.join()
+		
+		let rmseμ: Float = la_norm_as_float(la_difference(srcμ, dstμ), la_norm_t(LA_L2_NORM)) / sqrt(Float(o_width*i_width))
+		XCTAssert(!isnan(rmseμ))
+		XCTAssert(!isinf(rmseμ))
+		if 1e-3 < rmseμ {
+			XCTFail("RMSE: \(rmseμ)")
+		}
+		
+		
+		let rmseσ: Float = la_norm_as_float(la_difference(srcσ, dstσ), la_norm_t(LA_L2_NORM)) / sqrt(Float(o_width*i_width))
+		XCTAssert(!isnan(rmseσ))
+		XCTAssert(!isinf(rmseσ))
+		if 1e-3 < rmseσ {
+			XCTFail("RMSE: \(rmseσ)")
+		}
+		
+	}
+
 	func testCorrectLightWeight() {
 		
-		let o_width: Int = 16//4 * Int(1+arc4random_uniform(255))
-		let i_width: Int = 16//4 * Int(1+arc4random_uniform(255))
+		let o_width: Int = 4 * Int(1+arc4random_uniform(255))
+		let i_width: Int = 4 * Int(1+arc4random_uniform(255))
 		
 		let χ: [Float] = uniform(o_width*i_width)
 		

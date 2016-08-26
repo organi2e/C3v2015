@@ -84,14 +84,14 @@ extension Edge {
 			
 		}
 	}
-	internal static func correct(let context context: Context, let η: Float, let edge: (logμ: MTLBuffer, logσ: MTLBuffer, μ: MTLBuffer, σ: MTLBuffer), let gradient: (μ: MTLBuffer, σ: MTLBuffer), let delta: (μ: MTLBuffer, σ: MTLBuffer), let rows: Int, let cols: Int, let bs: Int = 64, let schedule: (()->())?=nil, let complete:(()->())?=nil) {
+	internal static func correct(let context context: Context, let η: Float, let edge: (logμ: MTLBuffer, logσ: MTLBuffer, μ: MTLBuffer, σ: MTLBuffer), let grad: (μ: MTLBuffer, σ: MTLBuffer), let delta: (μ: MTLBuffer, σ: MTLBuffer), let rows: Int, let cols: Int, let bs: Int = 64, let schedule: (()->())?=nil, let complete:(()->())?=nil) {
 		context.newComputeCommand(function: correctKernel, schedule: schedule, complete: complete) {
 			$0.setBuffer(edge.logμ, offset: 0, atIndex: 0)
 			$0.setBuffer(edge.logσ, offset: 0, atIndex: 1)
 			$0.setBuffer(edge.μ, offset: 0, atIndex: 2)
 			$0.setBuffer(edge.σ, offset: 0, atIndex: 3)
-			$0.setBuffer(gradient.μ, offset: 0, atIndex: 4)
-			$0.setBuffer(gradient.σ, offset: 0, atIndex: 5)
+			$0.setBuffer(grad.μ, offset: 0, atIndex: 4)
+			$0.setBuffer(grad.σ, offset: 0, atIndex: 5)
 			$0.setBuffer(delta.μ, offset: 0, atIndex: 6)
 			$0.setBuffer(delta.σ, offset: 0, atIndex: 7)
 			$0.setBytes([η], length: sizeof(Float), atIndex: 8)
@@ -127,13 +127,13 @@ extension Edge {
 			$0.dispatchThreadgroups(MTLSize(width: cols/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: bs, height: 1, depth: 1))
 		}
 	}
-	internal static func gradientInitialize(let context context: Context, let edge: (μ: MTLBuffer, σ: MTLBuffer), let input: MTLBuffer, let rows: Int, let cols: Int) {
-		assert(edge.μ.length==sizeof(Float)*rows*rows*cols)
-		assert(edge.σ.length==sizeof(Float)*rows*rows*cols)
+	internal static func gradientInitialize(let context context: Context, let grad: (μ: MTLBuffer, σ: MTLBuffer), let input: MTLBuffer, let rows: Int, let cols: Int) {
+		assert(grad.μ.length==sizeof(Float)*rows*rows*cols)
+		assert(grad.σ.length==sizeof(Float)*rows*rows*cols)
 		assert(input.length==sizeof(Float)*cols)
 		context.newComputeCommand(function: gradientInitializeKernel) {
-			$0.setBuffer(edge.μ, offset: 0, atIndex: 0)
-			$0.setBuffer(edge.σ, offset: 0, atIndex: 1)
+			$0.setBuffer(grad.μ, offset: 0, atIndex: 0)
+			$0.setBuffer(grad.σ, offset: 0, atIndex: 1)
 			$0.setBuffer(input, offset: 0, atIndex: 2)
 			$0.setBytes([uint(cols/4), uint(rows/4)], length: sizeof(uint)*2, atIndex: 3)
 			$0.dispatchThreadgroups(MTLSize(width: cols/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 4, height: 1, depth: 1))
