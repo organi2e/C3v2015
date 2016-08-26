@@ -120,6 +120,7 @@ kernel void edgeCorrect(device float4x4 * const edge_logmu [[ buffer(0) ]],
 	
 	uint offset = T.z;
 	while ( offset >>= 1 ) {
+		threadgroup_barrier ( mem_flags :: mem_threadgroup );
 		if ( t.z < offset ) {
 			accumulator_mu[t.z] += accumulator_mu[t.z+offset];
 			accumulator_sigma[t.z] += accumulator_sigma[t.z+offset];
