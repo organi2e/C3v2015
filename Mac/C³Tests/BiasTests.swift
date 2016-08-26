@@ -53,14 +53,14 @@ class BiasTests: XCTestCase {
 		Bias.shuffle(context: context, χ: bias_χ, μ: bias_μ, σ: bias_σ)
 		Bias.collect(context: context, level: (level_χ, level_μ, level_σ), bias: (bias_χ, bias_μ, level_σ), width: width)
 		
-		let srcχ: la_object_t = context.toLAObject(bias_χ, rows: width, cols: 1)
-		let dstχ: la_object_t = context.toLAObject(level_χ, rows: width, cols: 1)
+		let srcχ: la_object_t = context.newLaObjectFromBuffer(bias_χ, rows: width, cols: 1)
+		let dstχ: la_object_t = context.newLaObjectFromBuffer(level_χ, rows: width, cols: 1)
 		
-		let srcμ: la_object_t = context.toLAObject(bias_μ, rows: width, cols: 1)
-		let dstμ: la_object_t = context.toLAObject(level_μ, rows: width, cols: 1)
+		let srcμ: la_object_t = context.newLaObjectFromBuffer(bias_μ, rows: width, cols: 1)
+		let dstμ: la_object_t = context.newLaObjectFromBuffer(level_μ, rows: width, cols: 1)
 		
-		let srcσ: la_object_t = context.toLAObject(level_σ, rows: width, cols: 1)
-		let dstσ: la_object_t = context.toLAObject(level_σ, rows: width, cols: 1)
+		let srcσ: la_object_t = context.newLaObjectFromBuffer(level_σ, rows: width, cols: 1)
+		let dstσ: la_object_t = context.newLaObjectFromBuffer(level_σ, rows: width, cols: 1)
 		
 		context.join()
 		
@@ -97,8 +97,8 @@ class BiasTests: XCTestCase {
 		let mu: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows*cols)
 		let sigma: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows*cols)
 		Bias.gradientEye(context: context, grad: (mu, sigma), width: width)
-		let mu_la: la_object_t = context.toLAObject(mu, rows: rows, cols: cols)
-		let sigma_la: la_object_t = context.toLAObject(sigma, rows: rows, cols: cols)
+		let mu_la: la_object_t = context.newLaObjectFromBuffer(mu, rows: rows, cols: cols)
+		let sigma_la: la_object_t = context.newLaObjectFromBuffer(sigma, rows: rows, cols: cols)
 		context.join()
 		let rand: la_object_t = la_matrix_from_float_buffer((0..<rows*cols).map{(_)in Float(arc4random())}, la_count_t(rows), la_count_t(cols), la_count_t(cols), NOHINT, ATTR)
 		XCTAssert(0==la_norm_as_float(la_difference(rand, la_matrix_product(mu_la, rand)), la_norm_t(LA_L2_NORM)))
@@ -123,17 +123,17 @@ class BiasTests: XCTestCase {
 		let dμ: [Float] = (0..<o_width*i_width).map{(_)in (Float(arc4random())+1.0)/(Float(UInt32.max)+1.0)}
 		let dσ: [Float] = (0..<o_width*i_width).map{(_)in (Float(arc4random())+1.0)/(Float(UInt32.max)+1.0)}
 		
-		let logμ_mtl: MTLBuffer = context.fromRowMajorMatrix(logμ, rows: i_width, cols: 1)
-		let logσ_mtl: MTLBuffer = context.fromRowMajorMatrix(logσ, rows: i_width, cols: 1)
+		let logμ_mtl: MTLBuffer = context.newBufferFromRowMajorMatrix(logμ, rows: i_width, cols: 1)
+		let logσ_mtl: MTLBuffer = context.newBufferFromRowMajorMatrix(logσ, rows: i_width, cols: 1)
 		
-		let μ_mtl: MTLBuffer = context.fromRowMajorMatrix(μ, rows: i_width, cols: 1)
-		let σ_mtl: MTLBuffer = context.fromRowMajorMatrix(σ, rows:i_width, cols: 1)
+		let μ_mtl: MTLBuffer = context.newBufferFromRowMajorMatrix(μ, rows: i_width, cols: 1)
+		let σ_mtl: MTLBuffer = context.newBufferFromRowMajorMatrix(σ, rows:i_width, cols: 1)
 		
-		let Δμ_mtl: MTLBuffer = context.fromRowMajorMatrix(Δμ, rows: o_width, cols: 1)
-		let Δσ_mtl: MTLBuffer = context.fromRowMajorMatrix(Δσ, rows: o_width, cols: 1)
+		let Δμ_mtl: MTLBuffer = context.newBufferFromRowMajorMatrix(Δμ, rows: o_width, cols: 1)
+		let Δσ_mtl: MTLBuffer = context.newBufferFromRowMajorMatrix(Δσ, rows: o_width, cols: 1)
 		
-		let dμ_mtl: MTLBuffer = context.fromRowMajorMatrix(dμ, rows: o_width, cols: i_width)
-		let dσ_mtl: MTLBuffer = context.fromRowMajorMatrix(dσ, rows: o_width, cols: i_width)
+		let dμ_mtl: MTLBuffer = context.newBufferFromRowMajorMatrix(dμ, rows: o_width, cols: i_width)
+		let dσ_mtl: MTLBuffer = context.newBufferFromRowMajorMatrix(dσ, rows: o_width, cols: i_width)
 		
 		for i in 0..<i_width {
 			var m: Float = 0
@@ -148,8 +148,8 @@ class BiasTests: XCTestCase {
 		
 		Bias.correct(context: context, η: η, bias: (logμ_mtl, logσ_mtl, μ_mtl, σ_mtl), grad: (dμ_mtl, dσ_mtl), Δ: (Δμ_mtl, Δσ_mtl), width: o_width)
 		
-		let dstLogμ: [Float] = context.toRowMajorMatrix(logμ_mtl, rows: i_width, cols: 1)
-		let dstLogσ: [Float] = context.toRowMajorMatrix(logσ_mtl, rows: i_width, cols: 1)
+		let dstLogμ: [Float] = context.newRowMajorMatrixFromBuffer(logμ_mtl, rows: i_width, cols: 1)
+		let dstLogσ: [Float] = context.newRowMajorMatrixFromBuffer(logσ_mtl, rows: i_width, cols: 1)
 		
 		context.join()
 		
@@ -201,8 +201,8 @@ class BiasTests: XCTestCase {
 		bias.correct(eps: eps, delta: (mtl_mu, mtl_sigma))
 		bias.refresh()
 		
-		let srcMu: la_object_t = context.toLAObject(bias.mu, rows: rows, cols: cols)
-		let srcSigma: la_object_t = context.toLAObject(bias.sigma, rows: rows, cols: cols)
+		let srcMu: la_object_t = context.newLaObjectFromBuffer(bias.mu, rows: rows, cols: cols)
+		let srcSigma: la_object_t = context.newLaObjectFromBuffer(bias.sigma, rows: rows, cols: cols)
 
 		let dstMu: la_object_t = la_matrix_from_float_buffer(dMu.map { mu + muGrad * eps * $0 }, la_count_t(rows), la_count_t(cols), la_count_t(cols), NOHINT, ATTR)
 		let dstSigma: la_object_t = la_matrix_from_float_buffer(dSigma.map { sigmaF ( sigmaI ( sigma ) + sigmaG( sigma ) * eps * $0) }, la_count_t(rows), la_count_t(cols), la_count_t(cols), NOHINT, ATTR)

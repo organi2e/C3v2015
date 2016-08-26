@@ -263,7 +263,7 @@ extension Context {
 	public func newBuffer(let buffer: [Float], let options: MTLResourceOptions = .CPUCacheModeDefaultCache ) -> MTLBuffer {
 		return mtl.device.newBufferWithBytes(buffer, length: sizeof(Float)*buffer.count, options: options)
 	}
-	internal func fromRowMajorMatrix(let buffer: [Float], let rows: Int, let cols: Int, let options: MTLResourceOptions = .CPUCacheModeDefaultCache) -> MTLBuffer {
+	internal func newBufferFromRowMajorMatrix(let buffer: [Float], let rows: Int, let cols: Int, let options: MTLResourceOptions = .CPUCacheModeDefaultCache) -> MTLBuffer {
 		assert(rows*cols==buffer.count)
 		if rows == 1 || cols == 1 {
 			return newBuffer(buffer, options: options)
@@ -281,10 +281,10 @@ extension Context {
 			return result
 		}
 	}
-	internal func fromLAObject(let matrix: la_object_t, let options: MTLResourceOptions = .CPUCacheModeDefaultCache) -> MTLBuffer {
+	internal func newBufferFromLAObject(let matrix: la_object_t, let options: MTLResourceOptions = .CPUCacheModeDefaultCache) -> MTLBuffer {
 		let rows: Int = Int(la_matrix_rows(matrix))
 		let cols: Int = Int(la_matrix_cols(matrix))
-		return fromRowMajorMatrix(matrix.eval, rows: rows, cols: cols)
+		return newBufferFromRowMajorMatrix(matrix.eval, rows: rows, cols: cols)
 		/*
 		let result: MTLBuffer = newBuffer(length: sizeof(Float)*rows*cols, options: options)
 		let cache: MTLBuffer = newBuffer(length: sizeof(Float)*rows*cols, options: .CPUCacheModeDefaultCache)
@@ -310,7 +310,7 @@ extension Context {
 		return result
 		*/
 	}
-	internal func toRowMajorMatrix(let buffer: MTLBuffer, let rows: Int, let cols: Int) -> [Float] {
+	internal func newRowMajorMatrixFromBuffer(let buffer: MTLBuffer, let rows: Int, let cols: Int) -> [Float] {
 		assert(0<rows)
 		assert(0<cols)
 		var result: [Float] = [Float](count: rows*cols, repeatedValue: 0)
@@ -321,7 +321,7 @@ extension Context {
 				cache.setPurgeableState(.Empty)
 			}
 			if rows == 1 || cols == 1 {
-				newBlitCommand(sync: true, complete: complete) {
+				newBlitCommand(complete: complete) {
 					$0.copyFromBuffer(buffer, sourceOffset: 0, toBuffer: cache, destinationOffset: 0, size: sizeof(Float)*rows*cols)
 				}
 			} else {
@@ -342,7 +342,7 @@ extension Context {
 		}
 		return result
 	}
-	internal func toLAObject(let buffer: MTLBuffer, let rows: Int, let cols: Int, let attribute: la_attribute_t = Config.ATTR) -> la_object_t {
+	internal func newLaObjectFromBuffer(let buffer: MTLBuffer, let rows: Int, let cols: Int, let attribute: la_attribute_t = Config.ATTR) -> la_object_t {
 		let pool: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*rows*cols))
 		let cache: MTLBuffer = newBuffer(length: buffer.length, options: .CPUCacheModeDefaultCache)
 		if rows == 1 || cols == 1 {

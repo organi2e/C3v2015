@@ -18,8 +18,8 @@ class BlasTests: XCTestCase {
 		let cols: Int = 1024
 		let src: [Float] = (0..<rows*cols).map {(_)in (Float(arc4random())+1) / (Float(UInt32.max)+1)}
 		
-		let matrix: MTLBuffer = context.fromRowMajorMatrix(src, rows: rows, cols: cols)
-		let dst: [Float] = context.toRowMajorMatrix(matrix, rows: rows, cols: cols)
+		let matrix: MTLBuffer = context.newBufferFromRowMajorMatrix(src, rows: rows, cols: cols)
+		let dst: [Float] = context.newRowMajorMatrixFromBuffer(matrix, rows: rows, cols: cols)
 		
 		context.join()
 		
@@ -31,8 +31,8 @@ class BlasTests: XCTestCase {
 		let rows: Int = 8
 		let cols: Int = 12
 		let l: la_object_t = la_matrix_from_float_buffer((0..<rows*cols).map{Float($0)}, UInt(rows), UInt(cols), UInt(cols), NOHINT, ATTR)
-		let m: MTLBuffer = context.fromLAObject(l)
-		let r: la_object_t = context.toLAObject(m, rows: rows, cols: cols)
+		let m: MTLBuffer = context.newBufferFromLAObject(l)
+		let r: la_object_t = context.newLaObjectFromBuffer(m, rows: rows, cols: cols)
 		context.join()
 
 		let b: UnsafeMutableBufferPointer<Float> = UnsafeMutableBufferPointer<Float>(start: UnsafeMutablePointer<Float>(m.contents()), count: rows*cols)
@@ -114,8 +114,8 @@ class BlasTests: XCTestCase {
 		let LB: la_object_t = la_matrix_from_float_buffer((0..<cols).map{(_)in Float(arc4random_uniform(256))/Float(128.0)-1.0}, la_count_t(cols), la_count_t(1), la_count_t(1), NOHINT, ATTR)
 		let LC: la_object_t = la_matrix_product(LA, la_transpose(LB))
 		
-		let MA: MTLBuffer = context.fromLAObject(LA, options: .StorageModePrivate)
-		let MB: MTLBuffer = context.fromLAObject(LB, options: .StorageModePrivate)
+		let MA: MTLBuffer = context.newBufferFromLAObject(LA, options: .StorageModePrivate)
+		let MB: MTLBuffer = context.newBufferFromLAObject(LB, options: .StorageModePrivate)
 		let MC: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows*cols, options: .StorageModePrivate)
 		
 		let bs: Int = 64
@@ -136,7 +136,7 @@ class BlasTests: XCTestCase {
 			}
 			self.context.join()
 		}
-		let CC: la_object_t = context.toLAObject(MC, rows: rows, cols: cols)
+		let CC: la_object_t = context.newLaObjectFromBuffer(MC, rows: rows, cols: cols)
 		context.join()
 		
 		let E: la_object_t = la_difference(LC, CC)
@@ -163,8 +163,8 @@ class BlasTests: XCTestCase {
 		let LB: la_object_t = la_matrix_from_float_buffer((0..<K*N).map{(_)in Float(arc4random_uniform(256))/128.0-1.0}, la_count_t(K), la_count_t(N), la_count_t(N), NOHINT, ATTR)
 		let LC: la_object_t = la_matrix_product(LA, LB)
 		
-		let MA: MTLBuffer = context.fromLAObject(LA, options: .StorageModePrivate)
-		let MB: MTLBuffer = context.fromLAObject(LB, options: .StorageModePrivate)
+		let MA: MTLBuffer = context.newBufferFromLAObject(LA, options: .StorageModePrivate)
+		let MB: MTLBuffer = context.newBufferFromLAObject(LB, options: .StorageModePrivate)
 		let MC: MTLBuffer = context.newBuffer(length: sizeof(Float)*M*N, options: .StorageModePrivate)
 		
 		let bs: Int = 16
@@ -188,7 +188,7 @@ class BlasTests: XCTestCase {
 			self.context.join()
 		}
 		
-		let CC: la_object_t = context.toLAObject(MC, rows: M, cols: N)
+		let CC: la_object_t = context.newLaObjectFromBuffer(MC, rows: M, cols: N)
 		context.join()
 		
 		let E: la_object_t = la_difference(LC, CC)
@@ -218,8 +218,8 @@ class BlasTests: XCTestCase {
 		let LB: la_object_t = la_matrix_from_float_buffer((0..<rows).map{(_)in Float(arc4random_uniform(256))/Float(128.0)-1.0}, la_count_t(rows), la_count_t(1), la_count_t(1), NOHINT, ATTR)
 		let LC: la_object_t = la_matrix_product(la_transpose(LA), LB)
 		
-		let MA: MTLBuffer = context.fromLAObject(LA, options: .StorageModePrivate)
-		let MB: MTLBuffer = context.fromLAObject(LB, options: .StorageModePrivate)
+		let MA: MTLBuffer = context.newBufferFromLAObject(LA, options: .StorageModePrivate)
+		let MB: MTLBuffer = context.newBufferFromLAObject(LB, options: .StorageModePrivate)
 		let MC: MTLBuffer = context.newBuffer(length: sizeof(Float)*cols, options: .CPUCacheModeDefaultCache)
 		
 		let bs: Int = 64
@@ -242,7 +242,7 @@ class BlasTests: XCTestCase {
 			self.context.join()
 		}
 		
-		let CC: la_object_t = context.toLAObject(MC, rows: cols, cols: 1)
+		let CC: la_object_t = context.newLaObjectFromBuffer(MC, rows: cols, cols: 1)
 		let E: la_object_t = la_difference(LC, CC)
 
 		context.join()
@@ -263,8 +263,8 @@ class BlasTests: XCTestCase {
 		let LB: la_object_t = la_matrix_from_float_buffer((0..<cols).map{(_)in Float(arc4random_uniform(256))/Float(128.0)-1.0}, la_count_t(cols), la_count_t(1), la_count_t(1), NOHINT, ATTR)
 		let LC: la_object_t = la_matrix_product(LA, LB)
 		
-		let MA: MTLBuffer = context.fromLAObject(LA, options: .StorageModePrivate)
-		let MB: MTLBuffer = context.fromLAObject(LB, options: .StorageModePrivate)
+		let MA: MTLBuffer = context.newBufferFromLAObject(LA, options: .StorageModePrivate)
+		let MB: MTLBuffer = context.newBufferFromLAObject(LB, options: .StorageModePrivate)
 		let MC: MTLBuffer = context.newBuffer(length: sizeof(Float)*rows, options: .CPUCacheModeDefaultCache)
 		
 		let bs: Int = 64
@@ -287,7 +287,7 @@ class BlasTests: XCTestCase {
 			self.context.join()
 		}
 		
-		let CC: la_object_t = context.toLAObject(MC, rows: rows, cols: 1)
+		let CC: la_object_t = context.newLaObjectFromBuffer(MC, rows: rows, cols: 1)
 		context.join()
 		
 		let E: la_object_t = la_difference(LC, CC)

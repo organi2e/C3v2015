@@ -45,7 +45,7 @@ class CauchyTests: XCTestCase {
 		
 		for k in 0..<1024 {
 
-			let χ: la_object_t = context.toLAObject(art.χ, rows: rows*cols, cols: 1)
+			let χ: la_object_t = context.newLaObjectFromBuffer(art.χ, rows: rows*cols, cols: 1)
 			
 			let X: [Float] = [Float](count: rows*cols, repeatedValue: 0.0)
 

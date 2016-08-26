@@ -38,17 +38,17 @@ class EdgeTests: XCTestCase {
 		}
 	}
 	func dump(let buffer: MTLBuffer, let rows: Int, let cols: Int) {
-		let matrix: la_object_t = context.toLAObject(buffer, rows: rows, cols: cols)
+		let matrix: la_object_t = context.newLaObjectFromBuffer(buffer, rows: rows, cols: cols)
 		context.join()
 		dump(matrix)
 	}
 	func testCollect() {
 		
-		let o_width: Int = 16//4 * Int(1+arc4random_uniform(255))
-		let i_width: Int = 16//4 * Int(1+arc4random_uniform(255))
+		let o_width: Int = 4 * Int(1+arc4random_uniform(255))
+		let i_width: Int = 4 * Int(1+arc4random_uniform(255))
 		
 		let state_la: la_object_t = la_matrix_from_float_buffer(uniform(i_width), la_count_t(i_width), la_count_t(1), la_count_t(1), NOHINT, ATTR)
-		let state_mtl: MTLBuffer = context.fromLAObject(state_la)
+		let state_mtl: MTLBuffer = context.newBufferFromLAObject(state_la)
 		
 		let edge_la = (
 			χ: la_matrix_from_float_buffer(uniform(o_width*i_width), la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, ATTR),
@@ -57,9 +57,9 @@ class EdgeTests: XCTestCase {
 		)
 		
 		let edge_mtl = (
-			χ: context.fromLAObject(edge_la.χ),
-			μ: context.fromLAObject(edge_la.μ),
-			σ: context.fromLAObject(edge_la.σ)
+			χ: context.newBufferFromLAObject(edge_la.χ),
+			μ: context.newBufferFromLAObject(edge_la.μ),
+			σ: context.newBufferFromLAObject(edge_la.σ)
 		)
 		
 		let level_mtl = (
@@ -82,9 +82,9 @@ class EdgeTests: XCTestCase {
 		Edge.collect(context: self.context, level: level_mtl, edge: edge_mtl, input: state_mtl, rows: o_width, cols: i_width)
 		
 		let level_mtl_la = (
-			χ: context.toLAObject(level_mtl.χ, rows: o_width, cols: 1),
-			μ: context.toLAObject(level_mtl.μ, rows: o_width, cols: 1),
-			σ: context.toLAObject(level_mtl.σ, rows: o_width, cols: 1)
+			χ: context.newLaObjectFromBuffer(level_mtl.χ, rows: o_width, cols: 1),
+			μ: context.newLaObjectFromBuffer(level_mtl.μ, rows: o_width, cols: 1),
+			σ: context.newLaObjectFromBuffer(level_mtl.σ, rows: o_width, cols: 1)
 		)
 		
 		let level_la = (
@@ -128,8 +128,8 @@ class EdgeTests: XCTestCase {
 			Edge.gradientInitialize(context: self.context, grad: (edgeμ, edgeσ), input: input, rows: o_width, cols: i_width)
 			self.context.join()
 		}
-		let dstμ: [Float] = context.toRowMajorMatrix(edgeμ, rows: o_width, cols: i_width*o_width)
-		let dstσ: [Float] = context.toRowMajorMatrix(edgeσ, rows: o_width, cols: i_width*o_width)
+		let dstμ: [Float] = context.newRowMajorMatrixFromBuffer(edgeμ, rows: o_width, cols: i_width*o_width)
+		let dstσ: [Float] = context.newRowMajorMatrixFromBuffer(edgeσ, rows: o_width, cols: i_width*o_width)
 		
 		for k in 0..<o_width {
 			for j in 0..<i_width {
@@ -155,8 +155,8 @@ class EdgeTests: XCTestCase {
 	
 	func testCorrect() {
 		
-		let o_width: Int = 16
-		let i_width: Int = 16
+		let o_width: Int = 4 * Int(1+arc4random_uniform(15))
+		let i_width: Int = 4 * Int(1+arc4random_uniform(15))
 		
 		let η: Float = 0.5
 		
@@ -174,38 +174,38 @@ class EdgeTests: XCTestCase {
 		let deltaμ: [Float] = uniform(o_width)
 		let deltaσ: [Float] = uniform(o_width)
 		
-		let input: MTLBuffer = context.fromRowMajorMatrix(state, rows: i_width, cols: 1)
+		let input: MTLBuffer = context.newBufferFromRowMajorMatrix(state, rows: i_width, cols: 1)
 		
 		let edge = (
-			logμ: context.fromRowMajorMatrix(logμ, rows: o_width, cols: i_width),
-			logσ: context.fromRowMajorMatrix(logσ, rows: o_width, cols: i_width),
-			μ: context.fromRowMajorMatrix(μ, rows: o_width, cols: i_width),
-			σ: context.fromRowMajorMatrix(σ, rows: o_width, cols: i_width)
+			logμ: context.newBufferFromRowMajorMatrix(logμ, rows: o_width, cols: i_width),
+			logσ: context.newBufferFromRowMajorMatrix(logσ, rows: o_width, cols: i_width),
+			μ: context.newBufferFromRowMajorMatrix(μ, rows: o_width, cols: i_width),
+			σ: context.newBufferFromRowMajorMatrix(σ, rows: o_width, cols: i_width)
 		)
 		let grad = (
-			μ: context.fromRowMajorMatrix(gradμ, rows: o_width, cols: o_width*i_width),
-			σ: context.fromRowMajorMatrix(gradσ, rows: o_width, cols: o_width*i_width)
+			μ: context.newBufferFromRowMajorMatrix(gradμ, rows: o_width, cols: o_width*i_width),
+			σ: context.newBufferFromRowMajorMatrix(gradσ, rows: o_width, cols: o_width*i_width)
 		)
 		let delta = (
-			μ: context.fromRowMajorMatrix(deltaμ, rows: o_width, cols: 1),
-			σ: context.fromRowMajorMatrix(deltaσ, rows: o_width, cols: 1)
+			μ: context.newBufferFromRowMajorMatrix(deltaμ, rows: o_width, cols: 1),
+			σ: context.newBufferFromRowMajorMatrix(deltaσ, rows: o_width, cols: 1)
 		)
 		
 		Edge.gradientInitialize(context: context, grad: grad, input: input, rows: o_width, cols: i_width)
 		Edge.correct(context: context, η: η, edge: edge, grad: grad, delta: delta, rows: o_width, cols: i_width)
 		
-		for i in 0..<o_width {
-			for o in 0..<i_width {
-				logμ[ o * i_width + i ] += η * μGrad ( μ[o*i_width+i] ) * ( state[i] ) * deltaμ[o]
-				logσ[ o * i_width + i ] += η * σGrad ( σ[o*i_width+i] ) * ( state[i] ) * deltaσ[o]
+		for o in 0..<o_width {
+			for i in 0..<i_width {
+				logμ[ o * i_width + i ] += η * μGrad ( μ[ o * i_width + i ] ) * state[i] * deltaμ[o]
+				logσ[ o * i_width + i ] += η * σGrad ( σ[ o * i_width + i ] ) * state[i] * deltaσ[o]
 			}
 		}
 		
 		let srcμ: la_object_t = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logμ), la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, nil, ATTR)
-		let dstμ: la_object_t = context.toLAObject(edge.logμ, rows: o_width, cols: i_width)
+		let dstμ: la_object_t = context.newLaObjectFromBuffer(edge.logμ, rows: o_width, cols: i_width)
 
 		let srcσ: la_object_t = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(logσ), la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, nil, ATTR)
-		let dstσ: la_object_t = context.toLAObject(edge.logσ, rows: o_width, cols: i_width)
+		let dstσ: la_object_t = context.newLaObjectFromBuffer(edge.logσ, rows: o_width, cols: i_width)
 		
 		context.join()
 		
@@ -253,8 +253,8 @@ class EdgeTests: XCTestCase {
 		let error_la: la_object_t = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(error), la_count_t(i_width), 1, 1, NOHINT, nil, ATTR)
 		let state_la: la_object_t = la_matrix_from_float_buffer(state, la_count_t(i_width), 1, 1, NOHINT, ATTR)
 		
-		let error_mtl: MTLBuffer = context.fromLAObject(error_la)
-		let state_mtl: MTLBuffer = context.fromLAObject(state_la)
+		let error_mtl: MTLBuffer = context.newBufferFromLAObject(error_la)
+		let state_mtl: MTLBuffer = context.newBufferFromLAObject(state_la)
 		
 		let delta = (
 			χ: uniform(o_width),
@@ -267,9 +267,9 @@ class EdgeTests: XCTestCase {
 			σ: la_matrix_from_float_buffer(delta.σ, la_count_t(o_width), 1, 1, NOHINT, ATTR)
 		)
 		let delta_mtl = (
-			χ: context.fromLAObject(delta_la.χ),
-			μ: context.fromLAObject(delta_la.μ),
-			σ: context.fromLAObject(delta_la.σ)
+			χ: context.newBufferFromLAObject(delta_la.χ),
+			μ: context.newBufferFromLAObject(delta_la.μ),
+			σ: context.newBufferFromLAObject(delta_la.σ)
 		)
 		
 		let edge_la = (
@@ -281,11 +281,11 @@ class EdgeTests: XCTestCase {
 		)
 		
 		let edge_mtl = (
-			logμ: context.fromLAObject(edge_la.logμ),
-			logσ: context.fromLAObject(edge_la.logσ),
-			χ: context.fromLAObject(edge_la.χ),
-			μ: context.fromLAObject(edge_la.μ),
-			σ: context.fromLAObject(edge_la.σ)
+			logμ: context.newBufferFromLAObject(edge_la.logμ),
+			logσ: context.newBufferFromLAObject(edge_la.logσ),
+			χ: context.newBufferFromLAObject(edge_la.χ),
+			μ: context.newBufferFromLAObject(edge_la.μ),
+			σ: context.newBufferFromLAObject(edge_la.σ)
 		)
 		
 		let η: Float = 0.5
@@ -293,10 +293,10 @@ class EdgeTests: XCTestCase {
 		Edge.backpropagation(context: context, error: error_mtl, edge: edge_mtl.χ, delta: delta_mtl.χ, rows: o_width, cols: i_width)
 		Edge.correctLightWeight(context: context, η: η, edge: (edge_mtl.logμ, edge_mtl.logσ, edge_mtl.μ, edge_mtl.σ), input: state_mtl, delta: (delta_mtl.μ, delta_mtl.σ), rows: o_width, cols: i_width)
 		
-		let obsError_la: la_object_t = context.toLAObject(error_mtl, rows: i_width, cols: 1)
+		let obsError_la: la_object_t = context.newLaObjectFromBuffer(error_mtl, rows: i_width, cols: 1)
 		
-		let obsLogμ_la: la_object_t = context.toLAObject(edge_mtl.logμ, rows: o_width, cols: i_width)
-		let obsLogσ_la: la_object_t = context.toLAObject(edge_mtl.logσ, rows: o_width, cols: i_width)
+		let obsLogμ_la: la_object_t = context.newLaObjectFromBuffer(edge_mtl.logμ, rows: o_width, cols: i_width)
+		let obsLogσ_la: la_object_t = context.newLaObjectFromBuffer(edge_mtl.logσ, rows: o_width, cols: i_width)
 		
 		for i in 0..<i_width {
 			var accum: Float = 0.0

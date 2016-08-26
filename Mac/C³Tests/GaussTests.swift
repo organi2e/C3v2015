@@ -34,7 +34,7 @@ class GaussTests: XCTestCase {
 		
 		gauss.shuffle()
 		
-		let value: la_object_t = context.toLAObject(gauss.χ, rows: rows*cols, cols: 1)
+		let value: la_object_t = context.newLaObjectFromBuffer(gauss.χ, rows: rows*cols, cols: 1)
 		let cache: [Float] = [Float](count: rows*cols, repeatedValue: 0.0)
 		
 		context.join()
