@@ -42,6 +42,7 @@ extension Cell {
 	@NSManaged public private(set) var label: String
 	@NSManaged public private(set) var width: Int
 	@NSManaged public private(set) var attribute: [String: AnyObject]
+	@NSManaged public var priority: Int
 	@NSManaged private var input: Set<Edge>
 	@NSManaged private var output: Set<Edge>
 	@NSManaged private var bias: Bias
@@ -184,12 +185,14 @@ extension Cell {
 		ready.remove(.ψ)
 	}
 	
-	public func collect() -> MTLBuffer {
-		if let context: Context = managedObjectContext as? Context {
+	public func collect(let ignore: Set<Cell> = []) -> MTLBuffer {
+		if ignore.contains(self) {
+			return Υ.old.ϰ
+		} else if let context: Context = managedObjectContext as? Context {
 			if !ready.contains(.ϰ) {
 				ready.insert(.ϰ)
 				input.forEach {
-					$0.collect(Φ: (Φ.new.χ, Φ.new.μ, Φ.new.σ))
+					$0.collect(Φ: (Φ.new.χ, Φ.new.μ, Φ.new.σ), ignore: ignore.union([self]))
 				}
 				bias.collect(level: (Φ.new.χ, Φ.new.μ, Φ.new.σ))
 				self.dynamicType.activate(context: context,
@@ -203,8 +206,10 @@ extension Cell {
 		return Υ.new.ϰ
 	}
 	
-	public func correct(let η η: Float, let visit: Set<Cell>=[]) -> (MTLBuffer, MTLBuffer, MTLBuffer) {
-		if let context: Context = managedObjectContext as? Context {
+	public func correct(let η η: Float, let ignore: Set<Cell>=[]) -> (MTLBuffer, MTLBuffer, MTLBuffer) {
+		if ignore.contains(self) {
+			return(Δ.old.χ, Δ.old.μ, Δ.old.σ)
+		} else if let context: Context = managedObjectContext as? Context {
 			if !ready.contains(.δ) {
 				ready.insert(.δ)
 				if ready.contains(.ψ) {
@@ -215,7 +220,7 @@ extension Cell {
 					                            width: width)
 				} else {
 					output.forEach {
-						$0.correct(δ: Υ.new.δ, η: η, ϰ: Υ.new.ϰ)
+						$0.correct(η: η, δ: Υ.new.δ, ϰ: Υ.new.ϰ, ignore: ignore.union([self]))
 					}
 				}
 				self.dynamicType.derivate(context: context,

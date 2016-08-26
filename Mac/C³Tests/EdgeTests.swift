@@ -44,8 +44,8 @@ class EdgeTests: XCTestCase {
 	}
 	func testCollect() {
 		
-		let o_width: Int = 4 * Int(1+arc4random_uniform(255))
-		let i_width: Int = 4 * Int(1+arc4random_uniform(255))
+		let o_width: Int = 16//4 * Int(1+arc4random_uniform(255))
+		let i_width: Int = 16//4 * Int(1+arc4random_uniform(255))
 		
 		let state_la: la_object_t = la_matrix_from_float_buffer(uniform(i_width), la_count_t(i_width), la_count_t(1), la_count_t(1), NOHINT, ATTR)
 		let state_mtl: MTLBuffer = context.fromLAObject(state_la)
@@ -69,9 +69,17 @@ class EdgeTests: XCTestCase {
 		)
 		
 		measureBlock {
-			Edge.collect(context: self.context, Φ: level_mtl, edge: edge_mtl, ϰ: state_mtl, rows: o_width, cols: i_width)
+			Edge.collect(context: self.context, level: level_mtl, edge: edge_mtl, input: state_mtl, rows: o_width, cols: i_width)
 			self.context.join()
 		}
+		
+		context.newBlitCommand {
+			$0.fillBuffer(level_mtl.χ, range: NSRange(location: 0, length: level_mtl.χ.length), value: 0)
+			$0.fillBuffer(level_mtl.μ, range: NSRange(location: 0, length: level_mtl.μ.length), value: 0)
+			$0.fillBuffer(level_mtl.σ, range: NSRange(location: 0, length: level_mtl.σ.length), value: 0)
+		}
+		
+		Edge.collect(context: self.context, level: level_mtl, edge: edge_mtl, input: state_mtl, rows: o_width, cols: i_width)
 		
 		let level_mtl_la = (
 			χ: context.toLAObject(level_mtl.χ, rows: o_width, cols: 1),
@@ -105,8 +113,8 @@ class EdgeTests: XCTestCase {
 	}
 	func testGradient() {
 		
-		let o_width: Int = 4 * Int(1+arc4random_uniform(63))
-		let i_width: Int = 4 * Int(1+arc4random_uniform(63))
+		let o_width: Int = 4 * Int(1+arc4random_uniform(15))
+		let i_width: Int = 4 * Int(1+arc4random_uniform(15))
 
 		let srcχ: [Float] = (0..<i_width).map{(_)in Float(arc4random())}
 		var srcμ: [Float] = [Float](count: o_width*o_width*i_width, repeatedValue: 0)
@@ -146,8 +154,8 @@ class EdgeTests: XCTestCase {
 	}
 	func testCorrectLightWeight() {
 		
-		let o_width: Int = 4 * Int(1+arc4random_uniform(255))
-		let i_width: Int = 4 * Int(1+arc4random_uniform(255))
+		let o_width: Int = 16//4 * Int(1+arc4random_uniform(255))
+		let i_width: Int = 16//4 * Int(1+arc4random_uniform(255))
 		
 		let χ: [Float] = uniform(o_width*i_width)
 		
@@ -208,7 +216,8 @@ class EdgeTests: XCTestCase {
 		
 		let η: Float = 0.5
 		
-		Edge.correctLightWeight(context: context, η: η, δ: error_mtl, edge: edge_mtl, ϰ: state_mtl, Δ: delta_mtl, rows: o_width, cols: i_width)
+		Edge.backpropagation(context: context, error: error_mtl, edge: edge_mtl.χ, delta: delta_mtl.χ, rows: o_width, cols: i_width)
+		Edge.correctLightWeight(context: context, η: η, edge: (edge_mtl.logμ, edge_mtl.logσ, edge_mtl.μ, edge_mtl.σ), input: state_mtl, delta: (delta_mtl.μ, delta_mtl.σ), rows: o_width, cols: i_width)
 		
 		let obsError_la: la_object_t = context.toLAObject(error_mtl, rows: i_width, cols: 1)
 		
@@ -219,15 +228,15 @@ class EdgeTests: XCTestCase {
 			var accum: Float = 0.0
 			for o in 0..<o_width {
 				
-				//accum += delta.value[o] * edge.value[o * i_width + i]
-				accum += delta.μ[o] * edge.μ[o * i_width + i]
-				accum += delta.σ[o] * edge.σ[o * i_width + i]
+				accum += delta.χ[o] * edge.χ[o * i_width + i]
+				//accum += delta.μ[o] * edge.μ[o * i_width + i]
+				//accum += delta.σ[o] * edge.σ[o * i_width + i]
 				
 				logμ[ o * i_width + i ] += η * μGrad ( μ[o*i_width+i] ) * ( state[i] ) * delta.μ[o]
 				logσ[ o * i_width + i ] += η * σGrad ( σ[o*i_width+i] ) * ( state[i] ) * delta.σ[o]
 				
 			}
-			error[i] = accum
+			error[i] += accum
 		}
 		
 		let dstLogμ_la: la_object_t = la_matrix_from_float_buffer(UnsafePointer<Float>(logμ), la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, ATTR)
