@@ -155,8 +155,8 @@ class EdgeTests: XCTestCase {
 	
 	func testCorrect() {
 		
-		let o_width: Int = 4 * Int(1+arc4random_uniform(63))
-		let i_width: Int = 4 * Int(1+arc4random_uniform(63))
+		let o_width: Int = 16//4 * Int(1+arc4random_uniform(63))
+		let i_width: Int = 16//4 * Int(1+arc4random_uniform(63))
 		
 		let η: Float = 0.5
 		
@@ -212,14 +212,16 @@ class EdgeTests: XCTestCase {
 		let rmseμ: Float = la_norm_as_float(la_difference(srcμ, dstμ), la_norm_t(LA_L2_NORM)) / sqrt(Float(o_width*i_width))
 		XCTAssert(!isnan(rmseμ))
 		XCTAssert(!isinf(rmseμ))
-		if 1e-5 < rmseμ {
+		if 1e-7 < rmseμ {
+			print(srcμ.eval)
+			print(dstμ.eval)
 			XCTFail("RMSE: \(rmseμ)")
 		}
 		
 		let rmseσ: Float = la_norm_as_float(la_difference(srcσ, dstσ), la_norm_t(LA_L2_NORM)) / sqrt(Float(o_width*i_width))
 		XCTAssert(!isnan(rmseσ))
 		XCTAssert(!isinf(rmseσ))
-		if 1e-5 < rmseσ {
+		if 1e-7 < rmseσ {
 			XCTFail("RMSE: \(rmseσ)")
 		}
 		
