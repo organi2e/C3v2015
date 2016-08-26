@@ -23,7 +23,7 @@ extension Bias {
 extension Bias {
 	internal override func setup(let context: Context) {
 		super.setup(context)
-		if false {
+		if true {
 			let width: Int = output.width
 			let length: Int = 2
 			grads = RingBuffer<grad>(array: (0..<length).map{(_)in

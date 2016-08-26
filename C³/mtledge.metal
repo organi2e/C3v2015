@@ -21,9 +21,9 @@ kernel void edgeCollect(device float4 * level_value [[ buffer(0) ]],
 						device float4 * level_mu [[ buffer(1) ]],
 						device float4 * level_sigma [[ buffer(2) ]],
 						
-						device const float4x4 * const edge_value [[ buffer(3) ]],
-						device const float4x4 * const edge_mu [[ buffer(4) ]],
-						device const float4x4 * const edge_sigma [[ buffer(5) ]],
+						device const float4 * const edge_value [[ buffer(3) ]],
+						device const float4 * const edge_mu [[ buffer(4) ]],
+						device const float4 * const edge_sigma [[ buffer(5) ]],
 						
 						device const float4 * const input_state [[ buffer(6) ]],
 						
@@ -49,10 +49,21 @@ kernel void edgeCollect(device float4 * level_value [[ buffer(0) ]],
 	uint const m = g;
 	for ( uint n = t ; n < N ; n += T ) {
 		float4 const state = input_state [ n ];
-		uint const idx = n * M + m;
-		value += edge_value[idx] * state;
-		mu += edge_mu[idx] * state;
-		sigma += edge_sigma[idx] * state;
+		uint4 const idx = ( n * 4 + uint4(0, 1, 2, 3) ) * M + m;
+		value += float4x4(edge_value[idx[0]],
+						  edge_value[idx[1]],
+						  edge_value[idx[2]],
+						  edge_value[idx[3]]) * state;
+		
+		mu += float4x4(edge_mu[idx[0]],
+					   edge_mu[idx[1]],
+					   edge_mu[idx[2]],
+					   edge_mu[idx[3]]) * state;
+		
+		sigma += float4x4(edge_sigma[idx[0]],
+						  edge_sigma[idx[1]],
+						  edge_sigma[idx[2]],
+						  edge_sigma[idx[3]]) * state;
 	}
 	
 	th_value[t] = value;
@@ -76,18 +87,18 @@ kernel void edgeCollect(device float4 * level_value [[ buffer(0) ]],
 	}
 	
 }
-kernel void edgeCorrect(device float4x4 * const edge_logmu [[ buffer(0) ]],
-						device float4x4 * const edge_logsigma [[ buffer(1) ]],
-						device const float4x4 * const edge_mu [[ buffer(2) ]],
-						device const float4x4 * const edge_sigma [[ buffer(3) ]],
-						device const float4x4 * const grad_mu [[ buffer(4) ]],
-						device const float4x4 * const grad_sigma [[ buffer(5) ]],
-						device const float4 * const delta_mu [[ buffer(6) ]],
-						device const float4 * const delta_sigma [[ buffer(7) ]],
+kernel void edgeCorrect(device float4 * const edge_logmu [[ buffer(0) ]],
+						device float4 * const edge_logsigma [[ buffer(1) ]],
+						device const float4 * const edge_mu [[ buffer(2) ]],
+						device const float4 * const edge_sigma [[ buffer(3) ]],
+						device const float4 * const grad_mu [[ buffer(4) ]],
+						device const float4 * const grad_sigma [[ buffer(5) ]],
+						device const float * const delta_mu [[ buffer(6) ]],
+						device const float * const delta_sigma [[ buffer(7) ]],
 						constant const float & eta [[ buffer(8) ]],
 						constant const uint2 & dim [[ buffer(9) ]],
-						threadgroup float4x4 * const accumulator_mu [[ threadgroup(0) ]],
-						threadgroup float4x4 * const accumulator_sigma [[ threadgroup(1) ]],
+						threadgroup float4 * const accumulator_mu [[ threadgroup(0) ]],
+						threadgroup float4 * const accumulator_sigma [[ threadgroup(1) ]],
 						uint3 const g [[ threadgroup_position_in_grid ]],
 						uint3 const G [[ threadgroups_per_grid ]],
 						uint3 const t [[ thread_position_in_threadgroup ]],
@@ -96,23 +107,13 @@ kernel void edgeCorrect(device float4x4 * const edge_logmu [[ buffer(0) ]],
 	uint const I = dim.x, i = g.x;
 	uint const J = dim.y, j = g.y;
 	
-	float4x4 sum_mu = float4x4(0.0);
-	float4x4 sum_sigma = float4x4(0.0);
+	float4 sum_mu = 0;
+	float4 sum_sigma = 0;
 	
-	for ( uint k = t.z, K = 4 * I ; k < K ; k += 4 * T.z ) {
-		
-		uint4 const idx = ( ( k + uint4(0,1,2,3)) * J + j ) * I + i;
-		
-		sum_mu += delta_mu[k][0] * grad_mu[idx[0]];
-		sum_mu += delta_mu[k][1] * grad_mu[idx[1]];
-		sum_mu += delta_mu[k][2] * grad_mu[idx[2]];
-		sum_mu += delta_mu[k][3] * grad_mu[idx[3]];
-		
-		sum_sigma += delta_sigma[k][0] * grad_sigma[idx[0]];
-		sum_sigma += delta_sigma[k][1] * grad_sigma[idx[1]];
-		sum_sigma += delta_sigma[k][2] * grad_sigma[idx[2]];
-		sum_sigma += delta_sigma[k][3] * grad_sigma[idx[3]];
-		
+	for ( uint k = t.z, K = I ; k < K ; k += T.z ) {
+		uint const idx = i + I * ( j + J * k );
+		sum_mu += delta_mu[k] * grad_mu[idx];
+		sum_sigma += delta_sigma[k] * grad_sigma[idx];
 	}
 	
 	accumulator_mu[t.z] = sum_mu;
@@ -120,6 +121,7 @@ kernel void edgeCorrect(device float4x4 * const edge_logmu [[ buffer(0) ]],
 	
 	uint offset = T.z;
 	while ( offset >>= 1 ) {
+		threadgroup_barrier ( mem_flags :: mem_threadgroup );
 		if ( t.z < offset ) {
 			accumulator_mu[t.z] += accumulator_mu[t.z+offset];
 			accumulator_sigma[t.z] += accumulator_sigma[t.z+offset];
@@ -127,28 +129,15 @@ kernel void edgeCorrect(device float4x4 * const edge_logmu [[ buffer(0) ]],
 	}
 	
 	if ( !t.z ) {
-		
 		uint const idx = j * I + i;
-		
-		float4x4 const delta_mu_cache = *accumulator_mu;
-		float4x4 const mu_cache = edge_mu[idx];
-		edge_logmu[idx] += eta * float4x4(artMuGradient(mu_cache[0]) * delta_mu_cache[0],
-										  artMuGradient(mu_cache[1]) * delta_mu_cache[1],
-										  artMuGradient(mu_cache[2]) * delta_mu_cache[2],
-										  artMuGradient(mu_cache[3]) * delta_mu_cache[3]);
-		
-		float4x4 const delta_sigma_cache = *accumulator_sigma;
-		float4x4 const sigma_cache = edge_sigma[idx];
-		edge_logsigma[idx] += eta * float4x4(artSigmaGradient(sigma_cache[0]) * delta_sigma_cache[0],
-											 artSigmaGradient(sigma_cache[1]) * delta_sigma_cache[1],
-											 artSigmaGradient(sigma_cache[2]) * delta_sigma_cache[2],
-											 artSigmaGradient(sigma_cache[3]) * delta_sigma_cache[3]);
+		edge_logmu[idx] += eta * artMuGradient(edge_mu[idx]) * *accumulator_mu;
+		edge_logsigma[idx] += eta * artSigmaGradient(edge_sigma[idx]) * *accumulator_sigma;
 	}
 }
-kernel void edgeCorrectLightWeight(device float4x4 * const edge_logmu [[ buffer(0) ]],
-								   device float4x4 * const edge_logsigma [[ buffer(1) ]],
-								   device const float4x4 * const edge_mu [[ buffer(2) ]],
-								   device const float4x4 * const edge_sigma [[ buffer(3) ]],
+kernel void edgeCorrectLightWeight(device float4 * const edge_logmu [[ buffer(0) ]],
+								   device float4 * const edge_logsigma [[ buffer(1) ]],
+								   device const float4 * const edge_mu [[ buffer(2) ]],
+								   device const float4 * const edge_sigma [[ buffer(3) ]],
 								   device const float4 * const input_state [[ buffer(4) ]],
 								   device const float4 * const delta_mu [[ buffer(5) ]],
 								   device const float4 * const delta_sigma [[ buffer(6) ]],
@@ -156,54 +145,44 @@ kernel void edgeCorrectLightWeight(device float4x4 * const edge_logmu [[ buffer(
 								   threadgroup float4 * const accumulator [[ threadgroup(0) ]],
 								   uint2 const t [[ thread_position_in_grid ]],
 								   uint2 const T [[ threads_per_grid ]]) {
-	uint const m = t.y, M = T.y;
 	uint const n = t.x;
+	uint const m = t.y, M = T.y;
+
+	float4 const state = input_state[n];
+	float4 const mu = delta_mu[m];
+	float4 const sigma = delta_sigma[m];
+
+	uint4 const idx = ( n * 4 + uint4(0,1,2,3) ) * M + m;
 	
-	float4 const grad_mu = input_state[n];
-	float4 const grad_sigma = input_state[n];
+	edge_logmu[idx[0]] += eta * artMuGradient(edge_mu[idx[0]]) * mu * state[0];
+	edge_logmu[idx[1]] += eta * artMuGradient(edge_mu[idx[1]]) * mu * state[1];
+	edge_logmu[idx[2]] += eta * artMuGradient(edge_mu[idx[2]]) * mu * state[2];
+	edge_logmu[idx[3]] += eta * artMuGradient(edge_mu[idx[3]]) * mu * state[3];
 	
-	float4 const delta_mu_cache = delta_mu[m];
-	float4 const delta_sigma_cache = delta_sigma[m];
-		
-	uint const idx = n * M + m;
-	
-	float4x4 const mu_cache = edge_mu[idx];
-	edge_logmu[idx] += eta * float4x4(artMuGradient(mu_cache[0]) * grad_mu[0] * delta_mu_cache,
-									  artMuGradient(mu_cache[1]) * grad_mu[1] * delta_mu_cache,
-									  artMuGradient(mu_cache[2]) * grad_mu[2] * delta_mu_cache,
-									  artMuGradient(mu_cache[3]) * grad_mu[3] * delta_mu_cache);
-	
-	float4x4 const sigma_cache = edge_sigma[idx];
-	edge_logsigma[idx] += eta * float4x4(artSigmaGradient(sigma_cache[0]) * grad_sigma[0] * delta_sigma_cache,
-										 artSigmaGradient(sigma_cache[1]) * grad_sigma[1] * delta_sigma_cache,
-										 artSigmaGradient(sigma_cache[2]) * grad_sigma[2] * delta_sigma_cache,
-										 artSigmaGradient(sigma_cache[3]) * grad_sigma[3] * delta_sigma_cache);
+	edge_logsigma[idx[0]] += eta * artSigmaGradient(edge_sigma[idx[0]]) * sigma * state[0];
+	edge_logsigma[idx[1]] += eta * artSigmaGradient(edge_sigma[idx[1]]) * sigma * state[1];
+	edge_logsigma[idx[2]] += eta * artSigmaGradient(edge_sigma[idx[2]]) * sigma * state[2];
+	edge_logsigma[idx[3]] += eta * artSigmaGradient(edge_sigma[idx[3]]) * sigma * state[3];
 	
 }
-kernel void edgeGradientInitialize(device float4x4 * const mu [[ buffer(0) ]],
-								   device float4x4 * const sigma [[ buffer(1) ]],
-								   device const float4 * const input [[ buffer(2) ]],
+kernel void edgeGradientInitialize(device float * const mu [[ buffer(0) ]],
+								   device float * const sigma [[ buffer(1) ]],
+								   device const float * const input [[ buffer(2) ]],
 								   constant const uint2 & dim [[ buffer(3) ]],
-								   threadgroup float4 * const accumulator [[ threadgroup(0) ]],
-								   uint const g [[ threadgroup_position_in_grid ]],
-								   uint const G [[ threadgroups_per_grid ]],
-								   uint const t [[ thread_position_in_threadgroup ]],
-								   uint const T [[ threads_per_threadgroup ]]) {
-	uint const I = dim.y;
-	uint const J = dim.x, j = g;
-	float4x4 value = float4x4(0.0);
-	value[t] = input[j];
-	value = transpose(value);
-	for ( uint i = 0 ; i < I ; ++ i ) {
-		uint const k = i * T + t;
-		uint const idx = ( ( k * J ) + j ) * I + i;
+								   uint const t [[ thread_position_in_grid ]],
+								   uint const T [[ threads_per_grid ]]) {
+	uint const IK = dim.y;
+	uint const J = dim.x, j = t;
+	float const value = input[j];
+	for ( uint ik = 0 ; ik < IK ; ++ ik ) {
+		uint const idx = ik + ( IK * ( j + J * ik ) );
 		mu[idx] = value;
 		sigma[idx] = value;
 	}
 }
 
 kernel void edgeBackpropagation(device float4 * const error [[ buffer(0) ]],
-								device const float4x4 * const value [[ buffer(1) ]],
+								device const float4 * const value [[ buffer(1) ]],
 								device const float4 * const delta [[ buffer(2) ]],
 								constant const uint2 & dim [[ buffer(3) ]],
 								threadgroup float4 * const accumulator [[ threadgroup(0) ]],
@@ -215,8 +194,11 @@ kernel void edgeBackpropagation(device float4 * const error [[ buffer(0) ]],
 	uint const n = g;
 	float4 sum = 0;
 	for ( uint m = t ; m < M ; m += T ) {
-		uint const idx = n * M + m;
-		sum += delta[m] * value[idx];
+		uint4 const idx = ( n * 4 + uint4(0, 1, 2, 3) ) * M + m;
+		sum += delta[m] * float4x4(value[idx[0]],
+								   value[idx[1]],
+								   value[idx[2]],
+								   value[idx[3]]);
 	}
 	accumulator[t] = sum;
 	uint offset = T;

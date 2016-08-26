@@ -164,7 +164,7 @@
 		87C516CF1D3F72E000E3F36B /* Unit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Unit.swift; path = NLA/Unit.swift; sourceTree = "<group>"; };
 		87C516D41D3F742500E3F36B /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Config.swift; path = NLA/Config.swift; sourceTree = "<group>"; };
 		87C516D71D3F802C00E3F36B /* UnitTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = UnitTest.swift; path = NLA/UnitTest.swift; sourceTree = "<group>"; };
-		87D18E341D3F18BB00982020 /* LA.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = LA.swift; path = "C³/LA.swift"; sourceTree = "<group>"; };
+		87D18E341D3F18BB00982020 /* La.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = La.swift; path = "C³/La.swift"; sourceTree = "<group>"; };
 		87F6ABFD1D5B8C48005710FF /* mtlcell.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = mtlcell.metal; path = "C³/mtlcell.metal"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -235,10 +235,10 @@
 				878C7ABE1D01AF25002CDFD1 /* sandbox.app */,
 				878C7ABA1D01AF25002CDFD1 /* C3.framework */,
 				878C7ABC1D01AF25002CDFD1 /* C3Tests.xctest */,
-				878C7AC01D01AF25002CDFD1 /* MNIST.framework */,
-				875DD1EA1D6C619700A5C250 /* CIFAR10.framework */,
 				874347C41D6EF8EE00B54F70 /* CL3.framework */,
 				874347C61D6EF8EE00B54F70 /* CL3Tests.xctest */,
+				878C7AC01D01AF25002CDFD1 /* MNIST.framework */,
+				875DD1EA1D6C619700A5C250 /* CIFAR10.framework */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -268,7 +268,7 @@
 				878985BB1D050D42002C2A8D /* Dict.swift */,
 				878985BC1D050D42002C2A8D /* Edge.swift */,
 				878985BD1D050D42002C2A8D /* Error.swift */,
-				87D18E341D3F18BB00982020 /* LA.swift */,
+				87D18E341D3F18BB00982020 /* La.swift */,
 				87BCEBF01D4D745900FC3099 /* Decay.swift */,
 				87BCEBF91D4D746400FC3099 /* Gauss.swift */,
 				87BCEBFA1D4D75A500FC3099 /* Bias.swift */,

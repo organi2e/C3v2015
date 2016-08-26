@@ -44,11 +44,11 @@ class EdgeTests: XCTestCase {
 	}
 	func testCollect() {
 		
-		let o_width: Int = 4 * Int(1+arc4random_uniform(255))
-		let i_width: Int = 4 * Int(1+arc4random_uniform(255))
+		let o_width: Int = 4 * Int(1+arc4random_uniform(63))
+		let i_width: Int = 4 * Int(1+arc4random_uniform(63))
 		
 		let state_la: la_object_t = la_matrix_from_float_buffer(uniform(i_width), la_count_t(i_width), la_count_t(1), la_count_t(1), NOHINT, ATTR)
-		let state_mtl: MTLBuffer = context.newBufferFromLAObject(state_la)
+		let state_mtl: MTLBuffer = context.newBuffer(state_la.eval)
 		
 		let edge_la = (
 			χ: la_matrix_from_float_buffer(uniform(o_width*i_width), la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, ATTR),
@@ -57,9 +57,9 @@ class EdgeTests: XCTestCase {
 		)
 		
 		let edge_mtl = (
-			χ: context.newBufferFromLAObject(edge_la.χ),
-			μ: context.newBufferFromLAObject(edge_la.μ),
-			σ: context.newBufferFromLAObject(edge_la.σ)
+			χ: context.newBufferFromLaObject(edge_la.χ),
+			μ: context.newBufferFromLaObject(edge_la.μ),
+			σ: context.newBufferFromLaObject(edge_la.σ)
 		)
 		
 		let level_mtl = (
@@ -79,7 +79,7 @@ class EdgeTests: XCTestCase {
 			$0.fillBuffer(level_mtl.σ, range: NSRange(location: 0, length: level_mtl.σ.length), value: 0)
 		}
 		
-		Edge.collect(context: self.context, level: level_mtl, edge: edge_mtl, input: state_mtl, rows: o_width, cols: i_width)
+		Edge.collect(context: context, level: level_mtl, edge: edge_mtl, input: state_mtl, rows: o_width, cols: i_width)
 		
 		let level_mtl_la = (
 			χ: context.newLaObjectFromBuffer(level_mtl.χ, rows: o_width, cols: 1),
@@ -96,16 +96,24 @@ class EdgeTests: XCTestCase {
 		context.join()
 		
 		let χrmse: Float = la_norm_as_float(la_difference(level_mtl_la.χ, level_la.χ), la_norm_t(LA_L2_NORM)) / sqrt(Float(o_width))
+		XCTAssert(!isnan(χrmse))
+		XCTAssert(!isinf(χrmse))
 		if 1e-4 < χrmse {
+			print(level_mtl_la.χ.eval)
+			print(level_la.χ.eval)
 			XCTFail("RMSE: \(χrmse)")
 		}
 		
 		let μrmse: Float = la_norm_as_float(la_difference(level_mtl_la.μ, level_la.μ), la_norm_t(LA_L2_NORM)) / sqrt(Float(o_width))
+		XCTAssert(!isnan(μrmse))
+		XCTAssert(!isinf(μrmse))
 		if 1e-4 < μrmse {
 			XCTFail("RMSE: \(μrmse)")
 		}
 		
 		let σrmse: Float = la_norm_as_float(la_difference(level_mtl_la.σ, level_la.σ), la_norm_t(LA_L2_NORM)) / sqrt(Float(o_width))
+		XCTAssert(!isnan(σrmse))
+		XCTAssert(!isinf(σrmse))
 		if 1e-4 < σrmse {
 			XCTFail("RMSE: \(σrmse)")
 		}
@@ -128,14 +136,14 @@ class EdgeTests: XCTestCase {
 			Edge.gradientInitialize(context: self.context, grad: (edgeμ, edgeσ), input: input, rows: o_width, cols: i_width)
 			self.context.join()
 		}
-		let dstμ: [Float] = context.newRowMajorMatrixFromBuffer(edgeμ, rows: o_width, cols: i_width*o_width)
-		let dstσ: [Float] = context.newRowMajorMatrixFromBuffer(edgeσ, rows: o_width, cols: i_width*o_width)
+		let dstμ: [Float] = context.newBufferFromBuffer(edgeμ)
+		let dstσ: [Float] = context.newBufferFromBuffer(edgeσ)
 		
 		for k in 0..<o_width {
 			for j in 0..<i_width {
 				for i in 0..<o_width {
-					srcμ[((k*o_width)+i)*i_width+j] = i == k ? srcχ[j] : 0
-					srcσ[((k*o_width)+i)*i_width+j] = i == k ? srcχ[j] : 0
+					srcμ[i+o_width*(j+i_width*k)] = i == k ? srcχ[j] : 0
+					srcσ[i+o_width*(j+i_width*k)] = i == k ? srcχ[j] : 0
 				}
 			}
 		}
@@ -226,11 +234,10 @@ class EdgeTests: XCTestCase {
 		}
 		
 	}
-
 	func testCorrectLightWeight() {
 		
-		let o_width: Int = 4 * Int(1+arc4random_uniform(255))
-		let i_width: Int = 4 * Int(1+arc4random_uniform(255))
+		let o_width: Int = 8//4 * Int(1+arc4random_uniform(255))
+		let i_width: Int = 8//4 * Int(1+arc4random_uniform(255))
 		
 		let χ: [Float] = uniform(o_width*i_width)
 		
@@ -254,8 +261,8 @@ class EdgeTests: XCTestCase {
 		let error_la: la_object_t = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(error), la_count_t(i_width), 1, 1, NOHINT, nil, ATTR)
 		let state_la: la_object_t = la_matrix_from_float_buffer(state, la_count_t(i_width), 1, 1, NOHINT, ATTR)
 		
-		let error_mtl: MTLBuffer = context.newBufferFromLAObject(error_la)
-		let state_mtl: MTLBuffer = context.newBufferFromLAObject(state_la)
+		let error_mtl: MTLBuffer = context.newBufferFromLaObject(error_la)
+		let state_mtl: MTLBuffer = context.newBufferFromLaObject(state_la)
 		
 		let delta = (
 			χ: uniform(o_width),
@@ -268,9 +275,9 @@ class EdgeTests: XCTestCase {
 			σ: la_matrix_from_float_buffer(delta.σ, la_count_t(o_width), 1, 1, NOHINT, ATTR)
 		)
 		let delta_mtl = (
-			χ: context.newBufferFromLAObject(delta_la.χ),
-			μ: context.newBufferFromLAObject(delta_la.μ),
-			σ: context.newBufferFromLAObject(delta_la.σ)
+			χ: context.newBufferFromLaObject(delta_la.χ),
+			μ: context.newBufferFromLaObject(delta_la.μ),
+			σ: context.newBufferFromLaObject(delta_la.σ)
 		)
 		
 		let edge_la = (
@@ -282,11 +289,11 @@ class EdgeTests: XCTestCase {
 		)
 		
 		let edge_mtl = (
-			logμ: context.newBufferFromLAObject(edge_la.logμ),
-			logσ: context.newBufferFromLAObject(edge_la.logσ),
-			χ: context.newBufferFromLAObject(edge_la.χ),
-			μ: context.newBufferFromLAObject(edge_la.μ),
-			σ: context.newBufferFromLAObject(edge_la.σ)
+			logμ: context.newBufferFromLaObject(edge_la.logμ),
+			logσ: context.newBufferFromLaObject(edge_la.logσ),
+			χ: context.newBufferFromLaObject(edge_la.χ),
+			μ: context.newBufferFromLaObject(edge_la.μ),
+			σ: context.newBufferFromLaObject(edge_la.σ)
 		)
 		
 		let η: Float = 0.5
@@ -302,13 +309,12 @@ class EdgeTests: XCTestCase {
 		for i in 0..<i_width {
 			var accum: Float = 0.0
 			for o in 0..<o_width {
-				
 				accum += delta.χ[o] * edge.χ[o * i_width + i]
 				//accum += delta.μ[o] * edge.μ[o * i_width + i]
 				//accum += delta.σ[o] * edge.σ[o * i_width + i]
 				
-				logμ[ o * i_width + i ] += η * μGrad ( μ[o*i_width+i] ) * ( state[i] ) * delta.μ[o]
-				logσ[ o * i_width + i ] += η * σGrad ( σ[o*i_width+i] ) * ( state[i] ) * delta.σ[o]
+				logμ[ o * i_width + i ] += η * μGrad ( μ[o*i_width+i] ) * state[i] * delta.μ[o]
+				logσ[ o * i_width + i ] += η * σGrad ( σ[o*i_width+i] ) * state[i] * delta.σ[o]
 				
 			}
 			error[i] += accum

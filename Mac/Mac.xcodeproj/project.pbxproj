@@ -73,7 +73,7 @@
 		87BCEBFC1D4D763D00FC3099 /* Bias.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87BCEBFB1D4D763D00FC3099 /* Bias.swift */; };
 		87BCEBFE1D4D764100FC3099 /* Decay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87BCEBFD1D4D764100FC3099 /* Decay.swift */; };
 		87BCEC001D4D765000FC3099 /* Gauss.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87BCEBFF1D4D765000FC3099 /* Gauss.swift */; };
-		87D18E331D3F18B300982020 /* LA.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87D18E321D3F18B300982020 /* LA.swift */; };
+		87D18E331D3F18B300982020 /* La.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87D18E321D3F18B300982020 /* La.swift */; };
 		87D3F17C1D6CB1C300FA8C80 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87D3F17B1D6CB1C300FA8C80 /* AppDelegate.swift */; };
 		87D3F17E1D6CB1C300FA8C80 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87D3F17D1D6CB1C300FA8C80 /* ViewController.swift */; };
 		87D3F1801D6CB1C300FA8C80 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 87D3F17F1D6CB1C300FA8C80 /* Assets.xcassets */; };
@@ -212,7 +212,7 @@
 		87BCEBFB1D4D763D00FC3099 /* Bias.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Bias.swift; path = "../../C³/Bias.swift"; sourceTree = "<group>"; };
 		87BCEBFD1D4D764100FC3099 /* Decay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Decay.swift; path = "../../C³/Decay.swift"; sourceTree = "<group>"; };
 		87BCEBFF1D4D765000FC3099 /* Gauss.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Gauss.swift; path = "../../C³/Gauss.swift"; sourceTree = "<group>"; };
-		87D18E321D3F18B300982020 /* LA.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = LA.swift; path = "../../C³/LA.swift"; sourceTree = "<group>"; };
+		87D18E321D3F18B300982020 /* La.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = La.swift; path = "../../C³/La.swift"; sourceTree = "<group>"; };
 		87D3F1791D6CB1C300FA8C80 /* Analyzer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Analyzer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		87D3F17B1D6CB1C300FA8C80 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		87D3F17D1D6CB1C300FA8C80 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -414,7 +414,7 @@
 				87B1FD231D05466D00981CF4 /* Error.swift */,
 				87A42CC51D4F5D68008D9708 /* Feedback.swift */,
 				87BCEBFF1D4D765000FC3099 /* Gauss.swift */,
-				87D18E321D3F18B300982020 /* LA.swift */,
+				87D18E321D3F18B300982020 /* La.swift */,
 				875DD1C01D6AD8A900A5C250 /* Misc.swift */,
 				87B1FD051D05461100981CF4 /* Info.plist */,
 			);
@@ -837,7 +837,7 @@
 				87B1FD311D0546B500981CF4 /* Cell.swift in Sources */,
 				87B1FD321D0546B500981CF4 /* Config.swift in Sources */,
 				87B1FD331D0546B500981CF4 /* Context.swift in Sources */,
-				87D18E331D3F18B300982020 /* LA.swift in Sources */,
+				87D18E331D3F18B300982020 /* La.swift in Sources */,
 				87B1FD341D0546B500981CF4 /* Dict.swift in Sources */,
 				87B1FD351D0546B500981CF4 /* Edge.swift in Sources */,
 				87B1FD361D0546B500981CF4 /* Error.swift in Sources */,

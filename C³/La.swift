@@ -33,6 +33,9 @@ extension la_object_t {
 		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), cols, self)
 		return la_matrix_from_float_buffer_nocopy(buffer, rows, cols, cols, Config.HINT, { free($0) }, Config.ATTR)
 	}
+	var T: la_object_t {
+		return la_transpose(self)
+	}
 	func toExpand(let dim: UInt) -> la_object_t {
 		assert(cols==1)
 		let buffer: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*Int(rows*dim)))

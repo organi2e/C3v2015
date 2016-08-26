@@ -354,26 +354,21 @@ extension Context {
 		}
 		return result
 	}
+	internal func newBufferFromLaObject(let matrix: la_object_t, let options: MTLResourceOptions = .CPUCacheModeDefaultCache) -> MTLBuffer {
+		let object: la_object_t = matrix.T
+		let cols: Int = Int(la_matrix_cols(object))
+		let rows: Int = Int(la_matrix_rows(object))
+		let cache: [Float] = [Float](count: rows*cols, repeatedValue: 0)
+		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), la_count_t(cols), object)
+		return newBuffer(cache, options: options)
+	}
 	internal func newLaObjectFromBuffer(let buffer: MTLBuffer, let rows: Int, let cols: Int, let attribute: la_attribute_t = Config.ATTR) -> la_object_t {
 		let pool: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*rows*cols))
 		let cache: MTLBuffer = newBuffer(length: buffer.length, options: .CPUCacheModeDefaultCache)
-		if rows == 1 || cols == 1 {
-			newBlitCommand(complete: { NSData(bytesNoCopy: cache.contents(), length: cache.length, freeWhenDone: false).getBytes(pool, length: buffer.length); cache.setPurgeableState(.Empty)}) {
-				$0.copyFromBuffer(buffer, sourceOffset: 0, toBuffer: cache, destinationOffset: 0, size: buffer.length)
-			}
-		} else {
-			let group: MTLSize = MTLSize(width: cols/4, height: rows/4, depth: 1)
-			let local: MTLSize = MTLSize(width: 1, height: 1, depth: 1)
-			newComputeCommand(function: "toRowMajorMatrix", complete: { NSData(bytesNoCopy: cache.contents(), length: cache.length, freeWhenDone: false).getBytes(pool, length: sizeof(Float)*rows*cols); cache.setPurgeableState(.Empty); }) {
-				$0.setBuffer(cache, offset: 0, atIndex: 0)
-				$0.setBuffer(buffer, offset: 0, atIndex: 1)
-				$0.setBytes([uint(rows/4)], length: sizeof(uint), atIndex: 2)
-				$0.setBytes([uint(cols/4)], length: sizeof(uint), atIndex: 3)
-				$0.dispatchThreadgroups(group, threadsPerThreadgroup: local)
-			}
-		
+		newBlitCommand(complete: { NSData(bytesNoCopy: cache.contents(), length: cache.length, freeWhenDone: false).getBytes(pool, length: buffer.length); cache.setPurgeableState(.Empty)}) {
+			$0.copyFromBuffer(buffer, sourceOffset: 0, toBuffer: cache, destinationOffset: 0, size: buffer.length)
 		}
-		return la_matrix_from_float_buffer_nocopy(pool, la_count_t(rows), la_count_t(cols), la_count_t(cols), la_hint_t(LA_NO_HINT), { free($0) }, attribute)
+		return la_matrix_from_float_buffer_nocopy(pool, la_count_t(cols), la_count_t(rows), la_count_t(rows), la_hint_t(LA_NO_HINT), { free($0) }, attribute).T
 	}
 	public func join() {
 		let command: MTLCommandBuffer = mtl.queue.commandBuffer()

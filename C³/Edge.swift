@@ -24,7 +24,7 @@ extension Edge {
 extension Edge {
 	internal override func setup(context: Context) {
 		super.setup(context)
-		if false {
+		if true {
 			let rows: Int = output.width
 			let cols: Int = input.width
 			let length: Int = 2
@@ -132,10 +132,10 @@ extension Edge {
 			$0.setBuffer(delta.μ, offset: 0, atIndex: 6)
 			$0.setBuffer(delta.σ, offset: 0, atIndex: 7)
 			$0.setBytes([η], length: sizeof(Float), atIndex: 8)
-			$0.setBytes([uint(rows/4), uint(cols/4)], length: sizeof(uint)*2, atIndex: 9)
-			$0.setThreadgroupMemoryLength(sizeof(Float)*4*4*bs, atIndex: 0)
-			$0.setThreadgroupMemoryLength(sizeof(Float)*4*4*bs, atIndex: 1)
-			$0.dispatchThreadgroups(MTLSize(width: rows/4, height: cols/4, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: bs))
+			$0.setBytes([uint(cols), uint(rows/4)], length: sizeof(uint)*2, atIndex: 9)
+			$0.setThreadgroupMemoryLength(sizeof(Float)*4*bs, atIndex: 0)
+			$0.setThreadgroupMemoryLength(sizeof(Float)*4*bs, atIndex: 1)
+			$0.dispatchThreadgroups(MTLSize(width: cols, height: rows/4, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: bs))
 		}
 	}
 	internal static func correctLightWeight(let context context: Context, let η: Float, let edge: (logμ: MTLBuffer, logσ: MTLBuffer, μ: MTLBuffer, σ: MTLBuffer), let input: MTLBuffer, let delta: (μ: MTLBuffer, σ: MTLBuffer), let rows: Int, let cols: Int, let schedule: (()->())?=nil, let complete:(()->())?=nil) {
@@ -172,8 +172,8 @@ extension Edge {
 			$0.setBuffer(grad.μ, offset: 0, atIndex: 0)
 			$0.setBuffer(grad.σ, offset: 0, atIndex: 1)
 			$0.setBuffer(input, offset: 0, atIndex: 2)
-			$0.setBytes([uint(cols/4), uint(rows/4)], length: sizeof(uint)*2, atIndex: 3)
-			$0.dispatchThreadgroups(MTLSize(width: cols/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 4, height: 1, depth: 1))
+			$0.setBytes([uint(cols), uint(rows)], length: sizeof(uint)*2, atIndex: 3)
+			$0.dispatchThreadgroups(MTLSize(width: cols, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}
 	}
 }
