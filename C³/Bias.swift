@@ -5,6 +5,7 @@
 //  Created by Kota Nakano on 7/31/16.
 //
 //
+import Accelerate
 import Metal
 import CoreData
 internal class Bias: Cauchy {
@@ -48,30 +49,16 @@ extension Bias {
 			}
 		}
 	}
-	internal func collect(let level level: (MTLBuffer, MTLBuffer, MTLBuffer)) {
-		if let context: Context = managedObjectContext as? Context {
-			let width: Int = output.width
-			self.dynamicType.collect(context: context, level: level, bias: (χ, μ, σ), width: width)
-			
-		} else {
-			assertionFailure(Context.Error.InvalidContext.rawValue)
-			
-		}
+	internal func collect() -> (la_object_t, la_object_t, la_object_t) {
+		let width: Int = output.width
+		return (
+			la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(χ), la_count_t(width), la_count_t(1), la_count_t(1), Config.NOHINT, nil, Config.ATTR),
+			la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(μ), la_count_t(width), la_count_t(1), la_count_t(1), Config.NOHINT, nil, Config.ATTR),
+			la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(σ), la_count_t(width), la_count_t(1), la_count_t(1), Config.NOHINT, nil, Config.ATTR)
+		)
 	}
-	internal func correct(let η η: Float, let Δ: (MTLBuffer, MTLBuffer)) {
-		if let context: Context = managedObjectContext as? Context {
-			let width: Int = output.width
-			if 0 < grads.length {
-				self.dynamicType.gradientInitialize(context: context, grad: (grads.new.μ, grads.new.σ), width: output.width)
-				self.dynamicType.correct(context: context, η: η, bias: (logμ, logσ, μ, σ), grad: (grads.new.μ, grads.new.σ), Δ: Δ, width: width, schedule: willChange, complete: didChange)
-			} else {
-				self.dynamicType.correctLightWeight(context: context, η: η, bias: (logμ, logσ, μ, σ), Δ: Δ, width: width, schedule: willChange, complete: didChange)
-			}
-			
-		} else {
-			assertionFailure(Context.Error.InvalidContext.rawValue)
-			
-		}
+	internal func correct(let η η: Float, let ignore: Set<Cell>) {
+		let delta: (la_object_t, la_object_t, la_object_t) = output.correct(η: η, ignore: ignore)
 	}
 }
 extension Bias {

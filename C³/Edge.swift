@@ -5,6 +5,7 @@
 //  Created by Kota Nakano on 6/1/16.
 //
 //
+import Accelerate
 import Metal
 import CoreData
 
@@ -50,23 +51,21 @@ extension Edge {
 			}
 		}
 	}
-	internal func collect(let Φ level: (MTLBuffer, MTLBuffer, MTLBuffer), let ignore: Set<Cell>) {
-		let state: MTLBuffer = input.collect(ignore)
-		if let context: Context = managedObjectContext as? Context {
-			let rows: Int = output.width
-			let cols: Int = input.width
-			self.dynamicType.collect(context: context, level: level, edge: (χ, μ, σ), input: state, rows: rows, cols: cols)
-		} else {
-			assertionFailure(Context.Error.InvalidContext.rawValue)
-		}
+	internal func collect(let ignore: Set<Cell>) -> (la_object_t, la_object_t, la_object_t) {
+		let state: la_object_t = input.collect(ignore)
+		return(
+			la_matrix_product(la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(χ), la_count_t(output.width), la_count_t(input.width), la_count_t(input.width), Config.NOHINT, nil, Config.ATTR), state),
+			la_matrix_product(la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(μ), la_count_t(output.width), la_count_t(input.width), la_count_t(input.width), Config.NOHINT, nil, Config.ATTR), state),
+			la_matrix_product(la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(σ), la_count_t(output.width), la_count_t(input.width), la_count_t(input.width), Config.NOHINT, nil, Config.ATTR), state)
+		)
 	}
-	internal func correct(let η η: Float, let δ: MTLBuffer, let ϰ: MTLBuffer, let ignore: Set<Cell>) {
-		let Δ: (χ: MTLBuffer, μ: MTLBuffer, σ: MTLBuffer) = output.correct(η: η, ignore: ignore)
-		if let context: Context = managedObjectContext as? Context {
-			let rows: Int = output.width
-			let cols: Int = input.width
-			self.dynamicType.backpropagation(context: context, error: δ, edge: χ, delta: Δ.χ, rows: rows, cols: cols)
-			if 0 < grads.length {
+	internal func correct(let η η: Float, let ϰ: la_object_t, let ignore: Set<Cell>) -> la_object_t {
+		let Δ: (χ: la_object_t, μ: la_object_t, σ: la_object_t) = output.correct(η: η, ignore: ignore)
+		let rows: Int = output.width
+		let cols: Int = input.width
+	/*
+		self.dynamicType.backpropagation(context: context, error: δ, edge: χ, delta: Δ.χ, rows: rows, cols: cols)
+		if 0 < grads.length {
 				self.dynamicType.gradientInitialize(context: context, grad: (μ: grads.new.μ, σ: grads.new.σ), input: ϰ, rows: rows, cols: cols)
 				self.dynamicType.correct(context: context, η: η, edge: (logμ, logσ, μ, σ), grad: (μ: grads.new.μ, σ: grads.new.σ), delta: (Δ.μ, Δ.σ), rows: rows, cols: cols, schedule: willChange, complete: didChange)
 			} else {
@@ -75,6 +74,8 @@ extension Edge {
 		} else {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
 		}
+	*/
+		return la_matrix_product(la_splat_from_float(0, Config.ATTR), Δ.χ)
 	}
 	internal func iClear() {
 		shuffle()

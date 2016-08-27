@@ -10,11 +10,12 @@ import Metal
 import CoreData
 
 internal class Art: NSManagedObject {
-	internal private(set) var χ: MTLBuffer!
-	internal private(set) var μ: MTLBuffer!
-	internal private(set) var σ: MTLBuffer!
-	internal private(set) var logμ: MTLBuffer!
-	internal private(set) var logσ: MTLBuffer!
+	internal private(set) var ε: [UInt32] = []
+	internal private(set) var χ: [Float] = []
+	internal private(set) var μ: [Float] = []
+	internal private(set) var σ: [Float] = []
+	internal private(set) var logμ: [Float] = []
+	internal private(set) var logσ: [Float] = []
 }
 
 extension Art {
@@ -47,46 +48,43 @@ extension Art {
 	
 	internal func setup(let context: Context) {
 		
-		logμ = context.newBuffer(data: logmu, options: .CPUCacheModeDefaultCache)
-		setPrimitiveValue(NSData(bytesNoCopy: logμ.contents(), length: logμ.length, freeWhenDone: false), forKey: self.dynamicType.logμkey)
+		logμ = Array<Float>(UnsafeBufferPointer<Float>(start: UnsafePointer<Float>(logmu.bytes), count: logmu.length/sizeof(Float)))
+		setPrimitiveValue(NSData(bytesNoCopy: &logμ, length: sizeof(Float)*logμ.count, freeWhenDone: false), forKey: self.dynamicType.logμkey)
 		
-		logσ = context.newBuffer(data: logsigma, options: .CPUCacheModeDefaultCache)
-		setPrimitiveValue(NSData(bytesNoCopy: logσ.contents(), length: logσ.length, freeWhenDone: false), forKey: self.dynamicType.logσkey)
+		logσ = Array<Float>(UnsafeBufferPointer<Float>(start: UnsafePointer<Float>(logsigma.bytes), count: logsigma.length/sizeof(Float)))
+		setPrimitiveValue(NSData(bytesNoCopy: &logσ, length: sizeof(Float)*logσ.count, freeWhenDone: false), forKey: self.dynamicType.logσkey)
 		
-		μ = context.newBuffer(length: logμ.length, options: .StorageModePrivate)
-		σ = context.newBuffer(length: logσ.length, options: .StorageModePrivate)
+		μ = logμ.map { $0 }
+		σ = logσ.map { log(1+exp($0)) }
 		
-		χ = context.newBuffer(length: max(logμ.length, logσ.length), options: .StorageModePrivate)
+		χ = [Float](count: max(μ.count, σ.count), repeatedValue: 0)
+		ε = [UInt32](count: max(μ.count, σ.count), repeatedValue: 0)
 		
 		refresh()
 		
 	}
 	internal func shuffle() {
-		if let context: Context = managedObjectContext as? Context {
-			willAccess()
-			self.dynamicType.shuffle(context: context, χ: χ, μ: μ, σ: σ)
-			didAccess()
-		} else {
-			assertionFailure(Context.Error.InvalidContext.rawValue)
-		}
+		willAccess()
+		arc4random_buf(UnsafeMutablePointer<Void>(ε), sizeof(UInt32)*ε.count)
+		vDSP_vfltu32(ε, 1, &χ, 1, vDSP_Length(min(ε.count, χ.count)))
+		vDSP_vsadd(χ, 1, [0.5], &χ, 1, vDSP_Length(χ.count))
+		vDSP_vsdiv(χ, 1, [Float(UInt32.max)+1], &χ, 1, vDSP_Length(χ.count))
+		vvtanpif(&χ, χ, [Int32(χ.count)])
+		didAccess()
 	}
 	internal func refresh() {
-		if let context: Context = managedObjectContext as? Context {
-			willAccess()
-			self.dynamicType.refresh(context: context, μ: μ, σ: σ, logμ: logμ, logσ: logσ)
-			didAccess()
-		} else {
-			assertionFailure(Context.Error.InvalidContext.rawValue)
-		}
+		willAccess()
+		NSData(bytesNoCopy: &logμ, length: sizeof(Float)*logμ.count, freeWhenDone: false).getBytes(&μ, length: sizeof(Float)*μ.count)
+		vvexpf(&σ, logσ, [Int32(min(σ.count, logσ.count))])
+		vDSP_vsadd(σ, 1, [Float(1.0)], &σ, 1, vDSP_Length(σ.count))
+		vvlogf(&σ, σ, [Int32(σ.count)])
+		didAccess()
 	}
 	internal func adjust(let μ μ: Float, let σ: Float) {
-		if let context: Context = managedObjectContext as? Context {
-			willAccess()
-			self.dynamicType.adjust(context: context, logμ: logμ, logσ: logσ, parameter: (μ, σ))
-			didAccess()
-		} else {
-			assertionFailure(Context.Error.InvalidContext.rawValue)
-		}
+		willAccess()
+		vDSP_vfill([μ], &logμ, 1, vDSP_Length(logμ.count))
+		vDSP_vfill([1-exp(-σ)], &logσ, 1, vDSP_Length(logσ.count))
+		didAccess()
 		refresh()
 	}
 	internal func resize(let count count: Int) {
@@ -114,38 +112,6 @@ extension Art {
 		didAccessValueForKey(self.dynamicType.logμkey)
 		didAccessValueForKey(self.dynamicType.logσkey)
 	}
-	/*
-	internal func dump(let label: String? = nil) {
-		if let context: Context = managedObjectContext as? Context where 0 < rows && 0 < cols {
-			
-			let logm: la_object_t = context.toLAObject(logμ, rows: rows, cols: cols)
-			let logs: la_object_t = context.toLAObject(logσ, rows: rows, cols: cols)
-			
-			let cache: [Float] = [Float](count: rows*cols, repeatedValue: 0)
-			
-			if let label: String = label {
-				print(label)
-			}
-			
-			context.join()
-			
-			print(Art.logμkey)
-			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), la_count_t(cols), logm)
-			(0..<rows).forEach {
-				print(cache[$0*cols..<($0+1)*cols])
-			}
-			
-			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), la_count_t(cols), logs)
-			print(Art.logσkey)
-			(0..<rows).forEach {
-				print(cache[$0*cols..<($0+1)*cols])
-			}
-			
-		} else {
-			
-		}
-	}
-	*/
 }
 extension Art {
 	internal class var shuffleKernel: String { return "artShuffle" }

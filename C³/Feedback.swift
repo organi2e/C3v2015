@@ -20,6 +20,7 @@ extension Feedback {
 }
 extension Feedback {
 }
+/*
 extension Feedback {
 	func collect() -> (MTLBuffer, MTLBuffer, MTLBuffer) {
 		//let state: la_object_t = cell.state.past.value
@@ -64,3 +65,4 @@ extension Context {
 	}
 	
 }
+*/

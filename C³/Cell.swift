@@ -21,15 +21,15 @@ public class Cell: NSManagedObject {
 	private var ready: Set<Ready> = Set<Ready>()
 	
 	private struct Deterministic {
-		let ψ: MTLBuffer
-		let ϰ: MTLBuffer
-		let δ: MTLBuffer
+		let ψ: [Float]
+		let ϰ: [Float]
+		let δ: [Float]
 	}
 	
 	private struct Probabilistic {
-		let χ: MTLBuffer
-		let μ: MTLBuffer
-		let σ: MTLBuffer
+		let χ: [Float]
+		let μ: [Float]
+		let σ: [Float]
 	}
 	
 	private var Υ: RingBuffer<Deterministic> = RingBuffer<Deterministic>(array: [])
@@ -83,23 +83,23 @@ extension Cell {
 		let count: Int = 2
 		Υ = RingBuffer<Deterministic>(array: (0..<count).map{(_)in
 			return Deterministic(
-				ψ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
-				ϰ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
-				δ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
+				ψ: [Float](count: width, repeatedValue: 0),
+				ϰ: [Float](count: width, repeatedValue: 0),
+				δ: [Float](count: width, repeatedValue: 0)
 			)
 		})
 		Φ = RingBuffer<Probabilistic>(array: (0..<count).map{(_)in
 			return Probabilistic(
-				χ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
-				μ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
-				σ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
+				χ: [Float](count: width, repeatedValue: 0),
+				μ: [Float](count: width, repeatedValue: 0),
+				σ: [Float](count: width, repeatedValue: 0)
 			)
 		})
 		Δ = RingBuffer<Probabilistic>(array: (0..<count).map{(_)in
 			return Probabilistic(
-				χ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
-				μ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
-				σ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate)
+				χ: [Float](count: width, repeatedValue: 0),
+				μ: [Float](count: width, repeatedValue: 0),
+				σ: [Float](count: width, repeatedValue: 0)
 			)
 		})
 		iRefresh()
@@ -108,59 +108,12 @@ extension Cell {
 }
 extension Cell {
 	internal func iRefresh() {
-		
-		if let context: Context = managedObjectContext as? Context where 0 < width {
-			
-			Υ.progress()
-			
-			let ψ: MTLBuffer = Υ.new.ψ
-			let ϰ: MTLBuffer = Υ.new.ϰ
-			let δ: MTLBuffer = Υ.new.δ
-			
-			Φ.progress()
-			
-			let χ: MTLBuffer = Φ.new.χ
-			let μ: MTLBuffer = Φ.new.μ
-			let σ: MTLBuffer = Φ.new.σ
-
-			context.newBlitCommand {
-				
-				$0.fillBuffer(ψ, range: NSRange(location: 0, length: ψ.length), value: 0)
-				$0.fillBuffer(ϰ, range: NSRange(location: 0, length: ϰ.length), value: 0)
-				$0.fillBuffer(δ, range: NSRange(location: 0, length: δ.length), value: 0)
-				
-				$0.fillBuffer(χ, range: NSRange(location: 0, length: χ.length), value: 0)
-				$0.fillBuffer(μ, range: NSRange(location: 0, length: μ.length), value: 0)
-				$0.fillBuffer(σ, range: NSRange(location: 0, length: σ.length), value: 0)
-				
-			}
-			
-		} else {
-			assertionFailure(Context.Error.InvalidContext.rawValue)
-		
-		}
+		Υ.progress()
+		Φ.progress()
 		bias.shuffle()
 	}
 	private func oRefresh() {
-		
-		if let context: Context = managedObjectContext as? Context where 0 < width {
-			
-			Δ.progress()
-			
-			let χ: MTLBuffer = Δ.new.χ
-			let μ: MTLBuffer = Δ.new.μ
-			let σ: MTLBuffer = Δ.new.σ
-			
-			context.newBlitCommand {
-				$0.fillBuffer(χ, range: NSRange(location: 0, length: χ.length), value: 0)
-				$0.fillBuffer(μ, range: NSRange(location: 0, length: μ.length), value: 0)
-				$0.fillBuffer(σ, range: NSRange(location: 0, length: σ.length), value: 0)
-			}
-			
-		} else {
-			assertionFailure(Context.Error.InvalidContext.rawValue)
-		
-		}
+		Δ.progress()
 		bias.refresh()
 	}
 	
@@ -185,55 +138,49 @@ extension Cell {
 		ready.remove(.ψ)
 	}
 	
-	public func collect(let ignore: Set<Cell> = []) -> MTLBuffer {
+	public func collect(let ignore: Set<Cell> = []) -> la_object_t {
 		if ignore.contains(self) {
-			return Υ.old.ϰ
-		} else if let context: Context = managedObjectContext as? Context {
-			if !ready.contains(.ϰ) {
-				ready.insert(.ϰ)
-				input.forEach {
-					$0.collect(Φ: (Φ.new.χ, Φ.new.μ, Φ.new.σ), ignore: ignore.union([self]))
-				}
-				bias.collect(level: (Φ.new.χ, Φ.new.μ, Φ.new.σ))
-				self.dynamicType.activate(context: context,
-				                          Υ: Υ.new.ϰ,
-				                          Φ: Φ.new.χ,
-				                          width: width)
+			return la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(Υ.old.ϰ), la_count_t(width), la_count_t(1), la_count_t(1), Config.NOHINT, nil, Config.ATTR)
+		} else if !ready.contains(.ϰ) {
+			ready.insert(.ϰ)
+			var level: (χ: la_object_t, μ: la_object_t, σ: la_object_t) = bias.collect()
+			input.forEach {
+				let c: (χ: la_object_t, μ: la_object_t, σ: la_object_t) = $0.collect(ignore.union([self]))
+				level.χ = level.χ + c.χ
+				level.μ = level.μ + c.μ
+				level.σ = level.σ + c.σ
 			}
-		} else {
-			assertionFailure(Context.Error.InvalidContext.rawValue)
+			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(Φ.new.χ), la_count_t(1), level.χ)
+			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(Φ.new.μ), la_count_t(1), level.μ)
+			la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(Φ.new.σ), la_count_t(1), level.σ)
+			
 		}
-		return Υ.new.ϰ
+		return la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(Υ.new.ϰ), la_count_t(width), la_count_t(1), la_count_t(1), Config.NOHINT, nil, Config.ATTR)
 	}
 	
-	public func correct(let η η: Float, let ignore: Set<Cell>=[]) -> (MTLBuffer, MTLBuffer, MTLBuffer) {
+	public func correct(let η η: Float, let ignore: Set<Cell>=[]) -> (la_object_t, la_object_t, la_object_t) {
 		if ignore.contains(self) {
-			return(Δ.old.χ, Δ.old.μ, Δ.old.σ)
-		} else if let context: Context = managedObjectContext as? Context {
-			if !ready.contains(.δ) {
-				ready.insert(.δ)
-				if ready.contains(.ψ) {
-					self.dynamicType.difference(context: context,
-					                            δ: Υ.new.δ,
-					                            ψ: Υ.new.ψ,
-					                            ϰ: Υ.new.ϰ,
-					                            width: width)
-				} else {
-					output.forEach {
-						$0.correct(η: η, δ: Υ.new.δ, ϰ: Υ.new.ϰ, ignore: ignore.union([self]))
-					}
-				}
-				self.dynamicType.derivate(context: context,
-				                          Δ: (Δ.new.χ, Δ.new.μ, Δ.new.σ),
-				                          Φ: (Φ.new.χ, Φ.new.μ, Φ.new.σ),
-				                          δ: Υ.new.δ,
-				                          width: width)
-				bias.correct(η: η, Δ: (Δ.new.μ, Δ.new.σ))
+			return(
+				la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(Δ.old.χ), la_count_t(width), la_count_t(1), la_count_t(1), Config.NOHINT, nil, Config.ATTR),
+				la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(Δ.old.μ), la_count_t(width), la_count_t(1), la_count_t(1), Config.NOHINT, nil, Config.ATTR),
+				la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(Δ.old.σ), la_count_t(width), la_count_t(1), la_count_t(1), Config.NOHINT, nil, Config.ATTR)
+			)
+		} else if !ready.contains(.δ) {
+			ready.insert(.δ)
+			var error: la_object_t = la_splat_from_float(0, Config.ATTR)
+			if ready.contains(.ψ) {
+				let src: la_object_t = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(Υ.new.ϰ), la_count_t(width), la_count_t(1), la_count_t(1), Config.NOHINT, nil, Config.ATTR)
+				let dst: la_object_t = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(Υ.new.ψ), la_count_t(width), la_count_t(1), la_count_t(1), Config.NOHINT, nil, Config.ATTR)
+				error = la_difference(dst, src)
+			} else {
+				
 			}
-		} else {
-			assertionFailure(Context.Error.InvalidContext.rawValue)
 		}
-		return(Δ.new.χ, Δ.new.μ, Δ.new.σ)
+		return(
+			la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(Δ.new.χ), la_count_t(width), la_count_t(1), la_count_t(1), Config.NOHINT, nil, Config.ATTR),
+			la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(Δ.new.μ), la_count_t(width), la_count_t(1), la_count_t(1), Config.NOHINT, nil, Config.ATTR),
+			la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(Δ.new.σ), la_count_t(width), la_count_t(1), la_count_t(1), Config.NOHINT, nil, Config.ATTR)
+		)
 	}
 }
 extension Cell {
