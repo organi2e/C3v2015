@@ -26,11 +26,27 @@ public class Cell: NSManagedObject {
 		let δ: MTLBuffer
 	}
 	
+	private struct deterministic {
+		let ψ: [Float]
+		let ϰ: [Float]
+		let δ: [Float]
+	}
+	
 	private struct Probabilistic {
 		let χ: MTLBuffer
 		let μ: MTLBuffer
 		let σ: MTLBuffer
 	}
+	
+	private struct probabilistic {
+		let χ: [Float]
+		let μ: [Float]
+		let σ: [Float]
+	}
+	
+	private var state: RingBuffer<deterministic> = RingBuffer<deterministic>(array: [])
+	private var level: RingBuffer<probabilistic> = RingBuffer<probabilistic>(array: [])
+	private var delta: RingBuffer<probabilistic> = RingBuffer<probabilistic>(array: [])
 	
 	private var Υ: RingBuffer<Deterministic> = RingBuffer<Deterministic>(array: [])
 	private var Φ: RingBuffer<Probabilistic> = RingBuffer<Probabilistic>(array: [])
@@ -81,6 +97,28 @@ extension Cell {
 extension Cell {
 	internal func setup(let context: Context) {
 		let count: Int = 2
+		state = RingBuffer<deterministic>(array: (0..<count).map{(_)in
+			deterministic(
+				ψ: [Float](count: width, repeatedValue: 0),
+				ϰ: [Float](count: width, repeatedValue: 0),
+				δ: [Float](count: width, repeatedValue: 0)
+			)
+		})
+		level = RingBuffer<probabilistic>(array: (0..<count).map{(_)in
+			probabilistic(
+				χ: [Float](count: width, repeatedValue: 0),
+				μ: [Float](count: width, repeatedValue: 0),
+				σ: [Float](count: width, repeatedValue: 0)
+			)
+		})
+		delta = RingBuffer<probabilistic>(array: (0..<count).map{(_)in
+			probabilistic(
+				χ: [Float](count: width, repeatedValue: 0),
+				μ: [Float](count: width, repeatedValue: 0),
+				σ: [Float](count: width, repeatedValue: 0)
+			)
+		})
+		
 		Υ = RingBuffer<Deterministic>(array: (0..<count).map{(_)in
 			return Deterministic(
 				ψ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModePrivate),
@@ -108,6 +146,9 @@ extension Cell {
 }
 extension Cell {
 	internal func iRefresh() {
+		
+		state.progress()
+		level.progress()
 		
 		if let context: Context = managedObjectContext as? Context where 0 < width {
 			
@@ -142,6 +183,8 @@ extension Cell {
 		bias.shuffle()
 	}
 	private func oRefresh() {
+		
+		delta.progress()
 		
 		if let context: Context = managedObjectContext as? Context where 0 < width {
 			
@@ -184,7 +227,19 @@ extension Cell {
 		}
 		ready.remove(.ψ)
 	}
-	
+	public func collect_la(ignore: Set<Cell> = []) -> LaObjet {
+		if ignore.contains(self) {
+			return matrix(state.old.ϰ, rows: width, cols: 1)
+		} else {
+			if !ready.contains(.ϰ) {
+				ready.insert(.ϰ)
+				var χ: LaObjet = matrix(0)
+				var μ: LaObjet = matrix(0)
+				var σ: LaObjet = matrix(0)
+			}
+			return matrix(state.new.ϰ, rows: width, cols: 1)
+		}
+	}
 	public func collect(let ignore: Set<Cell> = []) -> MTLBuffer {
 		if ignore.contains(self) {
 			return Υ.old.ϰ
@@ -334,6 +389,23 @@ extension Cell {
 	internal class var differenceKernel: String { return "cellDifference" }
 	internal class var activateKernel: String { return "cellActivate" }
 	internal class var derivateKernel: String { return "cellDerivate" }
+	internal static func activate(state: [Float], level: [Float]) {
+		assert(state.count==level.count)
+		let length: vDSP_Length = vDSP_Length(min(state.count, level.count))
+		vDSP_vneg(level, 1, UnsafeMutablePointer<Float>(state), 1, length)
+		vDSP_vthrsc(state, 1, [Float(0.0)], [Float(0.5)], UnsafeMutablePointer<Float>(state), 1, length)
+		vDSP_vneg(state, 1, UnsafeMutablePointer<Float>(state), 1, length)
+		vDSP_vsadd(state, 1, [Float(0.5)], UnsafeMutablePointer<Float>(state), 1, length)
+	}
+	internal static func derivate(delta: [Float], error: [Float]) {
+		assert(delta.count==error.count)
+		let length: vDSP_Length = vDSP_Length(min(delta.count, error.count))
+		let cache: [Float] = [Float](count: Int(length), repeatedValue: 0)
+		vDSP_vthrsc(error, 1, [Float(0.0)], [Float( 0.5)], UnsafeMutablePointer<Float>(delta), 1, length)
+		vDSP_vneg(error, 1, UnsafeMutablePointer<Float>(cache), 1, length)
+		vDSP_vthrsc(UnsafeMutablePointer<Float>(cache), 1, [Float(0.0)], [Float(-0.5)], UnsafeMutablePointer<Float>(cache), 1, length)
+		vDSP_vadd(UnsafeMutablePointer<Float>(cache), 1, UnsafeMutablePointer<Float>(delta), 1, UnsafeMutablePointer<Float>(delta), 1, length)
+	}
 	internal static func difference(let context context: Context, let δ: MTLBuffer, let ψ: MTLBuffer, let ϰ: MTLBuffer, let width: Int) {
 		context.newComputeCommand(function: differenceKernel) {
 			$0.setBuffer(δ, offset: 0, atIndex: 0)

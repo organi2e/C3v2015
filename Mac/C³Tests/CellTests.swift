@@ -8,7 +8,31 @@
 
 import XCTest
 @testable import C3
-
+class CellTests: XCTestCase {
+	func testActivate() {
+		let count: Int = 16// + Int(arc4random_uniform(1023))
+		let x: [Float] = (0..<count-1).map{(_)in Float(arc4random())/Float(UInt32.max)} + [0.0]
+		let y: [Float] = x.map{ 0 < $0 ? 1 : 0 }
+		let z: [Float] = [Float](count: count, repeatedValue: 0)
+		Cell.activate(z, level: x)
+		print(x)
+		print(y)
+		print(z)
+		XCTAssert(z.elementsEqual(y))
+	}
+	func testDerivate() {
+		let count: Int = 16// + Int(arc4random_uniform(1023))
+		let x: [Float] = (0..<count-1).map{(_)in Float(arc4random())/Float(UInt32.max) - 0.5} + [0.0]
+		let y: [Float] = x.map{ 0 < $0 ? 1 : 0 > $0 ? -1 : 0 }
+		let z: [Float] = [Float](count: count, repeatedValue: 0)
+		Cell.derivate(z, error: x)
+		print(x)
+		print(y)
+		print(z)
+		XCTAssert(z.elementsEqual(y))
+	}
+}
+/*
 class CellTests: XCTestCase {
 	static let file: String = "test.sqlite"
 	
@@ -406,4 +430,5 @@ class CellTests: XCTestCase {
 	}
 	*/
 }
+*/
 */

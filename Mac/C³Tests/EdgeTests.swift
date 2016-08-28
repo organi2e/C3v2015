@@ -48,7 +48,7 @@ class EdgeTests: XCTestCase {
 		let i_width: Int = 4 * Int(1+arc4random_uniform(63))
 		
 		let state_la: la_object_t = la_matrix_from_float_buffer(uniform(i_width), la_count_t(i_width), la_count_t(1), la_count_t(1), NOHINT, ATTR)
-		let state_mtl: MTLBuffer = context.newBuffer(state_la.eval)
+		let state_mtl: MTLBuffer = context.newBuffer(state_la.array)
 		
 		let edge_la = (
 			χ: la_matrix_from_float_buffer(uniform(o_width*i_width), la_count_t(o_width), la_count_t(i_width), la_count_t(i_width), NOHINT, ATTR),
@@ -99,8 +99,8 @@ class EdgeTests: XCTestCase {
 		XCTAssert(!isnan(χrmse))
 		XCTAssert(!isinf(χrmse))
 		if 1e-4 < χrmse {
-			print(level_mtl_la.χ.eval)
-			print(level_la.χ.eval)
+			print(level_mtl_la.χ.array)
+			print(level_la.χ.array)
 			XCTFail("RMSE: \(χrmse)")
 		}
 		
@@ -221,8 +221,8 @@ class EdgeTests: XCTestCase {
 		XCTAssert(!isnan(rmseμ))
 		XCTAssert(!isinf(rmseμ))
 		if 1e-7 < rmseμ {
-			print(srcμ.eval)
-			print(dstμ.eval)
+			print(srcμ.array)
+			print(dstμ.array)
 			XCTFail("RMSE: \(rmseμ)")
 		}
 		
