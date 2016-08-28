@@ -6,8 +6,14 @@
 //
 //
 import Accelerate
-typealias LaObjet = la_object_t
-extension LaObjet {
+
+private let ATTR: la_attribute_t = la_attribute_t(LA_DEFAULT_ATTRIBUTES)
+private let HINT: la_hint_t = la_hint_t(LA_NO_HINT)
+private let TYPE: la_scalar_type_t = la_scalar_type_t(LA_SCALAR_TYPE_FLOAT)
+
+internal typealias LaObjet = la_object_t
+
+internal extension LaObjet {
 	var rows: Int {
 		return Int(la_matrix_rows(self))
 	}
@@ -16,6 +22,9 @@ extension LaObjet {
 	}
 	var count: Int {
 		return Int(la_matrix_rows(self)*la_matrix_cols(self))
+	}
+	var status: Int {
+		return Int(la_status(self))
 	}
 	var T: LaObjet {
 		return la_transpose(self)
@@ -26,20 +35,70 @@ extension LaObjet {
 		assert(result==la_status_t(LA_SUCCESS))
 		return buffer
 	}
-	static var ATTR: la_attribute_t {
-		return la_attribute_t(LA_DEFAULT_ATTRIBUTES)
+	func subvec(offset offset: Int, length: Int, stride: Int = 1) {
+		la_vector_slice(self, la_index_t(offset), la_index_t(stride), la_count_t(length))
 	}
-	static var HINT: la_hint_t {
-		return la_hint_t(LA_NO_HINT)
+	func submat(offset offset: (rows: Int, cols: Int), length: (rows: Int, cols: Int), stride: (rows: Int, cols: Int) = (1, 1)) -> LaObjet {
+		return la_matrix_slice(self, la_index_t(offset.rows), la_index_t(offset.cols), la_index_t(stride.rows), la_index_t(stride.cols), la_count_t(length.rows), la_count_t(length.cols))
 	}
 }
-func +(lhs: LaObjet, rhs: LaObjet) -> LaObjet { return la_sum(lhs, rhs) }
-//func +(lhs: LaObjet, rhs: Float) -> LaObjet { return la_sum(lhs, la_splat_from_float(rhs, <#T##attributes: la_attribute_t##la_attribute_t#>)) }
+internal func +(lhs: LaObjet, rhs: LaObjet) -> LaObjet { return la_sum(lhs, rhs) }
+internal func +(lhs: LaObjet, rhs: Float) -> LaObjet { return la_sum(lhs, la_splat_from_float(rhs, ATTR)) }
+internal func +(lhs: Float, rhs: LaObjet) -> LaObjet { return la_sum(la_splat_from_float(lhs, ATTR), rhs) }
 
-func -(lhs: LaObjet, rhs: LaObjet) -> LaObjet {	return la_difference(lhs, rhs) }
-func *(lhs: LaObjet, rhs: LaObjet) -> LaObjet { return la_elementwise_product(lhs, rhs) }
+internal func -(lhs: LaObjet, rhs: LaObjet) -> LaObjet { return la_difference(lhs, rhs) }
+internal func -(lhs: LaObjet, rhs: Float) -> LaObjet { return la_difference(lhs, la_splat_from_float(rhs, ATTR)) }
+internal func -(lhs: Float, rhs: LaObjet) -> LaObjet { return la_difference(la_splat_from_float(lhs, ATTR), rhs) }
 
+internal func *(lhs: LaObjet, rhs: LaObjet) -> LaObjet { return la_elementwise_product(lhs, rhs)}
+internal func *(lhs: LaObjet, rhs: Float) -> LaObjet { return la_scale_with_float(lhs, rhs) }
+internal func *(lhs: Float, rhs: LaObjet) -> LaObjet { return la_scale_with_float(rhs, lhs) }
 
+internal func /(lhs: LaObjet, rhs: LaObjet) -> LaObjet {
+	assert(lhs.rows==rhs.rows)
+	assert(lhs.cols==rhs.cols)
+	let rows: la_count_t = la_count_t(min(lhs.rows, rhs.rows))
+	let cols: la_count_t = la_count_t(min(lhs.cols, rhs.cols))
+	let result: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*lhs.count))
+	vDSP_vdiv(rhs.array, 1, lhs.array, 1, result, 1, vDSP_Length(rows*cols))
+	return la_matrix_from_float_buffer_nocopy(result, rows, cols, cols, HINT, free, ATTR)
+}
+internal func /(lhs: LaObjet, rhs: Float) -> LaObjet {
+	let result: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*lhs.count))
+	vDSP_vsdiv(lhs.array, 1, [rhs], result, 1, vDSP_Length(lhs.count))
+	return la_matrix_from_float_buffer_nocopy(result, la_matrix_rows(lhs), la_matrix_cols(lhs), la_matrix_cols(lhs), HINT, free, ATTR)
+}
+internal func /(lhs: Float, rhs: LaObjet) -> LaObjet {
+	let result: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*rhs.count))
+	vDSP_svdiv([lhs], rhs.array, 1, result, 1, vDSP_Length(rhs.count))
+	return la_matrix_from_float_buffer_nocopy(result, la_matrix_rows(rhs), la_matrix_cols(rhs), la_matrix_cols(rhs), HINT, free, ATTR)
+}
+
+internal func inner_product(lhs: LaObjet, rhs: LaObjet) -> LaObjet {
+	return la_inner_product(lhs, rhs)
+}
+internal func outer_product(lhs: LaObjet, rhs: LaObjet) -> LaObjet {
+	return la_outer_product(lhs, rhs)
+}
+internal func matrix_product(lhs: LaObjet, rhs: LaObjet) -> LaObjet {
+	return la_matrix_product(lhs, rhs)
+}
+internal func matrix_eye(count: Int) -> LaObjet {
+	return la_identity_matrix(la_count_t(count), TYPE, ATTR)
+}
+internal func matrix_diagonal(vector: [Float]) -> LaObjet {
+	let count: Int = vector.count
+	return la_diagonal_matrix_from_vector(la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(vector), la_count_t(count), 1, 1, HINT, nil, ATTR), la_index_t(count))
+}
+internal func matrix(scalar: Float) -> LaObjet {
+	return la_splat_from_float(scalar, ATTR)
+}
+internal func matrix(buffer: [Float], rows: Int, cols: Int) -> LaObjet {
+	return la_matrix_from_float_buffer(buffer, la_count_t(rows), la_count_t(cols), la_count_t(cols), HINT, ATTR)
+}
+internal func matrix(buffer: [Float], rows: Int, cols: Int, deallocator: (@convention(c) (UnsafeMutablePointer<Void>) -> Void)?) -> LaObjet {
+	return la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(buffer), la_count_t(rows), la_count_t(cols), la_count_t(cols), HINT, deallocator, ATTR)
+}
 
 /*
 extension la_object_t {
