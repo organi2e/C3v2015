@@ -164,7 +164,7 @@
 		87C516CF1D3F72E000E3F36B /* Unit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Unit.swift; path = NLA/Unit.swift; sourceTree = "<group>"; };
 		87C516D41D3F742500E3F36B /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Config.swift; path = NLA/Config.swift; sourceTree = "<group>"; };
 		87C516D71D3F802C00E3F36B /* UnitTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = UnitTest.swift; path = NLA/UnitTest.swift; sourceTree = "<group>"; };
-		87D18E341D3F18BB00982020 /* La.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = La.swift; path = "C³/La.swift"; sourceTree = "<group>"; };
+		87D18E341D3F18BB00982020 /* LaObjet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = LaObjet.swift; path = "C³/LaObjet.swift"; sourceTree = "<group>"; };
 		87F6ABFD1D5B8C48005710FF /* mtlcell.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = mtlcell.metal; path = "C³/mtlcell.metal"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -269,7 +269,7 @@
 				878985BB1D050D42002C2A8D /* Dict.swift */,
 				878985BC1D050D42002C2A8D /* Edge.swift */,
 				878985BD1D050D42002C2A8D /* Error.swift */,
-				87D18E341D3F18BB00982020 /* La.swift */,
+				87D18E341D3F18BB00982020 /* LaObjet.swift */,
 				87BCEBF01D4D745900FC3099 /* Decay.swift */,
 				87BCEBF91D4D746400FC3099 /* Gauss.swift */,
 				87A42CBC1D4F5CD5008D9708 /* Feedback.swift */,

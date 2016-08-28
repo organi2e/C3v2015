@@ -296,7 +296,7 @@ extension Context {
 	internal func newBufferFromLAObject(let matrix: la_object_t, let options: MTLResourceOptions = .CPUCacheModeDefaultCache) -> MTLBuffer {
 		let rows: Int = Int(la_matrix_rows(matrix))
 		let cols: Int = Int(la_matrix_cols(matrix))
-		return newBufferFromRowMajorMatrix(matrix.eval, rows: rows, cols: cols)
+		return newBufferFromRowMajorMatrix(matrix.array, rows: rows, cols: cols)
 		/*
 		let result: MTLBuffer = newBuffer(length: sizeof(Float)*rows*cols, options: options)
 		let cache: MTLBuffer = newBuffer(length: sizeof(Float)*rows*cols, options: .CPUCacheModeDefaultCache)
