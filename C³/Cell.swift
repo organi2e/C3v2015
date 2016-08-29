@@ -17,8 +17,13 @@ public class Cell: NSManagedObject {
 		case ϰ
 		case δ
 	}
+	public enum Distribution {
+		case Cauchy
+		case Gauss
+	}
 	
 	private var ready: Set<Ready> = Set<Ready>()
+	private var group: dispatch_group_t = dispatch_group_create()
 	
 	private struct Deterministic {
 		let ψ: MTLBuffer
