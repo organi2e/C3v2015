@@ -26,17 +26,16 @@ class GaussianTests: XCTestCase {
     }
 
     func testRNG() {
-		let μ: LaObjet = matrix(-3.0, rows: 256, cols: 256)
-		let σ: LaObjet = matrix(3.0, rows: 256, cols: 256)
-		let n: LaObjet = GaussianDistribution.rng(μ: μ, σ: σ)
-		var mean: Float = 0
-		vDSP_meanv(n.array, 1, &mean, vDSP_Length(n.count))
-		
-		print(mean)
-		
-		let fp = fopen("/tmp/gaussian.raw", "wb")
-		fwrite(n.array, sizeof(Float), n.count, fp)
-		fclose(fp)
+		let srcμ: Float = Float(arc4random())/Float(UInt32.max) * 2.0 - 1.0
+		let srcσ: Float = 1.0 + Float(arc4random())/Float(UInt32.max)
+		let μ: LaObjet = matrix(srcμ, rows: 256, cols: 256)
+		let σ: LaObjet = matrix(srcσ, rows: 256, cols: 256)
+		let χ: LaObjet = GaussianDistribution.rng(μ: μ, σ: σ)
+		let(dstμ, dstσ) = GaussianDistribution.est(χ)
+		let rmseμ: Float = ( srcμ - dstμ ) * ( srcμ - dstμ )
+		let rmseσ: Float = ( srcσ - dstσ ) * ( srcσ - dstσ )
+		XCTAssert(rmseμ < 1e-3)
+		XCTAssert(rmseσ < 1e-3)
     }
 
 }

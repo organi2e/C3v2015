@@ -39,7 +39,7 @@ internal class GaussianDistribution: StableDistribution {
 		
 		vDSP_vfltu32(UnsafeMutablePointer<UInt32>(uniform), 1, uniform, 1, vDSP_Length(count))
 		vDSP_vsadd(uniform, 1, [Float(1.0)], uniform, 1, vDSP_Length(count))
-		vDSP_vsdiv(uniform, 1, [Float(4294967296)], uniform, 1, vDSP_Length(count))
+		vDSP_vsdiv(uniform, 1, [Float(UInt32.max)+1.0], uniform, 1, vDSP_Length(count))
 
 		vDSP_vsmul(uniform, 1, [Float(2.0*M_PI)], uniform, 1, vDSP_Length(count/2))
 		vvsincosf(buffer.advancedBy(0*count/2), buffer.advancedBy(1*count/2), uniform, [Int32(count/2)])
@@ -51,5 +51,16 @@ internal class GaussianDistribution: StableDistribution {
 		vDSP_vmul(buffer.advancedBy(1*count/2), 1, uniform, 1, buffer.advancedBy(1*count/2), 1, vDSP_Length(count/2))
 		
 		return mu + sigma * matrix(buffer, rows: rows, cols: cols, deallocator: free)
+	}
+	
+	static func est(χ: LaObjet) -> (μ: Float, σ: Float) {
+		var μ: Float = 0.0
+		var σ: Float = 0.0
+		let array: [Float] = χ.array
+		vDSP_meanv(array, 1, &μ, vDSP_Length(array.count))
+		vDSP_vsadd(array, 1, [-μ], UnsafeMutablePointer(array), 1, vDSP_Length(array.count))
+		vDSP_vsq(array, 1, UnsafeMutablePointer(array), 1, vDSP_Length(array.count))
+		vDSP_meanv(array, 1, &σ, vDSP_Length(array.count))
+		return (μ, sqrt(σ))
 	}
 }

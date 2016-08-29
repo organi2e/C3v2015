@@ -16,4 +16,5 @@ internal protocol StableDistribution {
 //	static func cdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
 //	static func pdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
 	static func rng(μ _: LaObjet, σ _: LaObjet) -> LaObjet
+	static func est(χ: LaObjet) -> (μ: Float, σ: Float)
 }
