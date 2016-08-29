@@ -10,6 +10,11 @@ import Accelerate
 import Metal
 import CoreData
 
+internal protocol Chainable {
+	func collect() -> (LaObjet, LaObjet, LaObjet)
+	func correct(η: Float) -> LaObjet
+}
+
 public class Cell: NSManagedObject {
 	
 	private enum Ready {

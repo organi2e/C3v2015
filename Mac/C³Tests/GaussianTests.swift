@@ -10,28 +10,26 @@ import XCTest
 @testable import C3
 class GaussianTests: XCTestCase {
 
-    override func setUp() {
-        super.setUp()
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-    }
-    
-    override func tearDown() {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-        super.tearDown()
-    }
-	
-    func testExample() {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-    }
-
     func testRNG() {
+
 		let srcμ: Float = Float(arc4random())/Float(UInt32.max) * 2.0 - 1.0
-		let srcσ: Float = 1.0 + Float(arc4random())/Float(UInt32.max)
-		let μ: LaObjet = matrix(srcμ, rows: 256, cols: 256)
-		let σ: LaObjet = matrix(srcσ, rows: 256, cols: 256)
-		let χ: LaObjet = GaussianDistribution.rng(μ: μ, σ: σ)
+		let srcσ: Float = 1.0 + Float(M_PI) * Float(arc4random())/Float(UInt32.max)
+
+		let N: Int = 1024 * 1024
+		let ψ: [UInt32] = [UInt32](count: N, repeatedValue: 0)
+		let μ: [Float] = [Float](count: N, repeatedValue: srcμ)
+		let σ: [Float] = [Float](count: N, repeatedValue: srcσ)
+		let χ: [Float] = [Float](count: N, repeatedValue: 0.0)
+		
+		arc4random_buf(UnsafeMutablePointer<Void>(ψ), sizeof(UInt32)*N)
+		
+		GaussianDistribution.rng(χ, μ: μ, σ: σ, ψ: ψ)
+		
 		let(dstμ, dstσ) = GaussianDistribution.est(χ)
+		
+		print(srcμ, dstμ)
+		print(srcσ, dstσ)
+		
 		let rmseμ: Float = ( srcμ - dstμ ) * ( srcμ - dstμ )
 		let rmseσ: Float = ( srcσ - dstσ ) * ( srcσ - dstσ )
 		XCTAssert(rmseμ < 1e-3)

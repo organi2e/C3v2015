@@ -8,7 +8,15 @@
 import Accelerate
 import CoreData
 
+internal protocol RandomVariable {
+	var χ: LaObjet { get }
+	var μ: LaObjet { get }
+	var σ: LaObjet { get }
+}
+
 internal class Arcane: NSManagedObject {
+	private let group: dispatch_group_t = dispatch_group_create()
+	private var seed: [UInt32] = []
 	private var value: [Float] = []
 	private var mu: [Float] = []
 	private var sigma: [Float] = []
@@ -34,6 +42,7 @@ internal extension Arcane {
 internal extension Arcane {
 	internal func setup() {
 		let count: Int = rows * cols
+		seed = [UInt32](count: count, repeatedValue: 0)
 		value = [Float](count: count, repeatedValue: 0)
 		mu = [Float](count: count, repeatedValue: 0)
 		sigma = [Float](count: count, repeatedValue: 0)
@@ -44,13 +53,18 @@ internal extension Arcane {
 		self.dynamicType.logμ(logmu, μ: mu)
 		self.dynamicType.logσ(logsigma, σ: sigma)
 	}
-	internal func shuffle(type: StableDistributionType) {
-		switch type {
-		case .Cauchy:
-			break
-		case .Gauss:
-			break
-		}
+	internal func shuffle(distribution: StableDistribution) {
+		let count: Int = rows * cols
+		assert(value.count==count)
+		assert(mu.count==count)
+		assert(sigma.count==count)
+		assert(seed.count==count)
+		arc4random_buf(UnsafeMutablePointer<Void>(seed), sizeof(UInt32)*count)
+		distribution.dynamicType.rng(value, μ: mu, σ: sigma, ψ: seed)
+	}
+	internal func xx(η: Float) {
+		willChangeValueForKey("location")
+		willChangeValueForKey("")
 	}
 	internal func refresh() {
 		self.dynamicType.μ(mu, logμ: logmu)
@@ -64,9 +78,9 @@ internal extension Arcane {
 		setup()
 	}
 }
-internal extension Arcane {
+extension Arcane: RandomVariable {
 	internal var χ: LaObjet {
-		return matrix(value, rows: rows, cols: cols, deallocator: nil) * σ + μ
+		return matrix(value, rows: rows, cols: cols, deallocator: nil)
 	}
 	internal var μ: LaObjet {
 		return matrix(mu, rows: rows, cols: cols, deallocator: nil)

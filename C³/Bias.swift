@@ -7,6 +7,25 @@
 //
 import Metal
 import CoreData
+internal class Bias2: Arcane {
+	private struct grad {
+		let μ: [Float]
+		let σ: [Float]
+	}
+	private var grads: RingBuffer<grad> = RingBuffer<grad>(array: [])
+}
+extension Bias2 {
+	@NSManaged private var output: Cell
+}
+extension Bias2: Chainable {
+	internal func collect() -> (LaObjet, LaObjet, LaObjet) {
+		return(χ, μ, σ)
+	}
+	internal func correct(η: Float) -> LaObjet {
+		return matrix(0)
+	}
+}
+
 internal class Bias: Cauchy {
 	private struct grad {
 		let μ: MTLBuffer

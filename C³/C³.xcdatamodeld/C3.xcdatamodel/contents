@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <model userDefinedModelVersionIdentifier="" type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="10174" systemVersion="15G31" minimumToolsVersion="Xcode 7.0">
-    <entity name="Arcane" syncable="YES">
+    <entity name="Arcane" representedClassName="C3.Arcane" syncable="YES">
         <attribute name="cols" attributeType="Integer 64" defaultValueString="0" syncable="YES"/>
         <attribute name="location" attributeType="Binary" syncable="YES"/>
         <attribute name="rows" attributeType="Integer 64" defaultValueString="0" syncable="YES"/>
         <attribute name="scale" attributeType="Binary" syncable="YES"/>
     </entity>
-    <entity name="Art" isAbstract="YES" syncable="YES">
+    <entity name="Art" syncable="YES">
         <attribute name="logmu" attributeType="Binary" allowsExternalBinaryDataStorage="YES" syncable="YES"/>
         <attribute name="logsigma" attributeType="Binary" allowsExternalBinaryDataStorage="YES" syncable="YES"/>
     </entity>
-    <entity name="Bias" representedClassName="C3.Bias" parentEntity="Cauchy" syncable="YES">
+    <entity name="Bias" representedClassName="C3.Bias" parentEntity="Arcane" syncable="YES">
         <relationship name="output" maxCount="1" deletionRule="Nullify" destinationEntity="Cell" inverseName="bias" inverseEntity="Cell" syncable="YES"/>
     </entity>
     <entity name="Blob" representedClassName="C3.Blob" syncable="YES">
