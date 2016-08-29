@@ -98,6 +98,13 @@
 			remoteGlobalIDString = 878C7AA31D01AF13002CDFD1;
 			remoteInfo = MNIST;
 		};
+		87ED4FEA1D7430F000019209 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 878C7A5E1D01AE4D002CDFD1 /* Mac.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 87F2A6C71D73C8190090A509;
+			remoteInfo = Experimental;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
@@ -158,13 +165,15 @@
 		87BC8D921D55E05C004510EF /* mtledge.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = mtledge.metal; path = "C³/mtledge.metal"; sourceTree = "<group>"; };
 		87BC8D951D55E536004510EF /* mtlgauss.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = mtlgauss.metal; path = "C³/mtlgauss.metal"; sourceTree = "<group>"; };
 		87BCEBF01D4D745900FC3099 /* Decay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Decay.swift; path = "C³/Decay.swift"; sourceTree = "<group>"; };
-		87BCEBF91D4D746400FC3099 /* Gauss.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Gauss.swift; path = "C³/Gauss.swift"; sourceTree = "<group>"; };
+		87BCEBF91D4D746400FC3099 /* Gaussian.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Gaussian.swift; path = "C³/Gaussian.swift"; sourceTree = "<group>"; };
 		87BCEBFA1D4D75A500FC3099 /* Bias.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Bias.swift; path = "C³/Bias.swift"; sourceTree = "<group>"; };
 		87C516CE1D3F72B400E3F36B /* statistics.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = statistics.metal; path = NLA/statistics.metal; sourceTree = "<group>"; };
 		87C516CF1D3F72E000E3F36B /* Unit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Unit.swift; path = NLA/Unit.swift; sourceTree = "<group>"; };
 		87C516D41D3F742500E3F36B /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Config.swift; path = NLA/Config.swift; sourceTree = "<group>"; };
 		87C516D71D3F802C00E3F36B /* UnitTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = UnitTest.swift; path = NLA/UnitTest.swift; sourceTree = "<group>"; };
+		87CFDE881D7440BA00716188 /* Distribution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Distribution.swift; path = "C³/Distribution.swift"; sourceTree = "<group>"; };
 		87D18E341D3F18BB00982020 /* LaObjet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = LaObjet.swift; path = "C³/LaObjet.swift"; sourceTree = "<group>"; };
+		87ED4FDB1D7430F000019209 /* Arcane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Arcane.swift; path = "C³/Arcane.swift"; sourceTree = "<group>"; };
 		87F6ABFD1D5B8C48005710FF /* mtlcell.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = mtlcell.metal; path = "C³/mtlcell.metal"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -239,6 +248,7 @@
 				874347C61D6EF8EE00B54F70 /* CL3Tests.xctest */,
 				878C7AC01D01AF25002CDFD1 /* MNIST.framework */,
 				875DD1EA1D6C619700A5C250 /* CIFAR10.framework */,
+				87ED4FEB1D7430F000019209 /* Experimental */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -258,6 +268,7 @@
 		878C7A6B1D01AE66002CDFD1 /* C³ */ = {
 			isa = PBXGroup;
 			children = (
+				87ED4FDB1D7430F000019209 /* Arcane.swift */,
 				878985B61D050D42002C2A8D /* C³.xcdatamodeld */,
 				875DD1AD1D66DF9E00A5C250 /* Art.swift */,
 				87BCEBFA1D4D75A500FC3099 /* Bias.swift */,
@@ -271,7 +282,7 @@
 				878985BD1D050D42002C2A8D /* Error.swift */,
 				87D18E341D3F18BB00982020 /* LaObjet.swift */,
 				87BCEBF01D4D745900FC3099 /* Decay.swift */,
-				87BCEBF91D4D746400FC3099 /* Gauss.swift */,
+				87BCEBF91D4D746400FC3099 /* Gaussian.swift */,
 				87A42CBC1D4F5CD5008D9708 /* Feedback.swift */,
 				875DD1B71D6AD89500A5C250 /* Misc.swift */,
 				870EA91B1D54AD77008C3380 /* mtlblas.metal */,
@@ -285,6 +296,7 @@
 				875DD1A51D66B26100A5C250 /* mtlcauchy.metal */,
 				875DD1B01D66E4D000A5C250 /* mtlart.metal */,
 				875DD2741D6D81D000A5C250 /* mtldecay.metal */,
+				87CFDE881D7440BA00716188 /* Distribution.swift */,
 			);
 			name = "C³";
 			sourceTree = "<group>";
@@ -438,6 +450,13 @@
 			fileType = wrapper.framework;
 			path = MNIST.framework;
 			remoteRef = 878C7ABF1D01AF25002CDFD1 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		87ED4FEB1D7430F000019209 /* Experimental */ = {
+			isa = PBXReferenceProxy;
+			fileType = "compiled.mach-o.executable";
+			path = Experimental;
+			remoteRef = 87ED4FEA1D7430F000019209 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 /* End PBXReferenceProxy section */

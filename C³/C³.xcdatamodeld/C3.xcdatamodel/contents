@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <model userDefinedModelVersionIdentifier="" type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="10174" systemVersion="15G31" minimumToolsVersion="Xcode 7.0">
+    <entity name="Arcane" syncable="YES">
+        <attribute name="cols" attributeType="Integer 64" defaultValueString="0" syncable="YES"/>
+        <attribute name="location" attributeType="Binary" syncable="YES"/>
+        <attribute name="rows" attributeType="Integer 64" defaultValueString="0" syncable="YES"/>
+        <attribute name="scale" attributeType="Binary" syncable="YES"/>
+    </entity>
     <entity name="Art" isAbstract="YES" syncable="YES">
         <attribute name="logmu" attributeType="Binary" allowsExternalBinaryDataStorage="YES" syncable="YES"/>
         <attribute name="logsigma" attributeType="Binary" allowsExternalBinaryDataStorage="YES" syncable="YES"/>
@@ -40,6 +46,7 @@
     </entity>
     <entity name="Gauss" representedClassName="C3.Gauss" parentEntity="Art" syncable="YES"/>
     <elements>
+        <element name="Arcane" positionX="36" positionY="171" width="128" height="105"/>
         <element name="Art" positionX="45" positionY="180" width="128" height="75"/>
         <element name="Bias" positionX="54" positionY="189" width="128" height="60"/>
         <element name="Blob" positionX="36" positionY="171" width="128" height="75"/>

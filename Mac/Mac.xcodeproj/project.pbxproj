@@ -72,7 +72,10 @@
 		87BC8D971D55E544004510EF /* mtlgauss.metal in Sources */ = {isa = PBXBuildFile; fileRef = 87BC8D961D55E544004510EF /* mtlgauss.metal */; };
 		87BCEBFC1D4D763D00FC3099 /* Bias.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87BCEBFB1D4D763D00FC3099 /* Bias.swift */; };
 		87BCEBFE1D4D764100FC3099 /* Decay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87BCEBFD1D4D764100FC3099 /* Decay.swift */; };
-		87BCEC001D4D765000FC3099 /* Gauss.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87BCEBFF1D4D765000FC3099 /* Gauss.swift */; };
+		87BCEC001D4D765000FC3099 /* Gaussian.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87BCEBFF1D4D765000FC3099 /* Gaussian.swift */; };
+		87CFDE871D74321A00716188 /* Arcane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87ED4FDA1D7430E100019209 /* Arcane.swift */; };
+		87CFDE981D7441AB00716188 /* Distribution.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87CFDE971D7441AB00716188 /* Distribution.swift */; };
+		87CFDE9A1D744BD600716188 /* GaussianTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87CFDE991D744BD600716188 /* GaussianTests.swift */; };
 		87D18E331D3F18B300982020 /* LaObjet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87D18E321D3F18B300982020 /* LaObjet.swift */; };
 		87D3F17C1D6CB1C300FA8C80 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87D3F17B1D6CB1C300FA8C80 /* AppDelegate.swift */; };
 		87D3F17E1D6CB1C300FA8C80 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87D3F17D1D6CB1C300FA8C80 /* ViewController.swift */; };
@@ -222,7 +225,9 @@
 		87BC8D961D55E544004510EF /* mtlgauss.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = mtlgauss.metal; path = "../../C³/mtlgauss.metal"; sourceTree = "<group>"; };
 		87BCEBFB1D4D763D00FC3099 /* Bias.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Bias.swift; path = "../../C³/Bias.swift"; sourceTree = "<group>"; };
 		87BCEBFD1D4D764100FC3099 /* Decay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Decay.swift; path = "../../C³/Decay.swift"; sourceTree = "<group>"; };
-		87BCEBFF1D4D765000FC3099 /* Gauss.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Gauss.swift; path = "../../C³/Gauss.swift"; sourceTree = "<group>"; };
+		87BCEBFF1D4D765000FC3099 /* Gaussian.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Gaussian.swift; path = "../../C³/Gaussian.swift"; sourceTree = "<group>"; };
+		87CFDE971D7441AB00716188 /* Distribution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Distribution.swift; path = "../../C³/Distribution.swift"; sourceTree = "<group>"; };
+		87CFDE991D744BD600716188 /* GaussianTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GaussianTests.swift; sourceTree = "<group>"; };
 		87D18E321D3F18B300982020 /* LaObjet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = LaObjet.swift; path = "../../C³/LaObjet.swift"; sourceTree = "<group>"; };
 		87D3F1791D6CB1C300FA8C80 /* Analyzer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Analyzer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		87D3F17B1D6CB1C300FA8C80 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -231,6 +236,7 @@
 		87D3F1821D6CB1C300FA8C80 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		87D3F1841D6CB1C300FA8C80 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		87D8B4051D4B6E590010EA4F /* BlasTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BlasTests.swift; sourceTree = "<group>"; };
+		87ED4FDA1D7430E100019209 /* Arcane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Arcane.swift; path = "../../C³/Arcane.swift"; sourceTree = "<group>"; };
 		87F2A6C71D73C8190090A509 /* Experimental */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Experimental; sourceTree = BUILT_PRODUCTS_DIR; };
 		87F2A6C91D73C8190090A509 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		87F2A6CE1D73C82D0090A509 /* metal.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = metal.metal; sourceTree = "<group>"; };
@@ -424,6 +430,7 @@
 				870EA9281D54ADBF008C3380 /* mtlrand.metal */,
 				87B1FD381D0546BF00981CF4 /* C³.xcdatamodeld */,
 				87B1FD2C1D05467800981CF4 /* C³.h */,
+				87ED4FDA1D7430E100019209 /* Arcane.swift */,
 				875DD1AE1D66DFB700A5C250 /* Art.swift */,
 				87BCEBFB1D4D763D00FC3099 /* Bias.swift */,
 				873934B21D42FD7800888988 /* Blob.swift */,
@@ -436,7 +443,8 @@
 				87B1FD211D05466D00981CF4 /* Dict.swift */,
 				87B1FD231D05466D00981CF4 /* Error.swift */,
 				87A42CC51D4F5D68008D9708 /* Feedback.swift */,
-				87BCEBFF1D4D765000FC3099 /* Gauss.swift */,
+				87CFDE971D7441AB00716188 /* Distribution.swift */,
+				87BCEBFF1D4D765000FC3099 /* Gaussian.swift */,
 				87D18E321D3F18B300982020 /* LaObjet.swift */,
 				875DD1C01D6AD8A900A5C250 /* Misc.swift */,
 				87B1FD051D05461100981CF4 /* Info.plist */,
@@ -456,6 +464,7 @@
 				87D8B4051D4B6E590010EA4F /* BlasTests.swift */,
 				875DD1A81D66B47E00A5C250 /* CauchyTests.swift */,
 				875DD1C21D6C11B600A5C250 /* ArtTests.swift */,
+				87CFDE991D744BD600716188 /* GaussianTests.swift */,
 			);
 			path = "C³Tests";
 			sourceTree = "<group>";
@@ -877,6 +886,7 @@
 				870EA92E1D54ADD3008C3380 /* mtlrand.metal in Sources */,
 				875DD1C11D6AD8A900A5C250 /* Misc.swift in Sources */,
 				875DD1AF1D66DFB700A5C250 /* Art.swift in Sources */,
+				87CFDE871D74321A00716188 /* Arcane.swift in Sources */,
 				87BC8D971D55E544004510EF /* mtlgauss.metal in Sources */,
 				87BC8D941D55E071004510EF /* mtledge.metal in Sources */,
 				875DD1971D64532800A5C250 /* mtlrender.metal in Sources */,
@@ -896,7 +906,8 @@
 				87B1FD361D0546B500981CF4 /* Error.swift in Sources */,
 				875DD1B21D66E4DF00A5C250 /* mtlart.metal in Sources */,
 				87A42CC71D4F5F58008D9708 /* Feedback.swift in Sources */,
-				87BCEC001D4D765000FC3099 /* Gauss.swift in Sources */,
+				87BCEC001D4D765000FC3099 /* Gaussian.swift in Sources */,
+				87CFDE981D7441AB00716188 /* Distribution.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -909,6 +920,7 @@
 				87B9C0271D49249900534528 /* MNISTTest.swift in Sources */,
 				875DD1C31D6C11B600A5C250 /* ArtTests.swift in Sources */,
 				87B1FD3C1D0546FC00981CF4 /* BiasTests.swift in Sources */,
+				87CFDE9A1D744BD600716188 /* GaussianTests.swift in Sources */,
 				8719AE4D1D38BBE500F8DCA4 /* CellTests.swift in Sources */,
 				87D8B4061D4B6E590010EA4F /* BlasTests.swift in Sources */,
 				875DD1AC1D66B4ED00A5C250 /* CauchyTests.swift in Sources */,
@@ -1987,6 +1999,7 @@
 				87F2A6CC1D73C8190090A509 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 

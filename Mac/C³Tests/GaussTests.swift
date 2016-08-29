@@ -8,7 +8,7 @@
 import Accelerate
 import XCTest
 @testable import C3
-
+/*
 class GaussTests: XCTestCase {
 	let NOHINT: la_hint_t = la_hint_t(LA_NO_HINT)
 	let ATTR: la_attribute_t = la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING)
@@ -76,3 +76,4 @@ class GaussTests: XCTestCase {
 		
 	}
 }
+*/

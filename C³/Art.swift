@@ -152,6 +152,11 @@ extension Art {
 	internal class var refreshKernel: String { return "artRefresh" }
 	internal class var uniformKernel: String { return "artUniform" }
 	internal class var adjustKernel: String { return "artAdjust" }
+	internal static func cauchy(χ: [Float]) {
+		let array: [UInt32] = [UInt32](count: χ.count, repeatedValue: 0)
+		arc4random_buf(UnsafeMutablePointer<Void>(array), sizeof(UInt32)*array.count)
+		vDSP_vfltu32(array, 1, UnsafeMutablePointer<Float>(χ), 1, vDSP_Length(χ.count))
+	}
 	internal static func uniform(let context context: Context, let χ: MTLBuffer, let bs: Int = 64) {
 		let count: Int = χ.length / sizeof(Float)
 		let φ: [uint] = [uint](count: 4*bs, repeatedValue: 0)

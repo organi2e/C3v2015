@@ -97,6 +97,9 @@ internal func matrix_diagonal(vector: [Float]) -> LaObjet {
 internal func matrix(scalar: Float) -> LaObjet {
 	return la_splat_from_float(scalar, ATTR)
 }
+internal func matrix(scalar: Float, rows: Int, cols: Int) -> LaObjet {
+	return la_matrix_from_splat(la_splat_from_float(scalar, ATTR), la_count_t(rows), la_count_t(cols))
+}
 internal func matrix(buffer: UnsafePointer<Void>, rows: Int, cols: Int) -> LaObjet {
 	return la_matrix_from_float_buffer(UnsafePointer<Float>(buffer), la_count_t(rows), la_count_t(cols), la_count_t(cols), HINT, ATTR)
 }
