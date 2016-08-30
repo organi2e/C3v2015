@@ -57,6 +57,7 @@
 		87A42CC71D4F5F58008D9708 /* Feedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87A42CC51D4F5D68008D9708 /* Feedback.swift */; };
 		87AE7C941D7559990061F229 /* BFGS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87AE7C921D7558F80061F229 /* BFGS.swift */; };
 		87AE7C971D755E720061F229 /* LaObjetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87AE7C951D755CBF0061F229 /* LaObjetTests.swift */; };
+		87AE7C9A1D759F350061F229 /* ConjugateGradient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87AE7C991D759F350061F229 /* ConjugateGradient.swift */; };
 		87B1FD0B1D05461200981CF4 /* C3.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 87B1FD011D05461100981CF4 /* C3.framework */; };
 		87B1FD161D05461200981CF4 /* C3.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 87B1FD011D05461100981CF4 /* C3.framework */; };
 		87B1FD171D05461200981CF4 /* C3.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 87B1FD011D05461100981CF4 /* C3.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -211,6 +212,7 @@
 		87A42CC51D4F5D68008D9708 /* Feedback.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Feedback.swift; path = "../../C³/Feedback.swift"; sourceTree = "<group>"; };
 		87AE7C921D7558F80061F229 /* BFGS.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = BFGS.swift; path = "../../C³/BFGS.swift"; sourceTree = "<group>"; };
 		87AE7C951D755CBF0061F229 /* LaObjetTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LaObjetTests.swift; sourceTree = "<group>"; };
+		87AE7C991D759F350061F229 /* ConjugateGradient.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = ConjugateGradient.swift; path = "../../C³/ConjugateGradient.swift"; sourceTree = "<group>"; };
 		87B1FD011D05461100981CF4 /* C3.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = C3.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		87B1FD051D05461100981CF4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		87B1FD0A1D05461100981CF4 /* C3Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = C3Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -439,6 +441,7 @@
 				87ED4FDA1D7430E100019209 /* Arcane.swift */,
 				875DD1AE1D66DFB700A5C250 /* Art.swift */,
 				87AE7C921D7558F80061F229 /* BFGS.swift */,
+				87AE7C991D759F350061F229 /* ConjugateGradient.swift */,
 				87BCEBFB1D4D763D00FC3099 /* Bias.swift */,
 				873934B21D42FD7800888988 /* Blob.swift */,
 				87B1FD1E1D05466D00981CF4 /* Cell.swift */,
@@ -889,6 +892,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				87AE7C941D7559990061F229 /* BFGS.swift in Sources */,
+				87AE7C9A1D759F350061F229 /* ConjugateGradient.swift in Sources */,
 				87BC8D911D55D19D004510EF /* mtlbias.metal in Sources */,
 				870EA92C1D54ADD3008C3380 /* mtlblas.metal in Sources */,
 				870EA92D1D54ADD3008C3380 /* mtlmath.metal in Sources */,

@@ -28,6 +28,12 @@ internal extension LaObjet {
 	var T: LaObjet {
 		return la_transpose(self)
 	}
+	var length: Float {
+		return la_norm_as_float(self, la_norm_t(LA_L2_NORM))
+	}
+	var normal: LaObjet {
+		return la_normalized_vector(self, la_norm_t(LA_L2_NORM))
+	}
 	var array: [Float] {
 		let buffer: [Float] = [Float](count: count, repeatedValue: 0)
 		let result: la_status_t = la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), la_matrix_cols(self), self)
@@ -42,9 +48,6 @@ internal extension LaObjet {
 	}
 	func submat(offset offset: (rows: Int, cols: Int), length: (rows: Int, cols: Int), stride: (rows: Int, cols: Int) = (1, 1)) -> LaObjet {
 		return la_matrix_slice(self, la_index_t(offset.rows), la_index_t(offset.cols), la_index_t(stride.rows), la_index_t(stride.cols), la_count_t(length.rows), la_count_t(length.cols))
-	}
-	static var x: Int {
-		return 10
 	}
 }
 
