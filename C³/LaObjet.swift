@@ -12,7 +12,6 @@ private let HINT: la_hint_t = la_hint_t(LA_NO_HINT)
 private let TYPE: la_scalar_type_t = la_scalar_type_t(LA_SCALAR_TYPE_FLOAT)
 
 public typealias LaObjet = la_object_t
-
 internal extension LaObjet {
 	var rows: Int {
 		return Int(la_matrix_rows(self))
@@ -43,6 +42,9 @@ internal extension LaObjet {
 	}
 	func submat(offset offset: (rows: Int, cols: Int), length: (rows: Int, cols: Int), stride: (rows: Int, cols: Int) = (1, 1)) -> LaObjet {
 		return la_matrix_slice(self, la_index_t(offset.rows), la_index_t(offset.cols), la_index_t(stride.rows), la_index_t(stride.cols), la_count_t(length.rows), la_count_t(length.cols))
+	}
+	static var x: Int {
+		return 10
 	}
 }
 
@@ -90,23 +92,22 @@ internal func matrix_product(lhs: LaObjet, _ rhs: LaObjet) -> LaObjet {
 internal func solve(A lhs: LaObjet, b rhs: LaObjet) -> LaObjet {
 	return la_solve(lhs, rhs)
 }
-internal func matrix_eye(count: Int) -> LaObjet {
+internal func LaIdentité(count: Int) -> LaObjet {
 	return la_identity_matrix(la_count_t(count), TYPE, ATTR)
 }
-internal func matrix_diagonal(vector: [Float]) -> LaObjet {
-	let count: Int = vector.count
-	return la_diagonal_matrix_from_vector(la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(vector), la_count_t(count), 1, 1, HINT, nil, ATTR), la_index_t(count))
+internal func LaDiagonale(vector: LaObjet) -> LaObjet {
+	return la_diagonal_matrix_from_vector(vector, la_index_t(vector.count))
 }
-internal func matrix(scalar: Float) -> LaObjet {
+internal func LaMatrice(scalar: Float) -> LaObjet {
 	return la_splat_from_float(scalar, ATTR)
 }
-internal func matrix(scalar: Float, rows: Int, cols: Int) -> LaObjet {
+internal func LaMatrice(scalar: Float, rows: Int, cols: Int) -> LaObjet {
 	return la_matrix_from_splat(la_splat_from_float(scalar, ATTR), la_count_t(rows), la_count_t(cols))
 }
-internal func matrix(buffer: UnsafePointer<Void>, rows: Int, cols: Int) -> LaObjet {
+internal func LaMatrice(buffer: UnsafePointer<Void>, rows: Int, cols: Int) -> LaObjet {
 	return la_matrix_from_float_buffer(UnsafePointer<Float>(buffer), la_count_t(rows), la_count_t(cols), la_count_t(cols), HINT, ATTR)
 }
-internal func matrix(buffer: UnsafePointer<Void>, rows: Int, cols: Int, deallocator: (@convention(c) (UnsafeMutablePointer<Void>) -> Void)?) -> LaObjet {
+internal func LaMatrice(buffer: UnsafePointer<Void>, rows: Int, cols: Int, deallocator: (@convention(c) (UnsafeMutablePointer<Void>) -> Void)?) -> LaObjet {
 	return la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(buffer), la_count_t(rows), la_count_t(cols), la_count_t(cols), HINT, deallocator, ATTR)
 }
 /*

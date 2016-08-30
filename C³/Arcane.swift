@@ -88,19 +88,19 @@ internal extension Arcane {
 }
 extension Arcane: RandomNumberGeneratable {
 	internal var χ: LaObjet {
-		return matrix(cache.χ, rows: rows, cols: cols, deallocator: nil)
+		return LaMatrice(cache.χ, rows: rows, cols: cols, deallocator: nil)
 	}
 	internal var μ: LaObjet {
-		return matrix(cache.μ, rows: rows, cols: cols, deallocator: nil)
+		return LaMatrice(cache.μ, rows: rows, cols: cols, deallocator: nil)
 	}
 	internal var σ: LaObjet {
-		return matrix(cache.σ, rows: rows, cols: cols, deallocator: nil)
+		return LaMatrice(cache.σ, rows: rows, cols: cols, deallocator: nil)
 	}
 	private var logμ: LaObjet {
-		return matrix(cache.logμ, rows: rows, cols: cols, deallocator: nil)
+		return LaMatrice(cache.logμ, rows: rows, cols: cols, deallocator: nil)
 	}
 	private var logσ: LaObjet {
-		return matrix(cache.logσ, rows: rows, cols: cols, deallocator: nil)
+		return LaMatrice(cache.logσ, rows: rows, cols: cols, deallocator: nil)
 	}
 	internal func shuffle(distribution: StableDistribution.Type) {
 		let count: Int = rows * cols

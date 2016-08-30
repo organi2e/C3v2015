@@ -17,8 +17,8 @@ class ArcaneTest: XCTestCase {
 		
 		let a: Arcane! = context.new()
 		
-		let Δμ: LaObjet = matrix(1.0, rows: rows, cols: cols)
-		let Δσ: LaObjet = matrix(1.0, rows: rows, cols: cols)
+		let Δμ: LaObjet = LaMatrice(1.0, rows: rows, cols: cols)
+		let Δσ: LaObjet = LaMatrice(1.0, rows: rows, cols: cols)
 		
 		a.resize(rows: rows, cols: cols)
 		

@@ -13,25 +13,23 @@ internal class BFGS {
 	private let prevx: [Float]
 	private let Θ: Float
 	private var B: LaObjet {
-		return matrix(b, rows: I.rows, cols: I.cols, deallocator: nil)
+		return LaMatrice(b, rows: I.rows, cols: I.cols, deallocator: nil)
 	}
 	private var prevX: LaObjet {
-		return matrix(prevx, rows: prevx.count, cols: 1, deallocator: nil)
+		return LaMatrice(prevx, rows: prevx.count, cols: 1, deallocator: nil)
 	}
 	private var prevG: LaObjet {
-		return matrix(prevg, rows: prevg.count, cols: 1, deallocator: nil)
+		return LaMatrice(prevg, rows: prevg.count, cols: 1, deallocator: nil)
 	}
 	init(dim: Int, threshold: Float = 1e-24) {
 		prevx = [Float](count: dim, repeatedValue: 0)
 		prevg = [Float](count: dim, repeatedValue: 0)
 		b = [Float](count: dim*dim, repeatedValue: 0)
-		I = matrix_eye(dim)
+		I = LaIdentité(dim)
 		I.getBytes(b)
 		Θ = threshold
 	}
-	func update(g gc: [Float], x xc: [Float], threshold: Float? = nil) -> LaObjet {
-		let x: LaObjet = matrix(xc, rows: xc.count, cols: 1)
-		let g: LaObjet = matrix(gc, rows: gc.count, cols: 1)
+	func update(g g: LaObjet, x: LaObjet, threshold: Float? = nil) -> LaObjet {
 		defer {
 			x.getBytes(prevx)
 			g.getBytes(prevg)

@@ -11,7 +11,7 @@ import Metal
 import CoreData
 
 internal protocol Chainable {
-	func collect() -> (LaObjet, LaObjet, LaObjet)
+	func collect(ignore: Set<Cell>) -> (LaObjet, LaObjet, LaObjet)
 	func correct(η: Float) -> LaObjet
 }
 
@@ -239,15 +239,15 @@ extension Cell {
 	}
 	public func collect_la(ignore: Set<Cell> = []) -> LaObjet {
 		if ignore.contains(self) {
-			return matrix(state.old.ϰ, rows: width, cols: 1)
+			return LaMatrice(state.old.ϰ, rows: width, cols: 1)
 		} else {
 			if !ready.contains(.ϰ) {
 				ready.insert(.ϰ)
-				var χ: LaObjet = matrix(0)
-				var μ: LaObjet = matrix(0)
-				var σ: LaObjet = matrix(0)
+				var χ: LaObjet = LaMatrice(0)
+				var μ: LaObjet = LaMatrice(0)
+				var σ: LaObjet = LaMatrice(0)
 			}
-			return matrix(state.new.ϰ, rows: width, cols: 1)
+			return LaMatrice(state.new.ϰ, rows: width, cols: 1)
 		}
 	}
 	public func collect(let ignore: Set<Cell> = []) -> MTLBuffer {

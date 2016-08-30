@@ -18,14 +18,13 @@ extension Bias2 {
 	@NSManaged private var output: Cell
 }
 extension Bias2: Chainable {
-	internal func collect() -> (LaObjet, LaObjet, LaObjet) {
+	internal func collect(ignore: Set<Cell>) -> (LaObjet, LaObjet, LaObjet) {
 		return(χ, μ, σ)
 	}
 	internal func correct(η: Float) -> LaObjet {
-		return matrix(0)
+		return LaMatrice(0)
 	}
 }
-
 
 internal class Bias: Cauchy {
 	private struct grad {
