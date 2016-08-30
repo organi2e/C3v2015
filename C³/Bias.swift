@@ -26,6 +26,7 @@ extension Bias2: Chainable {
 	}
 }
 
+
 internal class Bias: Cauchy {
 	private struct grad {
 		let μ: MTLBuffer

@@ -3,8 +3,8 @@
     <entity name="Arcane" representedClassName="C3.Arcane" syncable="YES">
         <attribute name="cols" attributeType="Integer 64" defaultValueString="0" syncable="YES"/>
         <attribute name="location" attributeType="Binary" syncable="YES"/>
+        <attribute name="logscale" attributeType="Binary" syncable="YES"/>
         <attribute name="rows" attributeType="Integer 64" defaultValueString="0" syncable="YES"/>
-        <attribute name="scale" attributeType="Binary" syncable="YES"/>
     </entity>
     <entity name="Art" syncable="YES">
         <attribute name="logmu" attributeType="Binary" allowsExternalBinaryDataStorage="YES" syncable="YES"/>

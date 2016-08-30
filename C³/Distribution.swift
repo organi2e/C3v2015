@@ -15,5 +15,7 @@ internal protocol StableDistribution {
 //	static func cdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
 //	static func pdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
 	static func rng(χ: [Float], μ: [Float], σ: [Float], ψ: [UInt32])
-	static func est(χ: [Float]) -> (μ: Float, σ: Float)
+}
+internal protocol RandomNumberGeneratable {
+	func shuffle(dist: StableDistribution.Type)
 }

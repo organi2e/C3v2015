@@ -57,13 +57,12 @@ internal class CauchyDistribution: StableDistribution {
 		fwrite(χ, sizeof(Float), count, fp)
 		fclose(fp)
 	}
-	static func est(χ: [Float]) -> (μ: Float, σ: Float) {
+	static func est(χ: [Float], η: Float, K: Int, θ: Float = 1e-9) -> (μ: Float, σ: Float) {
 		
 		let count: Int = χ.count
 		
 		let eps: Double = 1.0e-8
 		
-		let eta: Double = M_SQRT1_2
 		let eye: double2x2 = double2x2(diagonal: double2(1))
 		
 		var est: double2 = double2(1)
@@ -80,7 +79,7 @@ internal class CauchyDistribution: StableDistribution {
 		
 		vDSP_vspdp(χ, 1, UnsafeMutablePointer<Double>(X), 1, vDSP_Length(count))
 		
-		for _ in 0..<1024*Int(log(Double(count))) {
+		for _ in 0..<K {
 			
 			var mean: Double = 0
 			
@@ -104,7 +103,7 @@ internal class CauchyDistribution: StableDistribution {
 			let s: double2 = est - p_est
 			let y: double2 = delta - p_delta
 			let m: Double = dot(y, s)
-			if eps < abs(m) {//BFGS
+			if Double(θ) < abs(m) {//BFGS
 				let rho: Double = 1.0 / m
 				let S: double2x2 = double2x2([s, double2(0)])
 				let Y: double2x2 = double2x2(rows: [y, double2(0)])
@@ -118,7 +117,7 @@ internal class CauchyDistribution: StableDistribution {
 			p_est = est
 			p_delta = delta
 			
-			est = est + eta * delta
+			est = est + Double(η) * delta
 			est = abs(est)
 			
 		}

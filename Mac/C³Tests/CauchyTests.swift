@@ -24,7 +24,7 @@ class CauchyTests: XCTestCase {
 		
 		CauchyDistribution.rng(χ, μ: μ, σ: σ, ψ: ψ)
 		
-		let(dstμ, dstσ) = CauchyDistribution.est(χ)
+		let(dstμ, dstσ) = CauchyDistribution.est(χ, η: 0.8, K: 1024)
 		
 		print(srcμ, dstμ)
 		print(srcσ, dstσ)
