@@ -25,8 +25,8 @@ class ArcaneTest: XCTestCase {
 		print(a.μ.array)
 		print(a.σ.array)
 		
-		(0..<128).forEach {(_)in
-			a.update(1/128.0, Δμ: Δμ, Δσ: Δσ)
+		(0..<4096).forEach {(_)in
+			a.update(1/256.0, Δμ: Δμ, Δσ: Δσ)
 		}
 
 		print(a.μ.array)

@@ -8,19 +8,16 @@
 import Accelerate
 import CoreData
 
-internal protocol RandomVariable {
-	var χ: LaObjet { get }
-	var μ: LaObjet { get }
-	var σ: LaObjet { get }
-}
-
 internal class Arcane: NSManagedObject {
 	private let group: dispatch_group_t = dispatch_group_create()
-	private var seed: [UInt32] = []
-	private var value: [Float] = []
-	private var mu: [Float] = []
-	private var sigma: [Float] = []
-	private var logsigma: [Float] = []
+	private var cache = (
+		χ: Array<Float>(),
+		μ: Array<Float>(),
+		σ: Array<Float>(),
+		ψ: Array<UInt32>(),
+		logμ: Array<Float>(),
+		logσ: Array<Float>()
+	)
 }
 internal extension Arcane {
 	@NSManaged private var location: NSData
@@ -42,69 +39,76 @@ internal extension Arcane {
 	private static let locationKey: String = "location"
 	private static let logscaleKey: String = "logscale"
 	internal func setup() {
+		
 		let count: Int = rows * cols
 		
-		seed = [UInt32](count: count, repeatedValue: 0)
-		value = [Float](count: count, repeatedValue: 0)
-		mu = [Float](count: count, repeatedValue: 0)
-		sigma = [Float](count: count, repeatedValue: 0)
-		logsigma = [Float](count: count, repeatedValue: 0)
+		cache.χ = Array<Float>(count: count, repeatedValue: 0)
+		cache.μ = Array<Float>(count: count, repeatedValue: 0)
+		cache.σ = Array<Float>(count: count, repeatedValue: 0)
+		cache.ψ = Array<UInt32>(count: count, repeatedValue: 0)
+		cache.logμ = Array<Float>(count: count, repeatedValue: 0)
+		cache.logσ = Array<Float>(count: count, repeatedValue: 0)
 		
-		location.getBytes(UnsafeMutablePointer<Void>(mu), length: sizeof(Float)*count)
-		logscale.getBytes(UnsafeMutablePointer<Void>(logsigma), length: sizeof(Float)*count)
+		location.getBytes(&cache.logμ, length: sizeof(Float)*count)
+		logscale.getBytes(&cache.logσ, length: sizeof(Float)*count)
 		
-		setPrimitiveValue(NSData(bytesNoCopy: UnsafeMutablePointer<Void>(mu), length: sizeof(Float)*count, freeWhenDone: false), forKey: self.dynamicType.locationKey)
-		setPrimitiveValue(NSData(bytesNoCopy: UnsafeMutablePointer<Void>(logsigma), length: sizeof(Float)*count, freeWhenDone: false), forKey: self.dynamicType.logscaleKey)
+		setPrimitiveValue(NSData(bytesNoCopy: &cache.logμ, length: sizeof(Float)*count, freeWhenDone: false), forKey: Arcane.locationKey)
+		setPrimitiveValue(NSData(bytesNoCopy: &cache.logσ, length: sizeof(Float)*count, freeWhenDone: false), forKey: Arcane.logscaleKey)
 	
 		update(0, Δμ: nil, Δσ: nil)
 	}
 	internal func update(η: Float, Δμ: LaObjet? = nil, Δσ: LaObjet? = nil) {
 		if let Δμ: LaObjet = Δμ where Δμ.rows == rows && Δμ.cols == cols {
-			willChangeValueForKey(self.dynamicType.locationKey)
-			(μ + η * Δμ).getBytes(mu)
-			didChangeValueForKey(self.dynamicType.locationKey)
+			willChangeValueForKey(Arcane.locationKey)
+			( logμ + η * Δμ ).getBytes(cache.logμ)
+			didChangeValueForKey(Arcane.locationKey)
 		}
+		cblas_scopy(Int32(rows*cols), cache.logμ, 1, &cache.μ, 1)
 		if let Δσ: LaObjet = Δσ where Δσ.rows == rows && Δσ.cols == cols {
-			let logσ: LaObjet = matrix(logsigma, rows: rows, cols: cols, deallocator: nil)
-			
-			vDSP_vneg(sigma, 1, UnsafeMutablePointer<Float>(sigma), 1, vDSP_Length(sigma.count))
-			vvexpf(UnsafeMutablePointer<Float>(sigma), sigma, [Int32(sigma.count)])
-			
-			willChangeValueForKey(self.dynamicType.logscaleKey)
-			(logσ+(1-σ)*η*Δσ).getBytes(logsigma)
-			didChangeValueForKey(self.dynamicType.logscaleKey)
+			vDSP_vneg(cache.σ, 1, &cache.σ, 1, vDSP_Length(cache.σ.count))
+			vvexpf(&cache.σ, cache.σ, [Int32(cache.σ.count)])
+			willChangeValueForKey(Arcane.logscaleKey)
+			( logσ + η * ( 1 - σ ) * Δσ ).getBytes(cache.logσ)
+			didChangeValueForKey(Arcane.logscaleKey)
 		}
-		vvexp2f(UnsafeMutablePointer<Float>(sigma), logsigma, [Int32(logsigma.count)])
-		(1.0+σ).getBytes(sigma)
-		vvlog2f(UnsafeMutablePointer<Float>(sigma), sigma, [Int32(sigma.count)])
+		vvexp2f(&cache.σ, cache.logσ, [Int32(cache.logσ.count)])
+		(1.0+σ).getBytes(cache.σ)
+		vvlog2f(&cache.σ, cache.σ, [Int32(cache.σ.count)])
 	}
 	internal func resize(rows r: Int, cols c: Int) {
 		rows = r
 		cols = c
-		location = NSData(bytes: [Float](count: rows*cols, repeatedValue: 0), length: sizeof(Float)*rows*cols)
-		logscale = NSData(bytes: [Float](count: rows*cols, repeatedValue: 0), length: sizeof(Float)*rows*cols)
+		do {
+			let count: Int = rows * cols
+			location = NSData(bytes: [Float](count: count, repeatedValue: 0), length: sizeof(Float)*count)
+			logscale = NSData(bytes: [Float](count: count, repeatedValue: 0), length: sizeof(Float)*count)
+		}
 		setup()
 	}
 }
-extension Arcane: RandomVariable {
+extension Arcane: RandomNumberGeneratable {
 	internal var χ: LaObjet {
-		return matrix(value, rows: rows, cols: cols, deallocator: nil)
+		return matrix(cache.χ, rows: rows, cols: cols, deallocator: nil)
 	}
 	internal var μ: LaObjet {
-		return matrix(mu, rows: rows, cols: cols, deallocator: nil)
+		return matrix(cache.μ, rows: rows, cols: cols, deallocator: nil)
 	}
 	internal var σ: LaObjet {
-		return matrix(sigma, rows: rows, cols: cols, deallocator: nil)
+		return matrix(cache.σ, rows: rows, cols: cols, deallocator: nil)
 	}
-}
-extension Arcane: RandomNumberGeneratable {
+	private var logμ: LaObjet {
+		return matrix(cache.logμ, rows: rows, cols: cols, deallocator: nil)
+	}
+	private var logσ: LaObjet {
+		return matrix(cache.logσ, rows: rows, cols: cols, deallocator: nil)
+	}
 	internal func shuffle(distribution: StableDistribution.Type) {
 		let count: Int = rows * cols
-		assert(value.count==count)
-		assert(mu.count==count)
-		assert(sigma.count==count)
-		assert(seed.count==count)
-		arc4random_buf(UnsafeMutablePointer<Void>(seed), sizeof(UInt32)*count)
-		distribution.rng(value, μ: mu, σ: sigma, ψ: seed)
+		assert(cache.χ.count==count)
+		assert(cache.μ.count==count)
+		assert(cache.σ.count==count)
+		assert(cache.ψ.count==count)
+		arc4random_buf(&cache.ψ, sizeof(UInt32)*count)
+		distribution.rng(cache.χ, μ: cache.μ, σ: cache.σ, ψ: cache.ψ)
 	}
 }

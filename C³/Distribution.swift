@@ -17,5 +17,8 @@ internal protocol StableDistribution {
 	static func rng(χ: [Float], μ: [Float], σ: [Float], ψ: [UInt32])
 }
 internal protocol RandomNumberGeneratable {
+	var χ: LaObjet { get }
+	var μ: LaObjet { get }
+	var σ: LaObjet { get }
 	func shuffle(dist: StableDistribution.Type)
 }

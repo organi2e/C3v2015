@@ -52,16 +52,10 @@ internal class CauchyDistribution: StableDistribution {
 		vDSP_vsdiv(χ, 1, [Float(UInt32.max)+1.0], UnsafeMutablePointer<Float>(χ), 1, vDSP_Length(count))
 		vvtanpif(UnsafeMutablePointer<Float>(χ), χ, [Int32(count)])
 		vDSP_vma(χ, 1, σ, 1, μ, 1, UnsafeMutablePointer<Float>(χ), 1, vDSP_Length(count))
-		
-		let fp = fopen("/tmp/cauchy.raw", "wb")
-		fwrite(χ, sizeof(Float), count, fp)
-		fclose(fp)
 	}
 	static func est(χ: [Float], η: Float, K: Int, θ: Float = 1e-9) -> (μ: Float, σ: Float) {
 		
 		let count: Int = χ.count
-		
-		let eps: Double = 1.0e-8
 		
 		let eye: double2x2 = double2x2(diagonal: double2(1))
 		
