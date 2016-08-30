@@ -7,7 +7,7 @@
 //
 import Accelerate
 
-private let ATTR: la_attribute_t = la_attribute_t(LA_DEFAULT_ATTRIBUTES)
+private let ATTR: la_attribute_t = la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING)
 private let HINT: la_hint_t = la_hint_t(LA_NO_HINT)
 private let TYPE: la_scalar_type_t = la_scalar_type_t(LA_SCALAR_TYPE_FLOAT)
 
@@ -78,14 +78,17 @@ internal func /(lhs: Float, rhs: LaObjet) -> LaObjet {
 	return la_matrix_from_float_buffer_nocopy(result, la_matrix_rows(rhs), la_matrix_cols(rhs), la_matrix_cols(rhs), HINT, free, ATTR)
 }
 
-internal func inner_product(lhs: LaObjet, rhs: LaObjet) -> LaObjet {
+internal func inner_product(lhs: LaObjet, _ rhs: LaObjet) -> LaObjet {
 	return la_inner_product(lhs, rhs)
 }
-internal func outer_product(lhs: LaObjet, rhs: LaObjet) -> LaObjet {
+internal func outer_product(lhs: LaObjet, _ rhs: LaObjet) -> LaObjet {
 	return la_outer_product(lhs, rhs)
 }
-internal func matrix_product(lhs: LaObjet, rhs: LaObjet) -> LaObjet {
+internal func matrix_product(lhs: LaObjet, _ rhs: LaObjet) -> LaObjet {
 	return la_matrix_product(lhs, rhs)
+}
+internal func solve(A lhs: LaObjet, b rhs: LaObjet) -> LaObjet {
+	return la_solve(lhs, rhs)
 }
 internal func matrix_eye(count: Int) -> LaObjet {
 	return la_identity_matrix(la_count_t(count), TYPE, ATTR)

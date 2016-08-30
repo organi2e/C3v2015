@@ -161,6 +161,7 @@
 		878C7A681D01AE5E002CDFD1 /* iOS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = iOS.xcodeproj; path = iOS/iOS.xcodeproj; sourceTree = "<group>"; };
 		878C7AC11D01AF60002CDFD1 /* MNIST.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MNIST.swift; path = MNIST/MNIST.swift; sourceTree = "<group>"; };
 		87A42CBC1D4F5CD5008D9708 /* Feedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Feedback.swift; path = "C³/Feedback.swift"; sourceTree = "<group>"; };
+		87AE7C831D7558E60061F229 /* BFGS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BFGS.swift; path = "C³/BFGS.swift"; sourceTree = "<group>"; };
 		87BC8D861D55D0EF004510EF /* mtlbias.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = mtlbias.metal; path = "C³/mtlbias.metal"; sourceTree = "<group>"; };
 		87BC8D921D55E05C004510EF /* mtledge.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = mtledge.metal; path = "C³/mtledge.metal"; sourceTree = "<group>"; };
 		87BC8D951D55E536004510EF /* mtlgauss.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = mtlgauss.metal; path = "C³/mtlgauss.metal"; sourceTree = "<group>"; };
@@ -297,6 +298,7 @@
 				875DD1B01D66E4D000A5C250 /* mtlart.metal */,
 				875DD2741D6D81D000A5C250 /* mtldecay.metal */,
 				87CFDE881D7440BA00716188 /* Distribution.swift */,
+				87AE7C831D7558E60061F229 /* BFGS.swift */,
 			);
 			name = "C³";
 			sourceTree = "<group>";
