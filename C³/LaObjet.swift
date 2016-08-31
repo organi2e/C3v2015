@@ -12,6 +12,7 @@ private let HINT: la_hint_t = la_hint_t(LA_NO_HINT)
 private let TYPE: la_scalar_type_t = la_scalar_type_t(LA_SCALAR_TYPE_FLOAT)
 
 public typealias LaObjet = la_object_t
+
 internal extension LaObjet {
 	var rows: Int {
 		return Int(la_matrix_rows(self))
@@ -31,7 +32,7 @@ internal extension LaObjet {
 	var length: Float {
 		return la_norm_as_float(self, la_norm_t(LA_L2_NORM))
 	}
-	var normal: LaObjet {
+	var normalize: LaObjet {
 		return la_normalized_vector(self, la_norm_t(LA_L2_NORM))
 	}
 	var array: [Float] {
@@ -43,8 +44,8 @@ internal extension LaObjet {
 	func getBytes(buffer: UnsafePointer<Void>) -> Bool {
 		return la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), la_count_t(la_matrix_cols(self)), self) == la_status_t(LA_SUCCESS)
 	}
-	func subvec(offset offset: Int, length: Int, stride: Int = 1) {
-		la_vector_slice(self, la_index_t(offset), la_index_t(stride), la_count_t(length))
+	func subvec(offset offset: Int, length: Int, stride: Int = 1) -> LaObjet {
+		return la_vector_slice(self, la_index_t(offset), la_index_t(stride), la_count_t(length))
 	}
 	func submat(offset offset: (rows: Int, cols: Int), length: (rows: Int, cols: Int), stride: (rows: Int, cols: Int) = (1, 1)) -> LaObjet {
 		return la_matrix_slice(self, la_index_t(offset.rows), la_index_t(offset.cols), la_index_t(stride.rows), la_index_t(stride.cols), la_count_t(length.rows), la_count_t(length.cols))

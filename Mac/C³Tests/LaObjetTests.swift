@@ -17,65 +17,97 @@ class LaObjetTests: XCTestCase {
 	}
 	
 	func J(x: [Float]) -> [Float] {
-		let dX0: Float = 2 * (x[0]-2)
+		let dX0: Float =  1 * (x[0]+3)
 		let dX1: Float = 2 * x[0] * exp(-x[0]*x[0]-x[1]*x[1])
-		let dY0: Float = 80 * (x[1]+2)
+		let dY0: Float = 80 * (x[1]+5)
 		let dY1: Float = 2 * x[1] * exp(-x[0]*x[0]-x[1]*x[1])
 		return[dX0+dX1, dY0+dY1]
 	}
 	
 	func testSGD() {
 		var x: [Float] = [14, 14]
-		for _ in 0..<128 {
+		let fp = fopen("/tmp/SGD.raw", "wb")
+		for _ in 0...40 {
+			fwrite(x, sizeof(Float), 2, fp)
 			let g = J(x)
-			x[0] -= g[0]/128.0
-			x[1] -= g[1]/128.0
+			x[0] -= g[0]/41.0
+			x[1] -= g[1]/41.0
 		}
 		print(x, f(x))
-	}
-	
-	func testNCG() {
-		let ncg = NewtonConjugateGradient(dim: 2)
-		var x: [Float] = [4, 4]
-		for _ in 0..<128 {
-			let g = J(x)
-			let G = LaMatrice(g, rows: 2, cols: 1)
-			let X = LaMatrice(x, rows: 2, cols: 1)
-			let h = ncg.update(g: G, x: X).array
-			x[0] -= h[0]/128.0
-			x[1] -= h[1]/128.0
-		}
-		print(x, f(x))
+		fclose(fp)
 	}
 	
 	func testCG() {
-		let cg = ConjugateGradient(dim: 2)
+		/*
+		FletcherReeves
+		PolakRibière
+		HestenesStiefe
+		DaiYuan
+		*/
+		let cg: GradientOptimizer = ConjugateGradient(dim: 2, condition: .DaiYuan)
+		let fp = fopen("/tmp/DAIYUAN.raw", "wb")
 		var x: [Float] = [14, 14]
-		for _ in 0..<128 {
+		for _ in 0...40 {
+			fwrite(x, sizeof(Float), 2, fp)
 			let g = J(x)
 			let G = LaMatrice(g, rows: 2, cols: 1)
 			let X = LaMatrice(x, rows: 2, cols: 1)
-			let h = cg.update(g: G, x: X).array
-			x[0] -= h[0]/128.0
-			x[1] -= h[1]/128.0
+			let h = cg.optimize(Δx: G, x: X).array
+			x[0] -= h[0]/41.0
+			x[1] -= h[1]/41.0
 		}
 		print(x, f(x))
+		fclose(fp)
+	}
+	
+	func testQuasiNewton() {
+		let qn: GradientOptimizer = QuasiNewton(dim: 2, type: .BroydenFletcherGoldfarbShanno)
+		let fp = fopen("/tmp/BFGS.raw", "wb")
+		var x: [Float] = [14, 14]
+		for _ in 0...40 {
+			fwrite(x, sizeof(Float), 2, fp)
+			let g = J(x)
+			let G = LaMatrice(g, rows: 2, cols: 1)
+			let X = LaMatrice(x, rows: 2, cols: 1)
+			let h = qn.optimize(Δx: G, x: X).array
+			x[0] -= h[0]/2.0
+			x[1] -= h[1]/2.0
+		}
+		print(x, f(x))
+		fclose(fp)
 	}
 
 	func testBFGS() {
 		let bfgs = BFGS(dim: 2)
-		let fp = fopen("/tmp/GRAD.raw", "wb")
-		var x: [Float] = [4, 4]
-		for _ in 0..<80 {
+		let fp = fopen("/tmp/BFGS.raw", "wb")
+		var x: [Float] = [14, 14]
+		for _ in 0...40 {
+			fwrite(x, sizeof(Float), 2, fp)
 			let g = J(x)
 			let G = LaMatrice(g, rows: 2, cols: 1)
 			let X = LaMatrice(x, rows: 2, cols: 1)
 			let h = bfgs.update(g: G, x: X).array
 			x[0] -= h[0]/2.0
 			x[1] -= h[1]/2.0
-			fwrite(x, sizeof(Float), 2, fp)
 		}
 		print(x, f(x))
 		fclose(fp)
 	}
 }
+
+/*
+from matplotlib.pylab import *
+figure()
+clf()
+x = fromfile('/tmp/SGD.raw', 'float32')
+plot(x[0::2],x[1::2],'r-')
+x = fromfile('/tmp/DAIYUAN.raw', 'float32')
+plot(x[0::2],x[1::2],'g-')
+x = fromfile('/tmp/BFGS.raw', 'float32')
+plot(x[0::2],x[1::2],'b-')
+legend(['SGD', 'DAIYUAN', 'BGFS'],loc=2)
+xlim([-20,20])
+ylim([-20,20])
+draw()
+show()
+*/
