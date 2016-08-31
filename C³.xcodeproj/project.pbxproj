@@ -149,6 +149,9 @@
 		875DD20A1D6C6DAA00A5C250 /* train-images-idx3-ubyte */ = {isa = PBXFileReference; lastKnownFileType = text; name = "train-images-idx3-ubyte"; path = "MNIST/train-images-idx3-ubyte"; sourceTree = "<group>"; };
 		875DD20B1D6C6DAA00A5C250 /* train-labels-idx1-ubyte */ = {isa = PBXFileReference; lastKnownFileType = text; name = "train-labels-idx1-ubyte"; path = "MNIST/train-labels-idx1-ubyte"; sourceTree = "<group>"; };
 		875DD2741D6D81D000A5C250 /* mtldecay.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = mtldecay.metal; path = "C³/mtldecay.metal"; sourceTree = "<group>"; };
+		87745FBC1D76D87600B90B5E /* RMSprop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RMSprop.swift; path = "C³/RMSprop.swift"; sourceTree = "<group>"; };
+		87745FCD1D76E09200B90B5E /* SMORMS3.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SMORMS3.swift; path = "C³/SMORMS3.swift"; sourceTree = "<group>"; };
+		87745FD01D76E82300B90B5E /* Adam.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Adam.swift; path = "C³/Adam.swift"; sourceTree = "<group>"; };
 		87799A601D41BF200088B9E7 /* math.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = math.metal; path = NLA/math.metal; sourceTree = "<group>"; };
 		878985B71D050D42002C2A8D /* C3.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = C3.xcdatamodel; sourceTree = "<group>"; };
 		878985B81D050D42002C2A8D /* Cell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Cell.swift; path = "C³/Cell.swift"; sourceTree = "<group>"; };
@@ -305,6 +308,9 @@
 				87AE7C981D759F230061F229 /* ConjugateGradient.swift */,
 				87AE7C9B1D767A600061F229 /* GradientOptimizer.swift */,
 				87AE7C9E1D76D1D80061F229 /* Momentum.swift */,
+				87745FBC1D76D87600B90B5E /* RMSprop.swift */,
+				87745FCD1D76E09200B90B5E /* SMORMS3.swift */,
+				87745FD01D76E82300B90B5E /* Adam.swift */,
 			);
 			name = "C³";
 			sourceTree = "<group>";

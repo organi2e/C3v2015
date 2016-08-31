@@ -25,7 +25,7 @@ class LaObjetTests: XCTestCase {
 	}
 	
 	func testSGD() {
-		var x: [Float] = [14, 14]
+		var x: [Float] = [14, -14]
 		let fp = fopen("/tmp/SGD.raw", "wb")
 		for _ in 0...40 {
 			fwrite(x, sizeof(Float), 2, fp)
@@ -45,8 +45,8 @@ class LaObjetTests: XCTestCase {
 		DaiYuan
 		*/
 		let cg: GradientOptimizer = ConjugateGradient(dim: 2, type: .DY)
-		let fp = fopen("/tmp/CG.raw", "wb")
-		var x: [Float] = [14, 14]
+		let fp = fopen("/tmp/Conjugate.raw", "wb")
+		var x: [Float] = [14, -14]
 		for _ in 0...40 {
 			fwrite(x, sizeof(Float), 2, fp)
 			let g = J(x)
@@ -62,8 +62,8 @@ class LaObjetTests: XCTestCase {
 	
 	func testMomentum() {
 		let cg: GradientOptimizer = Momentum(dim: 2, α: 0.7)
-		let fp = fopen("/tmp/MM.raw", "wb")
-		var x: [Float] = [14, 14]
+		let fp = fopen("/tmp/Momentum.raw", "wb")
+		var x: [Float] = [14, -14]
 		for _ in 0...40 {
 			fwrite(x, sizeof(Float), 2, fp)
 			let g = J(x)
@@ -77,10 +77,44 @@ class LaObjetTests: XCTestCase {
 		fclose(fp)
 	}
 	
+	func testAdam() {
+		let rmsprop: GradientOptimizer = Adam(dim: 2)
+		let fp = fopen("/tmp/Adam.raw", "wb")
+		var x: [Float] = [14, -14]
+		for _ in 0...40 {
+			fwrite(x, sizeof(Float), 2, fp)
+			let g = J(x)
+			let G = LaMatrice(g, rows: 2, cols: 1)
+			let X = LaMatrice(x, rows: 2, cols: 1)
+			let h = rmsprop.optimize(Δx: G, x: X).array
+			x[0] -= h[0]
+			x[1] -= h[1]
+		}
+		print(x, f(x))
+		fclose(fp)
+	}
+	
+	func testRMSProp() {
+		let rmsprop: GradientOptimizer = RMSprop(dim: 2, γ: 0.5)
+		let fp = fopen("/tmp/RMSprop.raw", "wb")
+		var x: [Float] = [14, -14]
+		for _ in 0...40 {
+			fwrite(x, sizeof(Float), 2, fp)
+			let g = J(x)
+			let G = LaMatrice(g, rows: 2, cols: 1)
+			let X = LaMatrice(x, rows: 2, cols: 1)
+			let h = rmsprop.optimize(Δx: G, x: X).array
+			x[0] -= h[0]
+			x[1] -= h[1]
+		}
+		print(x, f(x))
+		fclose(fp)
+	}
+	
 	func testQuasiNewton() {
 		let qn: GradientOptimizer = QuasiNewton(dim: 2, type: .SR1)
-		let fp = fopen("/tmp/QN.raw", "wb")
-		var x: [Float] = [14, 14]
+		let fp = fopen("/tmp/QuasiNewtron.raw", "wb")
+		var x: [Float] = [14, -14]
 		for _ in 0...40 {
 			fwrite(x, sizeof(Float), 2, fp)
 			let g = J(x)
@@ -117,17 +151,13 @@ class LaObjetTests: XCTestCase {
 from matplotlib.pylab import *
 figure()
 clf()
-x = fromfile('/tmp/SGD.raw', 'float32')
-plot(x[0::2],x[1::2],'r-')
-x = fromfile('/tmp/CG.raw', 'float32')
-plot(x[0::2],x[1::2],'g-')
-x = fromfile('/tmp/QN.raw', 'float32')
-plot(x[0::2],x[1::2],'b-')
-x = fromfile('/tmp/MM.raw', 'float32')
-plot(x[0::2],x[1::2],'y-')
-legend(['SGD', 'CG', 'QN','MM'],loc=2)
-xlim([-20,20])
-ylim([-20,20])
+for k in ['SGD', 'Adam', 'Conjugate']:
+	x = fromfile('/tmp/%s.raw'%k, 'float32')
+	plot(x[0::2],x[1::2],label=k)
+
+legend()
+xlim([-15,15])
+ylim([-15,15])
 draw()
 show()
 */

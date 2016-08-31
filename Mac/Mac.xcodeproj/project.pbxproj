@@ -46,6 +46,9 @@
 		875DD2681D6C8D1200A5C250 /* C³.h in Headers */ = {isa = PBXBuildFile; fileRef = 87B1FD2C1D05467800981CF4 /* C³.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		875DD28D1D6D81E000A5C250 /* mtldecay.metal in Sources */ = {isa = PBXBuildFile; fileRef = 875DD28C1D6D81E000A5C250 /* mtldecay.metal */; };
 		876A4B561D066EDC00D32E1B /* EdgeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 876A4B551D066EDC00D32E1B /* EdgeTests.swift */; };
+		87745FCC1D76D88800B90B5E /* RMSprop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87745FCB1D76D88800B90B5E /* RMSprop.swift */; };
+		87745FCF1D76E0A000B90B5E /* SMORMS3.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87745FCE1D76E0A000B90B5E /* SMORMS3.swift */; };
+		87745FD21D76E83300B90B5E /* Adam.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87745FD11D76E83300B90B5E /* Adam.swift */; };
 		878C7A921D01AF05002CDFD1 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878C7A911D01AF05002CDFD1 /* AppDelegate.swift */; };
 		878C7A941D01AF05002CDFD1 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878C7A931D01AF05002CDFD1 /* ViewController.swift */; };
 		878C7A961D01AF05002CDFD1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 878C7A951D01AF05002CDFD1 /* Assets.xcassets */; };
@@ -201,6 +204,9 @@
 		875DD2121D6C6DC400A5C250 /* train-labels-idx1-ubyte */ = {isa = PBXFileReference; lastKnownFileType = text; name = "train-labels-idx1-ubyte"; path = "../../MNIST/train-labels-idx1-ubyte"; sourceTree = "<group>"; };
 		875DD28C1D6D81E000A5C250 /* mtldecay.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = mtldecay.metal; path = "../../C³/mtldecay.metal"; sourceTree = "<group>"; };
 		876A4B551D066EDC00D32E1B /* EdgeTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EdgeTests.swift; sourceTree = "<group>"; };
+		87745FCB1D76D88800B90B5E /* RMSprop.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = RMSprop.swift; path = "../../C³/RMSprop.swift"; sourceTree = "<group>"; };
+		87745FCE1D76E0A000B90B5E /* SMORMS3.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SMORMS3.swift; path = "../../C³/SMORMS3.swift"; sourceTree = "<group>"; };
+		87745FD11D76E83300B90B5E /* Adam.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Adam.swift; path = "../../C³/Adam.swift"; sourceTree = "<group>"; };
 		878C7A8F1D01AF05002CDFD1 /* sandbox.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = sandbox.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		878C7A911D01AF05002CDFD1 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		878C7A931D01AF05002CDFD1 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -429,6 +435,9 @@
 		87B1FD021D05461100981CF4 /* C³ */ = {
 			isa = PBXGroup;
 			children = (
+				87745FD11D76E83300B90B5E /* Adam.swift */,
+				87745FCE1D76E0A000B90B5E /* SMORMS3.swift */,
+				87745FCB1D76D88800B90B5E /* RMSprop.swift */,
 				87AE7C9F1D76D1EB0061F229 /* Momentum.swift */,
 				875DD28C1D6D81E000A5C250 /* mtldecay.metal */,
 				875DD1B11D66E4DF00A5C250 /* mtlart.metal */,
@@ -905,6 +914,7 @@
 				87F6AC071D5B8C5B005710FF /* mtlcell.metal in Sources */,
 				870EA92E1D54ADD3008C3380 /* mtlrand.metal in Sources */,
 				875DD1C11D6AD8A900A5C250 /* Misc.swift in Sources */,
+				87745FD21D76E83300B90B5E /* Adam.swift in Sources */,
 				875DD1AF1D66DFB700A5C250 /* Art.swift in Sources */,
 				87CFDE871D74321A00716188 /* Arcane.swift in Sources */,
 				87AE7CA01D76D1EB0061F229 /* Momentum.swift in Sources */,
@@ -915,6 +925,7 @@
 				875DD28D1D6D81E000A5C250 /* mtldecay.metal in Sources */,
 				87B1FD3B1D0546C700981CF4 /* C³.xcdatamodeld in Sources */,
 				87BCEBFE1D4D764100FC3099 /* Decay.swift in Sources */,
+				87745FCF1D76E0A000B90B5E /* SMORMS3.swift in Sources */,
 				87BCEBFC1D4D763D00FC3099 /* Bias.swift in Sources */,
 				875DD1AA1D66B4DF00A5C250 /* Cauchy.swift in Sources */,
 				873934B31D42FD7800888988 /* Blob.swift in Sources */,
@@ -926,6 +937,7 @@
 				87B1FD351D0546B500981CF4 /* Edge.swift in Sources */,
 				87B1FD361D0546B500981CF4 /* Error.swift in Sources */,
 				875DD1B21D66E4DF00A5C250 /* mtlart.metal in Sources */,
+				87745FCC1D76D88800B90B5E /* RMSprop.swift in Sources */,
 				87A42CC71D4F5F58008D9708 /* Feedback.swift in Sources */,
 				87BCEC001D4D765000FC3099 /* Gaussian.swift in Sources */,
 				87AE7C9D1D767B290061F229 /* GradientOptimizer.swift in Sources */,
