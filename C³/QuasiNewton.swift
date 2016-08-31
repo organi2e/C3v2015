@@ -29,9 +29,9 @@ internal class QuasiNewton {
 		case .DavidonFletcherPowell, .DFP:
 			update = self.dynamicType.DFP
 		case .BroydenFletcherGoldfarbShanno, .BFGS:
-			update = self.dynamicType.SR1
+			update = self.dynamicType.BFGS
 		case .Broyden:
-			update = self.dynamicType.Boyden
+			update = self.dynamicType.Broyden
 		case .SymmetricRank1, .SR1:
 			update = self.dynamicType.SR1
 		}
@@ -43,9 +43,18 @@ internal class QuasiNewton {
 		return LaMatrice(prevy, rows: prevy.count, cols: 1, deallocator: nil)
 	}
 	private var H: LaObjet {
-		return LaMatrice(h, rows: prevy.count, cols: prevx.count)
+		return LaMatrice(h, rows: prevy.count, cols: prevx.count, deallocator: nil)
 	}
 	private static func DFP(H: LaObjet, Δy: LaObjet, Δx: LaObjet) -> LaObjet {
+		let XX: LaObjet = outer_product(Δx, Δx.T)
+		let XY: LaObjet = inner_product(Δx.T, Δy)
+		let HYYH: LaObjet = outer_product(matrix_product(H, Δy), matrix_product(Δy.T, H))
+		let YHY: LaObjet = inner_product(Δy.T, matrix_product(H, Δy))
+		if let xy: Float = XY.array.first, yhy: Float = YHY.array.first where 0 < abs(xy) && 0 < abs(yhy) {
+			let α: Float = 1 / xy
+			let β: Float = 1 / yhy
+			return H + ( isinf(α) || isnan(α) ? 0 : α ) * XX - ( isinf(β) || isnan(β) ? 0 : β ) * HYYH
+		}
 		return H
 	}
 	private static func BFGS(H: LaObjet, Δy: LaObjet, Δx: LaObjet) -> LaObjet {
@@ -57,14 +66,21 @@ internal class QuasiNewton {
 		}
 		return H
 	}
-	private static func Boyden(H: LaObjet, Δy: LaObjet, Δx: LaObjet) -> LaObjet {
+	private static func Broyden(H: LaObjet, Δy: LaObjet, Δx: LaObjet) -> LaObjet {
+		let HY: LaObjet = matrix_product(H, Δy)
+		let Ρ: LaObjet = inner_product(Δx.T, HY)
+		if let ρ: Float = Ρ.array.first where 0 < abs(ρ) {
+			let r: Float = 1 / ρ
+			return H + ( isinf(r) || isnan(r) ? 0 : r ) * outer_product(Δx-HY, matrix_product(Δx.T, H))
+		}
 		return H
 	}
 	private static func SR1(H: LaObjet, Δy: LaObjet, Δx: LaObjet) -> LaObjet {
 		let δ: LaObjet = Δx - matrix_product(H, Δy)
 		let Ρ: LaObjet = inner_product(δ, Δy)
 		if let ρ: Float = Ρ.array.first where 0 < abs(ρ) {
-			return H + (1/ρ) * outer_product(δ, δ)
+			let r: Float = 1 / ρ
+			return H + ( isinf(r) || isnan(r) ? 0 : r ) * outer_product(δ, δ)
 		}
 		return H
 	}
@@ -79,48 +95,5 @@ extension QuasiNewton: GradientOptimizer {
 		let Δy: LaObjet = prevY - y
 		update(H, Δy, Δx).getBytes(h)
 		return matrix_product(H, y)
-	}
-}
-
-internal class BFGS {
-	private let I: LaObjet
-	private let b: [Float]
-	private let prevg: [Float]
-	private let prevx: [Float]
-	private let Θ: Float
-	private var B: LaObjet {
-		return LaMatrice(b, rows: I.rows, cols: I.cols, deallocator: nil)
-	}
-	private var prevX: LaObjet {
-		return LaMatrice(prevx, rows: prevx.count, cols: 1, deallocator: nil)
-	}
-	private var prevG: LaObjet {
-		return LaMatrice(prevg, rows: prevg.count, cols: 1, deallocator: nil)
-	}
-	init(dim: Int, threshold: Float = 1e-24) {
-		prevx = [Float](count: dim, repeatedValue: 0)
-		prevg = [Float](count: dim, repeatedValue: 0)
-		b = [Float](count: dim*dim, repeatedValue: 0)
-		I = LaIdentité(dim)
-		I.getBytes(b)
-		Θ = threshold
-	}
-	func update(g g: LaObjet, x: LaObjet, threshold: Float? = nil) -> LaObjet {
-		defer {
-			x.getBytes(prevx)
-			g.getBytes(prevg)
-		}
-		let s: LaObjet = x - prevX
-		let y: LaObjet = g - prevG
-		let ρ: LaObjet = inner_product(y, s)
-		if let ρ: Float = ρ.array.first where !isinf(ρ) && !isnan(ρ) && ( threshold ?? Θ ) < abs(ρ) {
-			let r: Float = 1 / ρ
-			if !isinf(r) && !isnan(r) {
-				let J: LaObjet = outer_product(s, y)
-				let G: LaObjet = I - r * J
-				(matrix_product(matrix_product(G, B), G.T) + r * outer_product(s, s)).getBytes(b)
-			}
-		}
-		return matrix_product(B, g)
 	}
 }

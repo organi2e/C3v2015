@@ -7,25 +7,78 @@
 //
 import Foundation
 internal class ConjugateGradient {
-	internal enum Condition {
+	internal enum Type {
 		case FletcherReeves
+		case FR
 		case PolakRibière
+		case PR
 		case HestenesStiefe
+		case HS
 		case DaiYuan
+		case DY
 	}
-	private let condition: Condition
 	private let p: [Float]
 	private let g: [Float]
+	private let β: (LaObjet,(LaObjet,LaObjet)) -> Float
 	private var P: LaObjet {
 		return LaMatrice(p, rows: p.count, cols: 1, deallocator: nil)
 	}
 	private var prevG: LaObjet {
 		return LaMatrice(g, rows: g.count, cols: 1, deallocator: nil)
 	}
-	init(dim: Int, condition c: Condition = .FletcherReeves){
+	init(dim: Int, type: Type){
 		p = [Float](count: dim, repeatedValue: 0)
 		g = [Float](count: dim, repeatedValue: 0)
-		condition = c
+		switch type {
+		case .FletcherReeves, .FR:
+			β = ConjugateGradient.FR
+		case .PolakRibière, .PR:
+			β = ConjugateGradient.PR
+		case .HestenesStiefe, .HS:
+			β = ConjugateGradient.HS
+		case .DaiYuan, .DY:
+			β = ConjugateGradient.DY
+		}
+	}
+	static private func FR(P: LaObjet, G: (curr: LaObjet, prev: LaObjet)) -> Float {
+		if let
+			m: Float = inner_product(G.curr, G.curr).array.first,
+			M: Float = inner_product(G.prev, G.prev).array.first
+		where 0 < abs(m) && 0 < abs(M) {
+			let β: Float = m / M
+			return isinf(β) || isnan(β) ? 0 : β
+		}
+		return 0
+	}
+	static private func PR(P: LaObjet, G: (curr: LaObjet, prev: LaObjet)) -> Float {
+		if let
+			m: Float = inner_product(G.curr, G.curr-G.prev).array.first,
+			M: Float = inner_product(G.prev, G.prev).array.first
+		where 0 < abs(m) && 0 < abs(M) {
+			let β: Float = m / M
+			return isinf(β) || isnan(β) ? 0 : max(0, β)
+		}
+		return 0
+	}
+	static private func HS(P: LaObjet, G: (curr: LaObjet, prev: LaObjet)) -> Float {
+		if let
+			m: Float = inner_product(G.curr, G.curr-G.prev).array.first,
+			M: Float = inner_product(P, G.prev-G.curr).array.first
+		where 0 < abs(m) && 0 < abs(M) {
+			let β: Float = m / M
+			return isinf(β) || isnan(β) ? 0 : max(0, β)
+		}
+		return 0
+	}
+	static private func DY(P: LaObjet, G: (curr: LaObjet, prev: LaObjet)) -> Float {
+		if let
+			m: Float = inner_product(G.curr, G.curr).array.first,
+			M: Float = inner_product(P, G.prev-G.curr).array.first
+		where 0 < abs(m) && 0 < abs(M) {
+			let β: Float = m / M
+			return isinf(β) || isnan(β) ? 0 : max(0, β)
+		}
+		return 0
 	}
 }
 extension ConjugateGradient: GradientOptimizer {
@@ -33,36 +86,7 @@ extension ConjugateGradient: GradientOptimizer {
 		defer {
 			G.getBytes(g)
 		}
-		let fraction: (m: LaObjet, M: LaObjet) = {(condition: Condition, P: LaObjet, prevG: LaObjet, G: LaObjet)->(LaObjet, LaObjet)in
-			switch condition {
-			case .FletcherReeves:
-				return(
-					inner_product(G, G),
-					inner_product(prevG, prevG)
-				)
-			case .PolakRibière:
-				return(
-					inner_product(G, G-prevG),
-					inner_product(prevG, prevG)
-				)
-			case .HestenesStiefe:
-				return(
-					inner_product(G, G-prevG),
-					inner_product(P, G-prevG)
-				)
-			case .DaiYuan:
-				return(
-					inner_product(G, G),
-					inner_product(P, prevG-G)
-				)
-			}
-		}(condition, P, prevG, G)
-		if let m: Float = fraction.0.array.first, M: Float = fraction.1.array.first {
-			let β: Float = max(0, m/M)
-			( G + ( (isinf(β)||isnan(β)) ? 0 : β ) * P ).getBytes(p)
-		} else {
-			assertionFailure()
-		}
+		( G + β(P, (G, prevG)) * P ).getBytes(p)
 		return P
 	}
 }
