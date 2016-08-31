@@ -99,7 +99,7 @@ internal func LaIdentité(count: Int) -> LaObjet {
 	return la_identity_matrix(la_count_t(count), TYPE, ATTR)
 }
 internal func LaDiagonale(vector: LaObjet) -> LaObjet {
-	return la_diagonal_matrix_from_vector(vector, la_index_t(vector.count))
+	return la_diagonal_matrix_from_vector(vector, 0)
 }
 internal func LaMatrice(scalar: Float) -> LaObjet {
 	return la_splat_from_float(scalar, ATTR)
