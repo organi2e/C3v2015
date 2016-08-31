@@ -53,8 +53,8 @@ class LaObjetTests: XCTestCase {
 			let G = LaMatrice(g, rows: 2, cols: 1)
 			let X = LaMatrice(x, rows: 2, cols: 1)
 			let h = cg.optimize(Δx: G, x: X).array
-			x[0] -= h[0]/32.0
-			x[1] -= h[1]/32.0
+			x[0] -= h[0]/64.0
+			x[1] -= h[1]/64.0
 		}
 		print(x, f(x))
 		fclose(fp)
@@ -82,6 +82,23 @@ class LaObjetTests: XCTestCase {
 		let fp = fopen("/tmp/Adam.raw", "wb")
 		var x: [Float] = [14, -14]
 		for _ in 0...40 {
+			fwrite(x, sizeof(Float), 2, fp)
+			let g = J(x)
+			let G = LaMatrice(g, rows: 2, cols: 1)
+			let X = LaMatrice(x, rows: 2, cols: 1)
+			let h = rmsprop.optimize(Δx: G, x: X).array
+			x[0] -= h[0]
+			x[1] -= h[1]
+		}
+		print(x, f(x))
+		fclose(fp)
+	}
+	
+	func testSMORMS3() {
+		let rmsprop: GradientOptimizer = SMORMS3(dim: 2)
+		let fp = fopen("/tmp/SMORMS3.raw", "wb")
+		var x: [Float] = [14, -14]
+		for _ in 0...120 {
 			fwrite(x, sizeof(Float), 2, fp)
 			let g = J(x)
 			let G = LaMatrice(g, rows: 2, cols: 1)
@@ -151,7 +168,7 @@ class LaObjetTests: XCTestCase {
 from matplotlib.pylab import *
 figure()
 clf()
-for k in ['SGD', 'Adam', 'Conjugate']:
+for k in ['SGD', 'Adam', 'Conjugate', 'SMORMS3']:
 	x = fromfile('/tmp/%s.raw'%k, 'float32')
 	plot(x[0::2],x[1::2],label=k)
 
