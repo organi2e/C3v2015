@@ -25,7 +25,7 @@ internal class SMORMS3 {
 	private var X: LaObjet {
 		return LaMatrice(x, rows: x.count, cols: 1)
 	}
-	init(dim: Int, α a: Float = 0.2, ε e: Float = 1e-16) {
+	init(dim: Int, α a: Float = 1-3, ε e: Float = 1e-24) {
 		α = a
 		ε = e
 		mem = [Float](count: dim, repeatedValue: 1)
@@ -41,7 +41,7 @@ extension SMORMS3: GradientOptimizer {
 		((1-r) * G2 + r * grad * grad).getBytes(g2)
 		(1+MEM*(1-G*G/(G2+ε))).getBytes(mem)
 		for k in 0..<x.count {
-			x[k] = min(α, g[k]*g[k]/(g2[k]+ε))/(sqrt(g2[k])+ε)
+			x[k] = (g[k]*g[k]/(g2[k]+ε))/(sqrt(g2[k])+ε)
 		}
 		return grad * X
 	}

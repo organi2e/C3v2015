@@ -7,57 +7,49 @@
 //
 import Accelerate
 internal class Adam {
-	let α: Float
-	let β1: Float
-	let β2: Float
-	let ε: Float
-	let m: [Float]
-	let v: [Float]
-	let eμ: [Float]
-	let eσ: [Float]
-	let w: [Float]
-	var k: Int
-	var M: LaObjet {
-		return LaMatrice(m, rows: m.count, cols: 1)
+	private let α: Float
+	private let β1: Float
+	private let β2: Float
+	private let ε: Float
+	private let Μd: [Float]
+	private let Σd: [Float]
+	private let iσd: [Float]
+	private var k: Int
+	private var Μ: LaObjet {
+		return LaMatrice(Μd, rows: Μd.count, cols: 1, deallocator: nil)
 	}
-	var μ: LaObjet {
-		return LaMatrice(eμ, rows: eμ.count, cols: 1)
+	private var Σ: LaObjet {
+		return LaMatrice(Σd, rows: Σd.count, cols: 1, deallocator: nil)
 	}
-	var V: LaObjet {
-		return LaMatrice(v, rows: v.count, cols: 1)
+	private var μ: LaObjet {
+		return (1/(1 - pow(β1, Float(k)))) * Μ
 	}
-	var σ: LaObjet {
-		return LaMatrice(eσ, rows: eσ.count, cols: 1)
+	private var iσ: LaObjet {
+		(1/(1 - pow(β2, Float(k))) * Σ + ε).getBytes(iσd)
+		vvrsqrtf(UnsafeMutablePointer<Float>(iσd), iσd, [Int32(iσd.count)])
+		return LaMatrice(iσd, rows: iσd.count, cols: 1, deallocator: nil)
 	}
-	var W: LaObjet {
-		return LaMatrice(w, rows: w.count, cols: 1)
-	}
-	init(dim: Int) {
+	init(dim: Int, α a: Float = 1e-3, β1 b1: Float = 0.9, β2 b2: Float = 0.999, ε e: Float = 1e-24) {
 		k = 0
-		α = 1e-3
-		β1 = 0.9
-		β2 = 0.999
-		ε = 1e-8
-		w = [Float](count: dim, repeatedValue: 0)
-		m = [Float](count: dim, repeatedValue: 0)
-		v = [Float](count: dim, repeatedValue: 0)
-		eμ = [Float](count: dim, repeatedValue: 0)
-		eσ = [Float](count: dim, repeatedValue: 0)
+		α = a
+		β1 = b1
+		β2 = b2
+		ε = e
+		iσd = [Float](count: dim, repeatedValue: 0)
+		Μd = [Float](count: dim, repeatedValue: 0)
+		Σd = [Float](count: dim, repeatedValue: 0)
 	}
 	func reset() {
 		k = 0
-		vDSP_vclr(UnsafeMutablePointer<Float>(m), 1, vDSP_Length(m.count))
-		vDSP_vclr(UnsafeMutablePointer<Float>(v), 1, vDSP_Length(v.count))
+		vDSP_vclr(UnsafeMutablePointer<Float>(Μd), 1, vDSP_Length(Μd.count))
+		vDSP_vclr(UnsafeMutablePointer<Float>(Σd), 1, vDSP_Length(Σd.count))
 	}
 }
 extension Adam: GradientOptimizer {
 	func optimize(Δx g: LaObjet, x: LaObjet) -> LaObjet {
 		k = k + 1
-		(β1*M+(1-β1)*g).getBytes(m)
-		(β2*V+(1-β2)*(g*g)).getBytes(v)
-		((1/(1-pow(β1, Float(k)))*M)).getBytes(eμ)
-		((1/(1-pow(β2, Float(k)))*V)).getBytes(eσ)
-		vvrsqrtf(UnsafeMutablePointer<Float>(eσ), eσ, [Int32(eσ.count)])
-		return μ * σ
+		(β1*Μ+(1-β1)*g).getBytes(Μd)
+		(β2*Σ+(1-β2)*(g*g)).getBytes(Σd)
+		return μ * iσ
 	}
 }
