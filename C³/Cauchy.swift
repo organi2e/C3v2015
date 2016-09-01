@@ -6,7 +6,6 @@
 //
 //
 import Accelerate
-import Metal
 import CoreData
 import simd
 internal class Cauchy: Art {
@@ -53,13 +52,14 @@ internal class CauchyDistribution: Distribution {
 		vvtanpif(UnsafeMutablePointer<Float>(χ), χ, [Int32(count)])
 		vDSP_vma(χ, 1, σ, 1, μ, 1, UnsafeMutablePointer<Float>(χ), 1, vDSP_Length(count))
 	}
-	static func synthesize(χ χ: [Float], μ: [Float], σ: [Float], refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) {
+	static func synthesize(χ χ: [Float], μ: [Float], λ: [Float], refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) {
 		let mix: (χ: LaObjet, μ: LaObjet, σ: LaObjet) = refer.reduce((LaSplat(0), LaSplat(0), LaSplat(0))) {
 			($0.0.0+$0.1.χ, $0.0.0+$0.1.μ, $0.0.0+$0.1.σ)
 		}
 		mix.χ.getBytes(χ)
 		mix.μ.getBytes(μ)
-		mix.σ.getBytes(σ)
+		mix.σ.getBytes(λ)
+		vvrecf(UnsafeMutablePointer<Float>(λ), λ, [Int32(λ.count)])
 	}
 	static func est(χ: [Float], η: Float, K: Int, θ: Float = 1e-9) -> (μ: Float, σ: Float) {
 		
