@@ -8,14 +8,15 @@
 import Metal
 import CoreData
 
-internal class Edge: Cauchy {
+internal class Edge: Arcane {
 	struct grad {
 		let μ: MTLBuffer
 		let σ: MTLBuffer
 	}
 	var grads: RingBuffer<grad> = RingBuffer<grad>(array: [])
+	lazy var optimizerμ: GradientOptimizer = (self.managedObjectContext as? Context)?.optimizerFactory(self.output.width) ?? SGD()
+	lazy var optimizerσ: GradientOptimizer = (self.managedObjectContext as? Context)?.optimizerFactory(self.output.width) ?? SGD()
 }
-
 extension Edge {
 	@NSManaged private var input: Cell
 	@NSManaged private var output: Cell
@@ -32,9 +33,15 @@ extension Edge: Chainable {
 	func correct(ignore: Set<Cell>) -> LaObjet {
 		return LaSplat(0)
 	}
+	func collect_clear(distribution: Distribution.Type) {
+		shuffle(distribution)
+		input.collect_clear()
+	}
+	func correct_clear() {
+		output.correct_clear()
+	}
 }
-
-
+/*
 extension Edge {
 	internal override func setup(context: Context) {
 		super.setup(context)
@@ -191,6 +198,7 @@ extension Edge {
 		}
 	}
 }
+*/
 extension Context {
 	internal func newEdge(let output output: Cell, let input: Cell) throws -> Edge {
 		guard let edge: Edge = new() else {
@@ -198,8 +206,7 @@ extension Context {
 		}
 		edge.output = output
 		edge.input = input
-		edge.resize(count: output.width*input.width)
-		edge.adjust(μ: 0, σ: 1/Float(input.width))
+		edge.resize(rows: output.width, cols: input.width)
 		return edge
 	}
 }

@@ -13,6 +13,8 @@ import CoreData
 internal protocol Chainable {
 	func collect(ignore: Set<Cell>) -> (LaObjet, LaObjet, LaObjet)
 	func correct(ignore: Set<Cell>) -> LaObjet
+	func collect_clear(distribution: Distribution.Type)
+	func correct_clear()
 }
 
 public class Cell: NSManagedObject {
@@ -232,23 +234,22 @@ extension Cell {
 		
 		}
 	}
-	
-	public func iClear() {
+	public func collect_clear() {
 		if ready.contains(.ϰ) {
 			ready.remove(.ϰ)
 			input.forEach {
-				$0.iClear()
+				$0.collect_clear(distribution)
 			}
 			iRefresh()
 			bias.shuffle(distribution)
 		}
 	}
 	
-	public func oClear() {
+	public func correct_clear() {
 		if ready.contains(.δ) {
 			ready.remove(.δ)
 			output.forEach {
-				$0.oClear()
+				$0.correct_clear()
 			}
 			oRefresh()
 		}
@@ -256,68 +257,51 @@ extension Cell {
 	}
 	public func collect(ignore: Set<Cell> = []) -> LaObjet {
 		if ignore.contains(self) {
-			return LaMatrice(state.old.ϰ, rows: width, cols: 1)
+			return LaMatrice(state.old.ϰ, rows: width, cols: 1, deallocator: nil)
 		} else {
 			if !ready.contains(.ϰ) {
 				ready.insert(.ϰ)
-				let sum: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)] = [
-					
-				] + [bias.collect(ignore)]
+				let sum: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)] = input.map { $0.collect(ignore) } + [bias.collect(ignore)]
 				let mix: (χ: LaObjet, μ: LaObjet, σ: LaObjet) = distribution.mix(sum)
 				mix.χ.getBytes(level.new.χ)
 				mix.μ.getBytes(level.new.μ)
 				mix.σ.getBytes(level.new.σ)
 				self.dynamicType.activate(state.new.ϰ, level: level.new.χ)
 			}
-			return LaMatrice(state.new.ϰ, rows: width, cols: 1)
+			return LaMatrice(state.new.ϰ, rows: width, cols: 1, deallocator: nil)
 		}
 	}
-	public func collect_mtl(let ignore: Set<Cell> = []) -> MTLBuffer {
+	public func correct(ignore: Set<Cell> = []) -> (LaObjet, LaObjet, LaObjet) {
 		if ignore.contains(self) {
-			return Υ.old.ϰ
-		} else if let context: Context = managedObjectContext as? Context {
-			if !ready.contains(.ϰ) {
-				ready.insert(.ϰ)
-				input.forEach {
-					$0.collect(Φ: (Φ.new.χ, Φ.new.μ, Φ.new.σ), ignore: ignore.union([self]))
-				}
-				self.dynamicType.activate(context: context,
-				                          Υ: Υ.new.ϰ,
-				                          Φ: Φ.new.χ,
-				                          width: width)
-			}
+			return (
+				LaMatrice(delta.old.χ, rows: width, cols: 1),
+				LaMatrice(delta.old.μ, rows: width, cols: 1),
+				LaMatrice(delta.old.σ, rows: width, cols: 1)
+			)
 		} else {
-			assertionFailure(Context.Error.InvalidContext.rawValue)
+			if ready.contains(.ψ) {
+				if !ready.contains(.δ) {
+					
+				} else {
+					
+				}
+			}
+			return (
+				LaMatrice(delta.new.χ, rows: width, cols: 1),
+				LaMatrice(delta.new.μ, rows: width, cols: 1),
+				LaMatrice(delta.new.σ, rows: width, cols: 1)
+			)
 		}
+	}
+	
+	
+	public func collect_mtl(let ignore: Set<Cell> = []) -> MTLBuffer {
+		
 		return Υ.new.ϰ
 	}
 	
-	public func correct(let η η: Float, let ignore: Set<Cell>=[]) -> (MTLBuffer, MTLBuffer, MTLBuffer) {
-		if ignore.contains(self) {
-			return(Δ.old.χ, Δ.old.μ, Δ.old.σ)
-		} else if let context: Context = managedObjectContext as? Context {
-			if !ready.contains(.δ) {
-				ready.insert(.δ)
-				if ready.contains(.ψ) {
-					self.dynamicType.difference(context: context,
-					                            δ: Υ.new.δ,
-					                            ψ: Υ.new.ψ,
-					                            ϰ: Υ.new.ϰ,
-					                            width: width)
-				} else {
-					output.forEach {
-						$0.correct(η: η, δ: Υ.new.δ, ϰ: Υ.new.ϰ, ignore: ignore.union([self]))
-					}
-				}
-				self.dynamicType.derivate(context: context,
-				                          Δ: (Δ.new.χ, Δ.new.μ, Δ.new.σ),
-				                          Φ: (Φ.new.χ, Φ.new.μ, Φ.new.σ),
-				                          δ: Υ.new.δ,
-				                          width: width)
-			}
-		} else {
-			assertionFailure(Context.Error.InvalidContext.rawValue)
-		}
+	public func correct_mtl(let η η: Float, let ignore: Set<Cell>=[]) -> (MTLBuffer, MTLBuffer, MTLBuffer) {
+		
 		return(Δ.new.χ, Δ.new.μ, Δ.new.σ)
 	}
 }

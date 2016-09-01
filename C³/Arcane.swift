@@ -26,6 +26,10 @@ internal extension Arcane {
 	@NSManaged private var cols: Int
 }
 internal extension Arcane {
+	override func awakeFromInsert() {
+		super.awakeFromInsert()
+		resize(rows: 1, cols: 1)
+	}
 	internal override func awakeFromFetch() {
 		super.awakeFromFetch()
 		setup()
@@ -76,6 +80,7 @@ internal extension Arcane {
 		vvlog2f(&cache.σ, cache.σ, [Int32(cache.σ.count)])
 	}
 	internal func resize(rows r: Int, cols c: Int) {
+		
 		rows = r
 		cols = c
 

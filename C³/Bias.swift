@@ -24,6 +24,12 @@ extension Bias: Chainable {
 	internal func correct(ignore: Set<Cell>) -> LaObjet {
 		return LaSplat(0)
 	}
+	internal func collect_clear(distribution: Distribution.Type) {
+		shuffle(distribution)
+	}
+	internal func correct_clear() {
+		
+	}
 }
 /*
 internal class Bias: Cauchy {
