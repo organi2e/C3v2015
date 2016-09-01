@@ -67,7 +67,7 @@ extension Cell {
 	@NSManaged public private(set) var width: Int
 	@NSManaged public private(set) var attribute: [String: AnyObject]
 	@NSManaged public var priority: Int
-	@NSManaged private var distributionType: String
+	@NSManaged public var distributionType: String
 	@NSManaged private var input: Set<Edge>
 	@NSManaged private var output: Set<Edge>
 	@NSManaged private var bias: Bias
@@ -237,6 +237,8 @@ extension Cell {
 	public func collect_clear() {
 		if ready.contains(.ϰ) {
 			ready.remove(.ϰ)
+			state.progress()
+			level.progress()
 			input.forEach {
 				$0.collect_clear(distribution)
 			}
@@ -248,6 +250,7 @@ extension Cell {
 	public func correct_clear() {
 		if ready.contains(.δ) {
 			ready.remove(.δ)
+			delta.progress()
 			output.forEach {
 				$0.correct_clear()
 			}
@@ -261,12 +264,9 @@ extension Cell {
 		} else {
 			if !ready.contains(.ϰ) {
 				ready.insert(.ϰ)
-				let sum: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)] = input.map { $0.collect(ignore) } + [bias.collect(ignore)]
-				let mix: (χ: LaObjet, μ: LaObjet, σ: LaObjet) = distribution.mix(sum)
-				mix.χ.getBytes(level.new.χ)
-				mix.μ.getBytes(level.new.μ)
-				mix.σ.getBytes(level.new.σ)
-				self.dynamicType.activate(state.new.ϰ, level: level.new.χ)
+				let sum: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)] = input.map { $0.collect(ignore) } + [ bias.collect(ignore) ]
+				distribution.synthesize(χ: level.new.χ, μ: level.new.μ, σ: level.new.σ, refer: sum)
+				self.dynamicType.step(state.new.ϰ, level: level.new.χ)
 			}
 			return LaMatrice(state.new.ϰ, rows: width, cols: 1, deallocator: nil)
 		}
@@ -279,12 +279,19 @@ extension Cell {
 				LaMatrice(delta.old.σ, rows: width, cols: 1)
 			)
 		} else {
-			if ready.contains(.ψ) {
-				if !ready.contains(.δ) {
-					
+			if !ready.contains(.δ) {
+				ready.insert(.δ)
+				if ready.contains(.ψ) {
+					let ψ: LaObjet = LaMatrice(state.new.ψ, rows: width, cols: 1, deallocator: nil)
+					let ϰ: LaObjet = LaMatrice(state.new.ϰ, rows: width, cols: 1, deallocator: nil)
+					let δ: LaObjet = ψ - ϰ
+					δ.getBytes(state.new.δ)
 				} else {
-					
+					let δ: LaObjet = output.map { $0.correct(ignore) } .reduce(LaSplat(0)) { $0.0 + $0.1 }
+					δ.getBytes(state.new.δ)
 				}
+				self.dynamicType.sign(delta.new.χ, error: state.new.δ)
+				
 			}
 			return (
 				LaMatrice(delta.new.χ, rows: width, cols: 1),
@@ -403,7 +410,7 @@ extension Cell {
 	internal class var differenceKernel: String { return "cellDifference" }
 	internal class var activateKernel: String { return "cellActivate" }
 	internal class var derivateKernel: String { return "cellDerivate" }
-	internal static func activate(state: [Float], level: [Float]) {
+	internal static func step(state: [Float], level: [Float]) {
 		assert(state.count==level.count)
 		let length: vDSP_Length = vDSP_Length(min(state.count, level.count))
 		vDSP_vneg(level, 1, UnsafeMutablePointer<Float>(state), 1, length)
@@ -411,7 +418,7 @@ extension Cell {
 		vDSP_vneg(state, 1, UnsafeMutablePointer<Float>(state), 1, length)
 		vDSP_vsadd(state, 1, [Float(0.5)], UnsafeMutablePointer<Float>(state), 1, length)
 	}
-	internal static func derivate(delta: [Float], error: [Float]) {
+	internal static func sign(delta: [Float], error: [Float]) {
 		assert(delta.count==error.count)
 		let length: vDSP_Length = vDSP_Length(min(delta.count, error.count))
 		let cache: [Float] = [Float](count: Int(length), repeatedValue: 0)
@@ -477,7 +484,7 @@ extension Context {
 	public func searchCell( let width width: Int? = nil, let label: String? = nil ) -> [Cell] {
 		var attribute: [String: AnyObject] = [:]
 		if let width: Int = width {
-			attribute [ "width" ] = ((width-1)/4+1)*4
+			attribute [ "width" ] = width
 		}
 		if let label: String = label {
 			attribute [ "label" ] = label

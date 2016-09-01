@@ -17,7 +17,7 @@ internal protocol Distribution {
 //	static func cdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
 //	static func pdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
 	static func rng(χ: [Float], μ: [Float], σ: [Float], ψ: [UInt32])
-	static func mix(array: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) -> (LaObjet, LaObjet, LaObjet)
+	static func synthesize(χ χ: [Float], μ: [Float], σ: [Float], refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)])
 }
 internal class FalseDistribution: Distribution {
 	static func cdf(χ: Float, μ: Float, σ: Float) -> Float { return 0 }
@@ -27,12 +27,10 @@ internal class FalseDistribution: Distribution {
 	static func rng(χ: [Float], μ: [Float], σ: [Float], ψ: [UInt32]) {
 		vDSP_vfill([Float.quietNaN], UnsafeMutablePointer<Float>(χ), 1, vDSP_Length(χ.count))
 	}
-	static func mix(array: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) -> (LaObjet, LaObjet, LaObjet) {
-		return (
-			LaSplat(Float.quietNaN),
-			LaSplat(Float.quietNaN),
-			LaSplat(Float.quietNaN)
-		)
+	static func synthesize(χ χ: [Float], μ: [Float], σ: [Float], refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) {
+		vDSP_vfill([Float.quietNaN], UnsafeMutablePointer<Float>(χ), 1, vDSP_Length(χ.count))
+		vDSP_vfill([Float.quietNaN], UnsafeMutablePointer<Float>(μ), 1, vDSP_Length(μ.count))
+		vDSP_vfill([Float.quietNaN], UnsafeMutablePointer<Float>(σ), 1, vDSP_Length(σ.count))
 	}
 }
 internal protocol RandomNumberGeneratable {

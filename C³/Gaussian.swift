@@ -19,6 +19,9 @@ internal class GaussianDistribution: Distribution {
 			M_SQRT1_2*M_2_SQRTPI*exp(-0.5*level*level)/Double(σ)
 		)
 	}
+	static func pdf(buffer: [Float], μ: Float, σ: Float) {
+	
+	}
 	/*
 	static func cdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
 	static func pdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
@@ -57,9 +60,13 @@ internal class GaussianDistribution: Distribution {
 		vDSP_meanv(array, 1, &σ, vDSP_Length(array.count))
 		return (μ, sqrt(σ))
 	}
-	static func mix(array: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) -> (LaObjet, LaObjet, LaObjet) {
-		return array.reduce((LaSplat(0), LaSplat(0), LaSplat(0))) {(x, y)->(LaObjet, LaObjet, LaObjet)in
+	static func synthesize(χ χ: [Float], μ: [Float], σ: [Float], refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) {
+		let mix: (LaObjet, LaObjet, LaObjet) = refer.reduce((LaSplat(0), LaSplat(0), LaSplat(0))) {(x, y)->(LaObjet, LaObjet, LaObjet)in
 			( x.0 + y.χ, x.1 + y.μ, x.2 + y.σ * y.σ )
 		}
+		mix.0.getBytes(χ)
+		mix.1.getBytes(μ)
+		mix.2.getBytes(σ)
+		vvsqrtf(UnsafeMutablePointer<Float>(σ), σ, [Int32(σ.count)])
 	}
 }

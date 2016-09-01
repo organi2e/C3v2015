@@ -18,10 +18,10 @@ extension Bias {
 	@NSManaged private var output: Cell
 }
 extension Bias: Chainable {
-	internal func collect(ignore: Set<Cell>) -> (LaObjet, LaObjet, LaObjet) {
+	internal func collect(ignore: Set<Cell>=[]) -> (LaObjet, LaObjet, LaObjet) {
 		return(χ, μ, σ)
 	}
-	internal func correct(ignore: Set<Cell>) -> LaObjet {
+	internal func correct(ignore: Set<Cell>=[]) -> LaObjet {
 		return LaSplat(0)
 	}
 	internal func collect_clear(distribution: Distribution.Type) {

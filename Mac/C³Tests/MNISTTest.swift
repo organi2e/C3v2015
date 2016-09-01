@@ -9,7 +9,7 @@
 import XCTest
 import MNIST
 @testable import C3
-
+/*
 class MNISTTests: XCTestCase {
 	static let file: String = "test.sqlite"
 	func test0Insert() {
@@ -176,3 +176,4 @@ class MNISTTests: XCTestCase {
 	}
 */
 }
+*/

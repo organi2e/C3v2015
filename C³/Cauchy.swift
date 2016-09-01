@@ -53,10 +53,13 @@ internal class CauchyDistribution: Distribution {
 		vvtanpif(UnsafeMutablePointer<Float>(χ), χ, [Int32(count)])
 		vDSP_vma(χ, 1, σ, 1, μ, 1, UnsafeMutablePointer<Float>(χ), 1, vDSP_Length(count))
 	}
-	static func mix(array: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) -> (LaObjet, LaObjet, LaObjet) {
-		return array.reduce((LaSplat(0), LaSplat(0), LaSplat(0))) {(x, y)->(LaObjet, LaObjet, LaObjet)in
-			( x.0 + y.χ, x.1 + y.μ, x.2 + y.σ )
+	static func synthesize(χ χ: [Float], μ: [Float], σ: [Float], refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) {
+		let mix: (χ: LaObjet, μ: LaObjet, σ: LaObjet) = refer.reduce((LaSplat(0), LaSplat(0), LaSplat(0))) {
+			($0.0.0+$0.1.χ, $0.0.0+$0.1.μ, $0.0.0+$0.1.σ)
 		}
+		mix.χ.getBytes(χ)
+		mix.μ.getBytes(μ)
+		mix.σ.getBytes(σ)
 	}
 	static func est(χ: [Float], η: Float, K: Int, θ: Float = 1e-9) -> (μ: Float, σ: Float) {
 		

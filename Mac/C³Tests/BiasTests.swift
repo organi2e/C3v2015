@@ -18,7 +18,74 @@ func sigmaI(y: Float) -> Float {
 func sigmaG(y: Float) -> Float {
 	return 1 - exp(-y)
 }
-
+class BiasTests: XCTestCase {
+	let context: Context = try!Context()
+	
+	let rows: Int = 8
+	let cols: Int = 4
+	
+	func testGaussianCollect() {
+		
+		let χ: [Float] = [Float](count: rows*cols, repeatedValue: 0)
+		let μ: [Float] = [Float](count: rows*cols, repeatedValue: 0)
+		let σ: [Float] = [Float](count: rows*cols, repeatedValue: 0)
+		
+		let distribution = GaussianDistribution.self
+		let bias: Bias! = context.new()
+		
+		bias.resize(rows: rows, cols: cols)
+		bias.adjust(μ: 3, σ: 3)
+		bias.shuffle(distribution)
+		
+		distribution.synthesize(χ: χ, μ: μ, σ: σ, array: [bias.collect()])
+		
+		XCTAssert(χ.elementsEqual(bias.cache.χ))
+		XCTAssert(μ.elementsEqual(bias.cache.μ))
+		XCTAssert(σ.elementsEqual(bias.cache.σ))
+	}
+	func testCauchyCollect() {
+		
+		let χ: [Float] = [Float](count: rows*cols, repeatedValue: 0)
+		let μ: [Float] = [Float](count: rows*cols, repeatedValue: 0)
+		let σ: [Float] = [Float](count: rows*cols, repeatedValue: 0)
+		
+		let distribution = CauchyDistribution.self
+		let bias: Bias! = context.new()
+		
+		bias.resize(rows: rows, cols: cols)
+		bias.adjust(μ: 3, σ: 3)
+		bias.shuffle(distribution)
+		
+		distribution.synthesize(χ: χ, μ: μ, σ: σ, array: [bias.collect()])
+		
+		XCTAssert(χ.elementsEqual(bias.cache.χ))
+		XCTAssert(μ.elementsEqual(bias.cache.μ))
+		XCTAssert(σ.elementsEqual(bias.cache.σ))
+	}
+	func testGaussianCorrect() {
+		
+	}
+	func testCauchyCorrect(){
+		
+		let χ: [Float] = [Float](count: rows*cols, repeatedValue: 0)
+		let μ: [Float] = [Float](count: rows*cols, repeatedValue: 0)
+		let σ: [Float] = [Float](count: rows*cols, repeatedValue: 0)
+		
+		let distribution = CauchyDistribution.self
+		let bias: Bias! = context.new()
+		
+		bias.resize(rows: rows, cols: cols)
+		bias.adjust(μ: 3, σ: 3)
+		bias.shuffle(distribution)
+		
+		distribution.synthesize(χ: χ, μ: μ, σ: σ, array: [bias.collect()])
+		
+		XCTAssert(χ.elementsEqual(bias.cache.χ))
+		XCTAssert(μ.elementsEqual(bias.cache.μ))
+		XCTAssert(σ.elementsEqual(bias.cache.σ))
+	}
+}
+/*
 class BiasTests: XCTestCase {
 	
 	let context: Context = try!Context()
@@ -239,3 +306,4 @@ class BiasTests: XCTestCase {
 	}
 */
 }
+*/

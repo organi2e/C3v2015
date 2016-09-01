@@ -21,12 +21,13 @@ class ArcaneTest: XCTestCase {
 		let Δσ: LaObjet = LaMatrice(1.0, rows: rows, cols: cols)
 		
 		a.resize(rows: rows, cols: cols)
+		a.adjust(μ: 2, σ: 4)
 		
 		print(a.μ.array)
 		print(a.σ.array)
 		
 		(0..<4096).forEach {(_)in
-			a.update(1/256.0, Δμ: Δμ, Δσ: Δσ)
+			a.update(1/1024.0, Δμ: Δμ, Δσ: Δσ)
 		}
 
 		print(a.μ.array)

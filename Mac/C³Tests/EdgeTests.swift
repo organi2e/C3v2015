@@ -18,6 +18,16 @@ func σGrad(value: Float) -> Float {
 
 class EdgeTests: XCTestCase {
 	let context: Context = try!Context()
+	func testCollect() {
+	
+	}
+	func testCorrect() {
+	
+	}
+}
+/*
+class EdgeTests: XCTestCase {
+	let context: Context = try!Context()
 	let NOHINT: la_hint_t = la_hint_t(LA_NO_HINT)
 	let ATTR: la_attribute_t = la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING)
 	func uniform(let count: Int) -> [Float] {
@@ -361,4 +371,4 @@ class EdgeTests: XCTestCase {
 		
 	}
 }
-
+*/
