@@ -7,6 +7,7 @@
 //
 import Foundation
 public class QuasiNewton {
+	private static let η: Float = 1
 	public enum Type {
 		case DavidonFletcherPowell
 		case BroydenFletcherGoldfarbShanno
@@ -19,24 +20,31 @@ public class QuasiNewton {
 		BR: Type.Broyden,
 		SR1: Type.SymmetricRank1
 	)
+	private let η: Float
 	private let h: [Float]
 	private let prevy: [Float]
 	private let prevx: [Float]
-	private let update: (LaObjet,LaObjet,LaObjet)->LaObjet
-	init(dim: Int, type: Type) {
+	private let estimate: (LaObjet, LaObjet, LaObjet) -> LaObjet
+	init(dim: Int, type: Type, η n: Float = η) {
 		prevx = [Float](count: dim, repeatedValue: 0)
 		prevy = [Float](count: dim, repeatedValue: 0)
 		h = [Float](count: dim*dim, repeatedValue: 0)
 		LaIdentité(dim).getBytes(h)
+		η = n
 		switch type {
 		case .DavidonFletcherPowell:
-			update = self.dynamicType.DFP
+			estimate = self.dynamicType.DFP
 		case .BroydenFletcherGoldfarbShanno:
-			update = self.dynamicType.BFGS
+			estimate = self.dynamicType.BFGS
 		case .Broyden:
-			update = self.dynamicType.Broyden
+			estimate = self.dynamicType.Broyden
 		case .SymmetricRank1:
-			update = self.dynamicType.SR1
+			estimate = self.dynamicType.SR1
+		}
+	}
+	static func factory(type: Type, η: Float = η) -> Int -> GradientOptimizer {
+		return {
+			QuasiNewton(dim: $0, type: type, η: η)
 		}
 	}
 	private var prevX: LaObjet {
@@ -89,14 +97,17 @@ public class QuasiNewton {
 	}
 }
 extension QuasiNewton: GradientOptimizer {
-	func optimize(Δx y: LaObjet, x: LaObjet) -> LaObjet {
+	public func optimize(Δx y: LaObjet, x: LaObjet) -> LaObjet {
 		defer {
 			x.getBytes(prevx)
 			y.getBytes(prevy)
 		}
 		let Δx: LaObjet = prevX - x
 		let Δy: LaObjet = prevY - y
-		update(H, Δy, Δx).getBytes(h)
+		estimate(H, Δy, Δx).getBytes(h)
 		return matrix_product(H, y)
+	}
+	public func reset() {
+		LaIdentité(min(prevx.count, prevy.count)).getBytes(h)
 	}
 }

@@ -41,6 +41,19 @@ internal extension LaObjet {
 		assert(result==la_status_t(LA_SUCCESS))
 		return buffer
 	}
+	var issplat: Bool {
+		return la_matrix_cols(self) == 0 && la_matrix_rows(self) == 0
+	}
+	subscript(index: Int) -> Float {
+		var result: Float = 0
+		la_matrix_to_float_buffer(&result, 1, la_matrix_from_splat(la_splat_from_vector_element(self, la_index_t(index)), 1, 1))
+		return result
+	}
+	subscript(row: Int, col: Int) -> Float {
+		var result: Float = 0
+		la_matrix_to_float_buffer(&result, 1, la_matrix_from_splat(la_splat_from_matrix_element(self, la_index_t(row), la_index_t(cols)), 1, 1))
+		return result;
+	}
 	func getBytes(buffer: UnsafePointer<Void>) -> Bool {
 		return la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), la_count_t(la_matrix_cols(self)), self) == la_status_t(LA_SUCCESS)
 	}
@@ -102,7 +115,7 @@ internal func LaIdentité(count: Int) -> LaObjet {
 internal func LaDiagonale(vector: LaObjet) -> LaObjet {
 	return la_diagonal_matrix_from_vector(vector, 0)
 }
-internal func LaMatrice(scalar: Float) -> LaObjet {
+internal func LaSplat(scalar: Float) -> LaObjet {
 	return la_splat_from_float(scalar, ATTR)
 }
 internal func LaMatrice(scalar: Float, rows: Int, cols: Int) -> LaObjet {
@@ -111,8 +124,11 @@ internal func LaMatrice(scalar: Float, rows: Int, cols: Int) -> LaObjet {
 internal func LaMatrice(buffer: UnsafePointer<Void>, rows: Int, cols: Int) -> LaObjet {
 	return la_matrix_from_float_buffer(UnsafePointer<Float>(buffer), la_count_t(rows), la_count_t(cols), la_count_t(cols), HINT, ATTR)
 }
-internal func LaMatrice(buffer: UnsafePointer<Void>, rows: Int, cols: Int, deallocator: (@convention(c) (UnsafeMutablePointer<Void>) -> Void)?) -> LaObjet {
+public func LaMatrice(buffer: UnsafePointer<Void>, rows: Int, cols: Int, deallocator: (@convention(c) (UnsafeMutablePointer<Void>) -> Void)?) -> LaObjet {
 	return la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(buffer), la_count_t(rows), la_count_t(cols), la_count_t(cols), HINT, deallocator, ATTR)
+}
+public func LaVecteur(scalar: Float, length: Int) -> LaObjet {
+	return la_vector_from_splat(la_splat_from_float(scalar, ATTR), la_count_t(length))
 }
 /*
 extension la_object_t {

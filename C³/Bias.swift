@@ -22,7 +22,7 @@ extension Bias2: Chainable {
 		return(χ, μ, σ)
 	}
 	internal func correct(η: Float) -> LaObjet {
-		return LaMatrice(0)
+		return LaSplat(0)
 	}
 }
 

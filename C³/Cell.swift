@@ -243,9 +243,9 @@ extension Cell {
 		} else {
 			if !ready.contains(.ϰ) {
 				ready.insert(.ϰ)
-				var χ: LaObjet = LaMatrice(0)
-				var μ: LaObjet = LaMatrice(0)
-				var σ: LaObjet = LaMatrice(0)
+				var χ: LaObjet = LaSplat(0)
+				var μ: LaObjet = LaSplat(0)
+				var σ: LaObjet = LaSplat(0)
 			}
 			return LaMatrice(state.new.ϰ, rows: width, cols: 1)
 		}
