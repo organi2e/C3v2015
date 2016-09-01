@@ -6,16 +6,19 @@
 //
 //
 import Foundation
-internal class QuasiNewton {
-	internal enum Type {
+public class QuasiNewton {
+	public enum Type {
 		case DavidonFletcherPowell
-		case DFP
 		case BroydenFletcherGoldfarbShanno
-		case BFGS
-		case SymmetricRank1
-		case SR1
 		case Broyden
+		case SymmetricRank1
 	}
+	public static let types = (
+		DFP: Type.DavidonFletcherPowell,
+		BFGS: Type.BroydenFletcherGoldfarbShanno,
+		BR: Type.Broyden,
+		SR1: Type.SymmetricRank1
+	)
 	private let h: [Float]
 	private let prevy: [Float]
 	private let prevx: [Float]
@@ -26,13 +29,13 @@ internal class QuasiNewton {
 		h = [Float](count: dim*dim, repeatedValue: 0)
 		LaIdentité(dim).getBytes(h)
 		switch type {
-		case .DavidonFletcherPowell, .DFP:
+		case .DavidonFletcherPowell:
 			update = self.dynamicType.DFP
-		case .BroydenFletcherGoldfarbShanno, .BFGS:
+		case .BroydenFletcherGoldfarbShanno:
 			update = self.dynamicType.BFGS
 		case .Broyden:
 			update = self.dynamicType.Broyden
-		case .SymmetricRank1, .SR1:
+		case .SymmetricRank1:
 			update = self.dynamicType.SR1
 		}
 	}
