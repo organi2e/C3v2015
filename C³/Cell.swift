@@ -12,7 +12,7 @@ import CoreData
 
 internal protocol Chainable {
 	func collect(ignore: Set<Cell>) -> (LaObjet, LaObjet, LaObjet)
-	func correct(η: Float) -> LaObjet
+	func correct(ignore: Set<Cell>) -> LaObjet
 }
 
 public class Cell: NSManagedObject {
@@ -21,10 +21,6 @@ public class Cell: NSManagedObject {
 		case ψ
 		case ϰ
 		case δ
-	}
-	public enum Distribution {
-		case Cauchy
-		case Gauss
 	}
 	
 	private var ready: Set<Ready> = Set<Ready>()
@@ -69,11 +65,32 @@ extension Cell {
 	@NSManaged public private(set) var width: Int
 	@NSManaged public private(set) var attribute: [String: AnyObject]
 	@NSManaged public var priority: Int
+	@NSManaged private var distributionType: String
 	@NSManaged private var input: Set<Edge>
 	@NSManaged private var output: Set<Edge>
 	@NSManaged private var bias: Bias
 	@NSManaged private var feedback: Feedback?
 	@NSManaged private var decay: Decay?
+}
+extension Cell {
+	public var type: DistributionType {
+		get {
+			return DistributionType(rawValue: distributionType) ?? .False
+		}
+		set {
+			distributionType = newValue.rawValue
+		}
+	}
+	internal var distribution: Distribution.Type {
+		switch type {
+		case .Gauss:
+			return GaussianDistribution.self
+		case .Cauchy:
+			return CauchyDistribution.self
+		case .False:
+			return FalseDistribution.self
+		}
+	}
 }
 
 extension Cell {
@@ -190,7 +207,7 @@ extension Cell {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
 		
 		}
-		bias.shuffle()
+		
 	}
 	private func oRefresh() {
 		
@@ -214,7 +231,6 @@ extension Cell {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
 		
 		}
-		bias.refresh()
 	}
 	
 	public func iClear() {
@@ -224,6 +240,7 @@ extension Cell {
 				$0.iClear()
 			}
 			iRefresh()
+			bias.shuffle(distribution)
 		}
 	}
 	
@@ -237,20 +254,25 @@ extension Cell {
 		}
 		ready.remove(.ψ)
 	}
-	public func collect_la(ignore: Set<Cell> = []) -> LaObjet {
+	public func collect(ignore: Set<Cell> = []) -> LaObjet {
 		if ignore.contains(self) {
 			return LaMatrice(state.old.ϰ, rows: width, cols: 1)
 		} else {
 			if !ready.contains(.ϰ) {
 				ready.insert(.ϰ)
-				var χ: LaObjet = LaSplat(0)
-				var μ: LaObjet = LaSplat(0)
-				var σ: LaObjet = LaSplat(0)
+				let sum: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)] = [
+					
+				] + [bias.collect(ignore)]
+				let mix: (χ: LaObjet, μ: LaObjet, σ: LaObjet) = distribution.mix(sum)
+				mix.χ.getBytes(level.new.χ)
+				mix.μ.getBytes(level.new.μ)
+				mix.σ.getBytes(level.new.σ)
+				self.dynamicType.activate(state.new.ϰ, level: level.new.χ)
 			}
 			return LaMatrice(state.new.ϰ, rows: width, cols: 1)
 		}
 	}
-	public func collect(let ignore: Set<Cell> = []) -> MTLBuffer {
+	public func collect_mtl(let ignore: Set<Cell> = []) -> MTLBuffer {
 		if ignore.contains(self) {
 			return Υ.old.ϰ
 		} else if let context: Context = managedObjectContext as? Context {
@@ -259,7 +281,6 @@ extension Cell {
 				input.forEach {
 					$0.collect(Φ: (Φ.new.χ, Φ.new.μ, Φ.new.σ), ignore: ignore.union([self]))
 				}
-				bias.collect(level: (Φ.new.χ, Φ.new.μ, Φ.new.σ))
 				self.dynamicType.activate(context: context,
 				                          Υ: Υ.new.ϰ,
 				                          Φ: Φ.new.χ,
@@ -293,7 +314,6 @@ extension Cell {
 				                          Φ: (Φ.new.χ, Φ.new.μ, Φ.new.σ),
 				                          δ: Υ.new.δ,
 				                          width: width)
-				bias.correct(η: η, Δ: (Δ.new.μ, Δ.new.σ))
 			}
 		} else {
 			assertionFailure(Context.Error.InvalidContext.rawValue)
@@ -453,12 +473,13 @@ extension Cell {
 	}
 }
 extension Context {
-	public func newCell ( let width width: Int, let label: String = "", let recur: Bool = false, let buffer: Bool = false, let input: [Cell] = [] ) throws -> Cell {
+	public func newCell (type: DistributionType, width: Int, label: String = "", recur: Bool = false, buffer: Bool = false, input: [Cell] = [] ) throws -> Cell {
 		guard let cell: Cell = new() else {
 			throw Error.CoreData.InsertionFails(entity: Cell.className())
 		}
 		cell.label = label
-		cell.width = ((width-1)/4+1)*4
+		cell.width = width
+		cell.type = type
 		cell.attribute = [:]
 		cell.input = Set<Edge>()
 		cell.output = Set<Edge>()

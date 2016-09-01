@@ -20,6 +20,20 @@ extension Edge {
 	@NSManaged private var input: Cell
 	@NSManaged private var output: Cell
 }
+extension Edge: Chainable {
+	func collect(ignore: Set<Cell>) -> (LaObjet, LaObjet, LaObjet) {
+		let state: LaObjet = input.collect(ignore)
+		return(
+			matrix_product(χ, state),
+			matrix_product(μ, state),
+			matrix_product(σ, state)
+		)
+	}
+	func correct(ignore: Set<Cell>) -> LaObjet {
+		return LaSplat(0)
+	}
+}
+
 
 extension Edge {
 	internal override func setup(context: Context) {
@@ -51,7 +65,7 @@ extension Edge {
 		}
 	}
 	internal func collect(let Φ level: (MTLBuffer, MTLBuffer, MTLBuffer), let ignore: Set<Cell>) {
-		let state: MTLBuffer = input.collect(ignore)
+		let state: MTLBuffer = input.collect_mtl(ignore)
 		if let context: Context = managedObjectContext as? Context {
 			let rows: Int = output.width
 			let cols: Int = input.width

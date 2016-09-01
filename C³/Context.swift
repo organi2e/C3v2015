@@ -11,7 +11,7 @@ import Metal
 import MetalKit
 
 public class Context: NSManagedObjectContext {
-	
+	public var optimizerFactory: Int -> GradientOptimizer = SGD.factory()
 	enum Error: String, ErrorType {
 		case InvalidContext = "InvalidContext"
 		enum CoreData: ErrorType, CustomStringConvertible {

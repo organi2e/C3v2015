@@ -6,7 +6,7 @@
 //
 //
 import Accelerate
-internal class GaussianDistribution: StableDistribution {
+internal class GaussianDistribution: Distribution {
 	static func cdf(χ: Float, μ: Float, σ: Float) -> Float {
 		let level: Double = ( Double(χ) - Double(μ) ) / Double(σ)
 		return Float(
@@ -56,5 +56,10 @@ internal class GaussianDistribution: StableDistribution {
 		vDSP_vsq(array, 1, UnsafeMutablePointer(array), 1, vDSP_Length(array.count))
 		vDSP_meanv(array, 1, &σ, vDSP_Length(array.count))
 		return (μ, sqrt(σ))
+	}
+	static func mix(array: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) -> (LaObjet, LaObjet, LaObjet) {
+		return array.reduce((LaSplat(0), LaSplat(0), LaSplat(0))) {(x, y)->(LaObjet, LaObjet, LaObjet)in
+			( x.0 + y.χ, x.1 + y.μ, x.2 + y.σ * y.σ )
+		}
 	}
 }

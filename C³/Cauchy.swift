@@ -27,7 +27,7 @@ extension Cauchy {
 	}
 }
 
-internal class CauchyDistribution: StableDistribution {
+internal class CauchyDistribution: Distribution {
 	static func cdf(χ: Float, μ: Float, σ: Float) -> Float {
 		let level: Double = (Double(χ)-Double(μ))/Double(σ)
 		return Float(
@@ -52,6 +52,11 @@ internal class CauchyDistribution: StableDistribution {
 		vDSP_vsdiv(χ, 1, [Float(UInt32.max)+1.0], UnsafeMutablePointer<Float>(χ), 1, vDSP_Length(count))
 		vvtanpif(UnsafeMutablePointer<Float>(χ), χ, [Int32(count)])
 		vDSP_vma(χ, 1, σ, 1, μ, 1, UnsafeMutablePointer<Float>(χ), 1, vDSP_Length(count))
+	}
+	static func mix(array: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) -> (LaObjet, LaObjet, LaObjet) {
+		return array.reduce((LaSplat(0), LaSplat(0), LaSplat(0))) {(x, y)->(LaObjet, LaObjet, LaObjet)in
+			( x.0 + y.χ, x.1 + y.μ, x.2 + y.σ )
+		}
 	}
 	static func est(χ: [Float], η: Float, K: Int, θ: Float = 1e-9) -> (μ: Float, σ: Float) {
 		

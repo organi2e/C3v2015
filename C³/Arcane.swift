@@ -78,11 +78,11 @@ internal extension Arcane {
 	internal func resize(rows r: Int, cols c: Int) {
 		rows = r
 		cols = c
-		do {
-			let count: Int = rows * cols
-			location = NSData(bytes: [Float](count: count, repeatedValue: 0), length: sizeof(Float)*count)
-			logscale = NSData(bytes: [Float](count: count, repeatedValue: 0), length: sizeof(Float)*count)
-		}
+
+		let count: Int = rows * cols
+		location = NSData(bytes: [Float](count: count, repeatedValue: 0), length: sizeof(Float)*count)
+		logscale = NSData(bytes: [Float](count: count, repeatedValue: -0.5*log(Float(cols))), length: sizeof(Float)*count)//Xavier's initial value
+		
 		setup()
 	}
 }
@@ -102,7 +102,7 @@ extension Arcane: RandomNumberGeneratable {
 	private var logσ: LaObjet {
 		return LaMatrice(cache.logσ, rows: rows, cols: cols, deallocator: nil)
 	}
-	internal func shuffle(distribution: StableDistribution.Type) {
+	internal func shuffle(distribution: Distribution.Type) {
 		let count: Int = rows * cols
 		assert(cache.χ.count==count)
 		assert(cache.μ.count==count)

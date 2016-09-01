@@ -7,25 +7,25 @@
 //
 import Metal
 import CoreData
-internal class Bias2: Arcane {
+internal class Bias: Arcane {
 	private struct grad {
 		let μ: [Float]
 		let σ: [Float]
 	}
 	private var grads: RingBuffer<grad> = RingBuffer<grad>(array: [])
 }
-extension Bias2 {
+extension Bias {
 	@NSManaged private var output: Cell
 }
-extension Bias2: Chainable {
+extension Bias: Chainable {
 	internal func collect(ignore: Set<Cell>) -> (LaObjet, LaObjet, LaObjet) {
 		return(χ, μ, σ)
 	}
-	internal func correct(η: Float) -> LaObjet {
+	internal func correct(ignore: Set<Cell>) -> LaObjet {
 		return LaSplat(0)
 	}
 }
-
+/*
 internal class Bias: Cauchy {
 	private struct grad {
 		let μ: MTLBuffer
@@ -151,14 +151,14 @@ extension Bias {
 		}
 	}
 }
+*/
 extension Context {
 	internal func newBias(let output output: Cell) throws -> Bias {
 		guard let bias: Bias = new() else {
 			throw Error.CoreData.InsertionFails(entity: Bias.className())
 		}
 		bias.output = output
-		bias.resize(count: output.width)
-		bias.adjust(μ: 0, σ: 1.0)
+		bias.resize(rows: output.width, cols: 1)
 		return bias
 	}
 }

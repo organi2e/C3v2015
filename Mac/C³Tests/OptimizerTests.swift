@@ -27,9 +27,10 @@ class OptimizerTests: XCTestCase {
 	}
 	
 	func optimize(fp: UnsafeMutablePointer<FILE> = nil, factory: Int -> GradientOptimizer) {
-		let optimizer: GradientOptimizer = factory(2)
-		var x: [Float] = [4, 4]
-		for _ in 0...40 {
+		let dim: Int = 2
+		let optimizer: GradientOptimizer = factory(dim)
+		var x: [Float] = (0..<dim).map {(_)in Float(M_PI)*Float(arc4random())/Float(arc4random())}
+		for _ in 0...80 {
 			if fp != nil {
 				fwrite(x, sizeof(Float), 2, fp)
 			}
@@ -57,7 +58,6 @@ class OptimizerTests: XCTestCase {
 		fclose(fp)
 	}
 	
-	
 	func testAdam() {
 		let fp = fopen("/tmp/Adam.raw", "wb")
 		optimize(fp, factory: Adam.factory())
@@ -75,7 +75,6 @@ class OptimizerTests: XCTestCase {
 		optimize(fp, factory: SMORMS3.factory())
 		fclose(fp)
 	}
-	
 	
 	func testConjugateGradient() {
 		let fp = fopen("/tmp/ConjugateGradient.raw", "wb")
