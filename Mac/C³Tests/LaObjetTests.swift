@@ -25,7 +25,12 @@ class LaObjetTests: XCTestCase {
 	}
 	
 	func J(x: [Float]) -> [Float] {
-		return[x[0]/10, 2*x[1]]
+		let X: Float = x[0]
+		let Y: Float = x[1]
+		return[
+			(X)/sqrt(X*X + Y*Y),
+			(Y)/sqrt(X*X + Y*Y)
+		]
 	}
 	
 	func testSGD() {
@@ -48,7 +53,7 @@ class LaObjetTests: XCTestCase {
 		HestenesStiefe
 		DaiYuan
 		*/
-		let cg: GradientOptimizer = ConjugateGradient(dim: 2, type: .DY)
+		let cg: GradientOptimizer = ConjugateGradient(dim: 2, type: .PR)
 		let fp = fopen("/tmp/Conjugate.raw", "wb")
 		var x: [Float] = X
 		for _ in 0...iter {
@@ -57,15 +62,15 @@ class LaObjetTests: XCTestCase {
 			let G = LaMatrice(g, rows: 2, cols: 1)
 			let X = LaMatrice(x, rows: 2, cols: 1)
 			let h = cg.optimize(Δx: G, x: X).array
-			x[0] -= h[0]/4
-			x[1] -= h[1]/4
+			x[0] -= h[0]/2
+			x[1] -= h[1]/2
 		}
 		print(x, f(x))
 		fclose(fp)
 	}
 	
 	func testMomentum() {
-		let optimizer: GradientOptimizer = Momentum(dim: 2, α: 0.5)
+		let optimizer: GradientOptimizer = Momentum(dim: 2, α: 0.9)
 		let fp = fopen("/tmp/Momentum.raw", "wb")
 		var x: [Float] = X
 		for _ in 0...iter {
@@ -74,15 +79,15 @@ class LaObjetTests: XCTestCase {
 			let G = LaMatrice(g, rows: 2, cols: 1)
 			let X = LaMatrice(x, rows: 2, cols: 1)
 			let h = optimizer.optimize(Δx: G, x: X).array
-			x[0] -= h[0]*rate
-			x[1] -= h[1]*rate
+			x[0] -= h[0] * 0.1
+			x[1] -= h[1] * 0.1
 		}
 		print(x, f(x))
 		fclose(fp)
 	}
 	
 	func testAdam() {
-		let optimizer: GradientOptimizer = Adam(dim: 2, α: rate)
+		let optimizer: GradientOptimizer = Adam(dim: 2, α: 0.01)
 		let fp = fopen("/tmp/Adam.raw", "wb")
 		var x: [Float] = X
 		for _ in 0...iter {
@@ -99,7 +104,7 @@ class LaObjetTests: XCTestCase {
 	}
 	
 	func testSMORMS3() {
-		let optimizer: GradientOptimizer = SMORMS3(dim: 2, α: rate)
+		let optimizer: GradientOptimizer = SMORMS3(dim: 2, α: 0.9)
 		let fp = fopen("/tmp/SMORMS3.raw", "wb")
 		var x: [Float] = X
 		for _ in 0...iter {
@@ -142,8 +147,8 @@ class LaObjetTests: XCTestCase {
 			let G = LaMatrice(g, rows: 2, cols: 1)
 			let X = LaMatrice(x, rows: 2, cols: 1)
 			let h = qn.optimize(Δx: G, x: X).array
-			x[0] -= h[0]/2
-			x[1] -= h[1]/2
+			x[0] -= h[0]/4	
+			x[1] -= h[1]/4
 		}
 		print(x, f(x))
 		fclose(fp)
@@ -154,8 +159,8 @@ class LaObjetTests: XCTestCase {
 from matplotlib.pylab import *
 figure('render')
 clf()
-X, Y = meshgrid(arange(-20,20,0.1), arange(-20,20,0.1))
-Z = sqrt((X**2)/20 + Y**2)
+X, Y = meshgrid(arange(-15,15,0.1), arange(-15,15,0.1))
+Z = sqrt(X*X+Y*Y)
 contour(X, Y, Z, 16, colors='gray')
 for k in ['SGD', 'Momentum', 'Adam', 'RMSProp', 'SMORMS3', 'QuasiNewton', 'Conjugate']:
 	x = fromfile('/tmp/%s.raw'%k, 'float32')
@@ -174,7 +179,7 @@ figure('render')
 for i in range(1,180):
 	clf()
 	X, Y = meshgrid(arange(-20,20,0.1), arange(-20,20,0.1))
-	Z = sqrt((X**2)/20 + Y**2)
+	Z = sqrt(X*X+Y*Y-2*X*Y+4)
 	contour(X, Y, Z, 16, colors='k')
 	for k in ['SGD', 'Momentum', 'Adam', 'RMSProp', 'SMORMS3', 'QuasiNewton', 'Conjugate']:
 		x = fromfile('/tmp/%s.raw'%k, 'float32')
@@ -185,5 +190,5 @@ for i in range(1,180):
 	ylim([-20,20])
 	draw()
 	show(block=False)
-	savefig('%03d.png'%i)
+	savefig('%03d.png'%i,figsize=(16,9),dpi=72)
 */
