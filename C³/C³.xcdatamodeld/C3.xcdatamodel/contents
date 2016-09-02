@@ -38,11 +38,11 @@
         <attribute name="key" attributeType="Transformable" indexed="YES" syncable="YES"/>
         <attribute name="value" attributeType="Transformable" syncable="YES"/>
     </entity>
-    <entity name="Edge" representedClassName="C3.Edge" parentEntity="Cauchy" syncable="YES">
+    <entity name="Edge" representedClassName="C3.Edge" parentEntity="Arcane" syncable="YES">
         <relationship name="input" maxCount="1" deletionRule="Nullify" destinationEntity="Cell" inverseName="output" inverseEntity="Cell" syncable="YES"/>
         <relationship name="output" maxCount="1" deletionRule="Nullify" destinationEntity="Cell" inverseName="input" inverseEntity="Cell" syncable="YES"/>
     </entity>
-    <entity name="Feedback" representedClassName="C3.Feedback" parentEntity="Gauss" syncable="YES">
+    <entity name="Feedback" representedClassName="C3.Feedback" parentEntity="Arcane" syncable="YES">
         <relationship name="cell" maxCount="1" deletionRule="Nullify" destinationEntity="Cell" inverseName="feedback" inverseEntity="Cell" syncable="YES"/>
     </entity>
     <entity name="Gauss" representedClassName="C3.Gauss" parentEntity="Art" syncable="YES"/>

@@ -92,14 +92,14 @@ internal extension Arcane {
 		let count: Int = rows * cols
 
 		willChangeValueForKey(Arcane.locationKey)
-		( logμ - μoptimizer.optimize(Δx: distribution.Δμ(Δ: Δμ, μ: μ), x: logμ) ).getBytes(cache.logμ)
+		( logμ + μoptimizer.optimize(Δx: distribution.Δμ(Δ: Δμ, μ: μ), x: logμ) ).getBytes(cache.logμ)
 		didChangeValueForKey(Arcane.locationKey)
 		
 		vDSP_vneg(cache.σ, 1, &cache.grad, 1, vDSP_Length(count))
 		vvexpf(&cache.grad, cache.grad, [Int32(count)])
 		
 		willChangeValueForKey(Arcane.logscaleKey)
-		( logσ - ( 1 - grad ) * σoptimizer.optimize(Δx: distribution.Δσ(Δ: Δσ, σ: σ), x: logσ) ).getBytes(cache.logσ)
+		( logσ + ( 1 - grad ) * σoptimizer.optimize(Δx: distribution.Δσ(Δ: Δσ, σ: σ), x: logσ) ).getBytes(cache.logσ)
 		didChangeValueForKey(Arcane.logscaleKey)
 		
 		refresh()

@@ -28,12 +28,16 @@ extension Edge {
 			σ: matrix_product(σ, state)
 		)
 	}
-	func correct(ignore: Set<Cell>) -> LaObjet {
+	func correct(ignore: Set<Cell>, ϰ: [Float]) -> LaObjet {
 		let Δ: (χ: LaObjet, μ: LaObjet, σ: LaObjet, Dist: Distribution.Type) = output.correct(ignore)
 		defer {
-			output.distribution
+			let distribution: Distribution.Type = output.distribution
+			let weights: (μ: LaObjet, σ: LaObjet) = distribution.gainχ(LaMatrice(ϰ, rows: ϰ.count, cols: 1, deallocator: nil))
+			let Δμ: LaObjet = outer_product(Δ.μ, weights.μ)
+			let Δσ: LaObjet = outer_product(Δ.σ, weights.σ)
+			update(distribution, Δμ: Δμ, Δσ: Δσ)
 		}
-		return matrix_product(χ.T, Δ.0)
+		return matrix_product(χ.T, Δ.χ)
 	}
 	func collect_clear(distribution: Distribution.Type) {
 		shuffle(distribution)

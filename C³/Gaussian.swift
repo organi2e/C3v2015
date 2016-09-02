@@ -70,20 +70,21 @@ internal class GaussianDistribution: Distribution {
 		return 2 * σ * Δ
 	}
 	static func derivate(Δχ Δχ: [Float], Δμ: [Float], Δσ: [Float], Δ delta: [Float], μ mu: [Float], λ lambda: [Float]) {
-		let χ: LaObjet = LaMatrice(Δχ, rows: Δχ.count, cols: 1)
-		let Δ: LaObjet = LaMatrice(delta, rows: delta.count, cols: 1)
-		let μ: LaObjet = LaMatrice(mu, rows: mu.count, cols: 1)
-		let λ: LaObjet = LaMatrice(lambda, rows: lambda.count, cols: 1)
+		let χ: LaObjet = LaMatrice(Δχ, rows: Δχ.count, cols: 1, deallocator: nil)
+		let Δ: LaObjet = LaMatrice(delta, rows: delta.count, cols: 1, deallocator: nil)
+		let μ: LaObjet = LaMatrice(mu, rows: mu.count, cols: 1, deallocator: nil)
+		let λ: LaObjet = LaMatrice(lambda, rows: lambda.count, cols: 1, deallocator: nil)
 		
 		let λμ: LaObjet = λ * μ
 		(-0.5 * λμ * λμ).getBytes(Δχ)
 		vvexpf(UnsafeMutablePointer<Float>(Δχ), Δχ, [Int32(Δχ.count)])
-		
 		(Float(0.5*M_2_SQRTPI*M_SQRT1_2)*Δ*χ).getBytes(Δχ)
+		
 		
 		let λχ: LaObjet = λ * χ
 		(λχ).getBytes(Δμ)
 		(-0.5*λχ*μ*λ*λ).getBytes(Δσ)
+		
 		//vDSP_vneg(Δσ, 1, UnsafeMutablePointer<Float>(Δσ), 1, vDSP_Length(Δσ.count))
 	}
 	static func synthesize(χ χ: [Float], μ: [Float], λ: [Float], refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) {

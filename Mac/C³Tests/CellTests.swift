@@ -9,6 +9,8 @@
 import XCTest
 @testable import C3
 class CellTests: XCTestCase {
+	let cotext: Context = try!Context()
+	/*
 	func testStep() {
 		let count: Int = 16// + Int(arc4random_uniform(1023))
 		let x: [Float] = (0..<count-1).map{(_)in Float(arc4random())/Float(UInt32.max)} + [0.0]
@@ -30,6 +32,53 @@ class CellTests: XCTestCase {
 		print(y)
 		print(z)
 		XCTAssert(z.elementsEqual(y))
+	}
+	*/
+	func testCollect() {
+		let context: Context = try!Context()
+		context.optimizerFactory = SGD.factory(η: 1/16.0)
+		let I: Cell = try! context.newCell(.Gauss, width: 4, label: "I")
+		let H: Cell = try! context.newCell(.Gauss, width: 4, label: "H", input: [I])
+		let O: Cell = try! context.newCell(.Gauss, width: 4, label: "O", input: [H])
+		
+		let IS: [[Bool]] = [
+			[false, false, false, true],
+			[false, false, true, false],
+			[false, false, true, true],
+			[false, true, false, false]
+		]
+		
+		let OS: [[Bool]] = [
+			[false, false, false, true],
+			[false, false, true, false],
+			[false, true, false, false],
+			[true, false, false, false]
+		]
+		
+		for k in 0..<64 {
+			
+			for j in 0..<16 {
+				I.correct_clear()
+				O.collect_clear()
+		
+				I.active = IS[k%4]
+				O.answer = OS[k%4]
+			
+				O.collect()
+				I.correct()
+			}
+			
+		}
+		for k in 0..<4 {
+			
+			I.correct_clear()
+			O.collect_clear()
+			
+			I.active = IS[k%4]
+			print(O.active)
+			
+		}
+
 	}
 }
 /*
