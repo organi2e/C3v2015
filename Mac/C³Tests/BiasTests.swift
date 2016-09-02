@@ -39,11 +39,11 @@ class BiasTests: XCTestCase {
 		
 		distribution.synthesize(χ: χ, μ: μ, λ: λ, refer: [bias.collect()])
 		
-		XCTAssert(χ.elementsEqual(bias.cache.χ))
-		XCTAssert(μ.elementsEqual(bias.cache.μ))
-		XCTAssert(λ.elementsEqual(bias.cache.σ.map { 1 / $0 }))
+		XCTAssert(χ.elementsEqual(bias.χ.array))
+		XCTAssert(μ.elementsEqual(bias.μ.array))
+		XCTAssert(λ.elementsEqual(bias.σ.array.map { 1 / $0 }))
 		print(λ)
-		print(bias.cache.σ.map { 1 / $0 } )
+		print(bias.σ.array.map { 1 / $0 } )
 	}
 	func testCauchyCollect() {
 		
@@ -60,11 +60,11 @@ class BiasTests: XCTestCase {
 		
 		distribution.synthesize(χ: χ, μ: μ, λ: λ, refer: [bias.collect()])
 		
-		XCTAssert(χ.elementsEqual(bias.cache.χ))
-		XCTAssert(μ.elementsEqual(bias.cache.μ))
-		XCTAssert(λ.elementsEqual(bias.cache.σ.map { 1 / $0 } ))
+		XCTAssert(χ.elementsEqual(bias.χ.array))
+		XCTAssert(μ.elementsEqual(bias.μ.array))
+		XCTAssert(λ.elementsEqual(bias.σ.array.map { 1 / $0 } ))
 		print(λ)
-		print(bias.cache.σ.map { 1 / $0 } )
+		print(bias.σ.array.map { 1 / $0 } )
 	}
 	func testGaussianCorrect() {
 		
@@ -84,11 +84,11 @@ class BiasTests: XCTestCase {
 		
 		distribution.synthesize(χ: χ, μ: μ, λ: λ, refer: [bias.collect()])
 		
-		XCTAssert(χ.elementsEqual(bias.cache.χ))
-		XCTAssert(μ.elementsEqual(bias.cache.μ))
-		XCTAssert(λ.elementsEqual(bias.cache.σ.map { 1 / $0 }))
+		XCTAssert(χ.elementsEqual(bias.χ.array))
+		XCTAssert(μ.elementsEqual(bias.μ.array))
+		XCTAssert(λ.elementsEqual(bias.σ.array.map { 1 / $0 }))
 		print(λ)
-		print(bias.cache.σ.map { 1 / $0 } )
+		print(bias.σ.array.map { 1 / $0 } )
 	}
 }
 /*

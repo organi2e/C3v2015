@@ -23,7 +23,7 @@ class GaussianTests: XCTestCase {
 		
 		arc4random_buf(UnsafeMutablePointer<Void>(ψ), sizeof(UInt32)*N)
 		
-		GaussianDistribution.rng(χ, μ: μ, σ: σ, ψ: ψ)
+		GaussianDistribution.rng(χ, ψ: ψ, μ: LaMatrice(μ, rows: 1024, cols: 1024, deallocator: nil), σ: LaMatrice(σ, rows: 1024, cols: 1024, deallocator: nil))
 		
 		let(dstμ, dstσ) = GaussianDistribution.est(χ)
 		

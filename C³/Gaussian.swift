@@ -26,7 +26,7 @@ internal class GaussianDistribution: Distribution {
 	static func cdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
 	static func pdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
 	*/
-	static func rng(χ: [Float], μ: [Float], σ: [Float], ψ: [UInt32]) {
+	static func rng(χ: [Float], ψ: [UInt32], μ: LaObjet, σ: LaObjet) {
 
 		let count: Int = χ.count
 
@@ -47,8 +47,8 @@ internal class GaussianDistribution: Distribution {
 		vDSP_vmul(UnsafeMutablePointer<Float>(χ).advancedBy(0*count/2), 1, UnsafeMutablePointer<Float>(ψ), 1, UnsafeMutablePointer<Float>(χ).advancedBy(0*count/2), 1, vDSP_Length(count/2))
 		vDSP_vmul(UnsafeMutablePointer<Float>(χ).advancedBy(1*count/2), 1, UnsafeMutablePointer<Float>(ψ), 1, UnsafeMutablePointer<Float>(χ).advancedBy(1*count/2), 1, vDSP_Length(count/2))
 		
-		vDSP_vma(χ, 1, σ, 1, μ, 1, UnsafeMutablePointer<Float>(χ), 1, vDSP_Length(count))
 		
+		(LaMatrice(χ, rows: min(μ.rows, σ.rows), cols: min(μ.cols, σ.cols), deallocator: nil)*σ+μ).eval(χ)
 	}
 	static func est(χ: [Float]) -> (μ: Float, σ: Float) {
 		var μ: Float = 0.0

@@ -35,7 +35,7 @@ class CauchyTests: XCTestCase {
 		let srcμ: Float = Float(arc4random())/Float(UInt32.max) * 2.0 - 1.0
 		let srcσ: Float = 1.0 + Float(M_PI) * Float(arc4random())/Float(UInt32.max)
 		
-		let N: Int = 1 << 16
+		let N: Int = 1024 * 1024
 		let ψ: [UInt32] = [UInt32](count: N, repeatedValue: 0)
 		let μ: [Float] = [Float](count: N, repeatedValue: srcμ)
 		let σ: [Float] = [Float](count: N, repeatedValue: srcσ)
@@ -43,7 +43,7 @@ class CauchyTests: XCTestCase {
 		
 		arc4random_buf(UnsafeMutablePointer<Void>(ψ), sizeof(UInt32)*N)
 		
-		CauchyDistribution.rng(χ, μ: μ, σ: σ, ψ: ψ)
+		CauchyDistribution.rng(χ, ψ: ψ, μ: LaMatrice(μ, rows: 1024, cols: 1024, deallocator: nil), σ: LaMatrice(σ, rows: 1024, cols: 1024, deallocator: nil))
 		
 		let(dstμ, dstσ) = CauchyDistribution.est(χ, η: 0.8, K: 1024)
 		

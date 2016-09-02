@@ -45,18 +45,18 @@ class ArcaneTest: XCTestCase {
 		a.adjust(μ: 2, σ: 2)
 		
 		(0..<64).forEach {(_)in
-			let gu: [Float] = ug(Array(a.cache.μ))
-			let gs: [Float] = sg(Array(a.cache.σ))
+			let gu: [Float] = ug(a.μ.array)
+			let gs: [Float] = sg(a.σ.array)
 			let Δμ: LaObjet = LaMatrice(gu, rows: rows, cols: cols, deallocator: nil)
 			let Δσ: LaObjet = LaMatrice(gs, rows: rows, cols: cols, deallocator: nil)
 			a.update(Δμ: Δμ, Δσ: Δσ)
 			
-			print(Array(a.cache.μ))
-			print(Array(a.cache.σ))
+			print(a.μ.array)
+			print(a.σ.array)
 		}
 		
-		print(Array(a.cache.μ))
-		print(Array(a.cache.σ))
+		print(a.μ.array)
+		print(a.σ.array)
 		
 	}
 }

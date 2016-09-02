@@ -16,7 +16,7 @@ internal protocol Distribution {
 	static func pdf(χ: Float, μ: Float, σ: Float) -> Float
 //	static func cdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
 //	static func pdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
-	static func rng(χ: [Float], μ: [Float], σ: [Float], ψ: [UInt32])
+	static func rng(χ: [Float], ψ: [UInt32], μ: LaObjet, σ: LaObjet)
 	
 	
 	static func gradμ(μ μ: LaObjet, χ: LaObjet) -> LaObjet
@@ -31,8 +31,8 @@ internal class FalseDistribution: Distribution {
 	static func pdf(χ: Float, μ: Float, σ: Float) -> Float { return μ != χ ? 0 : 1 }
 	//	static func cdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
 	//	static func pdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
-	static func rng(χ: [Float], μ: [Float], σ: [Float], ψ: [UInt32]) {
-		cblas_scopy(Int32(min(χ.count, μ.count)), μ, 1, UnsafeMutablePointer<Float>(χ), 1)
+	static func rng(χ: [Float], ψ: [UInt32], μ: LaObjet, σ: LaObjet) {
+		μ.eval(χ)
 	}
 	static func gradμ(μ μ: LaObjet, χ: LaObjet) -> LaObjet {
 		return χ

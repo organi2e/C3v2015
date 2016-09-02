@@ -41,7 +41,7 @@ internal class CauchyDistribution: Distribution {
 	}
 	//	static func cdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
 	//	static func pdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
-	static func rng(χ: [Float], μ: [Float], σ: [Float], ψ: [UInt32]) {
+	static func rng(χ: [Float], ψ: [UInt32], μ: LaObjet, σ: LaObjet) {
 		let count: Int = χ.count
 		assert(μ.count==count)
 		assert(σ.count==count)
@@ -50,7 +50,7 @@ internal class CauchyDistribution: Distribution {
 		vDSP_vsadd(χ, 1, [Float(0.5)], UnsafeMutablePointer<Float>(χ), 1, vDSP_Length(count))
 		vDSP_vsdiv(χ, 1, [Float(UInt32.max)+1.0], UnsafeMutablePointer<Float>(χ), 1, vDSP_Length(count))
 		vvtanpif(UnsafeMutablePointer<Float>(χ), χ, [Int32(count)])
-		vDSP_vma(χ, 1, σ, 1, μ, 1, UnsafeMutablePointer<Float>(χ), 1, vDSP_Length(count))
+		(LaMatrice(χ, rows: min(μ.rows, σ.rows), cols: min(μ.cols, σ.cols), deallocator: nil)*σ+μ).eval(χ)
 	}
 	static func derivate(Δχ Δχ: [Float], Δμ: [Float], Δσ: [Float], Δ: LaObjet, μ: LaObjet, λ: LaObjet) {
 		let χ: LaObjet = LaMatrice(Δχ, rows: Δχ.count, cols: 1)
