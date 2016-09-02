@@ -18,30 +18,8 @@ extension Bias {
 	@NSManaged private var output: Cell
 }
 extension Bias {
-	
-	internal func correct(Δ: (μ: LaObjet, σ: LaObjet), distribution: Distribution.Type) {
-		let Δμ: LaObjet = Δ.μ
-		let Δσ: LaObjet = Δ.σ
-		update(Δμ: Δμ, Δσ: Δσ)
-	}
-}
-extension Bias: Chainable {
-	internal func collect(ignore: Set<Cell>=[]) -> (LaObjet, LaObjet, LaObjet) {
+	internal func collect() -> (LaObjet, LaObjet, LaObjet) {
 		return(χ, μ, σ)
-	}
-	internal func correct(distribution: Distribution.Type) {
-		let Δμ: LaObjet = LaValuer(0)
-		let Δσ: LaObjet = LaValuer(0)
-		update(Δμ: Δμ, Δσ: Δσ)
-	}
-	internal func correct(ignore: Set<Cell>=[]) -> LaObjet {
-		return LaSplat(0)
-	}
-	internal func collect_clear(distribution: Distribution.Type) {
-		shuffle(distribution)
-	}
-	internal func correct_clear() {
-		
 	}
 }
 /*

@@ -76,28 +76,79 @@ internal func -(lhs: LaObjet, rhs: LaObjet) -> LaObjet { return la_difference(lh
 internal func -(lhs: LaObjet, rhs: Float) -> LaObjet { return la_difference(lhs, la_splat_from_float(rhs, ATTR)) }
 internal func -(lhs: Float, rhs: LaObjet) -> LaObjet { return la_difference(la_splat_from_float(lhs, ATTR), rhs) }
 
-internal func *(lhs: LaObjet, rhs: LaObjet) -> LaObjet { return la_elementwise_product(lhs, rhs)}
-internal func *(lhs: LaObjet, rhs: Float) -> LaObjet { return la_scale_with_float(lhs, rhs) }
-internal func *(lhs: Float, rhs: LaObjet) -> LaObjet { return la_scale_with_float(rhs, lhs) }
+internal func *(lhs: LaObjet, rhs: LaObjet) -> LaObjet {
+	if lhs.count == 0 && rhs.count == 0 {
+		let a: Float = la_matrix_from_splat(lhs, 1, 1).array[0]
+		let b: Float = la_matrix_from_splat(rhs, 1, 1).array[0]
+		return la_splat_from_float(a*b, ATTR)
+	} else if lhs.count == 0 {
+		let a: Float = la_matrix_from_splat(lhs, 1, 1).array[0]
+		return la_scale_with_float(rhs, a)
+	} else if rhs.count == 0 {
+		let b: Float = la_matrix_from_splat(lhs, 1, 1).array[0]
+		return la_scale_with_float(lhs, b)
+	} else if lhs.count == 1 && rhs.count == 1 {
+		return la_elementwise_product(lhs, rhs)
+	} else if lhs.count == 1 {
+		return la_scale_with_float(rhs, lhs.array[0])
+	} else if rhs.count == 1 {
+		return la_scale_with_float(lhs, rhs.array[0])
+	} else {
+		assert(lhs.rows==rhs.rows)
+		assert(lhs.cols==rhs.cols)
+		return la_elementwise_product(lhs, rhs)
+	}
+}
+internal func *(lhs: LaObjet, rhs: Float) -> LaObjet { return lhs.count == 0 ? la_splat_from_float(la_matrix_from_splat(lhs, 1, 1).array[0]*rhs, ATTR) : la_scale_with_float(lhs, rhs) }
+internal func *(lhs: Float, rhs: LaObjet) -> LaObjet { return rhs.count == 0 ? la_splat_from_float(la_matrix_from_splat(rhs, 1, 1).array[0]*lhs, ATTR) : la_scale_with_float(rhs, lhs) }
 
 internal func /(lhs: LaObjet, rhs: LaObjet) -> LaObjet {
-	assert(lhs.rows==rhs.rows)
-	assert(lhs.cols==rhs.cols)
-	let rows: la_count_t = la_count_t(min(lhs.rows, rhs.rows))
-	let cols: la_count_t = la_count_t(min(lhs.cols, rhs.cols))
-	let result: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*lhs.count))
-	vvdivf(result, lhs.array, rhs.array, [Int32(rows*cols)])
-	return la_matrix_from_float_buffer_nocopy(result, rows, cols, cols, HINT, free, ATTR)
+	var B: LaObjet {
+		let result: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*lhs.count))
+		rhs.getBytes(result)
+		vvrecf(result, result, [Int32(rhs.count)])
+		return la_matrix_from_float_buffer_nocopy(result, la_matrix_rows(rhs), la_matrix_cols(rhs), la_matrix_cols(rhs), HINT, free, ATTR)
+	}
+	if lhs.count == 0 && rhs.count == 0 { // return splat
+		let a: Float = la_matrix_from_splat(lhs, 1, 1).array[0]
+		let b: Float = la_matrix_from_splat(rhs, 1, 1).array[0]
+		return la_splat_from_float(a/b, ATTR)
+	} else if lhs.count == 0 { // return lhs * ( 1 / rhs )
+		return la_scale_with_float(B, la_matrix_from_splat(lhs, 1, 1).array[0])
+	} else if rhs.count == 0 {
+		return la_scale_with_float(lhs, 1/la_matrix_from_splat(rhs, 1, 1).array[0])
+	} else if lhs.count == 1 && rhs.count == 1 {
+		return la_scale_with_float(lhs, 1/rhs.array[0])
+	} else if lhs.count == 1 {
+		return la_scale_with_float(B, lhs.array[0])
+	} else if rhs.count == 1 {
+		return la_scale_with_float(lhs, rhs.array[0])
+	} else {
+		assert(lhs.rows==rhs.rows)
+		assert(lhs.cols==rhs.cols)
+		let rows: la_count_t = la_count_t(min(lhs.rows, rhs.rows))
+		let cols: la_count_t = la_count_t(min(lhs.cols, rhs.cols))
+		let result: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*lhs.count))
+		vvdivf(result, lhs.array, rhs.array, [Int32(rows*cols)])
+		return la_matrix_from_float_buffer_nocopy(result, rows, cols, cols, HINT, free, ATTR)
+	}
 }
 internal func /(lhs: LaObjet, rhs: Float) -> LaObjet {
-	let result: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*lhs.count))
-	vDSP_vsdiv(lhs.array, 1, [rhs], result, 1, vDSP_Length(lhs.count))
-	return la_matrix_from_float_buffer_nocopy(result, la_matrix_rows(lhs), la_matrix_cols(lhs), la_matrix_cols(lhs), HINT, free, ATTR)
+	if lhs.count == 0 {
+		return la_splat_from_float(la_matrix_from_splat(lhs, 1, 1).array[0]/rhs, ATTR)
+	} else {
+		return la_scale_with_float(lhs, 1/rhs)
+	}
 }
 internal func /(lhs: Float, rhs: LaObjet) -> LaObjet {
-	let result: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*rhs.count))
-	vDSP_svdiv([lhs], rhs.array, 1, result, 1, vDSP_Length(rhs.count))
-	return la_matrix_from_float_buffer_nocopy(result, la_matrix_rows(rhs), la_matrix_cols(rhs), la_matrix_cols(rhs), HINT, free, ATTR)
+	if rhs.count == 0 {
+		return la_splat_from_float(lhs/la_matrix_from_splat(rhs, 1, 1).array[0], ATTR)
+	} else {
+		let result: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*rhs.count))
+		rhs.getBytes(result)
+		vvrecf(result, result, [Int32(rhs.count)])
+		return la_scale_with_float(la_matrix_from_float_buffer_nocopy(result, la_matrix_rows(rhs), la_matrix_cols(rhs), la_matrix_cols(rhs), HINT, free, ATTR), lhs)
+	}
 }
 
 internal func inner_product(lhs: LaObjet, _ rhs: LaObjet) -> LaObjet {

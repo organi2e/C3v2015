@@ -10,10 +10,10 @@ import XCTest
 @testable import C3
 class CauchyTests: XCTestCase {
 	
-	func testGrad() {
+	func testΔ() {
 		
-		let χd: [Float] = Array<Float>(arrayLiteral: 0, 1, 2, 3)
-		let χ: LaObjet = LaMatrice(χd, rows: χd.count, cols: 1)
+		let Δd: [Float] = Array<Float>(arrayLiteral: 0, 1, 2, 3)
+		let Δ: LaObjet = LaMatrice(Δd, rows: Δd.count, cols: 1)
 		
 		let μd: [Float] = Array<Float>(arrayLiteral: 0, 1, 2, 3)
 		let μ: LaObjet = LaMatrice(μd, rows: μd.count, cols: 1)
@@ -21,11 +21,11 @@ class CauchyTests: XCTestCase {
 		let σd: [Float] = Array<Float>(arrayLiteral: 0, 1, 2, 3)
 		let σ: LaObjet = LaMatrice(σd, rows: σd.count, cols: 1)
 		
-		let gradμ: LaObjet = CauchyDistribution.gradμ(μ: μ, χ: χ)
-		let gradσ: LaObjet = CauchyDistribution.gradσ(σ: σ, χ: χ)
+		let Δμ: LaObjet = CauchyDistribution.Δμ(Δ: Δ, μ: μ)
+		let Δσ: LaObjet = CauchyDistribution.Δσ(Δ: Δ, σ: σ)
 		
-		XCTAssert(gradμ.array.elementsEqual(χ.array))
-		XCTAssert(gradσ.array.elementsEqual(χ.array))
+		XCTAssert(Δμ.array.elementsEqual(Δ.array))
+		XCTAssert(Δσ.array.elementsEqual(Δ.array))
 		
 	}
 	

@@ -19,17 +19,21 @@ extension Edge {
 	@NSManaged private var input: Cell
 	@NSManaged private var output: Cell
 }
-extension Edge: Chainable {
-	func collect(ignore: Set<Cell>) -> (LaObjet, LaObjet, LaObjet) {
+extension Edge {
+	func collect(ignore: Set<Cell>) -> (χ: LaObjet, μ: LaObjet, σ: LaObjet) {
 		let state: LaObjet = input.collect(ignore)
 		return(
-			matrix_product(χ, state),
-			matrix_product(μ, state),
-			matrix_product(σ, state)
+			χ: matrix_product(χ, state),
+			μ: matrix_product(μ, state),
+			σ: matrix_product(σ, state)
 		)
 	}
 	func correct(ignore: Set<Cell>) -> LaObjet {
-		return LaSplat(0)
+		let Δ: (χ: LaObjet, μ: LaObjet, σ: LaObjet, Dist: Distribution.Type) = output.correct(ignore)
+		defer {
+			output.distribution
+		}
+		return matrix_product(χ.T, Δ.0)
 	}
 	func collect_clear(distribution: Distribution.Type) {
 		shuffle(distribution)

@@ -60,14 +60,20 @@ internal class GaussianDistribution: Distribution {
 		vDSP_meanv(array, 1, &σ, vDSP_Length(array.count))
 		return (μ, sqrt(σ))
 	}
-	static func gradμ(μ μ: LaObjet, χ: LaObjet) -> LaObjet {
-		return χ
+	static func gainχ(χ: LaObjet) -> (μ: LaObjet, σ: LaObjet) {
+		return ( χ, χ * χ )
 	}
-	static func gradσ(σ σ: LaObjet, χ: LaObjet) -> LaObjet {
-		return 2 * σ * χ * χ
+	static func Δμ(Δ Δ: LaObjet, μ: LaObjet) -> LaObjet {
+		return Δ
 	}
-	static func derivate(Δχ Δχ: [Float], Δμ: [Float], Δσ: [Float], Δ: LaObjet, μ: LaObjet, λ: LaObjet) {
+	static func Δσ(Δ Δ: LaObjet, σ: LaObjet) -> LaObjet {
+		return 2 * σ * Δ
+	}
+	static func derivate(Δχ Δχ: [Float], Δμ: [Float], Δσ: [Float], Δ delta: [Float], μ mu: [Float], λ lambda: [Float]) {
 		let χ: LaObjet = LaMatrice(Δχ, rows: Δχ.count, cols: 1)
+		let Δ: LaObjet = LaMatrice(delta, rows: delta.count, cols: 1)
+		let μ: LaObjet = LaMatrice(mu, rows: mu.count, cols: 1)
+		let λ: LaObjet = LaMatrice(lambda, rows: lambda.count, cols: 1)
 		
 		let λμ: LaObjet = λ * μ
 		(-0.5 * λμ * λμ).getBytes(Δχ)

@@ -10,13 +10,6 @@ import Accelerate
 import Metal
 import CoreData
 
-internal protocol Chainable {
-	func collect(ignore: Set<Cell>) -> (LaObjet, LaObjet, LaObjet)
-	func correct(ignore: Set<Cell>) -> LaObjet
-	func collect_clear(distribution: Distribution.Type)
-	func correct_clear()
-}
-
 public class Cell: NSManagedObject {
 	
 	private enum Ready {
@@ -46,16 +39,9 @@ public class Cell: NSManagedObject {
 		let σ: MTLBuffer
 	}
 	
-	private struct probabilistic {
-		let χ: [Float]
-		let μ: [Float]
-		let λ: [Float]
-		let j: [Float]
-	}
-	
 	private var state: RingBuffer<deterministic> = RingBuffer<deterministic>(array: [])
-	private var level: RingBuffer<probabilistic> = RingBuffer<probabilistic>(array: [])
-	private var delta: RingBuffer<probabilistic> = RingBuffer<probabilistic>(array: [])
+	private var level: RingBuffer<(χ: [Float], μ: [Float], λ: [Float])> = RingBuffer<(χ: [Float], μ: [Float], λ: [Float])>(array: [])
+	private var delta: RingBuffer<(χ: [Float], μ: [Float], σ: [Float])> = RingBuffer<(χ: [Float], μ: [Float], σ: [Float])>(array: [])
 	
 	private var Υ: RingBuffer<Deterministic> = RingBuffer<Deterministic>(array: [])
 	private var Φ: RingBuffer<Probabilistic> = RingBuffer<Probabilistic>(array: [])
@@ -84,7 +70,7 @@ extension Cell {
 			distributionType = newValue.rawValue
 		}
 	}
-	internal var distribution: Distribution.Type {
+	public var distribution: Distribution.Type {
 		switch type {
 		case .Gauss:
 			return GaussianDistribution.self
@@ -134,20 +120,18 @@ extension Cell {
 				δ: [Float](count: width, repeatedValue: 0)
 			)
 		})
-		level = RingBuffer<probabilistic>(array: (0..<count).map{(_)in
-			probabilistic(
+		level = RingBuffer<(χ: [Float], μ: [Float], λ: [Float])>(array: (0..<count).map{(_)in
+			(
 				χ: [Float](count: width, repeatedValue: 0),
 				μ: [Float](count: width, repeatedValue: 0),
-				λ: [Float](count: width, repeatedValue: 0),
-				j: [Float](count: width, repeatedValue: 0)
+				λ: [Float](count: width, repeatedValue: 0)
 			)
 		})
-		delta = RingBuffer<probabilistic>(array: (0..<count).map{(_)in
-			probabilistic(
+		delta = RingBuffer<(χ: [Float], μ: [Float], σ: [Float])>(array: (0..<count).map{(_)in
+			(
 				χ: [Float](count: width, repeatedValue: 0),
 				μ: [Float](count: width, repeatedValue: 0),
-				λ: [Float](count: width, repeatedValue: 0),
-				j: [Float](count: width, repeatedValue: 0)
+				σ: [Float](count: width, repeatedValue: 0)
 			)
 		})
 		
@@ -267,19 +251,20 @@ extension Cell {
 		} else {
 			if !ready.contains(.ϰ) {
 				ready.insert(.ϰ)
-				let sum: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)] = input.map { $0.collect(ignore) } + [ bias.collect(ignore) ]
+				let sum: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)] = input.map { $0.collect(ignore) } + [ bias.collect() ]
 				distribution.synthesize(χ: level.new.χ, μ: level.new.μ, λ: level.new.λ, refer: sum)
 				self.dynamicType.step(state.new.ϰ, level: level.new.χ)
 			}
 			return LaMatrice(state.new.ϰ, rows: width, cols: 1, deallocator: nil)
 		}
 	}
-	public func correct(ignore: Set<Cell> = []) -> (LaObjet, LaObjet, LaObjet) {
+	public func correct(ignore: Set<Cell> = []) -> (LaObjet, LaObjet, LaObjet, Distribution.Type) {
 		if ignore.contains(self) {
 			return (
 				LaMatrice(delta.old.χ, rows: width, cols: 1),
 				LaMatrice(delta.old.μ, rows: width, cols: 1),
-				LaMatrice(delta.old.λ, rows: width, cols: 1)
+				LaMatrice(delta.old.σ, rows: width, cols: 1),
+				distribution
 			)
 		} else {
 			if !ready.contains(.δ) {
@@ -290,16 +275,17 @@ extension Cell {
 					let δ: LaObjet = ψ - ϰ
 					δ.getBytes(state.new.δ)
 				} else {
-					let δ: LaObjet = output.map { $0.correct(ignore) } .reduce(LaSplat(0)) { $0.0 + $0.1 }
+					let δ: LaObjet = output.map { $0.correct(ignore) } .reduce(LaValuer(0)) { $0.0 + $0.1 }
 					δ.getBytes(state.new.δ)
 				}
-				self.dynamicType.sign(delta.new.χ, error: state.new.δ)
-				
+				self.dynamicType.sign(state.new.δ, error: state.new.δ)
+				distribution.derivate(Δχ: delta.new.χ, Δμ: delta.new.μ, Δσ: delta.new.σ, Δ: state.new.δ, μ: level.new.μ, λ: level.new.λ)
 			}
 			return (
 				LaMatrice(delta.new.χ, rows: width, cols: 1),
 				LaMatrice(delta.new.μ, rows: width, cols: 1),
-				LaMatrice(delta.new.λ, rows: width, cols: 1)
+				LaMatrice(delta.new.σ, rows: width, cols: 1),
+				distribution
 			)
 		}
 	}

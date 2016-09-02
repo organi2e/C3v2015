@@ -11,17 +11,15 @@ public enum DistributionType: String {
 	case Cauchy = "Cauchy"
 	case False = "False"
 }
-internal protocol Distribution {
+public protocol Distribution {
 	static func cdf(χ: Float, μ: Float, σ: Float) -> Float
 	static func pdf(χ: Float, μ: Float, σ: Float) -> Float
-//	static func cdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
-//	static func pdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
 	static func rng(χ: [Float], ψ: [UInt32], μ: LaObjet, σ: LaObjet)
 	
-	
-	static func gradμ(μ μ: LaObjet, χ: LaObjet) -> LaObjet
-	static func gradσ(σ σ: LaObjet, χ: LaObjet) -> LaObjet
-	static func derivate(Δχ Δχ: [Float], Δμ: [Float], Δσ: [Float], Δ: LaObjet, μ: LaObjet, λ: LaObjet)
+	static func gainχ(χ: LaObjet) -> (μ: LaObjet, σ: LaObjet)
+	static func Δμ(Δ Δ: LaObjet, μ: LaObjet) -> LaObjet
+	static func Δσ(Δ Δ: LaObjet, σ: LaObjet) -> LaObjet
+	static func derivate(Δχ Δχ: [Float], Δμ: [Float], Δσ: [Float], Δ: [Float], μ: [Float], λ: [Float])
 	static func synthesize(χ χ: [Float], μ: [Float], λ: [Float], refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)])
 	
 	
@@ -29,20 +27,24 @@ internal protocol Distribution {
 internal class FalseDistribution: Distribution {
 	static func cdf(χ: Float, μ: Float, σ: Float) -> Float { return μ >= χ ? 0 : 1 }
 	static func pdf(χ: Float, μ: Float, σ: Float) -> Float { return μ != χ ? 0 : 1 }
-	//	static func cdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
-	//	static func pdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
 	static func rng(χ: [Float], ψ: [UInt32], μ: LaObjet, σ: LaObjet) {
-		μ.eval(χ)
+		μ.getBytes(χ)
 	}
-	static func gradμ(μ μ: LaObjet, χ: LaObjet) -> LaObjet {
-		return χ
+	static func gainχ(χ: LaObjet) -> (μ: LaObjet, σ: LaObjet) {
+		return (
+			LaValuer(1),
+			LaValuer(1)
+		)
 	}
-	static func gradσ(σ σ: LaObjet, χ: LaObjet) -> LaObjet {
-		return LaValuer(0)
+	static func Δμ(Δ Δ: LaObjet, μ: LaObjet) -> LaObjet {
+		return Δ
 	}
-	static func derivate(Δχ Δχ: [Float], Δμ: [Float], Δσ: [Float], Δ: LaObjet, μ: LaObjet, λ: LaObjet) {
-		Δ.getBytes(Δχ)
-		Δ.getBytes(Δμ)
+	static func Δσ(Δ Δ: LaObjet, σ: LaObjet) -> LaObjet {
+		return Δ
+	}
+	static func derivate(Δχ Δχ: [Float], Δμ: [Float], Δσ: [Float], Δ: [Float], μ: [Float], λ: [Float]) {
+		cblas_scopy(Int32(min(Δ.count, Δχ.count)), Δ, 1, UnsafeMutablePointer<Float>(Δχ), 1)
+		cblas_scopy(Int32(min(Δ.count, Δμ.count)), Δ, 1, UnsafeMutablePointer<Float>(Δμ), 1)
 		vDSP_vclr(UnsafeMutablePointer<Float>(Δσ), 1, vDSP_Length(Δσ.count))
 	}
 	static func synthesize(χ χ: [Float], μ: [Float], λ: [Float], refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) {

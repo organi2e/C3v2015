@@ -52,8 +52,11 @@ internal class CauchyDistribution: Distribution {
 		vvtanpif(UnsafeMutablePointer<Float>(χ), χ, [Int32(count)])
 		(LaMatrice(χ, rows: min(μ.rows, σ.rows), cols: min(μ.cols, σ.cols), deallocator: nil)*σ+μ).eval(χ)
 	}
-	static func derivate(Δχ Δχ: [Float], Δμ: [Float], Δσ: [Float], Δ: LaObjet, μ: LaObjet, λ: LaObjet) {
+	static func derivate(Δχ Δχ: [Float], Δμ: [Float], Δσ: [Float], Δ delta: [Float], μ mu: [Float], λ lambda: [Float]) {
 		let χ: LaObjet = LaMatrice(Δχ, rows: Δχ.count, cols: 1)
+		let Δ: LaObjet = LaMatrice(delta, rows: delta.count, cols: 1)
+		let μ: LaObjet = LaMatrice(mu, rows: mu.count, cols: 1)
+		let λ: LaObjet = LaMatrice(lambda, rows: lambda.count, cols: 1)
 		
 		let λμ: LaObjet = λ * μ
 		(1 + λμ * λμ).getBytes(Δχ)
@@ -66,11 +69,14 @@ internal class CauchyDistribution: Distribution {
 		(λχ*μ*λ).getBytes(Δσ)
 		vDSP_vneg(Δσ, 1, UnsafeMutablePointer<Float>(Δσ), 1, vDSP_Length(Δσ.count))
 	}
-	static func gradμ(μ μ: LaObjet, χ: LaObjet) -> LaObjet {
-		return χ
+	static func gainχ(χ: LaObjet) -> (μ: LaObjet, σ: LaObjet) {
+		return (χ, χ)
 	}
-	static func gradσ(σ σ: LaObjet, χ: LaObjet) -> LaObjet {
-		return χ
+	static func Δμ(Δ Δ: LaObjet, μ: LaObjet) -> LaObjet {
+		return Δ
+	}
+	static func Δσ(Δ Δ: LaObjet, σ: LaObjet) -> LaObjet {
+		return Δ
 	}
 	static func synthesize(χ χ: [Float], μ: [Float], λ: [Float], refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) {
 		let mix: (χ: LaObjet, μ: LaObjet, σ: LaObjet) = refer.reduce((LaSplat(0), LaSplat(0), LaSplat(0))) {
