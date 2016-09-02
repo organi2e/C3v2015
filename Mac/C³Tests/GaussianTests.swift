@@ -10,18 +10,44 @@ import XCTest
 @testable import C3
 class GaussianTests: XCTestCase {
 
+	func uniform(count: Int) -> [Float] {
+		return(0..<count).map {(_)in
+			Float(arc4random()/65536)
+		}
+	}
 	func testSynthesize() {
 		let N: Int = 16
-		let L: Int = 64
-		let data: [([Float], [Float], [Float])] = (0..<N).map {(_)in
-			(
-				(0..<L).map{(_)in Float(arc4random())/Float(UInt32.max)},
-				(0..<L).map{(_)in Float(arc4random())/Float(UInt32.max)},
-				(0..<L).map{(_)in Float(arc4random())/Float(UInt32.max)}
+		let L: Int = 16
+		var refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)] = []
+		for _ in 0..<N {
+			let element: (χ: LaObjet, μ: LaObjet, σ: LaObjet) = (
+				LaMatrice(uniform(L), rows: L, cols: 1),
+				LaMatrice(uniform(L), rows: L, cols: 1),
+				LaMatrice(uniform(L), rows: L, cols: 1)
 			)
+			refer.append(element)
 		}
+		let χ: [Float] = [Float](count: L, repeatedValue: 0)
+		let μ: [Float] = [Float](count: L, repeatedValue: 0)
+		let λ: [Float] = [Float](count: L, repeatedValue: 0)
 		
-		//GaussianDistribution.synthesize(χ: <#T##[Float]#>, μ: <#T##[Float]#>, λ: <#T##[Float]#>, refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)])
+		var χd: [Float] = [Float](count: L, repeatedValue: 0)
+		var μd: [Float] = [Float](count: L, repeatedValue: 0)
+		var λd: [Float] = [Float](count: L, repeatedValue: 0)
+		
+		GaussianDistribution.synthesize(χ: χ, μ: μ, λ: λ, refer: refer)
+		
+		for l in 0..<L {
+			for n in 0..<N {
+				χd[l] = χd[l] + refer[n].χ[l]
+				μd[l] = μd[l] + refer[n].μ[l]
+				λd[l] = λd[l] + (refer[n].σ[l]*refer[n].σ[l])
+			}
+			λd[l] = sqrt(1/λd[l])
+		}
+		XCTAssert(χd.elementsEqual(χ))
+		XCTAssert(μd.elementsEqual(μ))
+		XCTAssert(λd.elementsEqual(λ))
 	}
 	
     func testRNG() {

@@ -5,7 +5,7 @@
 //  Created by Kota Nakano on 8/30/16.
 //
 //
-
+/*
 import XCTest
 @testable import C3
 class ArcaneTest: XCTestCase {
@@ -63,3 +63,4 @@ class ArcaneTest: XCTestCase {
 		
 	}
 }
+*/

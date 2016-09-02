@@ -5,6 +5,7 @@
 //  Created by Kota Nakano on 6/7/16.
 //
 //
+/*
 import Accelerate
 import Foundation
 import XCTest
@@ -299,3 +300,4 @@ class BlasTests: XCTestCase {
 		}
 	}
 }
+*/

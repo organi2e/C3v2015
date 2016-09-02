@@ -5,7 +5,7 @@
 //  Created by Kota Nakano on 6/7/16.
 //
 //
-
+/*
 import XCTest
 @testable import C3
 class CellTests: XCTestCase {
@@ -479,5 +479,6 @@ class CellTests: XCTestCase {
 	}
 	*/
 }
+*/
 */
 */

@@ -5,6 +5,7 @@
 //  Created by Kota Nakano on 6/7/16.
 //
 //
+/*
 import Accelerate
 import XCTest
 @testable import C3
@@ -371,4 +372,5 @@ class EdgeTests: XCTestCase {
 		
 	}
 }
+*/
 */

@@ -104,7 +104,7 @@ internal func *(lhs: Float, rhs: LaObjet) -> LaObjet { return rhs.count == 0 ? l
 
 internal func /(lhs: LaObjet, rhs: LaObjet) -> LaObjet {
 	var B: LaObjet {
-		let result: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*lhs.count))
+		let result: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*rhs.count))
 		rhs.getBytes(result)
 		vvrecf(result, result, [Int32(rhs.count)])
 		return la_matrix_from_float_buffer_nocopy(result, la_matrix_rows(rhs), la_matrix_cols(rhs), la_matrix_cols(rhs), HINT, free, ATTR)

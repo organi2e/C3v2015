@@ -5,11 +5,10 @@
 //  Created by Kota Nakano on 6/7/16.
 //
 //
-
+/*
 import XCTest
 import MNIST
 @testable import C3
-/*
 class MNISTTests: XCTestCase {
 	static let file: String = "test.sqlite"
 	func test0Insert() {

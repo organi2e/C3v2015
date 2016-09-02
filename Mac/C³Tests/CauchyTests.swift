@@ -5,6 +5,7 @@
 //  Created by Kota Nakano on 8/29/16.
 //
 //
+/*
 import Accelerate
 import XCTest
 @testable import C3
@@ -87,3 +88,4 @@ class CauchyTests: XCTestCase {
 	}
 	
 }
+*/

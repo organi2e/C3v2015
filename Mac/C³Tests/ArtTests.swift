@@ -5,6 +5,7 @@
 //  Created by Kota Nakano on 8/23/16.
 //
 //
+/*
 import Accelerate
 import XCTest
 import simd
@@ -61,3 +62,4 @@ class ArtTests: XCTestCase {
 		fclose(fp)
 	}
 }
+*/
