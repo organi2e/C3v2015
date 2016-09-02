@@ -9,8 +9,8 @@ import Accelerate
 import CoreData
 
 internal class Arcane: NSManagedObject {
-	private let group: dispatch_group_t = dispatch_group_create()
-	private var cache = (
+	internal let group: dispatch_group_t = dispatch_group_create()
+	internal var cache = (
 		ψ: Array<UInt32>(),
 		χ: Array<Float>(),
 		b: Array<Float>(),
@@ -19,7 +19,9 @@ internal class Arcane: NSManagedObject {
 		logb: Array<Float>(),
 		logμ: UnsafeMutablePointer<Float>(nil),
 		logσ: UnsafeMutablePointer<Float>(nil),
-		grad: Array<Float>()
+		gradb: Array<Float>(),
+		gradμ: UnsafeMutablePointer<Float>(nil),
+		gradσ: UnsafeMutablePointer<Float>(nil)
 	)
 	private var μoptimizer: GradientOptimizer = SGD()
 	private var σoptimizer: GradientOptimizer = SGD()
@@ -27,8 +29,8 @@ internal class Arcane: NSManagedObject {
 internal extension Arcane {
 	@NSManaged private var location: NSData
 	@NSManaged private var logscale: NSData
-	@NSManaged private var rows: Int
-	@NSManaged private var cols: Int
+	@NSManaged internal var rows: Int
+	@NSManaged internal var cols: Int
 }
 internal extension Arcane {
 	override func awakeFromInsert() {
@@ -62,7 +64,9 @@ internal extension Arcane {
 		cache.logμ = UnsafeMutablePointer<Float>(cache.logb).advancedBy(0*count)
 		cache.logσ = UnsafeMutablePointer<Float>(cache.logb).advancedBy(1*count)
 		
-		cache.grad = Array<Float>(count: count, repeatedValue: 0)
+		cache.gradb = Array<Float>(count: 2*count, repeatedValue: 0)//ARC
+		cache.gradμ = UnsafeMutablePointer<Float>(cache.gradb).advancedBy(0*count)
+		cache.gradσ = UnsafeMutablePointer<Float>(cache.gradb).advancedBy(1*count)
 		
 		location.getBytes(cache.logμ, length: sizeof(Float)*count)
 		logscale.getBytes(cache.logσ, length: sizeof(Float)*count)
@@ -90,18 +94,32 @@ internal extension Arcane {
 		assert(Δσ.cols == cols)
 		
 		let count: Int = rows * cols
-
-		willChangeValueForKey(Arcane.locationKey)
-		( logμ + μoptimizer.optimize(Δx: distribution.Δμ(Δ: Δμ, μ: μ), x: logμ) ).getBytes(cache.logμ)
-		didChangeValueForKey(Arcane.locationKey)
-		
-		vDSP_vneg(cache.σ, 1, &cache.grad, 1, vDSP_Length(count))
-		vvexpf(&cache.grad, cache.grad, [Int32(count)])
-		
-		willChangeValueForKey(Arcane.logscaleKey)
-		( logσ + ( 1 - grad ) * σoptimizer.optimize(Δx: distribution.Δσ(Δ: Δσ, σ: σ), x: logσ) ).getBytes(cache.logσ)
-		didChangeValueForKey(Arcane.logscaleKey)
-		
+		do {
+			distribution.Δμ(Δ: Δμ, μ: μ).getBytes(cache.μ)
+			let x: LaObjet = LaMatrice(cache.logμ, rows: count, cols: 1, deallocator: nil)
+			let Δx: LaObjet = LaMatrice(cache.μ, rows: count, cols: 1, deallocator: nil)
+			
+			μoptimizer.optimize(Δx: Δx, x: x).getBytes(cache.μ)
+			
+			willChangeValueForKey(Arcane.locationKey)
+			( logμ - μ ).getBytes(cache.logμ)
+			didChangeValueForKey(Arcane.locationKey)
+		}
+		do {
+			vDSP_vneg(cache.σ, 1, cache.gradσ, 1, vDSP_Length(count))
+			vvexpf(cache.gradσ, cache.gradσ, [Int32(count)])
+			
+			distribution.Δσ(Δ: Δσ, σ: σ).getBytes(cache.σ)
+			let x: LaObjet = LaMatrice(cache.logσ, rows: count, cols: 1, deallocator: nil)
+			let Δx: LaObjet = LaMatrice(cache.σ, rows: count, cols: 1, deallocator: nil)
+			
+			σoptimizer.optimize(Δx: Δx, x: x).getBytes(cache.σ)
+			( ( 1 - gradσ ) * σ ).getBytes(cache.σ)
+			
+			willChangeValueForKey(Arcane.logscaleKey)
+			( logσ - σ ).getBytes(cache.logσ)
+			didChangeValueForKey(Arcane.logscaleKey)
+		}
 		refresh()
 	}
 	internal func adjust(μ μ: Float, σ: Float) {
@@ -146,8 +164,11 @@ extension Arcane: RandomNumberGeneratable {
 	internal var σ: LaObjet {
 		return LaMatrice(cache.σ, rows: rows, cols: cols, deallocator: nil)
 	}
-	private var grad: LaObjet {
-		return LaMatrice(cache.grad, rows: rows, cols: cols, deallocator: nil)
+	private var gradμ: LaObjet {
+		return LaMatrice(cache.gradμ, rows: rows, cols: cols, deallocator: nil)
+	}
+	private var gradσ: LaObjet {
+		return LaMatrice(cache.gradσ, rows: rows, cols: cols, deallocator: nil)
 	}
 	private var logμ: LaObjet {
 		return LaMatrice(cache.logμ, rows: rows, cols: cols, deallocator: nil)

@@ -29,6 +29,29 @@ class CauchyTests: XCTestCase {
 		
 	}
 	
+	func testGain() {
+		let χd: [Float] = Array<Float>(arrayLiteral: 0, 1, 2, 3)
+		let χ: LaObjet = LaMatrice(χd, rows: χd.count, cols: 1)
+		
+		let weight = CauchyDistribution.gainχ(χ)
+		XCTAssert(weight.0.array.elementsEqual(χd))
+		XCTAssert(weight.1.array.elementsEqual(χd))
+	}
+	
+	func testSynthesize() {
+		let N: Int = 10
+		let L: Int = 64
+		let refer: [([Float], [Float], [Float])] = (0..<N).map {(_)in
+			(
+				(0..<L).map{(_)in Float(arc4random())/Float(uint32.max)},
+				(0..<L).map{(_)in Float(arc4random())/Float(uint32.max)},
+				(0..<L).map{(_)in Float(arc4random())/Float(uint32.max)}
+			)
+		}
+		let χ: [Float] = [Float](count: L, repeatedValue: 0)
+		let μ: [Float] = [Float](count: L, repeatedValue: 0)
+		let λ: [Float] = [Float](count: L, repeatedValue: 0)
+	}
 	
 	func testRNG() {
 		

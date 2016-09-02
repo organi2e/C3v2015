@@ -8,7 +8,7 @@
 
 import Accelerate
 import CoreData
-
+import simd
 public class Cell: NSManagedObject {
 	
 	private enum Ready {
@@ -102,25 +102,17 @@ extension Cell {
 				σ: [Float](count: width, repeatedValue: 0)
 			)
 		})
-		iRefresh()
-		oRefresh()
 	}
 }
 extension Cell {
-	internal func iRefresh() {
-		state.progress()
-		level.progress()
-	}
-	private func oRefresh() {
-		delta.progress()
-	}
 	public func collect_clear() {
 		if ready.contains(.ϰ) {
 			ready.remove(.ϰ)
 			input.forEach {
 				$0.collect_clear(distribution)
 			}
-			iRefresh()
+			state.progress()
+			level.progress()
 			bias.shuffle(distribution)
 		}
 	}
@@ -130,7 +122,7 @@ extension Cell {
 			output.forEach {
 				$0.correct_clear()
 			}
-			oRefresh()
+			delta.progress()
 		}
 		ready.remove(.ψ)
 	}
@@ -143,7 +135,6 @@ extension Cell {
 				let sum: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)] = input.map { $0.collect(ignore) } + [ bias.collect() ]
 				distribution.synthesize(χ: level.new.χ, μ: level.new.μ, λ: level.new.λ, refer: sum)
 				self.dynamicType.step(state.new.ϰ, level: level.new.χ)
-				print("\(label), \(level.new.μ)")
 			}
 			return LaMatrice(state.new.ϰ, rows: width, cols: 1, deallocator: nil)
 		}
@@ -162,7 +153,7 @@ extension Cell {
 				if ready.contains(.ψ) {
 					let ψ: LaObjet = LaMatrice(state.new.ψ, rows: width, cols: 1, deallocator: nil)
 					let ϰ: LaObjet = LaMatrice(state.new.ϰ, rows: width, cols: 1, deallocator: nil)
-					let δ: LaObjet = ψ - ϰ
+					let δ: LaObjet = ϰ - ψ
 					δ.getBytes(state.new.δ)
 				} else {
 					let δ: LaObjet = output.map { $0.correct(ignore, ϰ: state.new.ϰ) } .reduce(LaValuer(0)) { $0.0 + $0.1 }
@@ -170,6 +161,7 @@ extension Cell {
 				}
 				self.dynamicType.sign(state.new.δ, error: state.new.δ)
 				distribution.derivate(Δχ: delta.new.χ, Δμ: delta.new.μ, Δσ: delta.new.σ, Δ: state.new.δ, μ: level.new.μ, λ: level.new.λ)
+
 			}
 			return (
 				LaMatrice(delta.new.χ, rows: width, cols: 1, deallocator: nil),
@@ -183,7 +175,7 @@ extension Cell {
 extension Cell {
 	public var active: [Bool] {
 		set {
-			NSData(bytesNoCopy: UnsafeMutablePointer(newValue.map({Float($0)})), length: sizeof(Float)*newValue.count, freeWhenDone: false).getBytes(UnsafeMutablePointer<Void>(state.new.ϰ), length: sizeof(Float)*width)
+			NSData(bytesNoCopy: UnsafeMutablePointer(newValue.map({Float($0)})), length: sizeof(Float)*newValue.count, freeWhenDone: false).getBytes(UnsafeMutablePointer<Void>(state.new.ϰ), length: sizeof(Float)*state.new.ϰ.count)
 			ready.insert(.ϰ)
 		}
 		get {
@@ -192,7 +184,7 @@ extension Cell {
 	}
 	public var answer: [Bool] {
 		set {
-			NSData(bytesNoCopy: UnsafeMutablePointer(newValue.map({Float($0)})), length: sizeof(Float)*newValue.count, freeWhenDone: false).getBytes(UnsafeMutablePointer<Void>(state.new.ψ), length: sizeof(Float)*width)
+			NSData(bytesNoCopy: UnsafeMutablePointer(newValue.map({Float($0)})), length: sizeof(Float)*newValue.count, freeWhenDone: false).getBytes(UnsafeMutablePointer<Void>(state.new.ψ), length: sizeof(Float)*state.new.ψ.count)
 			ready.insert(.ψ)
 		}
 		get {
@@ -206,20 +198,34 @@ extension Cell {
 extension Cell {
 	internal static func step(state: [Float], level: [Float]) {
 		assert(state.count==level.count)
+		/*
 		let length: vDSP_Length = vDSP_Length(min(state.count, level.count))
 		vDSP_vneg(level, 1, UnsafeMutablePointer<Float>(state), 1, length)
 		vDSP_vthrsc(state, 1, [Float(0.0)], [Float(0.5)], UnsafeMutablePointer<Float>(state), 1, length)
 		vDSP_vneg(state, 1, UnsafeMutablePointer<Float>(state), 1, length)
 		vDSP_vsadd(state, 1, [Float(0.5)], UnsafeMutablePointer<Float>(state), 1, length)
+		*/
+		let sref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(state)
+		let lref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(level)
+		for k in 0..<((min(state.count, level.count)-1)/4+1) {
+			sref[k] = vector_step(float4(0.0), lref[k])
+		}
 	}
 	internal static func sign(delta: [Float], error: [Float]) {
 		assert(delta.count==error.count)
+		let dref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(delta)
+		let eref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(error)
+		for k in 0..<((min(delta.count, error.count)-1)/4+1) {
+			dref[k] = vector_sign(eref[k])
+		}
+		/*
 		let length: vDSP_Length = vDSP_Length(min(delta.count, error.count))
 		let cache: [Float] = [Float](count: Int(length), repeatedValue: 0)
 		vDSP_vthrsc(error, 1, [Float(0.0)], [Float( 0.5)], UnsafeMutablePointer<Float>(delta), 1, length)
 		vDSP_vneg(error, 1, UnsafeMutablePointer<Float>(cache), 1, length)
 		vDSP_vthrsc(UnsafeMutablePointer<Float>(cache), 1, [Float(0.0)], [Float(-0.5)], UnsafeMutablePointer<Float>(cache), 1, length)
 		vDSP_vadd(UnsafeMutablePointer<Float>(cache), 1, UnsafeMutablePointer<Float>(delta), 1, UnsafeMutablePointer<Float>(delta), 1, length)
+		*/
 	}
 }
 extension Context {

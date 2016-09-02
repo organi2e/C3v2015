@@ -10,6 +10,20 @@ import XCTest
 @testable import C3
 class GaussianTests: XCTestCase {
 
+	func testSynthesize() {
+		let N: Int = 16
+		let L: Int = 64
+		let data: [([Float], [Float], [Float])] = (0..<N).map {(_)in
+			(
+				(0..<L).map{(_)in Float(arc4random())/Float(UInt32.max)},
+				(0..<L).map{(_)in Float(arc4random())/Float(UInt32.max)},
+				(0..<L).map{(_)in Float(arc4random())/Float(UInt32.max)}
+			)
+		}
+		
+		//GaussianDistribution.synthesize(χ: <#T##[Float]#>, μ: <#T##[Float]#>, λ: <#T##[Float]#>, refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)])
+	}
+	
     func testRNG() {
 
 		let srcμ: Float = Float(arc4random())/Float(UInt32.max) * 2.0 - 1.0

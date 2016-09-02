@@ -63,17 +63,19 @@ class BiasTests: XCTestCase {
 		XCTAssert(χ.elementsEqual(bias.χ.array))
 		XCTAssert(μ.elementsEqual(bias.μ.array))
 		XCTAssert(λ.elementsEqual(bias.σ.array.map { 1 / $0 } ))
-		print(λ)
-		print(bias.σ.array.map { 1 / $0 } )
+		
 	}
 	func testGaussianCorrect() {
+		
 		
 	}
 	func testCauchyCorrect(){
 		
-		let χ: [Float] = [Float](count: rows*cols, repeatedValue: 0)
-		let μ: [Float] = [Float](count: rows*cols, repeatedValue: 0)
-		let λ: [Float] = [Float](count: rows*cols, repeatedValue: 0)
+		let count: Int = rows * cols
+		
+		let χ: [Float] = [Float](count: count, repeatedValue: 0)
+		let μ: [Float] = [Float](count: count, repeatedValue: 0)
+		let λ: [Float] = [Float](count: count, repeatedValue: 0)
 		
 		let distribution = CauchyDistribution.self
 		let bias: Bias! = context.new()

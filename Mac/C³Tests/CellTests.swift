@@ -36,15 +36,15 @@ class CellTests: XCTestCase {
 	*/
 	func testCollect() {
 		let context: Context = try!Context()
-		context.optimizerFactory = SGD.factory(η: 1/16.0)
+		context.optimizerFactory = Adam.factory()
 		let I: Cell = try! context.newCell(.Gauss, width: 4, label: "I")
-		let H: Cell = try! context.newCell(.Gauss, width: 4, label: "H", input: [I])
+		let H: Cell = try! context.newCell(.Gauss, width:16, label: "H", input: [I])
 		let O: Cell = try! context.newCell(.Gauss, width: 4, label: "O", input: [H])
 		
 		let IS: [[Bool]] = [
 			[false, false, false, true],
 			[false, false, true, false],
-			[false, false, true, true],
+			[false, false, true,  true],
 			[false, true, false, false]
 		]
 		
@@ -57,12 +57,12 @@ class CellTests: XCTestCase {
 		
 		for k in 0..<64 {
 			
-			for j in 0..<16 {
+			for _ in 0..<16 {
 				I.correct_clear()
 				O.collect_clear()
-		
-				I.active = IS[k%4]
+				
 				O.answer = OS[k%4]
+				I.active = IS[k%4]
 			
 				O.collect()
 				I.correct()

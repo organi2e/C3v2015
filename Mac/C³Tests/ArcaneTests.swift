@@ -39,7 +39,7 @@ class ArcaneTest: XCTestCase {
 		let rows: Int = 2
 		let cols: Int = 1
 		
-		context.optimizerFactory = Adam.factory()
+		context.optimizerFactory = QuasiNewton.factory(.SymmetricRank1, η: 0.1)
 		let a: Arcane! = context.new()
 
 		a.resize(rows: rows, cols: cols)

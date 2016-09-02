@@ -8,23 +8,6 @@
 import Accelerate
 import CoreData
 import simd
-internal class Cauchy: Art {
-	
-}
-extension Cauchy {
-	internal override class var shuffleKernel: String { return "cauchyShuffle" }
-}
-extension Cauchy {
-	internal static func pdf(pdf: [Float], μ: [Float], σ: [Float]) {
-	
-	}
-	internal static func cdf(cdf: [Float], μ: [Float], σ: [Float]) {
-	
-	}
-	internal static func rng(n: [Float], μ: [Float], σ: [Float]) {
-		
-	}
-}
 
 internal class CauchyDistribution: Distribution {
 	static func cdf(χ: Float, μ: Float, σ: Float) -> Float {
@@ -53,10 +36,10 @@ internal class CauchyDistribution: Distribution {
 		(LaMatrice(χ, rows: min(μ.rows, σ.rows), cols: min(μ.cols, σ.cols), deallocator: nil)*σ+μ).eval(χ)
 	}
 	static func derivate(Δχ Δχ: [Float], Δμ: [Float], Δσ: [Float], Δ delta: [Float], μ mu: [Float], λ lambda: [Float]) {
-		let χ: LaObjet = LaMatrice(Δχ, rows: Δχ.count, cols: 1)
-		let Δ: LaObjet = LaMatrice(delta, rows: delta.count, cols: 1)
-		let μ: LaObjet = LaMatrice(mu, rows: mu.count, cols: 1)
-		let λ: LaObjet = LaMatrice(lambda, rows: lambda.count, cols: 1)
+		let χ: LaObjet = LaMatrice(Δχ, rows: Δχ.count, cols: 1, deallocator: nil)
+		let Δ: LaObjet = LaMatrice(delta, rows: delta.count, cols: 1, deallocator: nil)
+		let μ: LaObjet = LaMatrice(mu, rows: mu.count, cols: 1, deallocator: nil)
+		let λ: LaObjet = LaMatrice(lambda, rows: lambda.count, cols: 1, deallocator: nil)
 		
 		let λμ: LaObjet = λ * μ
 		(1 + λμ * λμ).getBytes(Δχ)

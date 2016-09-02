@@ -6,10 +6,6 @@
         <attribute name="logscale" attributeType="Binary" syncable="YES"/>
         <attribute name="rows" attributeType="Integer 64" defaultValueString="0" syncable="YES"/>
     </entity>
-    <entity name="Art" syncable="YES">
-        <attribute name="logmu" attributeType="Binary" allowsExternalBinaryDataStorage="YES" syncable="YES"/>
-        <attribute name="logsigma" attributeType="Binary" allowsExternalBinaryDataStorage="YES" syncable="YES"/>
-    </entity>
     <entity name="Bias" representedClassName="C3.Bias" parentEntity="Arcane" syncable="YES">
         <relationship name="output" maxCount="1" deletionRule="Nullify" destinationEntity="Cell" inverseName="bias" inverseEntity="Cell" syncable="YES"/>
     </entity>
@@ -17,7 +13,6 @@
         <attribute name="data" attributeType="Binary" syncable="YES"/>
         <attribute name="name" attributeType="String" indexed="YES" syncable="YES"/>
     </entity>
-    <entity name="Cauchy" representedClassName="C3.Cauchy" parentEntity="Art" syncable="YES"/>
     <entity name="Cell" representedClassName="C3.Cell" syncable="YES">
         <attribute name="attribute" transient="YES" attributeType="Transformable" syncable="YES"/>
         <attribute name="distributionType" attributeType="String" syncable="YES"/>
@@ -45,18 +40,14 @@
     <entity name="Feedback" representedClassName="C3.Feedback" parentEntity="Arcane" syncable="YES">
         <relationship name="cell" maxCount="1" deletionRule="Nullify" destinationEntity="Cell" inverseName="feedback" inverseEntity="Cell" syncable="YES"/>
     </entity>
-    <entity name="Gauss" representedClassName="C3.Gauss" parentEntity="Art" syncable="YES"/>
     <elements>
         <element name="Arcane" positionX="36" positionY="171" width="128" height="105"/>
-        <element name="Art" positionX="45" positionY="180" width="128" height="75"/>
         <element name="Bias" positionX="54" positionY="189" width="128" height="60"/>
         <element name="Blob" positionX="36" positionY="171" width="128" height="75"/>
-        <element name="Cauchy" positionX="36" positionY="171" width="128" height="45"/>
         <element name="Cell" positionX="36" positionY="117" width="128" height="195"/>
         <element name="Decay" positionX="36" positionY="171" width="128" height="75"/>
         <element name="Dict" positionX="18" positionY="81" width="128" height="75"/>
         <element name="Edge" positionX="54" positionY="108" width="128" height="75"/>
         <element name="Feedback" positionX="36" positionY="171" width="128" height="60"/>
-        <element name="Gauss" positionX="36" positionY="171" width="128" height="45"/>
     </elements>
 </model>

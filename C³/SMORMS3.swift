@@ -57,7 +57,6 @@ extension SMORMS3: GradientOptimizer {
 		vvdivf(UnsafeMutablePointer<Float>(x), x, g2, [Int32(min(x.count, g2.count))])
 		//vDSP_vthr(x, 1, [α], UnsafeMutablePointer<Float>(x), 1, vDSP_Length(x.count))
 		vvrsqrtf(UnsafeMutablePointer<Float>(m), g2, [Int32(min(m.count, g2.count))])
-		//for k in 0..<x.count { x[k] = min(α, g[k]*g[k]/(g2[k]+ε)) }
 		//for k in 0..<x.count { x[k] = min(α, g[k]*g[k]/(g2[k]+ε))/(sqrt(g2[k])+ε) }
 		return grad * M * X
 	}

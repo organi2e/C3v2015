@@ -76,14 +76,13 @@ internal class GaussianDistribution: Distribution {
 		let λ: LaObjet = LaMatrice(lambda, rows: lambda.count, cols: 1, deallocator: nil)
 		
 		let λμ: LaObjet = λ * μ
-		(-0.5 * λμ * λμ).getBytes(Δχ)
+		( -0.5 * λμ * λμ ).getBytes(Δχ)
 		vvexpf(UnsafeMutablePointer<Float>(Δχ), Δχ, [Int32(Δχ.count)])
 		(Float(0.5*M_2_SQRTPI*M_SQRT1_2)*Δ*χ).getBytes(Δχ)
 		
-		
 		let λχ: LaObjet = λ * χ
 		(λχ).getBytes(Δμ)
-		(-0.5*λχ*μ*λ*λ).getBytes(Δσ)
+		( -0.5 * λχ * λμ * λ ).getBytes(Δσ)
 		
 		//vDSP_vneg(Δσ, 1, UnsafeMutablePointer<Float>(Δσ), 1, vDSP_Length(Δσ.count))
 	}
