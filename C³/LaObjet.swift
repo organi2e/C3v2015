@@ -57,6 +57,9 @@ internal extension LaObjet {
 	func getBytes(buffer: UnsafePointer<Void>) -> Bool {
 		return la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), la_count_t(la_matrix_cols(self)), self) == la_status_t(LA_SUCCESS)
 	}
+	func eval(buffer: [Float]) -> Bool {
+		return getBytes(buffer)
+	}
 	func subvec(offset offset: Int, length: Int, stride: Int = 1) -> LaObjet {
 		return la_vector_slice(self, la_index_t(offset), la_index_t(stride), la_count_t(length))
 	}
@@ -116,6 +119,9 @@ internal func LaDiagonale(vector: LaObjet) -> LaObjet {
 	return la_diagonal_matrix_from_vector(vector, 0)
 }
 internal func LaSplat(scalar: Float) -> LaObjet {
+	return la_splat_from_float(scalar, ATTR)
+}
+internal func LaValuer(scalar: Float) -> LaObjet {
 	return la_splat_from_float(scalar, ATTR)
 }
 internal func LaMatrice(scalar: Float, rows: Int, cols: Int) -> LaObjet {

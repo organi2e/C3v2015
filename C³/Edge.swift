@@ -14,8 +14,6 @@ internal class Edge: Arcane {
 		let σ: MTLBuffer
 	}
 	var grads: RingBuffer<grad> = RingBuffer<grad>(array: [])
-	lazy var optimizerμ: GradientOptimizer = (self.managedObjectContext as? Context)?.optimizerFactory(self.output.width) ?? SGD()
-	lazy var optimizerσ: GradientOptimizer = (self.managedObjectContext as? Context)?.optimizerFactory(self.output.width) ?? SGD()
 }
 extension Edge {
 	@NSManaged private var input: Cell

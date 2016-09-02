@@ -488,9 +488,9 @@
 				876A4B551D066EDC00D32E1B /* EdgeTests.swift */,
 				87B9C0261D49249900534528 /* MNISTTest.swift */,
 				87D8B4051D4B6E590010EA4F /* BlasTests.swift */,
-				875DD1A81D66B47E00A5C250 /* CauchyTests.swift */,
 				875DD1C21D6C11B600A5C250 /* ArtTests.swift */,
 				87CFDE991D744BD600716188 /* GaussianTests.swift */,
+				875DD1A81D66B47E00A5C250 /* CauchyTests.swift */,
 				87AE7C951D755CBF0061F229 /* OptimizerTests.swift */,
 			);
 			path = "C³Tests";

@@ -17,20 +17,41 @@ internal protocol Distribution {
 //	static func cdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
 //	static func pdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
 	static func rng(χ: [Float], μ: [Float], σ: [Float], ψ: [UInt32])
+	
+	
+	static func gradμ(μ μ: LaObjet, χ: LaObjet) -> LaObjet
+	static func gradσ(σ σ: LaObjet, χ: LaObjet) -> LaObjet
+	static func derivate(Δχ Δχ: [Float], Δμ: [Float], Δσ: [Float], Δ: LaObjet, μ: LaObjet, λ: LaObjet)
 	static func synthesize(χ χ: [Float], μ: [Float], λ: [Float], refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)])
+	
+	
 }
 internal class FalseDistribution: Distribution {
-	static func cdf(χ: Float, μ: Float, σ: Float) -> Float { return 0 }
-	static func pdf(χ: Float, μ: Float, σ: Float) -> Float { return 0 }
+	static func cdf(χ: Float, μ: Float, σ: Float) -> Float { return μ >= χ ? 0 : 1 }
+	static func pdf(χ: Float, μ: Float, σ: Float) -> Float { return μ != χ ? 0 : 1 }
 	//	static func cdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
 	//	static func pdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
 	static func rng(χ: [Float], μ: [Float], σ: [Float], ψ: [UInt32]) {
-		vDSP_vfill([Float.quietNaN], UnsafeMutablePointer<Float>(χ), 1, vDSP_Length(χ.count))
+		cblas_scopy(Int32(min(χ.count, μ.count)), μ, 1, UnsafeMutablePointer<Float>(χ), 1)
+	}
+	static func gradμ(μ μ: LaObjet, χ: LaObjet) -> LaObjet {
+		return χ
+	}
+	static func gradσ(σ σ: LaObjet, χ: LaObjet) -> LaObjet {
+		return LaValuer(0)
+	}
+	static func derivate(Δχ Δχ: [Float], Δμ: [Float], Δσ: [Float], Δ: LaObjet, μ: LaObjet, λ: LaObjet) {
+		Δ.getBytes(Δχ)
+		Δ.getBytes(Δμ)
+		vDSP_vclr(UnsafeMutablePointer<Float>(Δσ), 1, vDSP_Length(Δσ.count))
 	}
 	static func synthesize(χ χ: [Float], μ: [Float], λ: [Float], refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) {
-		vDSP_vfill([Float.quietNaN], UnsafeMutablePointer<Float>(χ), 1, vDSP_Length(χ.count))
-		vDSP_vfill([Float.quietNaN], UnsafeMutablePointer<Float>(μ), 1, vDSP_Length(μ.count))
-		vDSP_vfill([Float.infinity], UnsafeMutablePointer<Float>(λ), 1, vDSP_Length(λ.count))
+		let mix: (χ: LaObjet, μ: LaObjet, LaObjet) = refer.reduce((LaValuer(0), LaValuer(0), LaValuer(0))) {
+			($0.0.0 + $0.1.χ, $0.0.1 + $0.1.μ, LaValuer(0))
+		}
+		mix.χ.getBytes(χ)
+		mix.μ.getBytes(μ)
+		vDSP_vclr(UnsafeMutablePointer<Float>(λ), 1, vDSP_Length(λ.count))
 	}
 }
 internal protocol RandomNumberGeneratable {

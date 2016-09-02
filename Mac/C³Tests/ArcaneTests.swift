@@ -10,28 +10,53 @@ import XCTest
 @testable import C3
 class ArcaneTest: XCTestCase {
 	let context: Context = try!Context()
+	func uf(u: [Float]) -> Float{
+		return (
+			(u[0]+16)*(u[0]+16) +
+			(u[1]+32)*(u[1]+32)
+		)
+	}
+	func ug(u: [Float]) -> [Float] {
+		return [
+			2*(u[0]+16),
+			2*(u[1]+32)
+		]
+	}
+	func sf(s: [Float]) -> Float{
+		return (
+			(s[0]-4)*(s[0]-4) +
+			(s[1]-8)*(s[1]-8)
+		)
+	}
+	func sg(s: [Float]) -> [Float] {
+		return [
+			2*(s[0]-4),
+			2*(s[1]-8)
+		]
+	}
 	func testUpdate() {
 		
-		let rows: Int = 4
-		let cols: Int = 8
+		let rows: Int = 2
+		let cols: Int = 1
 		
 		let a: Arcane! = context.new()
-		
-		let Δμ: LaObjet = LaMatrice(1.0, rows: rows, cols: cols)
-		let Δσ: LaObjet = LaMatrice(1.0, rows: rows, cols: cols)
-		
-		a.resize(rows: rows, cols: cols)
-		a.adjust(μ: 2, σ: 4)
-		
-		print(a.μ.array)
-		print(a.σ.array)
-		
-		(0..<4096).forEach {(_)in
-			a.update(1/1024.0, Δμ: Δμ, Δσ: Δσ)
-		}
 
-		print(a.μ.array)
-		print(a.σ.array)
+		a.resize(rows: rows, cols: cols)
+		a.adjust(μ: 2, σ: 2)
+		
+		(0..<64).forEach {(_)in
+			let gu: [Float] = ug(a.cache.μ)
+			let gs: [Float] = sg(a.cache.σ)
+			let Δμ: LaObjet = LaMatrice(gu, rows: rows, cols: cols, deallocator: nil)
+			let Δσ: LaObjet = LaMatrice(gs, rows: rows, cols: cols, deallocator: nil)
+			a.update(Δμ: Δμ, Δσ: Δσ)
+			
+			print(a.cache.μ)
+			print(a.cache.σ)
+		}
+		
+		print(a.cache.μ)
+		print(a.cache.σ)
 		
 	}
 }

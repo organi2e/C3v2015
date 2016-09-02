@@ -60,30 +60,34 @@ internal class GaussianDistribution: Distribution {
 		vDSP_meanv(array, 1, &σ, vDSP_Length(array.count))
 		return (μ, sqrt(σ))
 	}
-	static func χgain(input: LaObjet) -> LaObjet {
-		return input
+	static func gradμ(μ μ: LaObjet, χ: LaObjet) -> LaObjet {
+		return χ
 	}
-	static func μgain(input: LaObjet) -> LaObjet {
-		return input
+	static func gradσ(σ σ: LaObjet, χ: LaObjet) -> LaObjet {
+		return 2 * σ * χ * χ
 	}
-	static func σgain(input: LaObjet) -> LaObjet {
-		return input * input
-	}
-	static func derivate(Δ: (χ: [Float], μ: [Float], σ: [Float]), μ: LaObjet, λ: LaObjet, δ: LaObjet) {
-		let Δχ: LaObjet = LaMatrice(Δ.χ, rows: Δ.χ.count, cols: 1, deallocator: nil)
-		(-0.5 * μ * λ * μ * λ).getBytes(Δ.χ)
-		vvexpf(UnsafeMutablePointer<Float>(Δ.χ), Δ.χ, [Int32(Δ.χ.count)])
-		(Float(0.5*M_2_SQRTPI*M_SQRT1_2)*Δχ*δ).getBytes(Δ.χ)
-		(Δχ*λ).getBytes(Δ.μ)
-		(-1*Δχ*μ*λ*λ).getBytes(Δ.μ)
+	static func derivate(Δχ Δχ: [Float], Δμ: [Float], Δσ: [Float], Δ: LaObjet, μ: LaObjet, λ: LaObjet) {
+		let χ: LaObjet = LaMatrice(Δχ, rows: Δχ.count, cols: 1)
+		
+		let λμ: LaObjet = λ * μ
+		(-0.5 * λμ * λμ).getBytes(Δχ)
+		vvexpf(UnsafeMutablePointer<Float>(Δχ), Δχ, [Int32(Δχ.count)])
+		
+		(Float(0.5*M_2_SQRTPI*M_SQRT1_2)*Δ*χ).getBytes(Δχ)
+		
+		let λχ: LaObjet = λ * χ
+		(λχ).getBytes(Δμ)
+		(-0.5*λχ*μ*λ*λ).getBytes(Δσ)
+		//vDSP_vneg(Δσ, 1, UnsafeMutablePointer<Float>(Δσ), 1, vDSP_Length(Δσ.count))
 	}
 	static func synthesize(χ χ: [Float], μ: [Float], λ: [Float], refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) {
-		let mix: (LaObjet, LaObjet, LaObjet) = refer.reduce((LaSplat(0), LaSplat(0), LaSplat(0))) {(x, y)->(LaObjet, LaObjet, LaObjet)in
-			( x.0 + χgain(y.χ), x.1 + μgain(y.μ), x.2 + σgain(y.σ) )
+		func σ(σ: LaObjet) -> LaObjet { return σ * σ }
+		let mix: (χ: LaObjet, μ: LaObjet, λ: LaObjet) = refer.reduce((LaSplat(0), LaSplat(0), LaSplat(0))) {
+			( $0.0.0 + $0.1.χ, $0.0.1 + $0.1.1, $0.0.2 + σ($0.1.σ) )
 		}
-		mix.0.getBytes(χ)
-		mix.1.getBytes(μ)
-		mix.2.getBytes(λ)
+		mix.χ.getBytes(χ)
+		mix.μ.getBytes(μ)
+		mix.λ.getBytes(λ)
 		vvrsqrtf(UnsafeMutablePointer<Float>(λ), λ, [Int32(λ.count)])
 	}
 }

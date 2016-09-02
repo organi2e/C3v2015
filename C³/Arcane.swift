@@ -18,6 +18,8 @@ internal class Arcane: NSManagedObject {
 		logμ: Array<Float>(),
 		logσ: Array<Float>()
 	)
+	internal var μoptimizer: GradientOptimizer = SGD()
+	internal var σoptimizer: GradientOptimizer = SGD()
 }
 internal extension Arcane {
 	@NSManaged private var location: NSData
@@ -58,13 +60,16 @@ internal extension Arcane {
 		
 		setPrimitiveValue(NSData(bytesNoCopy: &cache.logμ, length: sizeof(Float)*count, freeWhenDone: false), forKey: Arcane.locationKey)
 		setPrimitiveValue(NSData(bytesNoCopy: &cache.logσ, length: sizeof(Float)*count, freeWhenDone: false), forKey: Arcane.logscaleKey)
-	
-		update(0, Δμ: nil, Δσ: nil)
+		
+		update(Δμ: nil, Δσ: nil)
+		
+		μoptimizer = (managedObjectContext as? Context)?.optimizerFactory(rows*cols) ?? μoptimizer
+		σoptimizer = (managedObjectContext as? Context)?.optimizerFactory(rows*cols) ?? σoptimizer
 	}
-	internal func update(η: Float, Δμ: LaObjet? = nil, Δσ: LaObjet? = nil) {
+	internal func update(Δμ Δμ: LaObjet? = nil, Δσ: LaObjet? = nil) {
 		if let Δμ: LaObjet = Δμ where Δμ.rows == rows && Δμ.cols == cols {
 			willChangeValueForKey(Arcane.locationKey)
-			( logμ + η * Δμ ).getBytes(cache.logμ)
+			( logμ - μoptimizer.optimize(Δx: Δμ, x: logμ) ).getBytes(cache.logμ)
 			didChangeValueForKey(Arcane.locationKey)
 		}
 		cblas_scopy(Int32(rows*cols), cache.logμ, 1, &cache.μ, 1)
@@ -72,24 +77,30 @@ internal extension Arcane {
 			vDSP_vneg(cache.σ, 1, &cache.σ, 1, vDSP_Length(cache.σ.count))
 			vvexpf(&cache.σ, cache.σ, [Int32(cache.σ.count)])
 			willChangeValueForKey(Arcane.logscaleKey)
-			( logσ + η * Δσ ).getBytes(cache.logσ)
+			( logσ - σoptimizer.optimize(Δx: Δσ, x: logσ) ).getBytes(cache.logσ)
 			didChangeValueForKey(Arcane.logscaleKey)
 		}
 		//cblas_scopy(Int32(rows*cols), cache.logσ, 1, &cache.σ, 1)
-		vvexp2f(&cache.σ, cache.logσ, [Int32(cache.logσ.count)])
+		vvexpf(&cache.σ, cache.logσ, [Int32(cache.logσ.count)])
 		( 1.0 + σ ).getBytes(cache.σ)
-		vvlog2f(&cache.σ, cache.σ, [Int32(cache.σ.count)])
+		vvlogf(&cache.σ, cache.σ, [Int32(cache.σ.count)])
 	}
 	internal func adjust(μ μ: Float, σ: Float) {
 		
 		vDSP_vfill([μ], UnsafeMutablePointer<Float>(cache.μ), 1, vDSP_Length(cache.μ.count))
-		cblas_scopy(Int32(min(cache.μ.count, cache.logμ.count)), cache.μ, 1, &cache.logμ, 1)
 		
+		willChangeValueForKey(Arcane.locationKey)
+		cblas_scopy(Int32(min(cache.μ.count, cache.logμ.count)), cache.μ, 1, &cache.logμ, 1)
+		didChangeValueForKey(Arcane.locationKey)
+
 		vDSP_vfill([σ], UnsafeMutablePointer<Float>(cache.σ), 1, vDSP_Length(cache.σ.count))
 		
-		vvexp2f(&cache.logσ, cache.σ, [Int32(min(cache.logσ.count, cache.σ.count))])
+		willChangeValueForKey(Arcane.logscaleKey)
+		vvexpf(&cache.logσ, cache.σ, [Int32(min(cache.logσ.count, cache.σ.count))])
 		vDSP_vsadd(cache.logσ, 1, [Float(-1.0)], &cache.logσ, 1, vDSP_Length(cache.logσ.count))
-		vvlog2f(&cache.logσ, cache.logσ, [Int32(cache.logσ.count)])
+		vvlogf(&cache.logσ, cache.logσ, [Int32(cache.logσ.count)])
+		didChangeValueForKey(Arcane.logscaleKey)
+
 		
 	}
 	internal func resize(rows r: Int, cols c: Int) {
@@ -99,7 +110,7 @@ internal extension Arcane {
 
 		let count: Int = rows * cols
 		location = NSData(bytes: [Float](count: count, repeatedValue: 0), length: sizeof(Float)*count)
-		logscale = NSData(bytes: [Float](count: count, repeatedValue: 0), length: sizeof(Float)*count)//Xavier's initial value
+		logscale = NSData(bytes: [Float](count: count, repeatedValue: 0), length: sizeof(Float)*count)
 		//logscale = NSData(bytes: [Float](count: count, repeatedValue: -0.5*log(Float(cols))), length: sizeof(Float)*count)//Xavier's initial value
 		
 		setup()

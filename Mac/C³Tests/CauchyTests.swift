@@ -9,6 +9,27 @@ import Accelerate
 import XCTest
 @testable import C3
 class CauchyTests: XCTestCase {
+	
+	func testGrad() {
+		
+		let χd: [Float] = Array<Float>(arrayLiteral: 0, 1, 2, 3)
+		let χ: LaObjet = LaMatrice(χd, rows: χd.count, cols: 1)
+		
+		let μd: [Float] = Array<Float>(arrayLiteral: 0, 1, 2, 3)
+		let μ: LaObjet = LaMatrice(μd, rows: μd.count, cols: 1)
+		
+		let σd: [Float] = Array<Float>(arrayLiteral: 0, 1, 2, 3)
+		let σ: LaObjet = LaMatrice(σd, rows: σd.count, cols: 1)
+		
+		let gradμ: LaObjet = CauchyDistribution.gradμ(μ: μ, χ: χ)
+		let gradσ: LaObjet = CauchyDistribution.gradσ(σ: σ, χ: χ)
+		
+		XCTAssert(gradμ.array.elementsEqual(χ.array))
+		XCTAssert(gradσ.array.elementsEqual(χ.array))
+		
+	}
+	
+	
 	func testRNG() {
 		
 		let srcμ: Float = Float(arc4random())/Float(UInt32.max) * 2.0 - 1.0
