@@ -12,8 +12,9 @@ internal class Arcane: NSManagedObject {
 	private let group: dispatch_group_t = dispatch_group_create()
 	internal var cache = (
 		χ: Array<Float>(),
-		μ: Array<Float>(),
-		σ: Array<Float>(),
+		b: Array<Float>(),
+		μ: UnsafeMutableBufferPointer<Float>(start: nil, count: 0),
+		σ: UnsafeMutableBufferPointer<Float>(start: nil, count: 0),
 		ψ: Array<UInt32>(),
 		logμ: Array<Float>(),
 		logσ: Array<Float>()
@@ -49,8 +50,9 @@ internal extension Arcane {
 		let count: Int = rows * cols
 		
 		cache.χ = Array<Float>(count: count, repeatedValue: 0)
-		cache.μ = Array<Float>(count: count, repeatedValue: 0)
-		cache.σ = Array<Float>(count: count, repeatedValue: 0)
+		cache.b = Array<Float>(count: 2*count, repeatedValue: 0)
+		cache.μ = UnsafeMutableBufferPointer<Float>(start: UnsafeMutablePointer<Float>(cache.b).advancedBy(0*count), count: count)
+		cache.σ = UnsafeMutableBufferPointer<Float>(start: UnsafeMutablePointer<Float>(cache.b).advancedBy(1*count), count: count)
 		cache.ψ = Array<UInt32>(count: count, repeatedValue: 0)
 		cache.logμ = Array<Float>(count: count, repeatedValue: 0)
 		cache.logσ = Array<Float>(count: count, repeatedValue: 0)
@@ -72,31 +74,31 @@ internal extension Arcane {
 			( logμ - μoptimizer.optimize(Δx: Δμ, x: logμ) ).getBytes(cache.logμ)
 			didChangeValueForKey(Arcane.locationKey)
 		}
-		cblas_scopy(Int32(rows*cols), cache.logμ, 1, &cache.μ, 1)
+		cblas_scopy(Int32(rows*cols), cache.logμ, 1, cache.μ.baseAddress, 1)
 		if let Δσ: LaObjet = Δσ where Δσ.rows == rows && Δσ.cols == cols {
-			vDSP_vneg(cache.σ, 1, &cache.σ, 1, vDSP_Length(cache.σ.count))
-			vvexpf(&cache.σ, cache.σ, [Int32(cache.σ.count)])
+			vDSP_vneg(cache.σ.baseAddress, 1, cache.σ.baseAddress, 1, vDSP_Length(cache.σ.count))
+			vvexpf(cache.σ.baseAddress, cache.σ.baseAddress, [Int32(cache.σ.count)])
 			willChangeValueForKey(Arcane.logscaleKey)
 			( logσ - σoptimizer.optimize(Δx: Δσ, x: logσ) ).getBytes(cache.logσ)
 			didChangeValueForKey(Arcane.logscaleKey)
 		}
 		//cblas_scopy(Int32(rows*cols), cache.logσ, 1, &cache.σ, 1)
-		vvexpf(&cache.σ, cache.logσ, [Int32(cache.logσ.count)])
-		( 1.0 + σ ).getBytes(cache.σ)
-		vvlogf(&cache.σ, cache.σ, [Int32(cache.σ.count)])
+		vvexpf(cache.σ.baseAddress, cache.logσ, [Int32(cache.logσ.count)])
+		( 1.0 + σ ).getBytes(cache.σ.baseAddress)
+		vvlogf(cache.σ.baseAddress, cache.σ.baseAddress, [Int32(cache.σ.count)])
 	}
 	internal func adjust(μ μ: Float, σ: Float) {
 		
-		vDSP_vfill([μ], UnsafeMutablePointer<Float>(cache.μ), 1, vDSP_Length(cache.μ.count))
+		vDSP_vfill([μ], UnsafeMutablePointer<Float>(cache.μ.baseAddress), 1, vDSP_Length(cache.μ.count))
 		
 		willChangeValueForKey(Arcane.locationKey)
-		cblas_scopy(Int32(min(cache.μ.count, cache.logμ.count)), cache.μ, 1, &cache.logμ, 1)
+		cblas_scopy(Int32(min(cache.μ.count, cache.logμ.count)), cache.μ.baseAddress, 1, &cache.logμ, 1)
 		didChangeValueForKey(Arcane.locationKey)
 
-		vDSP_vfill([σ], UnsafeMutablePointer<Float>(cache.σ), 1, vDSP_Length(cache.σ.count))
+		vDSP_vfill([σ], UnsafeMutablePointer<Float>(cache.σ.baseAddress), 1, vDSP_Length(cache.σ.count))
 		
 		willChangeValueForKey(Arcane.logscaleKey)
-		vvexpf(&cache.logσ, cache.σ, [Int32(min(cache.logσ.count, cache.σ.count))])
+		vvexpf(&cache.logσ, cache.σ.baseAddress, [Int32(min(cache.logσ.count, cache.σ.count))])
 		vDSP_vsadd(cache.logσ, 1, [Float(-1.0)], &cache.logσ, 1, vDSP_Length(cache.logσ.count))
 		vvlogf(&cache.logσ, cache.logσ, [Int32(cache.logσ.count)])
 		didChangeValueForKey(Arcane.logscaleKey)
@@ -121,10 +123,10 @@ extension Arcane: RandomNumberGeneratable {
 		return LaMatrice(cache.χ, rows: rows, cols: cols, deallocator: nil)
 	}
 	internal var μ: LaObjet {
-		return LaMatrice(cache.μ, rows: rows, cols: cols, deallocator: nil)
+		return LaMatrice(cache.μ.baseAddress, rows: rows, cols: cols, deallocator: nil)
 	}
 	internal var σ: LaObjet {
-		return LaMatrice(cache.σ, rows: rows, cols: cols, deallocator: nil)
+		return LaMatrice(cache.σ.baseAddress, rows: rows, cols: cols, deallocator: nil)
 	}
 	private var logμ: LaObjet {
 		return LaMatrice(cache.logμ, rows: rows, cols: cols, deallocator: nil)
@@ -139,6 +141,6 @@ extension Arcane: RandomNumberGeneratable {
 		assert(cache.σ.count==count)
 		assert(cache.ψ.count==count)
 		arc4random_buf(&cache.ψ, sizeof(UInt32)*count)
-		distribution.rng(cache.χ, μ: cache.μ, σ: cache.σ, ψ: cache.ψ)
+		distribution.rng(cache.χ, μ: Array(cache.μ), σ: Array(cache.σ), ψ: cache.ψ)
 	}
 }
