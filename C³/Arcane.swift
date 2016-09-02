@@ -10,18 +10,18 @@ import CoreData
 
 internal class Arcane: NSManagedObject {
 	private let group: dispatch_group_t = dispatch_group_create()
-	internal var cache = (
+	private var cache = (
 		χ: Array<Float>(),
+		ψ: Array<UInt32>(),
 		b: Array<Float>(),
 		μ: UnsafeMutablePointer<Float>(nil),
 		σ: UnsafeMutablePointer<Float>(nil),
-		ψ: Array<UInt32>(),
 		logb: Array<Float>(),
 		logμ: UnsafeMutablePointer<Float>(nil),
 		logσ: UnsafeMutablePointer<Float>(nil)
 	)
-	internal var μoptimizer: GradientOptimizer = SGD()
-	internal var σoptimizer: GradientOptimizer = SGD()
+	private var μoptimizer: GradientOptimizer = SGD()
+	private var σoptimizer: GradientOptimizer = SGD()
 }
 internal extension Arcane {
 	@NSManaged private var location: NSData
@@ -53,11 +53,11 @@ internal extension Arcane {
 		cache.χ = Array<Float>(count: count, repeatedValue: 0)
 		cache.ψ = Array<UInt32>(count: count, repeatedValue: 0)
 		
-		cache.b = Array<Float>(count: 2*count, repeatedValue: 0)
+		cache.b = Array<Float>(count: 2*count, repeatedValue: 0)//ARC
 		cache.μ = UnsafeMutablePointer<Float>(cache.b).advancedBy(0*count)
 		cache.σ = UnsafeMutablePointer<Float>(cache.b).advancedBy(1*count)
 		
-		cache.logb = Array<Float>(count: 2*count, repeatedValue: 0)
+		cache.logb = Array<Float>(count: 2*count, repeatedValue: 0)//ARC
 		cache.logμ = UnsafeMutablePointer<Float>(cache.logb).advancedBy(0*count)
 		cache.logσ = UnsafeMutablePointer<Float>(cache.logb).advancedBy(1*count)
 		
@@ -69,8 +69,8 @@ internal extension Arcane {
 		
 		update(Δμ: nil, Δσ: nil)
 		
-		μoptimizer = (managedObjectContext as? Context)?.optimizerFactory(rows*cols) ?? μoptimizer
-		σoptimizer = (managedObjectContext as? Context)?.optimizerFactory(rows*cols) ?? σoptimizer
+		μoptimizer = (managedObjectContext as? Context)?.optimizerFactory(count) ?? μoptimizer
+		σoptimizer = (managedObjectContext as? Context)?.optimizerFactory(count) ?? σoptimizer
 	}
 	internal func update(Δμ Δμ: LaObjet? = nil, Δσ: LaObjet? = nil) {
 		let count: Int = rows * cols
@@ -81,16 +81,16 @@ internal extension Arcane {
 		}
 		cblas_scopy(Int32(count), cache.logμ, 1, cache.μ, 1)
 		if let Δσ: LaObjet = Δσ where Δσ.rows == rows && Δσ.cols == cols {
-			vDSP_vneg(cache.σ, 1, cache.σ, 1, vDSP_Length(rows*cols))
-			vvexpf(cache.σ, cache.σ, [Int32(rows*cols)])
+			vDSP_vneg(cache.σ, 1, cache.σ, 1, vDSP_Length(count))
+			vvexpf(cache.σ, cache.σ, [Int32(count)])
 			willChangeValueForKey(Arcane.logscaleKey)
 			( logσ - σoptimizer.optimize(Δx: Δσ, x: logσ) ).getBytes(cache.logσ)
 			didChangeValueForKey(Arcane.logscaleKey)
 		}
 		//cblas_scopy(Int32(rows*cols), cache.logσ, 1, &cache.σ, 1)
-		vvexpf(cache.σ, cache.logσ, [Int32(rows*cols)])
+		vvexpf(cache.σ, cache.logσ, [Int32(count)])
 		( 1.0 + σ ).getBytes(cache.σ)
-		vvlogf(cache.σ, cache.σ, [Int32(rows*cols)])
+		vvlogf(cache.σ, cache.σ, [Int32(count)])
 	}
 	internal func adjust(μ μ: Float, σ: Float) {
 		
@@ -99,7 +99,7 @@ internal extension Arcane {
 		vDSP_vfill([μ], cache.μ, 1, vDSP_Length(count))
 		
 		willChangeValueForKey(Arcane.locationKey)
-		cblas_scopy(Int32(rows*cols), cache.μ, 1, cache.logμ, 1)
+		cblas_scopy(Int32(count), cache.μ, 1, cache.logμ, 1)
 		didChangeValueForKey(Arcane.locationKey)
 
 		vDSP_vfill([σ], cache.σ, 1, vDSP_Length(count))
