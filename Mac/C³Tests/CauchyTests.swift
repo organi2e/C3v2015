@@ -112,9 +112,9 @@ class CauchyTests: XCTestCase {
 		
 		for l in 0..<L {
 			for n in 0..<N {
-				χd[l] = χd[l] + refer[n].χ[l]
-				μd[l] = μd[l] + refer[n].μ[l]
-				λd[l] = λd[l] + refer[n].σ[l]
+				χd[l] = χd[l] + refer[n].χ.array[l]
+				μd[l] = μd[l] + refer[n].μ.array[l]
+				λd[l] = λd[l] + refer[n].σ.array[l]
 			}
 			λd[l] = 1/λd[l]
 		}

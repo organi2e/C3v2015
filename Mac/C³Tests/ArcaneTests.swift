@@ -5,7 +5,6 @@
 //  Created by Kota Nakano on 8/30/16.
 //
 //
-/*
 import XCTest
 @testable import C3
 class ArcaneTest: XCTestCase {
@@ -24,13 +23,13 @@ class ArcaneTest: XCTestCase {
 	}
 	func sf(s: [Float]) -> Float{
 		return (
-			(s[0]-4)*(s[0]-4) +
+			(s[0]-8)*(s[0]-8) +
 			(s[1]-8)*(s[1]-8)
 		)
 	}
 	func sg(s: [Float]) -> [Float] {
 		return [
-			2*(s[0]-4),
+			2*(s[0]-8),
 			2*(s[1]-8)
 		]
 	}
@@ -43,7 +42,7 @@ class ArcaneTest: XCTestCase {
 		let a: Arcane! = context.new()
 
 		a.resize(rows: rows, cols: cols)
-		a.adjust(μ: 2, σ: 2)
+		a.adjust(μ: 1, σ: 5)
 		
 		(0..<64).forEach {(_)in
 			
@@ -54,7 +53,7 @@ class ArcaneTest: XCTestCase {
 			let gs: [Float] = sg(a.σ.array)
 			let Δμ: LaObjet = LaMatrice(gu, rows: rows, cols: cols, deallocator: nil)
 			let Δσ: LaObjet = LaMatrice(gs, rows: rows, cols: cols, deallocator: nil)
-			a.update(FalseDistribution.self, Δμ: Δμ, Δσ: Δσ)
+			a.update(CauchyDistribution.self, Δμ: Δμ, Δσ: Δσ)
 			
 		}
 		
@@ -63,4 +62,3 @@ class ArcaneTest: XCTestCase {
 		
 	}
 }
-*/

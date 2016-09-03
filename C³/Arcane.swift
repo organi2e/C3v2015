@@ -109,13 +109,12 @@ internal extension Arcane {
 			vDSP_vneg(cache.σ, 1, cache.gradσ, 1, vDSP_Length(count))
 			vvexpf(cache.gradσ, cache.gradσ, [Int32(count)])
 			
-			distribution.Δσ(Δ: Δσ, σ: σ).getBytes(cache.σ)
+			distribution.Δσ(Δ: ( 1 - gradσ ) * Δσ, σ: σ).getBytes(cache.σ)
 			let x: LaObjet = LaMatrice(cache.logσ, rows: count, cols: 1, deallocator: nil)
 			let Δx: LaObjet = LaMatrice(cache.σ, rows: count, cols: 1, deallocator: nil)
 			
 			σoptimizer.optimize(Δx: Δx, x: x).getBytes(cache.σ)
-			( ( 1 - gradσ ) * σ ).getBytes(cache.σ)
-			
+
 			willChangeValueForKey(Arcane.logscaleKey)
 			( logσ - σ ).getBytes(cache.logσ)
 			didChangeValueForKey(Arcane.logscaleKey)
