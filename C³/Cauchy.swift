@@ -62,12 +62,12 @@ internal class CauchyDistribution: Distribution {
 		return Δ
 	}
 	static func synthesize(χ χ: [Float], μ: [Float], λ: [Float], refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) {
-		let mix: (χ: LaObjet, μ: LaObjet, σ: LaObjet) = refer.reduce((LaSplat(0), LaSplat(0), LaSplat(0))) {
-			($0.0.0 + $0.1.χ, $0.0.0 + $0.1.μ, $0.0.0 + $0.1.σ)
+		let mix: (χ: LaObjet, μ: LaObjet, λ: LaObjet) = refer.reduce((LaSplat(0), LaSplat(0), LaSplat(0))) {
+			( $0.0.0 + $0.1.χ, $0.0.1 + $0.1.1, $0.0.2 + $0.1.σ )
 		}
 		mix.χ.getBytes(χ)
 		mix.μ.getBytes(μ)
-		mix.σ.getBytes(λ)
+		mix.λ.getBytes(λ)
 		vvrecf(UnsafeMutablePointer<Float>(λ), λ, [Int32(λ.count)])
 	}
 	static func est(χ: [Float], η: Float, K: Int, θ: Float = 1e-9) -> (μ: Float, σ: Float) {

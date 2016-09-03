@@ -5,11 +5,60 @@
 //  Created by Kota Nakano on 8/29/16.
 //
 //
-/*
 import Accelerate
 import XCTest
 @testable import C3
 class CauchyTests: XCTestCase {
+	
+	func uniform(count: Int) -> [Float] {
+		return(0..<count).map {(_)in
+			Float(arc4random())/Float(arc4random())
+		}
+	}
+	
+	func testDerivate() {
+		
+		let L: Int = 64
+		
+		let Δχ: [Float] = uniform(L)
+		let Δμ: [Float] = uniform(L)
+		let Δσ: [Float] = uniform(L)
+		let Δ: [Float] = uniform(L)
+		let μ: [Float] = uniform(L)
+		let λ: [Float] = uniform(L)
+		
+		var dΔχ: [Float] = [Float](count: L, repeatedValue: 0)
+		var dΔμ: [Float] = [Float](count: L, repeatedValue: 0)
+		var dΔσ: [Float] = [Float](count: L, repeatedValue: 0)
+		
+		CauchyDistribution.derivate(Δχ: Δχ, Δμ: Δμ, Δσ: Δσ, Δ: Δ, μ: μ, λ: λ)
+		
+		for k in 0..<L {
+			let λd: Double = Double(λ[k])
+			let μd: Double = Double(μ[k])
+			let Δd: Double = Double(Δ[k])
+			let dΔχd = ( Δd / ( 1 + ( λd * λd * μd * μd ) ) ) / M_PI
+			dΔχ[k] = Float(dΔχd)
+			dΔμ[k] = Float(dΔχd * λd)
+			dΔσ[k] = Float(dΔχd * λd * -μd * λd)
+		}
+		
+		if 1e-6 < (LaMatrice(dΔχ, rows: L, cols: 1, deallocator: nil) - LaMatrice(Δχ, rows: L, cols: 1, deallocator: nil)).length {
+			print("χ", dΔχ, "\r\n", Δχ)
+			XCTFail()
+		}
+		
+		if 1e-6 < (LaMatrice(dΔμ, rows: L, cols: 1, deallocator: nil) - LaMatrice(Δμ, rows: L, cols: 1, deallocator: nil)).length {
+			print("μ", dΔμ, "\r\n", Δμ)
+			XCTFail()
+		}
+		
+		if 1e-6 < (LaMatrice(dΔσ, rows: L, cols: 1, deallocator: nil) - LaMatrice(Δσ, rows: L, cols: 1, deallocator: nil)).length {
+			print("σ", dΔσ, "\r\n", Δσ)
+			XCTFail()
+		}
+		
+	}
 	
 	func testΔ() {
 		
@@ -40,34 +89,66 @@ class CauchyTests: XCTestCase {
 	}
 	
 	func testSynthesize() {
-		let N: Int = 10
-		let L: Int = 64
-		let refer: [([Float], [Float], [Float])] = (0..<N).map {(_)in
-			(
-				(0..<L).map{(_)in Float(arc4random())/Float(uint32.max)},
-				(0..<L).map{(_)in Float(arc4random())/Float(uint32.max)},
-				(0..<L).map{(_)in Float(arc4random())/Float(uint32.max)}
+		let N: Int = 4
+		let L: Int = 4
+		var refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)] = []
+		for _ in 0..<N {
+			let element: (χ: LaObjet, μ: LaObjet, σ: LaObjet) = (
+				LaMatrice(uniform(L), rows: L, cols: 1),
+				LaMatrice(uniform(L), rows: L, cols: 1),
+				LaMatrice(uniform(L), rows: L, cols: 1)
 			)
+			refer.append(element)
 		}
 		let χ: [Float] = [Float](count: L, repeatedValue: 0)
 		let μ: [Float] = [Float](count: L, repeatedValue: 0)
 		let λ: [Float] = [Float](count: L, repeatedValue: 0)
+		
+		var χd: [Float] = [Float](count: L, repeatedValue: 0)
+		var μd: [Float] = [Float](count: L, repeatedValue: 0)
+		var λd: [Float] = [Float](count: L, repeatedValue: 0)
+		
+		CauchyDistribution.synthesize(χ: χ, μ: μ, λ: λ, refer: refer)
+		
+		for l in 0..<L {
+			for n in 0..<N {
+				χd[l] = χd[l] + refer[n].χ[l]
+				μd[l] = μd[l] + refer[n].μ[l]
+				λd[l] = λd[l] + refer[n].σ[l]
+			}
+			λd[l] = 1/λd[l]
+		}
+		if 1e-9 < (LaMatrice(χd, rows: L, cols: 1, deallocator: nil) - LaMatrice(χ, rows: L, cols: 1, deallocator: nil)).length {
+			print(χd, χ)
+			XCTFail()
+		}
+		if 1e-9 < (LaMatrice(μd, rows: L, cols: 1, deallocator: nil) - LaMatrice(μ, rows: L, cols: 1, deallocator: nil)).length {
+			print(μd, μ)
+			XCTFail()
+		}
+		if 1e-9 < (LaMatrice(λd, rows: L, cols: 1, deallocator: nil) - LaMatrice(λ, rows: L, cols: 1, deallocator: nil)).length {
+			print(λd, λ)
+			XCTFail()
+		}
+		
 	}
+	
 	
 	func testRNG() {
 		
 		let srcμ: Float = Float(arc4random())/Float(UInt32.max) * 2.0 - 1.0
 		let srcσ: Float = 1.0 + Float(M_PI) * Float(arc4random())/Float(UInt32.max)
 		
-		let N: Int = 1024 * 1024
-		let ψ: [UInt32] = [UInt32](count: N, repeatedValue: 0)
-		let μ: [Float] = [Float](count: N, repeatedValue: srcμ)
-		let σ: [Float] = [Float](count: N, repeatedValue: srcσ)
-		let χ: [Float] = [Float](count: N, repeatedValue: 0.0)
+		let rows: Int = 256
+		let cols: Int = 256
+		let ψ: [UInt32] = [UInt32](count: rows*cols, repeatedValue: 0)
+		let μ: [Float] = [Float](count: rows*cols, repeatedValue: srcμ)
+		let σ: [Float] = [Float](count: rows*cols, repeatedValue: srcσ)
+		let χ: [Float] = [Float](count: rows*cols, repeatedValue: 0.0)
 		
-		arc4random_buf(UnsafeMutablePointer<Void>(ψ), sizeof(UInt32)*N)
+		arc4random_buf(UnsafeMutablePointer<Void>(ψ), sizeof(UInt32)*rows*cols)
 		
-		CauchyDistribution.rng(χ, ψ: ψ, μ: LaMatrice(μ, rows: 1024, cols: 1024, deallocator: nil), σ: LaMatrice(σ, rows: 1024, cols: 1024, deallocator: nil))
+		CauchyDistribution.rng(χ, ψ: ψ, μ: LaMatrice(μ, rows: rows, cols: cols, deallocator: nil), σ: LaMatrice(σ, rows: rows, cols: cols, deallocator: nil))
 		
 		let(dstμ, dstσ) = CauchyDistribution.est(χ, η: 0.8, K: 1024)
 		
@@ -82,10 +163,9 @@ class CauchyTests: XCTestCase {
 		XCTAssert(!isinf(rmseσ))
 		XCTAssert(!isnan(rmseσ))
 		
-		XCTAssert(rmseμ < 1e-2)
-		XCTAssert(rmseσ < 1e-2)
+		XCTAssert(rmseμ < 1e-1)
+		XCTAssert(rmseσ < 1e-1)
 		
 	}
 	
 }
-*/
