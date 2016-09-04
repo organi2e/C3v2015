@@ -35,10 +35,10 @@ class CellTests: XCTestCase {
 	*/
 	func testCollect() {
 		let context: Context = try!Context()
-		context.optimizerFactory = Momentum.factory()
-		let I: Cell = try! context.newCell(.Gauss, width: 4, label: "I")
-		let H: Cell = try! context.newCell(.Gauss, width:64, label: "H", input: [I])
-		let O: Cell = try! context.newCell(.Gauss, width: 4, label: "O", input: [H])
+		context.optimizerFactory = Momentum.factory(α: 5e-1, η: 5e-1)
+		let I: Cell = try! context.newCell(.Cauchy, width: 4, label: "I")
+		let H: Cell = try! context.newCell(.Cauchy, width:64, label: "H", input: [I])
+		let O: Cell = try! context.newCell(.Cauchy, width: 4, label: "O", input: [H])
 		
 		let IS: [[Bool]] = [
 			[false, false, false, true],
@@ -54,7 +54,7 @@ class CellTests: XCTestCase {
 			[true, false, false, false]
 		]
 		
-		for k in 0..<256 {
+		for k in 0..<1024 {
 			
 			for _ in 0..<16 {
 				I.correct_clear()

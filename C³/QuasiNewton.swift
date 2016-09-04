@@ -61,6 +61,11 @@ public class QuasiNewton {
 		let XY: LaObjet = inner_product(Δx.T, Δy)
 		let HYYH: LaObjet = outer_product(matrix_product(H, Δy), matrix_product(Δy.T, H))
 		let YHY: LaObjet = inner_product(Δy.T, matrix_product(H, Δy))
+		/*
+		let xy: LaObjet = XY[0,0]
+		let yhy: LaObjet = YHY[0,0]
+		return H + XX / xy - HYYH / yhy
+		*/
 		if let xy: Float = XY.array.first, yhy: Float = YHY.array.first where 0 < abs(xy) && 0 < abs(yhy) {
 			let α: Float = 1 / xy
 			let β: Float = 1 / yhy

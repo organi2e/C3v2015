@@ -143,28 +143,28 @@ internal extension Arcane {
 }
 extension Arcane {
 	internal static func μ(μ: UnsafeMutablePointer<Float>, logμ: UnsafePointer<Float>, count: Int) {
-			cblas_scopy(Int32(count), logμ, 1, μ, 1)
-	}
-	internal static func σ(σ: UnsafeMutablePointer<Float>, logσ: UnsafePointer<Float>, count: Int) {
-		vvexpf(UnsafeMutablePointer<Float>(σ), logσ, [Int32(count)])
-		vDSP_vsadd(σ, 1, [Float( 1)], UnsafeMutablePointer<Float>(σ), 1, vDSP_Length(count))
-		vvlogf(UnsafeMutablePointer<Float>(σ), σ, [Int32(count)])
+		cblas_scopy(Int32(count), logμ, 1, μ, 1)
 	}
 	internal static func logμ(logμ: UnsafeMutablePointer<Float>, μ: UnsafePointer<Float>, count: Int) {
 		cblas_scopy(Int32(count), μ, 1, UnsafeMutablePointer<Float>(logμ), 1)
 	}
-	internal static func logσ(logσ: UnsafeMutablePointer<Float>, σ: UnsafePointer<Float>, count: Int) {
-		vvexpf(UnsafeMutablePointer<Float>(σ), logσ, [Int32(count)])
-		vDSP_vsadd(σ, 1, [Float(-1)], UnsafeMutablePointer<Float>(σ), 1, vDSP_Length(count))
-		vvlogf(UnsafeMutablePointer<Float>(σ), σ, [Int32(count)])
-	}
 	internal static func gradμ(gradμ: UnsafeMutablePointer<Float>, μ: UnsafePointer<Float>, count: Int) {
 		vDSP_vfill([Float(1)], gradμ, 1, vDSP_Length(count))
 	}
+	internal static func σ(σ: UnsafeMutablePointer<Float>, logσ: UnsafePointer<Float>, count: Int) {
+		vvexpf(σ, logσ, [Int32(count)])
+		vDSP_vsadd(σ, 1, [Float( 1)], σ, 1, vDSP_Length(count))
+		vvlogf(σ, σ, [Int32(count)])
+	}
+	internal static func logσ(logσ: UnsafeMutablePointer<Float>, σ: UnsafePointer<Float>, count: Int) {
+		vvexpf(logσ, σ, [Int32(count)])
+		vDSP_vsadd(logσ, 1, [Float(-1)], logσ, 1, vDSP_Length(count))
+		vvlogf(logσ, logσ, [Int32(count)])
+	}
 	internal static func gradσ(gradσ: UnsafeMutablePointer<Float>, σ: UnsafePointer<Float>, count: Int) {
-		vDSP_vneg(σ, 1, UnsafeMutablePointer<Float>(gradσ), 1, vDSP_Length(count))
-		vvexpf(UnsafeMutablePointer<Float>(gradσ), gradσ, [Int32(count)])
-		vDSP_vsmsa(gradσ, 1, [Float(-1)], [Float(1)], UnsafeMutablePointer<Float>(gradσ), 1, vDSP_Length(count))
+		vDSP_vneg(σ, 1, gradσ, 1, vDSP_Length(count))
+		vvexpf(gradσ, gradσ, [Int32(count)])	
+		vDSP_vsmsa(gradσ, 1, [Float(-1)], [Float(1)], gradσ, 1, vDSP_Length(count))
 	}
 }
 extension Arcane: RandomNumberGeneratable {

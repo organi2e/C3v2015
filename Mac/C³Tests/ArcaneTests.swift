@@ -33,7 +33,7 @@ class ArcaneTest: XCTestCase {
 	func sg(s: [Float]) -> [Float] {
 		return [
 			2*(s[0]-0.1),
-			2*(s[1]-3)
+			2*(s[1]-0.1)
 		]
 	}
 	func uniform(count: Int) -> [Float] {
@@ -41,12 +41,90 @@ class ArcaneTest: XCTestCase {
 			Float(arc4random())/Float(UInt32.max)
 		}
 	}
+	
+	func testμσ() {
+		
+		let count: Int = 16
+		
+		let logμ_src: [Float] = uniform(count)
+		let logσ_src: [Float] = uniform(count)
+		
+		let μ_src: [Float] = logμ_src
+		let σ_src: [Float] = logσ_src.map { log(1+exp($0)) }
+		
+		let μ_dst: [Float] = [Float](count: count, repeatedValue: 0)
+		let σ_dst: [Float] = [Float](count: count, repeatedValue: 0)
+		
+		Arcane.μ(UnsafeMutablePointer<Float>(μ_dst), logμ: logμ_src, count: count)
+		Arcane.σ(UnsafeMutablePointer<Float>(σ_dst), logσ: logσ_src, count: count)
+		
+		if 1e-6 < rmse(μ_src, μ_dst) {
+			XCTFail()
+			print(μ_src)
+			print(μ_dst)
+		}
+		
+		if 1e-6 < rmse(σ_src, σ_dst) {
+			XCTFail()
+			print(σ_src)
+			print(σ_dst)
+		}
+		
+		let logμ_dst: [Float] = [Float](count: count, repeatedValue: 0)
+		let logσ_dst: [Float] = [Float](count: count, repeatedValue: 0)
+		
+		Arcane.logμ(UnsafeMutablePointer<Float>(logμ_dst), μ: μ_src, count: count)
+		Arcane.logσ(UnsafeMutablePointer<Float>(logσ_dst), σ: σ_src, count: count)
+		
+		if 1e-5 < rmse(logμ_src, logμ_dst) {
+			XCTFail()
+			print(logμ_src)
+			print(logμ_dst)
+		}
+		
+		if 1e-6 < rmse(logσ_src, logσ_dst) {
+			XCTFail()
+			print(logσ_src)
+			print(logσ_dst)
+		}
+	
+		let gradμ_src: [Float] = [Float](count: count, repeatedValue: 1)
+		let gradσ_src: [Float] = σ_src.map { 1 - exp(-$0) }
+		
+		let gradμ_dst: [Float] = [Float](count: count, repeatedValue: 0)
+		let gradσ_dst: [Float] = [Float](count: count, repeatedValue: 0)
+		
+		Arcane.gradμ(UnsafeMutablePointer<Float>(gradμ_dst), μ: μ_src, count: count)
+		Arcane.gradσ(UnsafeMutablePointer<Float>(gradσ_dst), σ: σ_src, count: count)
+		
+		if 1e-6 < rmse(gradμ_src, gradμ_dst) {
+			XCTFail()
+			print(gradμ_src)
+			print(gradμ_dst)
+		}
+		
+		if 1e-6 < rmse(gradσ_src, gradσ_dst) {
+			XCTFail()
+			print(gradσ_src)
+			print(gradσ_dst)
+		}
+		
+	}
+	
 	func testUpdate() {
+		let a: Arcane! = context.new()
+		
+		let μ: Float = 1.0
+		let σ: Float = 3.0
+		a.adjust(μ: μ, σ: σ)
+	}
+	
+	func testUpdate2() {
 		
 		let rows: Int = 2
 		let cols: Int = 1
 		
-		context.optimizerFactory = ConjugateGradient.factory(.HagerZhang)
+		context.optimizerFactory = ConjugateGradient.factory(.HestenesStiefe)
 		let a: Arcane! = context.new()
 
 		a.resize(rows: rows, cols: cols)
@@ -54,13 +132,14 @@ class ArcaneTest: XCTestCase {
 		
 		(0..<64).forEach {(_)in
 			
-			print(a.μ.array)
+			//print(a.μ.array)
 			print(a.σ.array)
 			
 			let gu: [Float] = ug(a.μ.array)
 			let gs: [Float] = sg(a.σ.array)
 			let Δμ: LaObjet = LaMatrice(gu, rows: rows, cols: cols, deallocator: nil)
 			let Δσ: LaObjet = LaMatrice(gs, rows: rows, cols: cols, deallocator: nil)
+			
 			a.update(FalseDistribution.self, Δμ: Δμ, Δσ: Δσ)
 			
 		}
@@ -77,15 +156,15 @@ class ArcaneTest: XCTestCase {
 		
 //		let η: Float = 0.5
 
-		let μ: Float = -1.5
-		let σ: Float =  0.25
+		let μ: Float = (Float(arc4random())+1)/(Float(UInt32.max)+1) * 2.0 - 1.0
+		let σ: Float = (Float(arc4random())+1)/(Float(UInt32.max)+1)
 		let λ: Float = 1 / σ
 
 		let d: [Float] = uniform(rows*cols)
 		
 		let dχ: [Float] = d.map { $0 * exp(-0.5*(μ*λ)*(μ*λ))/sqrt(2*Float(M_PI)) }
 		let dμ: [Float] = dχ.map { $0 * λ }
-		let dσ: [Float] = dχ.map { $0 * -μ * λ }
+		let dσ: [Float] = dχ.map { $0 * λ * -μ * λ }
 		
 		let Δχ: [Float] = [Float](count: rows*cols, repeatedValue: 0)
 		let Δμ: [Float] = [Float](count: rows*cols, repeatedValue: 0)
@@ -110,10 +189,8 @@ class ArcaneTest: XCTestCase {
 		let Δμk: [Float] = Δμ
 		let Δσk: [Float] = Δσ.map { $0 * σ }
 		
-		let Δ = GaussianDistribution.Δ((μ: LaMatrice(Δμ, rows: rows, cols: cols), σ: LaMatrice(Δσ, rows: rows, cols: cols)), μ: LaValuer(μ), σ: LaValuer(σ), Σ: (μ: LaValuer(μ), λ: LaValuer(λ)))
-		
-		Δ.μ.getBytes(Δμ)
-		Δ.σ.getBytes(Δσ)
+		GaussianDistribution.Δμ(Δ: LaMatrice(Δμ, rows: rows, cols: cols), μ: LaValuer(μ)).getBytes(Δμ)
+		GaussianDistribution.Δσ(Δ: LaMatrice(Δσ, rows: rows, cols: cols), σ: LaValuer(σ)).getBytes(Δσ)
 		
 		if 1e-6 < rmse(Δμk, Δμ) {
 			XCTFail()
@@ -127,10 +204,9 @@ class ArcaneTest: XCTestCase {
 			print(Δσ)
 		}
 		
-		
-		
 	}
-
+	
+	
 	func testCauchyUpdate() {
 		
 		let rows: Int = 4
@@ -144,7 +220,7 @@ class ArcaneTest: XCTestCase {
 		
 		let d: [Float] = uniform(rows*cols)
 		
-		let dχ: [Float] = d.map { $0 / ( 1 + μ * μ * λ * λ ) / Float(M_PI) }
+		let dχ: [Float] = d.map { $0 / ( 1 + μ * μ * λ * λ ) * Float(M_1_PI) }
 		let dμ: [Float] = dχ.map { $0 * λ }
 		let dσ: [Float] = dχ.map { $0 * -μ * λ * λ }
 		
@@ -171,10 +247,8 @@ class ArcaneTest: XCTestCase {
 		let Δμk: [Float] = Δμ
 		let Δσk: [Float] = Δσ
 		
-		let Δ = CauchyDistribution.Δ((μ: LaMatrice(Δμ, rows: rows, cols: cols), σ: LaMatrice(Δσ, rows: rows, cols: cols)), μ: LaValuer(μ), σ: LaValuer(σ), Σ: (μ: LaValuer(μ), λ: LaValuer(λ)))
-		
-		Δ.μ.getBytes(Δμ)
-		Δ.σ.getBytes(Δσ)
+		CauchyDistribution.Δμ(Δ: LaMatrice(Δμ, rows: rows, cols: cols), μ: LaValuer(μ)).getBytes(Δμ)
+		CauchyDistribution.Δσ(Δ: LaMatrice(Δσ, rows: rows, cols: cols), σ: LaValuer(σ)).getBytes(Δσ)
 		
 		if 1e-6 < rmse(Δμk, Δμ) {
 			XCTFail()
@@ -187,7 +261,6 @@ class ArcaneTest: XCTestCase {
 			print(Δσk)
 			print(Δσ)
 		}
-		
 		
 		
 	}
