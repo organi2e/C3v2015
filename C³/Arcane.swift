@@ -146,7 +146,7 @@ extension Arcane {
 		cblas_scopy(Int32(count), logμ, 1, μ, 1)
 	}
 	internal static func logμ(logμ: UnsafeMutablePointer<Float>, μ: UnsafePointer<Float>, count: Int) {
-		cblas_scopy(Int32(count), μ, 1, UnsafeMutablePointer<Float>(logμ), 1)
+		cblas_scopy(Int32(count), μ, 1, logμ, 1)
 	}
 	internal static func gradμ(gradμ: UnsafeMutablePointer<Float>, μ: UnsafePointer<Float>, count: Int) {
 		vDSP_vfill([Float(1)], gradμ, 1, vDSP_Length(count))
@@ -163,7 +163,7 @@ extension Arcane {
 	}
 	internal static func gradσ(gradσ: UnsafeMutablePointer<Float>, σ: UnsafePointer<Float>, count: Int) {
 		vDSP_vneg(σ, 1, gradσ, 1, vDSP_Length(count))
-		vvexpf(gradσ, gradσ, [Int32(count)])	
+		vvexpf(gradσ, gradσ, [Int32(count)])
 		vDSP_vsmsa(gradσ, 1, [Float(-1)], [Float(1)], gradσ, 1, vDSP_Length(count))
 	}
 }
