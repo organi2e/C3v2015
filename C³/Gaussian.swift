@@ -63,27 +63,32 @@ internal class GaussianDistribution: Distribution {
 	static func gainχ(χ: LaObjet) -> (μ: LaObjet, σ: LaObjet) {
 		return ( χ, χ * χ )
 	}
+	static func Δ(Δ: (μ: LaObjet, σ: LaObjet), μ: LaObjet, σ: LaObjet, Σ: (μ: LaObjet, λ: LaObjet)) -> (μ: LaObjet, σ: LaObjet) {
+		return (
+			μ: Δ.μ,
+			σ: Δ.σ * σ * Σ.λ
+		)
+	}
 	static func Δμ(Δ Δ: LaObjet, μ: LaObjet) -> LaObjet {
 		return Δ
 	}
 	static func Δσ(Δ Δ: LaObjet, σ: LaObjet) -> LaObjet {
-		return 2 * σ * Δ
+		return σ * Δ
 	}
 	static func derivate(Δχ Δχ: [Float], Δμ: [Float], Δσ: [Float], Δ delta: [Float], μ mu: [Float], λ lambda: [Float]) {
+		
 		let χ: LaObjet = LaMatrice(Δχ, rows: Δχ.count, cols: 1, deallocator: nil)
 		let Δ: LaObjet = LaMatrice(delta, rows: delta.count, cols: 1, deallocator: nil)
 		let μ: LaObjet = LaMatrice(mu, rows: mu.count, cols: 1, deallocator: nil)
 		let λ: LaObjet = LaMatrice(lambda, rows: lambda.count, cols: 1, deallocator: nil)
 		
-		let λμ: LaObjet = λ * μ
-		( -0.5 * λμ * λμ ).getBytes(Δχ)
+		( -0.5 * ( λ * μ ) * ( λ * μ ) ).getBytes(Δχ)
+		
 		vvexpf(UnsafeMutablePointer<Float>(Δχ), Δχ, [Int32(Δχ.count)])
 		(Float(0.5*M_2_SQRTPI*M_SQRT1_2)*Δ*χ).getBytes(Δχ)
 		
-		let λχ: LaObjet = λ * χ
-		(λχ).getBytes(Δμ)
-		( -0.5 * λχ * λμ * λ ).getBytes(Δσ)
-		
+		(  1.0 * χ * λ ).getBytes(Δμ)
+		( -1.0 * χ * μ * λ * λ ).getBytes(Δσ)
 		//vDSP_vneg(Δσ, 1, UnsafeMutablePointer<Float>(Δσ), 1, vDSP_Length(Δσ.count))
 	}
 	static func synthesize(χ χ: [Float], μ: [Float], λ: [Float], refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) {

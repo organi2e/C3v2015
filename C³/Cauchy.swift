@@ -55,6 +55,12 @@ internal class CauchyDistribution: Distribution {
 	static func gainχ(χ: LaObjet) -> (μ: LaObjet, σ: LaObjet) {
 		return (χ, χ)
 	}
+	static func Δ(Δ: (μ: LaObjet, σ: LaObjet), μ: LaObjet, σ: LaObjet, Σ: (μ: LaObjet, λ: LaObjet)) -> (μ: LaObjet, σ: LaObjet) {
+		return (
+			μ: Δ.μ,
+			σ: Δ.σ
+		)
+	}
 	static func Δμ(Δ Δ: LaObjet, μ: LaObjet) -> LaObjet {
 		return Δ
 	}

@@ -23,6 +23,8 @@ internal class Arcane: NSManagedObject {
 		gradμ: UnsafeMutablePointer<Float>(nil),
 		gradσ: UnsafeMutablePointer<Float>(nil)
 	)
+	
+	private var optimizer: GradientOptimizer = SGD()
 	private var μoptimizer: GradientOptimizer = SGD()
 	private var σoptimizer: GradientOptimizer = SGD()
 }
@@ -76,15 +78,14 @@ internal extension Arcane {
 		
 		refresh()
 		
+		optimizer = (managedObjectContext as? Context)?.optimizerFactory(2*count) ?? μoptimizer
 		μoptimizer = (managedObjectContext as? Context)?.optimizerFactory(count) ?? μoptimizer
 		σoptimizer = (managedObjectContext as? Context)?.optimizerFactory(count) ?? σoptimizer
 	}
 	private func refresh() {
 		let count: Int = rows * cols
-		cblas_scopy(Int32(count), cache.logμ, 1, cache.μ, 1)
-		vvexpf(cache.σ, cache.logσ, [Int32(count)])
-		( 1.0 + σ ).getBytes(cache.σ)
-		vvlogf(cache.σ, cache.σ, [Int32(count)])
+		self.dynamicType.μ(cache.μ, logμ: cache.logμ, count: count)
+		self.dynamicType.σ(cache.σ, logσ: cache.logσ, count: count)
 	}
 	internal func update(distribution: Distribution.Type, Δμ: LaObjet, Δσ: LaObjet) {
 		
@@ -94,31 +95,23 @@ internal extension Arcane {
 		assert(Δσ.cols == cols)
 		
 		let count: Int = rows * cols
-		do {
-			distribution.Δμ(Δ: Δμ, μ: μ).getBytes(cache.μ)
-			let x: LaObjet = LaMatrice(cache.logμ, rows: count, cols: 1, deallocator: nil)
-			let Δx: LaObjet = LaMatrice(cache.μ, rows: count, cols: 1, deallocator: nil)
-			
-			μoptimizer.optimize(Δx: Δx, x: x).getBytes(cache.μ)
-			
-			willChangeValueForKey(Arcane.locationKey)
-			( logμ - μ ).getBytes(cache.logμ)
-			didChangeValueForKey(Arcane.locationKey)
-		}
-		do {
-			vDSP_vneg(cache.σ, 1, cache.gradσ, 1, vDSP_Length(count))
-			vvexpf(cache.gradσ, cache.gradσ, [Int32(count)])
-			
-			distribution.Δσ(Δ: ( 1 - gradσ ) * Δσ, σ: σ).getBytes(cache.σ)
-			let x: LaObjet = LaMatrice(cache.logσ, rows: count, cols: 1, deallocator: nil)
-			let Δx: LaObjet = LaMatrice(cache.σ, rows: count, cols: 1, deallocator: nil)
-			
-			σoptimizer.optimize(Δx: Δx, x: x).getBytes(cache.σ)
-
-			willChangeValueForKey(Arcane.logscaleKey)
-			( logσ - σ ).getBytes(cache.logσ)
-			didChangeValueForKey(Arcane.logscaleKey)
-		}
+		
+		self.dynamicType.gradμ(cache.gradμ, μ: cache.μ, count: count)
+		self.dynamicType.gradσ(cache.gradσ, σ: cache.σ, count: count)
+		
+		distribution.Δμ(Δ: gradμ * Δμ, μ: μ).getBytes(cache.gradμ)
+		distribution.Δσ(Δ: gradσ * Δσ, σ: σ).getBytes(cache.gradσ)
+		
+		optimizer.optimize(Δx: LaMatrice(cache.gradb, rows: 2*count, cols: 1, deallocator: nil), x: LaMatrice(cache.logb, rows: 2*count, cols: 1, deallocator: nil)).getBytes(cache.gradb)
+		
+		willChangeValueForKey(Arcane.locationKey)
+		( logμ - gradμ ).getBytes(cache.logμ)
+		didChangeValueForKey(Arcane.locationKey)
+		
+		willChangeValueForKey(Arcane.logscaleKey)
+		( logσ - gradσ ).getBytes(cache.logσ)
+		didChangeValueForKey(Arcane.logscaleKey)
+		
 		refresh()
 	}
 	internal func adjust(μ μ: Float, σ: Float) {
@@ -126,20 +119,15 @@ internal extension Arcane {
 		let count: Int = rows * cols
 		
 		vDSP_vfill([μ], cache.μ, 1, vDSP_Length(count))
-		
 		willChangeValueForKey(Arcane.locationKey)
-		cblas_scopy(Int32(count), cache.μ, 1, cache.logμ, 1)
+		self.dynamicType.logμ(cache.logμ, μ: cache.μ, count: count)
 		didChangeValueForKey(Arcane.locationKey)
 
 		vDSP_vfill([σ], cache.σ, 1, vDSP_Length(count))
-		
 		willChangeValueForKey(Arcane.logscaleKey)
-		vvexpf(cache.logσ, cache.σ, [Int32(count)])
-		(logσ - 1).getBytes(cache.logσ)
-		vvlogf(cache.logσ, cache.logσ, [Int32(count)])
+		self.dynamicType.logσ(cache.logσ, σ: cache.σ, count: count)
 		didChangeValueForKey(Arcane.logscaleKey)
 
-		
 	}
 	internal func resize(rows r: Int, cols c: Int) {
 		
@@ -151,6 +139,32 @@ internal extension Arcane {
 		logscale = NSData(bytes: [Float](count: count, repeatedValue: 0), length: sizeof(Float)*count)
 		
 		setup()
+	}
+}
+extension Arcane {
+	internal static func μ(μ: UnsafeMutablePointer<Float>, logμ: UnsafePointer<Float>, count: Int) {
+			cblas_scopy(Int32(count), logμ, 1, μ, 1)
+	}
+	internal static func σ(σ: UnsafeMutablePointer<Float>, logσ: UnsafePointer<Float>, count: Int) {
+		vvexpf(UnsafeMutablePointer<Float>(σ), logσ, [Int32(count)])
+		vDSP_vsadd(σ, 1, [Float( 1)], UnsafeMutablePointer<Float>(σ), 1, vDSP_Length(count))
+		vvlogf(UnsafeMutablePointer<Float>(σ), σ, [Int32(count)])
+	}
+	internal static func logμ(logμ: UnsafeMutablePointer<Float>, μ: UnsafePointer<Float>, count: Int) {
+		cblas_scopy(Int32(count), μ, 1, UnsafeMutablePointer<Float>(logμ), 1)
+	}
+	internal static func logσ(logσ: UnsafeMutablePointer<Float>, σ: UnsafePointer<Float>, count: Int) {
+		vvexpf(UnsafeMutablePointer<Float>(σ), logσ, [Int32(count)])
+		vDSP_vsadd(σ, 1, [Float(-1)], UnsafeMutablePointer<Float>(σ), 1, vDSP_Length(count))
+		vvlogf(UnsafeMutablePointer<Float>(σ), σ, [Int32(count)])
+	}
+	internal static func gradμ(gradμ: UnsafeMutablePointer<Float>, μ: UnsafePointer<Float>, count: Int) {
+		vDSP_vfill([Float(1)], gradμ, 1, vDSP_Length(count))
+	}
+	internal static func gradσ(gradσ: UnsafeMutablePointer<Float>, σ: UnsafePointer<Float>, count: Int) {
+		vDSP_vneg(σ, 1, UnsafeMutablePointer<Float>(gradσ), 1, vDSP_Length(count))
+		vvexpf(UnsafeMutablePointer<Float>(gradσ), gradσ, [Int32(count)])
+		vDSP_vsmsa(gradσ, 1, [Float(-1)], [Float(1)], UnsafeMutablePointer<Float>(gradσ), 1, vDSP_Length(count))
 	}
 }
 extension Arcane: RandomNumberGeneratable {

@@ -5,7 +5,6 @@
 //  Created by Kota Nakano on 6/7/16.
 //
 //
-/*
 import XCTest
 @testable import C3
 class CellTests: XCTestCase {
@@ -36,9 +35,9 @@ class CellTests: XCTestCase {
 	*/
 	func testCollect() {
 		let context: Context = try!Context()
-		context.optimizerFactory = Adam.factory()
+		context.optimizerFactory = Momentum.factory()
 		let I: Cell = try! context.newCell(.Gauss, width: 4, label: "I")
-		let H: Cell = try! context.newCell(.Gauss, width:16, label: "H", input: [I])
+		let H: Cell = try! context.newCell(.Gauss, width:64, label: "H", input: [I])
 		let O: Cell = try! context.newCell(.Gauss, width: 4, label: "O", input: [H])
 		
 		let IS: [[Bool]] = [
@@ -55,7 +54,7 @@ class CellTests: XCTestCase {
 			[true, false, false, false]
 		]
 		
-		for k in 0..<64 {
+		for k in 0..<256 {
 			
 			for _ in 0..<16 {
 				I.correct_clear()
@@ -479,6 +478,5 @@ class CellTests: XCTestCase {
 	}
 	*/
 }
-*/
 */
 */

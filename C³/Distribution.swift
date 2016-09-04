@@ -17,6 +17,8 @@ public protocol Distribution {
 	static func rng(χ: [Float], ψ: [UInt32], μ: LaObjet, σ: LaObjet)
 	
 	static func gainχ(χ: LaObjet) -> (μ: LaObjet, σ: LaObjet)
+	
+	static func Δ(Δ: (μ: LaObjet, σ: LaObjet), μ: LaObjet, σ: LaObjet, Σ: (μ: LaObjet, λ: LaObjet)) -> (μ: LaObjet, σ: LaObjet)
 	static func Δμ(Δ Δ: LaObjet, μ: LaObjet) -> LaObjet
 	static func Δσ(Δ Δ: LaObjet, σ: LaObjet) -> LaObjet
 	static func derivate(Δχ Δχ: [Float], Δμ: [Float], Δσ: [Float], Δ: [Float], μ: [Float], λ: [Float])
@@ -34,6 +36,12 @@ internal class FalseDistribution: Distribution {
 		return (
 			LaValuer(1),
 			LaValuer(1)
+		)
+	}
+	static func Δ(Δ: (μ: LaObjet, σ: LaObjet), μ: LaObjet, σ: LaObjet, Σ: (μ: LaObjet, λ: LaObjet)) -> (μ: LaObjet, σ: LaObjet) {
+		return (
+			μ: Δ.μ,
+			σ: Δ.σ
 		)
 	}
 	static func Δμ(Δ Δ: LaObjet, μ: LaObjet) -> LaObjet {
