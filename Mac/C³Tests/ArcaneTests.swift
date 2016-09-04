@@ -162,7 +162,7 @@ class ArcaneTest: XCTestCase {
 
 		let d: [Float] = uniform(rows*cols)
 		
-		let dχ: [Float] = d.map { $0 * exp(-0.5*(μ*λ)*(μ*λ))/sqrt(2*Float(M_PI)) }
+		let dχ: [Float] = d.map { $0 * exp(-0.5*(μ*λ)*(μ*λ))/Float(sqrt(2*M_PI)) }
 		let dμ: [Float] = dχ.map { $0 * λ }
 		let dσ: [Float] = dχ.map { $0 * λ * -μ * λ }
 		
