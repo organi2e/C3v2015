@@ -36,9 +36,9 @@ class CellTests: XCTestCase {
 	func testCollect() {
 		let context: Context = try!Context()
 		context.optimizerFactory = Momentum.factory(α: 5e-1, η: 5e-1)
-		let I: Cell = try! context.newCell(.Cauchy, width: 4, label: "I")
-		let H: Cell = try! context.newCell(.Cauchy, width:64, label: "H", input: [I])
-		let O: Cell = try! context.newCell(.Cauchy, width: 4, label: "O", input: [H])
+		let I: Cell = try! context.newCell(.Gauss, width: 4, label: "I")
+		let H: Cell = try! context.newCell(.Gauss, width:64, label: "H", input: [I])
+		let O: Cell = try! context.newCell(.Gauss, width: 4, label: "O", input: [H])
 		
 		let IS: [[Bool]] = [
 			[false, false, false, true],
