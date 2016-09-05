@@ -27,6 +27,32 @@ class GaussianTests: XCTestCase {
 		XCTAssert(Z.elementsEqual(Y))
 	}
 	
+	func testDerivatevDSP() {
+		
+		let N: Int = 16
+		
+		let Δ: [Float] = uniform(N)
+		let μ: [Float] = uniform(N)
+		let λ: [Float] = uniform(N)
+		
+		let Δχ_src: [Float] = Δ.enumerate().map { $0.element * exp(-0.5 * μ[$0.index] * μ[$0.index] * λ[$0.index] * λ[$0.index] ) / Float(sqrt(2.0*M_PI)) }
+		let Δμ_src: [Float] = Δχ_src.enumerate().map { $0.element * λ[$0.index] }
+		let Δσ_src: [Float] = Δχ_src.enumerate().map { $0.element * λ[$0.index] * λ[$0.index] * -μ[$0.index] }
+		
+		let Δχ_dst: [Float] = [Float](count: N, repeatedValue: 0)
+		let Δμ_dst: [Float] = [Float](count: N, repeatedValue: 0)
+		let Δσ_dst: [Float] = [Float](count: N, repeatedValue: 0)
+		
+		GaussianDistribution.derivate((χ: UnsafeMutablePointer<Float>(Δχ_dst), μ: UnsafeMutablePointer<Float>(Δμ_dst), σ: UnsafeMutablePointer<Float>(Δσ_src)), δ: Δ, μ: μ, λ: λ, count: N)
+		
+		let rmseΔχ: Float = zip(Δχ_src, Δχ_dst).map { $0 - $0 }.map { $0 * $0 }.reduce(0) { $0.0 + $0.1 }
+		print(rmseΔχ)
+		print(Δχ_src)
+		print(Δχ_dst)
+		
+		
+	}
+	
 	func testDerivate2() {
 		
 		let N: Int = 16
@@ -70,7 +96,7 @@ class GaussianTests: XCTestCase {
 		XCTAssert(Y.elementsEqual(Z))
 		
 	}
-	
+	/*
 	func testDerivate() {
 		
 		let L: Int = 16
@@ -112,9 +138,9 @@ class GaussianTests: XCTestCase {
 			print("σ", dΔσ, "\r\n", Δσ)
 			XCTFail()
 		}
-		
-	}
 	
+	}
+	*/
 	func testΔ() {
 		
 		let Δd: [Float] = Array<Float>(arrayLiteral: 0, 1, 2, 3)

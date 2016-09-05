@@ -72,19 +72,17 @@ internal class GaussianDistribution: Distribution {
 		return σ * Δ
 	}
 	static func activate(κ: UnsafeMutablePointer<Float>, φ: UnsafePointer<Float>, count: Int) {
-		/*
-		let κref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(κ)
-		let φref: UnsafePointer<float4> = UnsafePointer<float4>(φ)
-		(0..<count/4).forEach {
-			κref[$0] = vector_step(float4(0.0), φref[$0])
-		}*/
+		
 		let length: vDSP_Length = vDSP_Length(count)
+		
 		var zero: Float = 0.0
 		var half: Float = 0.5
 		var nega: Float = -1.0
+		
 		vDSP_vneg(φ, 1, κ, 1, length)
 		vDSP_vthrsc(κ, 1, &zero, &half, κ, 1, length)
 		vDSP_vsmsa(κ, 1, &nega, &half, κ, 1, length)
+		
 	}
 	static func derivate(Δ: (χ: UnsafeMutablePointer<Float>, μ: UnsafeMutablePointer<Float>, σ: UnsafeMutablePointer<Float>), δ: UnsafePointer<Float>, μ: UnsafePointer<Float>, λ: UnsafePointer<Float>, count: Int) {
 		/*
