@@ -1,25 +1,25 @@
 //
-//  Cauchy.swift
-//  C³
+//  ChebyshevDistribution.swift
+//  Mac
 //
-//  Created by Kota Nakano on 8/19/16.
+//  Created by Kota Nakano on 9/5/16.
 //
 //
 import Accelerate
 import CoreData
 import simd
 
-internal class CauchyDistribution: Distribution {
+internal class ChebyshevDistribution: Distribution {
 	static func cdf(χ: Float, μ: Float, σ: Float) -> Float {
 		let level: Double = (Double(χ)-Double(μ))/Double(σ)
 		return Float(
-			0.5 + M_1_PI * atan(level)
+			0.0
 		)
 	}
 	static func pdf(χ: Float, μ: Float, σ: Float) -> Float {
 		let level: Double = (Double(χ)-Double(μ))/Double(σ)
 		return Float(
-			1.0 / ( M_PI * Double(σ) * ( 1.0 + level * level ) )
+			( level == 0 ? 1.0 : sin(level) / level ) / Double(σ) / M_PI
 		)
 	}
 	//	static func cdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
@@ -29,11 +29,6 @@ internal class CauchyDistribution: Distribution {
 		assert(μ.count==count)
 		assert(σ.count==count)
 		assert(ψ.count==count)
-		vDSP_vfltu32(ψ, 1, UnsafeMutablePointer<Float>(χ), 1, vDSP_Length(count))
-		vDSP_vsadd(χ, 1, [Float(0.5)], UnsafeMutablePointer<Float>(χ), 1, vDSP_Length(count))
-		vDSP_vsdiv(χ, 1, [Float(UInt32.max)+1.0], UnsafeMutablePointer<Float>(χ), 1, vDSP_Length(count))
-		vvtanpif(UnsafeMutablePointer<Float>(χ), χ, [Int32(count)])
-		(LaMatrice(χ, rows: min(μ.rows, σ.rows), cols: min(μ.cols, σ.cols), deallocator: nil)*σ+μ).eval(χ)
 	}
 	static func activate(κ: UnsafeMutablePointer<Float>, φ: UnsafePointer<Float>, count: Int) {
 		let κref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(κ)
@@ -47,21 +42,7 @@ internal class CauchyDistribution: Distribution {
 		cblas_scopy(Int32(count), δ, 1, Δ.μ, 1)
 	}
 	static func derivate(Δχ Δχ: [Float], Δμ: [Float], Δσ: [Float], Δ delta: [Float], μ mu: [Float], λ lambda: [Float]) {
-		let χ: LaObjet = LaMatrice(Δχ, rows: Δχ.count, cols: 1, deallocator: nil)
-		let Δ: LaObjet = LaMatrice(delta, rows: delta.count, cols: 1, deallocator: nil)
-		let μ: LaObjet = LaMatrice(mu, rows: mu.count, cols: 1, deallocator: nil)
-		let λ: LaObjet = LaMatrice(lambda, rows: lambda.count, cols: 1, deallocator: nil)
 		
-		let λμ: LaObjet = λ * μ
-		(1 + λμ * λμ).getBytes(Δχ)
-		vvrecf(UnsafeMutablePointer<Float>(Δχ), Δχ, [Int32(Δχ.count)])
-		
-		(Float(M_1_PI)*Δ*χ).getBytes(Δχ)
-		
-		let λχ: LaObjet = λ * χ
-		(λχ).getBytes(Δμ)
-		(λχ*μ*λ).getBytes(Δσ)
-		vDSP_vneg(Δσ, 1, UnsafeMutablePointer<Float>(Δσ), 1, vDSP_Length(Δσ.count))
 	}
 	static func gainχ(χ: LaObjet) -> (μ: LaObjet, σ: LaObjet) {
 		return (χ, χ)
@@ -98,12 +79,13 @@ internal class CauchyDistribution: Distribution {
 		
 		var p_est: double2 = est
 		var p_delta: double2 = double2(0)
-
+		
 		let X: [Double] = [Double](count: count, repeatedValue: 0)
 		let U: [Double] = [Double](count: count, repeatedValue: 0)
 		let A: [Double] = [Double](count: count, repeatedValue: 0)
 		let B: [Double] = [Double](count: count, repeatedValue: 0)
 		let C: [Double] = [Double](count: count, repeatedValue: 0)
+		
 		
 		vDSP_vspdp(χ, 1, UnsafeMutablePointer<Double>(X), 1, vDSP_Length(count))
 		

@@ -11,10 +11,10 @@ import XCTest
 class LaObjetTests: XCTestCase {
 	let M: Int = 4
 	let N: Int = 4
-	@nonobjc func uniform() -> [Float] {
+	private func uniform() -> [Float] {
 		return(0..<N*M).map{(_)in Float(arc4random())/sqrt(Float(UInt32.max))}
 	}
-	@nonobjc func uniform() -> Float {
+	private func uniform() -> Float {
 		return Float(arc4random())/Float(UInt32.max)
 	}
 	func testAddVV() {
@@ -109,10 +109,10 @@ class LaObjetTests: XCTestCase {
 	func testDivVS() {
 		let a: Float = uniform()
 		let b: [Float] = uniform()
-		let c: [Float] = b.map { $0 / a }
+		let c: [Float] = b.map { Float(Double($0) / Double(a)) }
 		let A: LaObjet = LaValuer(a)
 		let B: LaObjet = LaMatrice(b, rows: b.count, cols: 1, deallocator: nil)
-		if 1e-4 < ((B/A) - LaMatrice(c, rows: b.count, cols: 1, deallocator: nil)).length {
+		if 1e-3 < ((B/A) - LaMatrice(c, rows: b.count, cols: 1, deallocator: nil)).length {
 			XCTFail()
 			print((B/A).array)
 			print(c)

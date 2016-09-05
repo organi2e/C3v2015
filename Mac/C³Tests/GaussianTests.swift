@@ -6,6 +6,7 @@
 //
 //
 import Accelerate
+import simd
 import XCTest
 @testable import C3
 class GaussianTests: XCTestCase {
@@ -16,9 +17,63 @@ class GaussianTests: XCTestCase {
 		}
 	}
 	
+	func testActivate() {
+		let X: [Float] = uniform(512) + [Float](count: 512, repeatedValue: 0)
+		let Y: [Float] = X.map { 0 < $0 ? 1 : 0 }
+		let Z: [Float] = X.map { (_)in 0.0 }
+		
+		GaussianDistribution.activate(UnsafeMutablePointer<Float>(Z), φ: X, count: X.count)
+		
+		XCTAssert(Z.elementsEqual(Y))
+	}
+	
+	func testDerivate2() {
+		
+		let N: Int = 16
+		
+		let X: [Float] = [Float](count: N, repeatedValue: 0)
+		
+		UnsafeMutablePointer<Float>(X)[0] = -1
+		UnsafeMutablePointer<Float>(X)[1] = -0.5
+		UnsafeMutablePointer<Float>(X)[2] = -0.0
+		UnsafeMutablePointer<Float>(X)[3] = 0.5
+		UnsafeMutablePointer<Float>(X)[4] = 1.0
+		UnsafeMutablePointer<Float>(X)[5] = 0.5
+		UnsafeMutablePointer<Float>(X)[6] = 0.0
+		UnsafeMutablePointer<Float>(X)[7] = -0.5
+		
+		let Y: [Float] = X.map { 0 < $0 ? 1 : 0 }
+		let Z: [Float] = X.map { 1 - vector_step(0, -$0) }
+		let W: [Float] = [Float](count: N, repeatedValue: 0)
+		
+		print(X)
+		/*sign
+		vDSP_vneg(X, 1, UnsafeMutablePointer<Float>(W), 1, vDSP_Length(N))
+		vDSP_vlim(X, 1, [Float(0.0)], [Float( 0.5)], UnsafeMutablePointer<Float>(X), 1, vDSP_Length(N))
+		vDSP_vlim(W, 1, [Float(0.0)], [Float(-0.5)], UnsafeMutablePointer<Float>(W), 1, vDSP_Length(N))
+		vDSP_vadd(X, 1, W, 1, UnsafeMutablePointer<Float>(X), 1, vDSP_Length(N))
+		*/
+		
+		//step
+		
+		vDSP_vneg(X, 1, UnsafeMutablePointer<Float>(X), 1, vDSP_Length(N))
+		//vDSP_vlim(X, 1, [Float(0.0)], [Float( 0.5)], UnsafeMutablePointer<Float>(X), 1, vDSP_Length(N))
+		vDSP_vthrsc(X, 1, [Float(0.0)], [Float( 0.5)], UnsafeMutablePointer<Float>(X), 1, vDSP_Length(N))
+		//vDSP_vlim(W, 1, [Float(0.0)], [Float(-0.5)], UnsafeMutablePointer<Float>(W), 1, vDSP_Length(N))
+		//vDSP_vadd(X, 1, W, 1, UnsafeMutablePointer<Float>(X), 1, vDSP_Length(N))
+		vDSP_vsmsa(X, 1, [-Float(1.0)], [Float(0.5)], UnsafeMutablePointer<Float>(X), 1, vDSP_Length(N))
+		
+		print(X)
+		print(Y)
+		print(Z)
+		
+		XCTAssert(Y.elementsEqual(Z))
+		
+	}
+	
 	func testDerivate() {
 		
-		let L: Int = 64
+		let L: Int = 16
 		
 		let Δχ: [Float] = uniform(L)
 		let Δμ: [Float] = uniform(L)
@@ -75,7 +130,7 @@ class GaussianTests: XCTestCase {
 		let Δσ: LaObjet = GaussianDistribution.Δσ(Δ: Δ, σ: σ)
 		
 		XCTAssert(Δ.array.elementsEqual(Δμ.array))
-		XCTAssert(zip(Δ.array, σ.array).map { 2.0 * $0 * $1 }.elementsEqual(Δσ.array))
+		XCTAssert(zip(Δ.array, σ.array).map { $0 * $1 }.elementsEqual(Δσ.array))
 		
 		
 		//XCTAssert(Δσ.array.elementsEqual(zip(Δ, σ).map { 2 * $0 * $1 * $1 }))

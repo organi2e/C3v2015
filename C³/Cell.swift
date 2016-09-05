@@ -13,12 +13,12 @@ public class Cell: NSManagedObject {
 	
 	private enum Ready {
 		case ψ
-		case ϰ
+		case κ
 		case δ
 	}
 	
 	private var ready: Set<Ready> = Set<Ready>()
-	private var state: RingBuffer<(ψ: [Float], ϰ: [Float], δ: [Float])> = RingBuffer<(ψ: [Float], ϰ: [Float], δ: [Float])>(array: [])
+	private var state: RingBuffer<(ψ: [Float], κ: [Float], δ: [Float])> = RingBuffer<(ψ: [Float], κ: [Float], δ: [Float])>(array: [])
 	private var level: RingBuffer<(χ: [Float], μ: [Float], λ: [Float])> = RingBuffer<(χ: [Float], μ: [Float], λ: [Float])>(array: [])
 	private var delta: RingBuffer<(χ: [Float], μ: [Float], σ: [Float])> = RingBuffer<(χ: [Float], μ: [Float], σ: [Float])>(array: [])
 	
@@ -81,10 +81,10 @@ extension Cell {
 extension Cell {
 	internal func setup() {
 		let count: Int = 2
-		state = RingBuffer<(ψ: [Float], ϰ: [Float], δ: [Float])>(array: (0..<count).map{(_)in
+		state = RingBuffer<(ψ: [Float], κ: [Float], δ: [Float])>(array: (0..<count).map{(_)in
 			(
 				ψ: [Float](count: width, repeatedValue: 0),
-				ϰ: [Float](count: width, repeatedValue: 0),
+				κ: [Float](count: width, repeatedValue: 0),
 				δ: [Float](count: width, repeatedValue: 0)
 			)
 		})
@@ -106,8 +106,8 @@ extension Cell {
 }
 extension Cell {
 	public func collect_clear() {
-		if ready.contains(.ϰ) {
-			ready.remove(.ϰ)
+		if ready.contains(.κ) {
+			ready.remove(.κ)
 			input.forEach {
 				$0.collect_clear(distribution)
 			}
@@ -128,15 +128,15 @@ extension Cell {
 	}
 	public func collect(ignore: Set<Cell> = []) -> LaObjet {
 		if ignore.contains(self) {
-			return LaMatrice(state.old.ϰ, rows: width, cols: 1, deallocator: nil)
+			return LaMatrice(state.old.κ, rows: width, cols: 1, deallocator: nil)
 		} else {
-			if !ready.contains(.ϰ) {
-				ready.insert(.ϰ)
+			if !ready.contains(.κ) {
+				ready.insert(.κ)
 				let sum: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)] = input.map { $0.collect(ignore) } + [ bias.collect() ]
 				distribution.synthesize(χ: level.new.χ, μ: level.new.μ, λ: level.new.λ, refer: sum)
-				self.dynamicType.step(state.new.ϰ, level: level.new.χ)
+				distribution.activate(UnsafeMutablePointer<Float>(state.new.κ), φ: level.new.χ, count: width)
 			}
-			return LaMatrice(state.new.ϰ, rows: width, cols: 1, deallocator: nil)
+			return LaMatrice(state.new.κ, rows: width, cols: 1, deallocator: nil)
 		}
 	}
 	public func correct(ignore: Set<Cell> = []) -> (LaObjet, LaObjet, LaObjet, Distribution.Type) {
@@ -152,11 +152,11 @@ extension Cell {
 				ready.insert(.δ)
 				if ready.contains(.ψ) {
 					let ψ: LaObjet = LaMatrice(state.new.ψ, rows: width, cols: 1, deallocator: nil)
-					let ϰ: LaObjet = LaMatrice(state.new.ϰ, rows: width, cols: 1, deallocator: nil)
-					let δ: LaObjet = ϰ - ψ
+					let κ: LaObjet = LaMatrice(state.new.κ, rows: width, cols: 1, deallocator: nil)
+					let δ: LaObjet = κ - ψ
 					δ.getBytes(state.new.δ)
 				} else {
-					let δ: LaObjet = output.map { $0.correct(ignore, ϰ: state.new.ϰ) } .reduce(LaValuer(0)) { $0.0 + $0.1 }
+					let δ: LaObjet = output.map { $0.correct(ignore, ϰ: state.new.κ) } .reduce(LaValuer(0)) { $0.0 + $0.1 }
 					δ.getBytes(state.new.δ)
 				}
 				self.dynamicType.sign(state.new.δ, error: state.new.δ)
@@ -175,8 +175,8 @@ extension Cell {
 extension Cell {
 	public var active: [Bool] {
 		set {
-			NSData(bytesNoCopy: UnsafeMutablePointer(newValue.map({Float($0)})), length: sizeof(Float)*newValue.count, freeWhenDone: false).getBytes(UnsafeMutablePointer<Void>(state.new.ϰ), length: sizeof(Float)*state.new.ϰ.count)
-			ready.insert(.ϰ)
+			NSData(bytesNoCopy: UnsafeMutablePointer(newValue.map({Float($0)})), length: sizeof(Float)*newValue.count, freeWhenDone: false).getBytes(UnsafeMutablePointer<Void>(state.new.κ), length: sizeof(Float)*state.new.κ.count)
+			ready.insert(.κ)
 		}
 		get {
 			return collect().array.map { Bool($0) }

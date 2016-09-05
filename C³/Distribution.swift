@@ -11,6 +11,12 @@ public enum DistributionType: String {
 	case Cauchy = "Cauchy"
 	case False = "False"
 }
+internal protocol RandomNumberGeneratable {
+	var χ: LaObjet { get }
+	var μ: LaObjet { get }
+	var σ: LaObjet { get }
+	func shuffle(dist: Distribution.Type)
+}
 public protocol Distribution {
 	static func cdf(χ: Float, μ: Float, σ: Float) -> Float
 	static func pdf(χ: Float, μ: Float, σ: Float) -> Float
@@ -21,9 +27,10 @@ public protocol Distribution {
 	static func Δ(Δ: (μ: LaObjet, σ: LaObjet), μ: LaObjet, σ: LaObjet, Σ: (μ: LaObjet, λ: LaObjet)) -> (μ: LaObjet, σ: LaObjet)
 	static func Δμ(Δ Δ: LaObjet, μ: LaObjet) -> LaObjet
 	static func Δσ(Δ Δ: LaObjet, σ: LaObjet) -> LaObjet
+	static func activate(κ: UnsafeMutablePointer<Float>, φ: UnsafePointer<Float>, count: Int)
+	static func derivate(Δ: (χ: UnsafeMutablePointer<Float>, μ: UnsafeMutablePointer<Float>, σ: UnsafeMutablePointer<Float>), δ: UnsafePointer<Float>, μ: UnsafePointer<Float>, λ: UnsafePointer<Float>, count: Int)
 	static func derivate(Δχ Δχ: [Float], Δμ: [Float], Δσ: [Float], Δ: [Float], μ: [Float], λ: [Float])
 	static func synthesize(χ χ: [Float], μ: [Float], λ: [Float], refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)])
-	
 	
 }
 internal class FalseDistribution: Distribution {
@@ -50,6 +57,13 @@ internal class FalseDistribution: Distribution {
 	static func Δσ(Δ Δ: LaObjet, σ: LaObjet) -> LaObjet {
 		return Δ
 	}
+	static func activate(κ: UnsafeMutablePointer<Float>, φ: UnsafePointer<Float>, count: Int) {
+		cblas_scopy(Int32(count), φ, 1, κ, 1)
+	}
+	static func derivate(Δ: (χ: UnsafeMutablePointer<Float>, μ: UnsafeMutablePointer<Float>, σ: UnsafeMutablePointer<Float>), δ: UnsafePointer<Float>, μ: UnsafePointer<Float>, λ: UnsafePointer<Float>, count: Int) {
+		cblas_scopy(Int32(count), δ, 1, Δ.χ, 1)
+		cblas_scopy(Int32(count), δ, 1, Δ.μ, 1)
+	}
 	static func derivate(Δχ Δχ: [Float], Δμ: [Float], Δσ: [Float], Δ: [Float], μ: [Float], λ: [Float]) {
 		cblas_scopy(Int32(min(Δ.count, Δχ.count)), Δ, 1, UnsafeMutablePointer<Float>(Δχ), 1)
 		cblas_scopy(Int32(min(Δ.count, Δμ.count)), Δ, 1, UnsafeMutablePointer<Float>(Δμ), 1)
@@ -63,10 +77,4 @@ internal class FalseDistribution: Distribution {
 		mix.μ.getBytes(μ)
 		vDSP_vclr(UnsafeMutablePointer<Float>(λ), 1, vDSP_Length(λ.count))
 	}
-}
-internal protocol RandomNumberGeneratable {
-	var χ: LaObjet { get }
-	var μ: LaObjet { get }
-	var σ: LaObjet { get }
-	func shuffle(dist: Distribution.Type)
 }

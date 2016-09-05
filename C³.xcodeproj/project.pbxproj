@@ -120,6 +120,7 @@
 		874347D01D6F013600B54F70 /* Bridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = Bridge.m; path = CL3/Bridge.m; sourceTree = "<group>"; };
 		874347D11D6F014200B54F70 /* Bridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Bridge.h; path = CL3/Bridge.h; sourceTree = "<group>"; };
 		874347D61D6F023B00B54F70 /* clblas.cl */ = {isa = PBXFileReference; explicitFileType = text; name = clblas.cl; path = CL3/clblas.cl; sourceTree = "<group>"; };
+		874D7F141D7D742E0055162F /* Chebyshev.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Chebyshev.swift; path = "C³/Chebyshev.swift"; sourceTree = "<group>"; };
 		874F0BC41D3FC4C0005A2B62 /* AsyncValue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AsyncValue.swift; path = NLA/AsyncValue.swift; sourceTree = "<group>"; };
 		87591AE11D3C45C400BD9248 /* blas.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = blas.metal; path = Computer/blas.metal; sourceTree = "<group>"; };
 		87591AE21D3C45C400BD9248 /* Buffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Buffer.swift; path = Computer/Buffer.swift; sourceTree = "<group>"; };
@@ -290,6 +291,7 @@
 				87D18E341D3F18BB00982020 /* LaObjet.swift */,
 				87BCEBF01D4D745900FC3099 /* Decay.swift */,
 				87BCEBF91D4D746400FC3099 /* Gaussian.swift */,
+				874D7F141D7D742E0055162F /* Chebyshev.swift */,
 				87A42CBC1D4F5CD5008D9708 /* Feedback.swift */,
 				875DD1B71D6AD89500A5C250 /* Misc.swift */,
 				870EA91B1D54AD77008C3380 /* mtlblas.metal */,

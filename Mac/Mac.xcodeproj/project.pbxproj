@@ -22,6 +22,7 @@
 		874347D31D6F014D00B54F70 /* Bridge.m in Sources */ = {isa = PBXBuildFile; fileRef = 874347D21D6F014D00B54F70 /* Bridge.m */; };
 		874347D51D6F015200B54F70 /* Bridge.h in Headers */ = {isa = PBXBuildFile; fileRef = 874347D41D6F015200B54F70 /* Bridge.h */; };
 		874347D81D6F024600B54F70 /* clblas.cl in Resources */ = {isa = PBXBuildFile; fileRef = 874347D71D6F024600B54F70 /* clblas.cl */; };
+		874D7F131D7D36F80055162F /* Chebyshev.swift in Sources */ = {isa = PBXBuildFile; fileRef = 874D7F121D7D36F80055162F /* Chebyshev.swift */; };
 		875DD1971D64532800A5C250 /* mtlrender.metal in Sources */ = {isa = PBXBuildFile; fileRef = 875DD1951D6452E100A5C250 /* mtlrender.metal */; };
 		875DD1AA1D66B4DF00A5C250 /* Cauchy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 875DD1A31D66B25300A5C250 /* Cauchy.swift */; };
 		875DD1AB1D66B4E200A5C250 /* mtlcauchy.metal in Sources */ = {isa = PBXBuildFile; fileRef = 875DD1A61D66B33800A5C250 /* mtlcauchy.metal */; };
@@ -179,6 +180,7 @@
 		874347D21D6F014D00B54F70 /* Bridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = Bridge.m; path = ../../CL3/Bridge.m; sourceTree = "<group>"; };
 		874347D41D6F015200B54F70 /* Bridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Bridge.h; path = ../../CL3/Bridge.h; sourceTree = "<group>"; };
 		874347D71D6F024600B54F70 /* clblas.cl */ = {isa = PBXFileReference; explicitFileType = text; name = clblas.cl; path = ../../CL3/clblas.cl; sourceTree = "<group>"; };
+		874D7F121D7D36F80055162F /* Chebyshev.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Chebyshev.swift; path = "../../C³/Chebyshev.swift"; sourceTree = "<group>"; };
 		875DD1951D6452E100A5C250 /* mtlrender.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = mtlrender.metal; path = "../../C³/mtlrender.metal"; sourceTree = "<group>"; };
 		875DD1A31D66B25300A5C250 /* Cauchy.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Cauchy.swift; path = "../../C³/Cauchy.swift"; sourceTree = "<group>"; };
 		875DD1A61D66B33800A5C250 /* mtlcauchy.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = mtlcauchy.metal; path = "../../C³/mtlcauchy.metal"; sourceTree = "<group>"; };
@@ -465,6 +467,7 @@
 				87CFDE971D7441AB00716188 /* Distribution.swift */,
 				87BCEBFF1D4D765000FC3099 /* Gaussian.swift */,
 				875DD1A31D66B25300A5C250 /* Cauchy.swift */,
+				874D7F121D7D36F80055162F /* Chebyshev.swift */,
 				87AE7C9C1D767B290061F229 /* GradientOptimizer.swift */,
 				87AE7C9F1D76D1EB0061F229 /* Momentum.swift */,
 				87745FD11D76E83300B90B5E /* Adam.swift */,
@@ -929,6 +932,7 @@
 				87BCEBFC1D4D763D00FC3099 /* Bias.swift in Sources */,
 				875DD1AA1D66B4DF00A5C250 /* Cauchy.swift in Sources */,
 				873934B31D42FD7800888988 /* Blob.swift in Sources */,
+				874D7F131D7D36F80055162F /* Chebyshev.swift in Sources */,
 				87B1FD311D0546B500981CF4 /* Cell.swift in Sources */,
 				87B1FD321D0546B500981CF4 /* Config.swift in Sources */,
 				87B1FD331D0546B500981CF4 /* Context.swift in Sources */,

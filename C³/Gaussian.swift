@@ -6,6 +6,7 @@
 //
 //
 import Accelerate
+import simd
 internal class GaussianDistribution: Distribution {
 	static func cdf(χ: Float, μ: Float, σ: Float) -> Float {
 		let level: Double = ( Double(χ) - Double(μ) ) / Double(σ)
@@ -47,18 +48,13 @@ internal class GaussianDistribution: Distribution {
 		vDSP_vmul(UnsafeMutablePointer<Float>(χ).advancedBy(0*count/2), 1, UnsafeMutablePointer<Float>(ψ), 1, UnsafeMutablePointer<Float>(χ).advancedBy(0*count/2), 1, vDSP_Length(count/2))
 		vDSP_vmul(UnsafeMutablePointer<Float>(χ).advancedBy(1*count/2), 1, UnsafeMutablePointer<Float>(ψ), 1, UnsafeMutablePointer<Float>(χ).advancedBy(1*count/2), 1, vDSP_Length(count/2))
 		
-		
 		(LaMatrice(χ, rows: min(μ.rows, σ.rows), cols: min(μ.cols, σ.cols), deallocator: nil)*σ+μ).eval(χ)
 	}
 	static func est(χ: [Float]) -> (μ: Float, σ: Float) {
 		var μ: Float = 0.0
-		var σ: Float = 0.0
-		let array: [Float] = χ
-		vDSP_meanv(array, 1, &μ, vDSP_Length(array.count))
-		vDSP_vsadd(array, 1, [-μ], UnsafeMutablePointer(array), 1, vDSP_Length(array.count))
-		vDSP_vsq(array, 1, UnsafeMutablePointer(array), 1, vDSP_Length(array.count))
-		vDSP_meanv(array, 1, &σ, vDSP_Length(array.count))
-		return (μ, sqrt(σ))
+		var σ: Float = 1.0
+		vDSP_normalize(χ, 1, nil, 1, &μ, &σ, vDSP_Length(χ.count))
+		return (μ, σ)
 	}
 	static func gainχ(χ: LaObjet) -> (μ: LaObjet, σ: LaObjet) {
 		return ( χ, χ * χ )
@@ -74,6 +70,55 @@ internal class GaussianDistribution: Distribution {
 	}
 	static func Δσ(Δ Δ: LaObjet, σ: LaObjet) -> LaObjet {
 		return σ * Δ
+	}
+	static func activate(κ: UnsafeMutablePointer<Float>, φ: UnsafePointer<Float>, count: Int) {
+		/*
+		let κref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(κ)
+		let φref: UnsafePointer<float4> = UnsafePointer<float4>(φ)
+		(0..<count/4).forEach {
+			κref[$0] = vector_step(float4(0.0), φref[$0])
+		}*/
+		let length: vDSP_Length = vDSP_Length(count)
+		var zero: Float = 0.0
+		var half: Float = 0.5
+		var nega: Float = -1.0
+		vDSP_vneg(φ, 1, κ, 1, length)
+		vDSP_vthrsc(κ, 1, &zero, &half, κ, 1, length)
+		vDSP_vsmsa(κ, 1, &nega, &half, κ, 1, length)
+	}
+	static func derivate(Δ: (χ: UnsafeMutablePointer<Float>, μ: UnsafeMutablePointer<Float>, σ: UnsafeMutablePointer<Float>), δ: UnsafePointer<Float>, μ: UnsafePointer<Float>, λ: UnsafePointer<Float>, count: Int) {
+		/*
+		let κref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(Δ.χ)
+		let φref: UnsafePointer<float4> = UnsafePointer<float4>(δ)
+		(0..<count/4).forEach {
+			κref[$0] = vector_sign(φref[$0])
+		}
+		*/
+		let length: vDSP_Length = vDSP_Length(count)
+		var len: Int32 = Int32(count)
+		var zero: Float = 0
+		var posi: Float = 0.5
+		var nega: Float = -0.5
+		var gain: Float = Float(0.5 * M_2_SQRTPI * M_SQRT1_2)
+		
+		vDSP_vneg(δ, 1, Δ.σ, 1, length)
+		vDSP_vlim(δ, 1, &zero, &posi, Δ.μ, 1, length)
+		vDSP_vlim(Δ.σ, 1, &zero, &nega, Δ.σ, 1, length)
+
+		vDSP_vmul(μ, 1, λ, 1, Δ.χ, 1, length)
+		vDSP_vsq(Δ.χ, 1, Δ.χ, 1, length)
+		vDSP_vsmul(Δ.χ, 1, &nega, Δ.χ, 1, length)
+		
+		vvexpf(Δ.χ, Δ.χ, &len)
+		
+		vDSP_vsmul(Δ.χ, 1, &gain, Δ.χ, 1, length)
+		vDSP_vam(Δ.μ, 1, Δ.σ, 1, Δ.χ, 1, Δ.χ, 1, length)
+		
+		vDSP_vmul(Δ.χ, 1, λ, 1, Δ.μ, 1, length)
+		vDSP_vmul(Δ.μ, 1, λ, 1, Δ.σ, 1, length)
+		vDSP_vmul(Δ.σ, 1, μ, 1, Δ.σ, 1, length)
+		vDSP_vneg(Δ.σ, 1, Δ.σ, 1, length)		
+		
 	}
 	static func derivate(Δχ Δχ: [Float], Δμ: [Float], Δσ: [Float], Δ delta: [Float], μ mu: [Float], λ lambda: [Float]) {
 		
@@ -93,7 +138,7 @@ internal class GaussianDistribution: Distribution {
 	}
 	static func synthesize(χ χ: [Float], μ: [Float], λ: [Float], refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) {
 		func σ(σ: LaObjet) -> LaObjet { return σ * σ }
-		let mix: (χ: LaObjet, μ: LaObjet, λ: LaObjet) = refer.reduce((LaSplat(0), LaSplat(0), LaSplat(0))) {
+		let mix: (χ: LaObjet, μ: LaObjet, λ: LaObjet) = refer.reduce((LaValuer(0), LaValuer(0), LaValuer(0))) {
 			( $0.0.0 + $0.1.χ, $0.0.1 + $0.1.1, $0.0.2 + σ($0.1.σ) )
 		}
 		mix.χ.getBytes(χ)

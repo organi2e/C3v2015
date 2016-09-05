@@ -10,6 +10,7 @@ import Accelerate
 private let ATTR: la_attribute_t = la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING)
 private let HINT: la_hint_t = la_hint_t(LA_NO_HINT)
 private let TYPE: la_scalar_type_t = la_scalar_type_t(LA_SCALAR_TYPE_FLOAT)
+private let SUCCESS: la_status_t = la_status_t(LA_SUCCESS)
 
 public typealias LaObjet = la_object_t
 
@@ -32,13 +33,27 @@ internal extension LaObjet {
 	var length: Float {
 		return la_norm_as_float(self, la_norm_t(LA_L2_NORM))
 	}
-	var normalize: LaObjet {
+	var L1Norm: Float {
+		return la_norm_as_float(self, la_norm_t(LA_L1_NORM))
+	}
+	var L2Norm: Float {
+		return la_norm_as_float(self, la_norm_t(LA_L2_NORM))
+	}
+	var LINFNorm: Float {
+		return la_norm_as_float(self, la_norm_t(LA_LINF_NORM))
+	}
+	var L1Normalize: LaObjet {
 		return la_normalized_vector(self, la_norm_t(LA_L2_NORM))
+	}
+	var L2Normalize: LaObjet {
+		return la_normalized_vector(self, la_norm_t(LA_L1_NORM))
+	}
+	var LINFNormalize:LaObjet {
+		return la_normalized_vector(self, la_norm_t(LA_LINF_NORM))
 	}
 	var array: [Float] {
 		let buffer: [Float] = [Float](count: count, repeatedValue: 0)
-		let result: la_status_t = la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), la_matrix_cols(self), self)
-		assert(result==la_status_t(LA_SUCCESS))
+		assert(la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), la_matrix_cols(self), self) == SUCCESS)
 		return buffer
 	}
 	var issplat: Bool {
@@ -51,7 +66,7 @@ internal extension LaObjet {
 		return la_splat_from_matrix_element(self, la_index_t(row), la_index_t(col))
 	}
 	func getBytes(buffer: UnsafePointer<Void>) -> Bool {
-		return la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), la_count_t(la_matrix_cols(self)), self) == la_status_t(LA_SUCCESS)
+		return la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), la_count_t(la_matrix_cols(self)), self) == SUCCESS
 	}
 	func eval(buffer: [Float]) -> Bool {
 		return getBytes(buffer)
@@ -76,8 +91,8 @@ internal func *(lhs: LaObjet, rhs: LaObjet) -> LaObjet {
 	if lhs.count == 0 && rhs.count == 0 {
 		var x: Float = 0
 		var y: Float = 0
-		assert(la_matrix_to_float_buffer(&x, 1, la_matrix_from_splat(lhs, 1, 1))==la_status_t(LA_SUCCESS))
-		assert(la_matrix_to_float_buffer(&y, 1, la_matrix_from_splat(rhs, 1, 1))==la_status_t(LA_SUCCESS))
+		assert(la_matrix_to_float_buffer(&x, 1, la_matrix_from_splat(lhs, 1, 1))==SUCCESS)
+		assert(la_matrix_to_float_buffer(&y, 1, la_matrix_from_splat(rhs, 1, 1))==SUCCESS)
 		return la_splat_from_float(x*y, ATTR)
 	} else if lhs.count == 1 && rhs.count == 1 {
 		return la_elementwise_product(lhs, rhs)
@@ -86,27 +101,40 @@ internal func *(lhs: LaObjet, rhs: LaObjet) -> LaObjet {
 	}
 }
 internal func *(lhs: LaObjet, rhs: Float) -> LaObjet {
-	return lhs.count == 0 ? la_splat_from_float(la_matrix_from_splat(lhs, 1, 1).array[0]*rhs, ATTR) : la_scale_with_float(lhs, rhs)
+	if lhs.count == 0 {
+		var value: Float = 0
+		assert(la_matrix_to_float_buffer(&value, 1, la_matrix_from_splat(lhs, 1, 1))==SUCCESS)
+		return la_splat_from_float(value*rhs, ATTR)
+	}
+	else {
+		return la_scale_with_float(lhs, rhs)
+	}
 }
 internal func *(lhs: Float, rhs: LaObjet) -> LaObjet {
-	return rhs.count == 0 ? la_splat_from_float(la_matrix_from_splat(rhs, 1, 1).array[0]*lhs, ATTR) : la_scale_with_float(rhs, lhs)
+	if rhs.count == 0 {
+		var value: Float = 0
+		assert(la_matrix_to_float_buffer(&value, 1, la_matrix_from_splat(rhs, 1, 1))==SUCCESS)
+		return la_splat_from_float(value*lhs, ATTR)
+	} else {
+		return la_scale_with_float(rhs, lhs)
+	}
 }
 
 internal func /(lhs: LaObjet, rhs: LaObjet) -> LaObjet {
 	if lhs.count == 0 && rhs.count == 0 { // return splat
 		var y: Float = 0
 		var x: Float = 1
-		assert(la_matrix_to_float_buffer(&y, 1, la_matrix_from_splat(lhs, 1, 1))==la_status_t(LA_SUCCESS))
-		assert(la_matrix_to_float_buffer(&x, 1, la_matrix_from_splat(rhs, 1, 1))==la_status_t(LA_SUCCESS))
-		return la_splat_from_float(y/x, ATTR)
+		assert(la_matrix_to_float_buffer(&y, 1, la_matrix_from_splat(lhs, 1, 1))==SUCCESS)
+		assert(la_matrix_to_float_buffer(&x, 1, la_matrix_from_splat(rhs, 1, 1))==SUCCESS)
+		return la_splat_from_float(Float(Double(y)/Double(x)), ATTR)
 	} else if lhs.count != 0 && rhs.count == 0 {
 		var x: Float = 1
-		assert(la_matrix_to_float_buffer(&x, 1, la_matrix_from_splat(rhs, 1, 1))==la_status_t(LA_SUCCESS))
-		return la_scale_with_float(lhs, 1/x)
+		assert(la_matrix_to_float_buffer(&x, 1, la_matrix_from_splat(rhs, 1, 1))==SUCCESS)
+		return la_scale_with_float(lhs, Float(1/Double(x)))
 	} else if lhs.count != 0 && rhs.count == 1 {
 		var x: Float = 1
-		assert(la_matrix_to_float_buffer(&x, 1, rhs)==la_status_t(LA_SUCCESS))
-		return la_scale_with_float(lhs, 1/x)
+		assert(la_matrix_to_float_buffer(&x, 1, rhs)==SUCCESS)
+		return la_scale_with_float(lhs, Float(1/Double(x)))
 	} else {
 		let result: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*rhs.count))
 		assert(la_matrix_to_float_buffer(result, la_matrix_cols(rhs), rhs)==la_status_t(LA_SUCCESS))
@@ -117,7 +145,7 @@ internal func /(lhs: LaObjet, rhs: LaObjet) -> LaObjet {
 internal func /(lhs: LaObjet, rhs: Float) -> LaObjet {
 	if lhs.count == 0 {
 		var value: Float = 0
-		assert(la_matrix_to_float_buffer(&value, 1, la_matrix_from_splat(lhs, 1, 1))==la_status_t(LA_SUCCESS))
+		assert(la_matrix_to_float_buffer(&value, 1, la_matrix_from_splat(lhs, 1, 1))==SUCCESS)
 		return la_splat_from_float(value/rhs, ATTR)
 	} else {
 		return la_scale_with_float(lhs, 1/rhs)
@@ -126,11 +154,11 @@ internal func /(lhs: LaObjet, rhs: Float) -> LaObjet {
 internal func /(lhs: Float, rhs: LaObjet) -> LaObjet {
 	if rhs.count == 0 {
 		var value: Float = 0
-		assert(la_matrix_to_float_buffer(&value, 1, la_matrix_from_splat(rhs, 1, 1))==la_status_t(LA_SUCCESS))
+		assert(la_matrix_to_float_buffer(&value, 1, la_matrix_from_splat(rhs, 1, 1))==SUCCESS)
 		return la_splat_from_float(lhs/value, ATTR)
 	} else {
 		let result: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(malloc(sizeof(Float)*rhs.count))
-		assert(rhs.getBytes(result))
+		assert(la_matrix_to_float_buffer(result, la_matrix_cols(rhs), rhs)==SUCCESS)
 		vvrecf(result, result, [Int32(rhs.count)])
 		return la_scale_with_float(la_matrix_from_float_buffer_nocopy(result, la_matrix_rows(rhs), la_matrix_cols(rhs), la_matrix_cols(rhs), HINT, free, ATTR), lhs)
 	}
@@ -153,9 +181,6 @@ internal func LaIdentité(count: Int) -> LaObjet {
 }
 internal func LaDiagonale(vector: LaObjet) -> LaObjet {
 	return la_diagonal_matrix_from_vector(vector, 0)
-}
-internal func LaSplat(scalar: Float) -> LaObjet {
-	return la_splat_from_float(scalar, ATTR)
 }
 internal func LaValuer(scalar: Float) -> LaObjet {
 	return la_splat_from_float(scalar, ATTR)
