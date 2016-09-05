@@ -16,6 +16,53 @@ class CauchyTests: XCTestCase {
 		}
 	}
 	
+	func testDerivatevDSP() {
+		
+		let N: Int = 16
+		
+		let Δ: [Float] = uniform(N)
+		let μ: [Float] = uniform(N)
+		let λ: [Float] = uniform(N)
+		
+		func error(x: Float) -> Float {
+			return 0 < x ? 1 : x < 0 ? -1 : 0
+		}
+		func cauchy(μ μ: Float, λ: Float) -> Float {
+			return Float(M_1_PI)/(1+μ*μ*λ*λ)
+		}
+		let Δχ_src: [Float] = Δ.enumerate().map { error($0.element) * cauchy(μ: μ[$0.index], λ: λ[$0.index]) }
+		let Δμ_src: [Float] = Δχ_src.enumerate().map { $0.element * λ[$0.index] }
+		let Δσ_src: [Float] = Δχ_src.enumerate().map { $0.element * λ[$0.index] * λ[$0.index] * -μ[$0.index] }
+		
+		let Δχ_dst: [Float] = [Float](count: N, repeatedValue: 0)
+		let Δμ_dst: [Float] = [Float](count: N, repeatedValue: 0)
+		let Δσ_dst: [Float] = [Float](count: N, repeatedValue: 0)
+		
+		CauchyDistribution.derivate((χ: UnsafeMutablePointer<Float>(Δχ_dst), μ: UnsafeMutablePointer<Float>(Δμ_dst), σ: UnsafeMutablePointer<Float>(Δσ_dst)), δ: Δ, μ: μ, λ: λ, count: N)
+		
+		let rmseΔχ: Float = zip(Δχ_src, Δχ_dst).map { $0.0 - $0.1 }.map { $0 * $0 }.reduce(0) { $0.0 + $0.1 }
+		if 1e-9 < rmseΔχ {
+			XCTFail("rmseΔχ: \(rmseΔχ)")
+			print(Δχ_src)
+			print(Δχ_dst)
+		}
+		
+		let rmseΔμ: Float = zip(Δμ_src, Δμ_dst).map { $0.0 - $0.1 }.map { $0 * $0 }.reduce(0) { $0.0 + $0.1 }
+		if 1e-9 < rmseΔμ {
+			XCTFail("rmseΔμ: \(rmseΔμ)")
+			print(Δμ_src)
+			print(Δμ_dst)
+		}
+		
+		let rmseΔσ: Float = zip(Δσ_src, Δσ_dst).map { $0.0 - $0.1 }.map { $0 * $0 }.reduce(0) { $0.0 + $0.1 }
+		if 1e-9 < rmseΔσ {
+			XCTFail("rmseΔσ: \(rmseΔσ)")
+			print(Δσ_src)
+			print(Δσ_dst)
+		}
+		
+	}
+	/*
 	func testDerivate() {
 		
 		let L: Int = 64
@@ -59,7 +106,7 @@ class CauchyTests: XCTestCase {
 		}
 		
 	}
-	
+	*/
 	func testΔ() {
 		
 		let Δd: [Float] = Array<Float>(arrayLiteral: 0, 1, 2, 3)
@@ -148,7 +195,8 @@ class CauchyTests: XCTestCase {
 		
 		arc4random_buf(UnsafeMutablePointer<Void>(ψ), sizeof(UInt32)*rows*cols)
 		
-		CauchyDistribution.rng(χ, ψ: ψ, μ: LaMatrice(μ, rows: rows, cols: cols, deallocator: nil), σ: LaMatrice(σ, rows: rows, cols: cols, deallocator: nil))
+		CauchyDistribution.rng(UnsafeMutablePointer<Float>(χ), ψ: ψ, μ: μ, σ: σ, count: rows*cols)
+		//CauchyDistribution.rng(χ, ψ: ψ, μ: LaMatrice(μ, rows: rows, cols: cols, deallocator: nil), σ: LaMatrice(σ, rows: rows, cols: cols, deallocator: nil))
 		
 		let(dstμ, dstσ) = CauchyDistribution.est(χ, η: 0.8, K: 1024)
 		

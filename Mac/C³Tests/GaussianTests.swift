@@ -35,24 +35,45 @@ class GaussianTests: XCTestCase {
 		let μ: [Float] = uniform(N)
 		let λ: [Float] = uniform(N)
 		
-		let Δχ_src: [Float] = Δ.enumerate().map { $0.element * exp(-0.5 * μ[$0.index] * μ[$0.index] * λ[$0.index] * λ[$0.index] ) / Float(sqrt(2.0*M_PI)) }
+		func error(x: Float) -> Float {
+			return 0 < x ? 1 : x < 0 ? -1 : 0
+		}
+		func gauss(μ μ: Float, λ: Float) -> Float {
+			return exp(-0.5*μ*μ*λ*λ)/Float(sqrt(2.0*M_PI))
+		}
+		let Δχ_src: [Float] = Δ.enumerate().map { error($0.element) * gauss(μ: μ[$0.index], λ: λ[$0.index]) }
 		let Δμ_src: [Float] = Δχ_src.enumerate().map { $0.element * λ[$0.index] }
-		let Δσ_src: [Float] = Δχ_src.enumerate().map { $0.element * λ[$0.index] * λ[$0.index] * -μ[$0.index] }
+		let Δσ_src: [Float] = Δχ_src.enumerate().map { $0.element * λ[$0.index] * λ[$0.index] * λ[$0.index] * -μ[$0.index] }
 		
 		let Δχ_dst: [Float] = [Float](count: N, repeatedValue: 0)
 		let Δμ_dst: [Float] = [Float](count: N, repeatedValue: 0)
 		let Δσ_dst: [Float] = [Float](count: N, repeatedValue: 0)
 		
-		GaussianDistribution.derivate((χ: UnsafeMutablePointer<Float>(Δχ_dst), μ: UnsafeMutablePointer<Float>(Δμ_dst), σ: UnsafeMutablePointer<Float>(Δσ_src)), δ: Δ, μ: μ, λ: λ, count: N)
+		GaussianDistribution.derivate((χ: UnsafeMutablePointer<Float>(Δχ_dst), μ: UnsafeMutablePointer<Float>(Δμ_dst), σ: UnsafeMutablePointer<Float>(Δσ_dst)), δ: Δ, μ: μ, λ: λ, count: N)
 		
-		let rmseΔχ: Float = zip(Δχ_src, Δχ_dst).map { $0 - $0 }.map { $0 * $0 }.reduce(0) { $0.0 + $0.1 }
-		print(rmseΔχ)
-		print(Δχ_src)
-		print(Δχ_dst)
+		let rmseΔχ: Float = zip(Δχ_src, Δχ_dst).map { $0.0 - $0.1 }.map { $0 * $0 }.reduce(0) { $0.0 + $0.1 }
+		if 1e-9 < rmseΔχ {
+			XCTFail("rmseΔχ: \(rmseΔχ)")
+			print(Δχ_src)
+			print(Δχ_dst)
+		}
 		
+		let rmseΔμ: Float = zip(Δμ_src, Δμ_dst).map { $0.0 - $0.1 }.map { $0 * $0 }.reduce(0) { $0.0 + $0.1 }
+		if 1e-9 < rmseΔμ {
+			XCTFail("rmseΔμ: \(rmseΔμ)")
+			print(Δμ_src)
+			print(Δμ_dst)
+		}
+		
+		let rmseΔσ: Float = zip(Δσ_src, Δσ_dst).map { $0.0 - $0.1 }.map { $0 * $0 }.reduce(0) { $0.0 + $0.1 }
+		if 1e-9 < rmseΔσ {
+			XCTFail("rmseΔσ: \(rmseΔσ)")
+			print(Δσ_src)
+			print(Δσ_dst)
+		}
 		
 	}
-	
+	/*
 	func testDerivate2() {
 		
 		let N: Int = 16
@@ -96,6 +117,7 @@ class GaussianTests: XCTestCase {
 		XCTAssert(Y.elementsEqual(Z))
 		
 	}
+	*/
 	/*
 	func testDerivate() {
 		
@@ -200,7 +222,7 @@ class GaussianTests: XCTestCase {
 				μd[l] = μd[l] + refer[n].μ.array[l]
 				λd[l] = λd[l] + (refer[n].σ.array[l]*refer[n].σ.array[l])
 			}
-			λd[l] = sqrt(1/λd[l])
+			λd[l] = rsqrt(λd[l])
 		}
 		XCTAssert((LaMatrice(χd, rows: L, cols: 1, deallocator: nil) - LaMatrice(χ, rows: L, cols: 1, deallocator: nil)).length<1e-7)
 		XCTAssert((LaMatrice(μd, rows: L, cols: 1, deallocator: nil) - LaMatrice(μ, rows: L, cols: 1, deallocator: nil)).length<1e-7)
@@ -221,7 +243,8 @@ class GaussianTests: XCTestCase {
 		
 		arc4random_buf(UnsafeMutablePointer<Void>(ψ), sizeof(UInt32)*N)
 		
-		GaussianDistribution.rng(χ, ψ: ψ, μ: LaMatrice(μ, rows: 1024, cols: 1024, deallocator: nil), σ: LaMatrice(σ, rows: 1024, cols: 1024, deallocator: nil))
+		GaussianDistribution.rng(UnsafeMutablePointer<Float>(χ), ψ: ψ, μ: μ, σ: σ, count: N)
+		//GaussianDistribution.rng(χ, ψ: ψ, μ: LaMatrice(μ, rows: 1024, cols: 1024, deallocator: nil), σ: LaMatrice(σ, rows: 1024, cols: 1024, deallocator: nil))
 		
 		let(dstμ, dstσ) = GaussianDistribution.est(χ)
 		

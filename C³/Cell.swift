@@ -132,8 +132,8 @@ extension Cell {
 		} else {
 			if !ready.contains(.κ) {
 				ready.insert(.κ)
-				let sum: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)] = input.map { $0.collect(ignore) } + [ bias.collect() ]
-				distribution.synthesize(χ: level.new.χ, μ: level.new.μ, λ: level.new.λ, refer: sum)
+				let refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)] = input.map { $0.collect(ignore) } + [ bias.collect() ]
+				distribution.synthesize(χ: UnsafeMutablePointer<Float>(level.new.χ), μ: UnsafeMutablePointer<Float>(level.new.μ), λ: UnsafeMutablePointer<Float>(level.new.λ), refer: refer, count: width)
 				distribution.activate(UnsafeMutablePointer<Float>(state.new.κ), φ: level.new.χ, count: width)
 			}
 			return LaMatrice(state.new.κ, rows: width, cols: 1, deallocator: nil)
@@ -159,8 +159,8 @@ extension Cell {
 					let δ: LaObjet = output.map { $0.correct(ignore, ϰ: state.new.κ) } .reduce(LaValuer(0)) { $0.0 + $0.1 }
 					δ.getBytes(state.new.δ)
 				}
-				self.dynamicType.sign(state.new.δ, error: state.new.δ)
-				distribution.derivate(Δχ: delta.new.χ, Δμ: delta.new.μ, Δσ: delta.new.σ, Δ: state.new.δ, μ: level.new.μ, λ: level.new.λ)
+				distribution.derivate((χ: UnsafeMutablePointer<Float>(delta.new.χ), μ: UnsafeMutablePointer<Float>(delta.new.μ), σ: UnsafeMutablePointer<Float>(delta.new.σ)), δ: state.new.δ, μ: level.new.μ, λ: level.new.λ, count: width)
+				//distribution.derivate(Δχ: delta.new.χ, Δμ: delta.new.μ, Δσ: delta.new.σ, Δ: state.new.δ, μ: level.new.μ, λ: level.new.λ)
 
 			}
 			return (

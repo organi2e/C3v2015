@@ -22,6 +22,7 @@
 		874347D31D6F014D00B54F70 /* Bridge.m in Sources */ = {isa = PBXBuildFile; fileRef = 874347D21D6F014D00B54F70 /* Bridge.m */; };
 		874347D51D6F015200B54F70 /* Bridge.h in Headers */ = {isa = PBXBuildFile; fileRef = 874347D41D6F015200B54F70 /* Bridge.h */; };
 		874347D81D6F024600B54F70 /* clblas.cl in Resources */ = {isa = PBXBuildFile; fileRef = 874347D71D6F024600B54F70 /* clblas.cl */; };
+		8746B0731D7DC6460052C001 /* Refraction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8746B0721D7DC6460052C001 /* Refraction.swift */; };
 		874D7F131D7D36F80055162F /* Chebyshev.swift in Sources */ = {isa = PBXBuildFile; fileRef = 874D7F121D7D36F80055162F /* Chebyshev.swift */; };
 		875DD1971D64532800A5C250 /* mtlrender.metal in Sources */ = {isa = PBXBuildFile; fileRef = 875DD1951D6452E100A5C250 /* mtlrender.metal */; };
 		875DD1AA1D66B4DF00A5C250 /* Cauchy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 875DD1A31D66B25300A5C250 /* Cauchy.swift */; };
@@ -180,6 +181,7 @@
 		874347D21D6F014D00B54F70 /* Bridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = Bridge.m; path = ../../CL3/Bridge.m; sourceTree = "<group>"; };
 		874347D41D6F015200B54F70 /* Bridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Bridge.h; path = ../../CL3/Bridge.h; sourceTree = "<group>"; };
 		874347D71D6F024600B54F70 /* clblas.cl */ = {isa = PBXFileReference; explicitFileType = text; name = clblas.cl; path = ../../CL3/clblas.cl; sourceTree = "<group>"; };
+		8746B0721D7DC6460052C001 /* Refraction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Refraction.swift; path = "../../C³/Refraction.swift"; sourceTree = "<group>"; };
 		874D7F121D7D36F80055162F /* Chebyshev.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Chebyshev.swift; path = "../../C³/Chebyshev.swift"; sourceTree = "<group>"; };
 		875DD1951D6452E100A5C250 /* mtlrender.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = mtlrender.metal; path = "../../C³/mtlrender.metal"; sourceTree = "<group>"; };
 		875DD1A31D66B25300A5C250 /* Cauchy.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Cauchy.swift; path = "../../C³/Cauchy.swift"; sourceTree = "<group>"; };
@@ -475,6 +477,7 @@
 				87745FCE1D76E0A000B90B5E /* SMORMS3.swift */,
 				87AE7C991D759F350061F229 /* ConjugateGradient.swift */,
 				87AE7C921D7558F80061F229 /* QuasiNewton.swift */,
+				8746B0721D7DC6460052C001 /* Refraction.swift */,
 				87B1FD051D05461100981CF4 /* Info.plist */,
 			);
 			path = "C³";
@@ -943,6 +946,7 @@
 				875DD1B21D66E4DF00A5C250 /* mtlart.metal in Sources */,
 				87745FCC1D76D88800B90B5E /* RMSprop.swift in Sources */,
 				87A42CC71D4F5F58008D9708 /* Feedback.swift in Sources */,
+				8746B0731D7DC6460052C001 /* Refraction.swift in Sources */,
 				87BCEC001D4D765000FC3099 /* Gaussian.swift in Sources */,
 				87AE7C9D1D767B290061F229 /* GradientOptimizer.swift in Sources */,
 				87CFDE981D7441AB00716188 /* Distribution.swift in Sources */,

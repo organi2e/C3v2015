@@ -24,6 +24,16 @@ internal class CauchyDistribution: Distribution {
 	}
 	//	static func cdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
 	//	static func pdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
+	static func rng(χ: UnsafeMutablePointer<Float>, ψ: UnsafePointer<UInt32>, μ: UnsafePointer<Float>, σ: UnsafePointer<Float>, count: Int) {
+		let length: vDSP_Length = vDSP_Length(count)
+		var len: Int32 = Int32(length)
+		var gain: Float = Float(1/(Double(UInt32.max)+1))
+		var bias: Float = 0.5 * gain
+		vDSP_vfltu32(ψ, 1, χ, 1, length)
+		vDSP_vsmsa(χ, 1, &gain, &bias, χ, 1, length)
+		vvtanpif(χ, χ, &len)
+		vDSP_vma(χ, 1, σ, 1, μ, 1, χ, 1, length)
+	}
 	static func rng(χ: [Float], ψ: [UInt32], μ: LaObjet, σ: LaObjet) {
 		let count: Int = χ.count
 		assert(μ.count==count)
@@ -43,7 +53,31 @@ internal class CauchyDistribution: Distribution {
 		}
 	}
 	static func derivate(Δ: (χ: UnsafeMutablePointer<Float>, μ: UnsafeMutablePointer<Float>, σ: UnsafeMutablePointer<Float>), δ: UnsafePointer<Float>, μ: UnsafePointer<Float>, λ: UnsafePointer<Float>, count: Int) {
-	
+		
+		let length: vDSP_Length = vDSP_Length(count)
+		
+		var len: Int32 = Int32(count)
+
+		var one: Float = 1.0
+		var zero: Float = 0
+		var posi: Float = 0.5
+		var nega: Float = -0.5
+		
+		vDSP_vneg(δ, 1, Δ.σ, 1, length)
+		vDSP_vlim(δ, 1, &zero, &posi, Δ.μ, 1, length)
+		vDSP_vlim(Δ.σ, 1, &zero, &nega, Δ.σ, 1, length)
+		vDSP_vadd(Δ.μ, 1, Δ.σ, 1, Δ.χ, 1, length)
+		
+		vDSP_vmul(μ, 1, λ, 1, Δ.σ, 1, length)
+		vDSP_vsq(Δ.σ, 1, Δ.μ, 1, length)
+		vDSP_vsadd(Δ.μ, 1, &one, Δ.μ, 1, length)
+		
+		cblas_sscal(len, Float(M_1_PI), Δ.χ, 1)
+		vvdivf(Δ.χ, Δ.χ, Δ.μ, &len)
+		
+		vDSP_vmul(Δ.χ, 1, λ, 1, Δ.μ, 1, length)
+		vDSP_vmul(Δ.μ, 1, Δ.σ, 1, Δ.σ, 1, length)
+		vDSP_vneg(Δ.σ, 1, Δ.σ, 1, length)
 		
 	}
 	static func derivate(Δχ Δχ: [Float], Δμ: [Float], Δσ: [Float], Δ delta: [Float], μ mu: [Float], λ lambda: [Float]) {
@@ -77,6 +111,17 @@ internal class CauchyDistribution: Distribution {
 	}
 	static func Δσ(Δ Δ: LaObjet, σ: LaObjet) -> LaObjet {
 		return Δ
+	}
+	
+	static func synthesize(χ χ: UnsafeMutablePointer<Float>, μ: UnsafeMutablePointer<Float>, λ: UnsafeMutablePointer<Float>, refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)], count: Int) {
+		var len: Int32 = Int32(count)
+		let mix: (χ: LaObjet, μ: LaObjet, λ: LaObjet) = refer.reduce((LaValuer(0), LaValuer(0), LaValuer(0))) {
+			( $0.0.0 + $0.1.χ, $0.0.1 + $0.1.1, $0.0.2 + $0.1.σ )
+		}
+		mix.χ.getBytes(χ)
+		mix.μ.getBytes(μ)
+		mix.λ.getBytes(λ)
+		vvrsqrtf(UnsafeMutablePointer<Float>(λ), λ, &len)
 	}
 	static func synthesize(χ χ: [Float], μ: [Float], λ: [Float], refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) {
 		let mix: (χ: LaObjet, μ: LaObjet, λ: LaObjet) = refer.reduce((LaValuer(0), LaValuer(0), LaValuer(0))) {

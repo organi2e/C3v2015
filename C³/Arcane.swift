@@ -194,6 +194,6 @@ extension Arcane: RandomNumberGeneratable {
 		assert(cache.χ.count==count)
 		assert(cache.ψ.count==count)
 		arc4random_buf(&cache.ψ, sizeof(UInt32)*count)
-		distribution.rng(cache.χ, ψ: cache.ψ, μ: μ, σ: σ)
+		distribution.rng(UnsafeMutablePointer<Float>(cache.χ), ψ: cache.ψ, μ: cache.μ, σ: cache.σ, count: count)
 	}
 }

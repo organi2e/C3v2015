@@ -11,7 +11,6 @@ import simd
 
 internal class ChebyshevDistribution: Distribution {
 	static func cdf(χ: Float, μ: Float, σ: Float) -> Float {
-		let level: Double = (Double(χ)-Double(μ))/Double(σ)
 		return Float(
 			0.0
 		)
@@ -24,6 +23,8 @@ internal class ChebyshevDistribution: Distribution {
 	}
 	//	static func cdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
 	//	static func pdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
+	static func rng(χ: UnsafeMutablePointer<Float>, ψ: UnsafePointer<UInt32>, μ: UnsafePointer<Float>, σ: UnsafePointer<Float>, count: Int) {
+	}
 	static func rng(χ: [Float], ψ: [UInt32], μ: LaObjet, σ: LaObjet) {
 		let count: Int = χ.count
 		assert(μ.count==count)
@@ -58,6 +59,9 @@ internal class ChebyshevDistribution: Distribution {
 	}
 	static func Δσ(Δ Δ: LaObjet, σ: LaObjet) -> LaObjet {
 		return Δ
+	}
+	static func synthesize(χ χ: UnsafeMutablePointer<Float>, μ: UnsafeMutablePointer<Float>, λ: UnsafeMutablePointer<Float>, refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)], count: Int) {
+	
 	}
 	static func synthesize(χ χ: [Float], μ: [Float], λ: [Float], refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) {
 		let mix: (χ: LaObjet, μ: LaObjet, λ: LaObjet) = refer.reduce((LaValuer(0), LaValuer(0), LaValuer(0))) {
