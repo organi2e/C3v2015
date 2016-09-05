@@ -43,8 +43,8 @@ internal class CauchyDistribution: Distribution {
 		}
 	}
 	static func derivate(Δ: (χ: UnsafeMutablePointer<Float>, μ: UnsafeMutablePointer<Float>, σ: UnsafeMutablePointer<Float>), δ: UnsafePointer<Float>, μ: UnsafePointer<Float>, λ: UnsafePointer<Float>, count: Int) {
-		cblas_scopy(Int32(count), δ, 1, Δ.χ, 1)
-		cblas_scopy(Int32(count), δ, 1, Δ.μ, 1)
+	
+		
 	}
 	static func derivate(Δχ Δχ: [Float], Δμ: [Float], Δσ: [Float], Δ delta: [Float], μ mu: [Float], λ lambda: [Float]) {
 		let χ: LaObjet = LaMatrice(Δχ, rows: Δχ.count, cols: 1, deallocator: nil)

@@ -70,7 +70,7 @@ do {
 		vDSP_vthrsc(UnsafeMutablePointer<Float>(cache), 1, &zero, &nega, UnsafeMutablePointer<Float>(cache), 1, length)
 		vDSP_vadd(UnsafeMutablePointer<Float>(cache), 1, UnsafeMutablePointer<Float>(b), 1, UnsafeMutablePointer<Float>(b), 1, length)
 	}
-	print(Double(N*P)/cputoc()/1_000_000_000.0, "GFLOPS")
+	print(Double(N*P)/cputoc()/1_000_000_000.0, "GFLOPS (vDSP sign)")
 }
 
 let smdtoc = tic()
@@ -82,7 +82,7 @@ for p in 1...P {
 		bref[$0] = vector_sign(aref[$0])
 	}
 }
-print(Double(N*P)/smdtoc()/1_000_000_000.0, "GFLOPS")
+print(Double(N*P)/smdtoc()/1_000_000_000.0, "GFLOPS (simd sign)")
 
 let gcd = tic()
 for p in 1...P {
