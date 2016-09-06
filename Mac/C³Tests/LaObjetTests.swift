@@ -5,6 +5,7 @@
 //  Created by Kota Nakano on 7/23/16.
 //
 //
+/*
 import Accelerate
 import XCTest
 @testable import C3
@@ -120,3 +121,4 @@ class LaObjetTests: XCTestCase {
 	}
 
 }
+*/

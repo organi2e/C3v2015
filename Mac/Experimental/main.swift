@@ -46,7 +46,7 @@ let mtltoc = tic()
 for p in 1...P {
 	let command = queue.commandBuffer()
 	var encoder = command.computeCommandEncoder()
-	encoder.setComputePipelineState(tan)
+	encoder.setComputePipelineState(sign)
 	encoder.setBuffer(mtlC, offset: 0, atIndex: 0)
 	encoder.setBuffer(mtlA, offset: 0, atIndex: 1)
 	encoder.dispatchThreadgroups(group, threadsPerThreadgroup: local)
@@ -60,29 +60,50 @@ print(Double(N*P)/mtltoc()/1_000_000_000.0, "GFLOPS")
 do {
 	let length: vDSP_Length = vDSP_Length(N)
 	let cache: [Float] = [Float](count: Int(length), repeatedValue: 0)
+	
+	var zero: Float = 0.0
+	var posi: Float = 0.5
+	var nega: Float = -0.5
+	
 	let cputoc = tic()
 	for p in 1...P {
-		var zero: Float = 0.0
-		var posi: Float = 0.5
-		var nega: Float = -0.5
 		vDSP_vthrsc(a, 1, &zero, &posi, UnsafeMutablePointer<Float>(b), 1, length)
 		vDSP_vneg(a, 1, UnsafeMutablePointer<Float>(cache), 1, length)
 		vDSP_vthrsc(UnsafeMutablePointer<Float>(cache), 1, &zero, &nega, UnsafeMutablePointer<Float>(cache), 1, length)
 		vDSP_vadd(UnsafeMutablePointer<Float>(cache), 1, UnsafeMutablePointer<Float>(b), 1, UnsafeMutablePointer<Float>(b), 1, length)
 	}
-	print(Double(N*P)/cputoc()/1_000_000_000.0, "GFLOPS (vDSP sign)")
+	print(Double(N*P)/cputoc()/1_000_000_000.0, "GFLOPS (vDSP sign, vthrsc)")
 }
 
-let smdtoc = tic()
-for p in 1...P {
-	var aref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(a)
-	var bref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(b)
+do {
+	let length: vDSP_Length = vDSP_Length(N)
+	let cache: [Float] = [Float](count: Int(length), repeatedValue: 0)
 	
-	(0..<N/4).forEach {
-		bref[$0] = vector_sign(aref[$0])
+	var zero: Float = 0.0
+	var posi: Float = 0.5
+	var nega: Float = -0.5
+	
+	let cputoc = tic()
+	for p in 1...P {
+		vDSP_vlim(a, 1, &zero, &posi, UnsafeMutablePointer<Float>(b), 1, length)
+		vDSP_vneg(a, 1, UnsafeMutablePointer<Float>(cache), 1, length)
+		vDSP_vlim(UnsafeMutablePointer<Float>(cache), 1, &zero, &nega, UnsafeMutablePointer<Float>(cache), 1, length)
+		vDSP_vadd(UnsafeMutablePointer<Float>(cache), 1, UnsafeMutablePointer<Float>(b), 1, UnsafeMutablePointer<Float>(b), 1, length)
 	}
+	print(Double(N*P)/cputoc()/1_000_000_000.0, "GFLOPS (vDSP sign, vlim)")
 }
-print(Double(N*P)/smdtoc()/1_000_000_000.0, "GFLOPS (simd sign)")
+
+do {
+	let smdtoc = tic()
+	let aref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(a)
+	var bref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(b)
+	for p in 1...P {
+		(0..<N/4).forEach {
+			bref[$0] = -vector_sign(-aref[$0])
+		}
+	}
+	print(Double(N*P)/smdtoc()/1_000_000_000.0, "GFLOPS (simd sign)")
+}
 
 let gcd = tic()
 for p in 1...P {

@@ -121,11 +121,11 @@ internal class GaussianDistribution: Distribution {
 		vDSP_vneg(δ, 1, Δ.σ, 1, length)
 		vDSP_vlim(δ, 1, &zero, &posi, Δ.μ, 1, length)
 		vDSP_vlim(Δ.σ, 1, &zero, &nega, Δ.σ, 1, length)
-		vDSP_vadd(Δ.μ, 1, Δ.σ, 1, Δ.χ, 1, length)
+		vDSP_vadd(Δ.μ, 1, Δ.σ, 1, Δ.χ, 1, length)//Δ.χ = sign(δ)
 		
-		vDSP_vmul(μ, 1, λ, 1, Δ.σ, 1, length)
-		vDSP_vsq(Δ.σ, 1, Δ.μ, 1, length)
-		vDSP_vneg(Δ.μ, 1, Δ.μ, 1, length)
+		vDSP_vmul(μ, 1, λ, 1, Δ.σ, 1, length)//Δ.σ = μ * λ
+		vDSP_vsq(Δ.σ, 1, Δ.μ, 1, length)//Δ.μ = ( μ * λ ) ^ 2
+		cblas_sscal(len, nega, Δ.μ, 1)//Δ.μ = -0.5 * ( μ * λ ) ^ 2
 		
 		vvexpf(Δ.μ, Δ.μ, &len)
 		cblas_sscal(len, Float(0.5 * M_2_SQRTPI * M_SQRT1_2), Δ.μ, 1)
@@ -137,7 +137,6 @@ internal class GaussianDistribution: Distribution {
 		vDSP_vneg(Δ.σ, 1, Δ.σ, 1, length)
 		
 	}
-	/*
 	static func derivate(Δχ Δχ: [Float], Δμ: [Float], Δσ: [Float], Δ delta: [Float], μ mu: [Float], λ lambda: [Float]) {
 		
 		let χ: LaObjet = LaMatrice(Δχ, rows: Δχ.count, cols: 1, deallocator: nil)
@@ -154,7 +153,6 @@ internal class GaussianDistribution: Distribution {
 		( -1.0 * χ * μ * λ * λ ).getBytes(Δσ)
 		//vDSP_vneg(Δσ, 1, UnsafeMutablePointer<Float>(Δσ), 1, vDSP_Length(Δσ.count))
 	}
-	*/
 	static func synthesize(χ χ: UnsafeMutablePointer<Float>, μ: UnsafeMutablePointer<Float>, λ: UnsafeMutablePointer<Float>, refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)], count: Int) {
 		func σ(σ: LaObjet) -> LaObjet { return σ * σ }
 		var len: Int32 = Int32(count)

@@ -195,39 +195,6 @@ extension Cell {
 		return feedback != nil || decay != nil
 	}
 }
-extension Cell {
-	internal static func step(state: [Float], level: [Float]) {
-		assert(state.count==level.count)
-		/*
-		let length: vDSP_Length = vDSP_Length(min(state.count, level.count))
-		vDSP_vneg(level, 1, UnsafeMutablePointer<Float>(state), 1, length)
-		vDSP_vthrsc(state, 1, [Float(0.0)], [Float(0.5)], UnsafeMutablePointer<Float>(state), 1, length)
-		vDSP_vneg(state, 1, UnsafeMutablePointer<Float>(state), 1, length)
-		vDSP_vsadd(state, 1, [Float(0.5)], UnsafeMutablePointer<Float>(state), 1, length)
-		*/
-		let sref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(state)
-		let lref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(level)
-		for k in 0..<((min(state.count, level.count)-1)/4+1) {
-			sref[k] = vector_step(float4(0.0), lref[k])
-		}
-	}
-	internal static func sign(delta: [Float], error: [Float]) {
-		assert(delta.count==error.count)
-		let dref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(delta)
-		let eref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(error)
-		for k in 0..<((min(delta.count, error.count)-1)/4+1) {
-			dref[k] = vector_sign(eref[k])
-		}
-		/*
-		let length: vDSP_Length = vDSP_Length(min(delta.count, error.count))
-		let cache: [Float] = [Float](count: Int(length), repeatedValue: 0)
-		vDSP_vthrsc(error, 1, [Float(0.0)], [Float( 0.5)], UnsafeMutablePointer<Float>(delta), 1, length)
-		vDSP_vneg(error, 1, UnsafeMutablePointer<Float>(cache), 1, length)
-		vDSP_vthrsc(UnsafeMutablePointer<Float>(cache), 1, [Float(0.0)], [Float(-0.5)], UnsafeMutablePointer<Float>(cache), 1, length)
-		vDSP_vadd(UnsafeMutablePointer<Float>(cache), 1, UnsafeMutablePointer<Float>(delta), 1, UnsafeMutablePointer<Float>(delta), 1, length)
-		*/
-	}
-}
 extension Context {
 	public func newCell (type: DistributionType, width: Int, label: String = "", recur: Bool = false, buffer: Bool = false, input: [Cell] = [] ) throws -> Cell {
 		guard let cell: Cell = new() else {
