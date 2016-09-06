@@ -1,17 +1,18 @@
 //
-//  Feedback.swift
+//  Circular.swift
 //  C³
 //
 //  Created by Kota Nakano on 8/1/16.
 //
 //
-internal class Feedback: Arcane {
+
+class Circular: Arcane {
 	private var grad: (μ: [Float], σ: [Float]) = (
 		μ: Array<Float>(),
 		σ: Array<Float>()
 	)
 }
-extension Feedback {
+extension Circular {
 	@NSManaged private var cell: Cell
 	internal override func setup() {
 		super.setup()
@@ -23,12 +24,12 @@ extension Feedback {
 	}
 }
 extension Context {
-	internal func newFeedback(cell: Cell) throws -> Feedback? {
-		guard let feedback: Feedback = new() else {
-			throw Context.Error.CoreData.InsertionFails(entity: Feedback.self)
+	@nonobjc internal func newCircular(let cell cell: Cell) throws -> Circular {
+		guard let circular: Circular = new() else {
+			throw Context.Error.CoreData.InsertionFails(entity: Circular.self)
 		}
-		feedback.cell = cell
-		feedback.resize(rows: cell.width, cols: cell.width)
-		return feedback
+		circular.cell = cell
+		circular.resize(rows: cell.width, cols: cell.width)
+		return circular
 	}
 }

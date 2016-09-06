@@ -206,7 +206,7 @@ extension Edge {
 extension Context {
 	internal func newEdge(let output output: Cell, let input: Cell) throws -> Edge {
 		guard let edge: Edge = new() else {
-			throw Error.CoreData.InsertionFails(entity: Cell.self)
+			throw Error.CoreData.InsertionFails(entity: Edge.self)
 		}
 		edge.output = output
 		edge.input = input
@@ -214,3 +214,5 @@ extension Context {
 		return edge
 	}
 }
+
+

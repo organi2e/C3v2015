@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		870723AF1D7EDB9600A9333F /* Circular.swift in Sources */ = {isa = PBXBuildFile; fileRef = 870723AE1D7EDB9600A9333F /* Circular.swift */; };
 		870EA92C1D54ADD3008C3380 /* mtlblas.metal in Sources */ = {isa = PBXBuildFile; fileRef = 870EA9261D54ADBF008C3380 /* mtlblas.metal */; };
 		870EA92D1D54ADD3008C3380 /* mtlmath.metal in Sources */ = {isa = PBXBuildFile; fileRef = 870EA9271D54ADBF008C3380 /* mtlmath.metal */; };
 		870EA92E1D54ADD3008C3380 /* mtlrand.metal in Sources */ = {isa = PBXBuildFile; fileRef = 870EA9281D54ADBF008C3380 /* mtlrand.metal */; };
@@ -59,7 +60,7 @@
 		878C7AAB1D01AF13002CDFD1 /* MNIST.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 878C7AA31D01AF13002CDFD1 /* MNIST.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		878C7AC71D01AF92002CDFD1 /* MNIST.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878C7AC61D01AF92002CDFD1 /* MNIST.swift */; };
 		878C7AE51D01B044002CDFD1 /* MNIST.h in Headers */ = {isa = PBXBuildFile; fileRef = 878C7AA51D01AF13002CDFD1 /* MNIST.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		87A42CC71D4F5F58008D9708 /* Feedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87A42CC51D4F5D68008D9708 /* Feedback.swift */; };
+		87A42CC71D4F5F58008D9708 /* Feedbax.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87A42CC51D4F5D68008D9708 /* Feedbax.swift */; };
 		87AE7C941D7559990061F229 /* QuasiNewton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87AE7C921D7558F80061F229 /* QuasiNewton.swift */; };
 		87AE7C971D755E720061F229 /* OptimizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87AE7C951D755CBF0061F229 /* OptimizerTests.swift */; };
 		87AE7C9A1D759F350061F229 /* ConjugateGradient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87AE7C991D759F350061F229 /* ConjugateGradient.swift */; };
@@ -163,6 +164,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		870723AE1D7EDB9600A9333F /* Circular.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Circular.swift; path = "../../C³/Circular.swift"; sourceTree = "<group>"; };
 		870EA9261D54ADBF008C3380 /* mtlblas.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = mtlblas.metal; path = "../../C³/mtlblas.metal"; sourceTree = "<group>"; };
 		870EA9271D54ADBF008C3380 /* mtlmath.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = mtlmath.metal; path = "../../C³/mtlmath.metal"; sourceTree = "<group>"; };
 		870EA9281D54ADBF008C3380 /* mtlrand.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = mtlrand.metal; path = "../../C³/mtlrand.metal"; sourceTree = "<group>"; };
@@ -221,7 +223,7 @@
 		878C7AA51D01AF13002CDFD1 /* MNIST.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MNIST.h; sourceTree = "<group>"; };
 		878C7AA71D01AF13002CDFD1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		878C7AC61D01AF92002CDFD1 /* MNIST.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MNIST.swift; path = ../../MNIST/MNIST.swift; sourceTree = "<group>"; };
-		87A42CC51D4F5D68008D9708 /* Feedback.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Feedback.swift; path = "../../C³/Feedback.swift"; sourceTree = "<group>"; };
+		87A42CC51D4F5D68008D9708 /* Feedbax.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Feedbax.swift; path = "../../C³/Feedbax.swift"; sourceTree = "<group>"; };
 		87AE7C921D7558F80061F229 /* QuasiNewton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = QuasiNewton.swift; path = "../../C³/QuasiNewton.swift"; sourceTree = "<group>"; };
 		87AE7C951D755CBF0061F229 /* OptimizerTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OptimizerTests.swift; sourceTree = "<group>"; };
 		87AE7C991D759F350061F229 /* ConjugateGradient.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = ConjugateGradient.swift; path = "../../C³/ConjugateGradient.swift"; sourceTree = "<group>"; };
@@ -439,6 +441,7 @@
 		87B1FD021D05461100981CF4 /* C³ */ = {
 			isa = PBXGroup;
 			children = (
+				870723AE1D7EDB9600A9333F /* Circular.swift */,
 				875DD28C1D6D81E000A5C250 /* mtldecay.metal */,
 				875DD1B11D66E4DF00A5C250 /* mtlart.metal */,
 				875DD1A61D66B33800A5C250 /* mtlcauchy.metal */,
@@ -463,7 +466,7 @@
 				87BCEBFD1D4D764100FC3099 /* Decay.swift */,
 				87B1FD211D05466D00981CF4 /* Dict.swift */,
 				87B1FD231D05466D00981CF4 /* Error.swift */,
-				87A42CC51D4F5D68008D9708 /* Feedback.swift */,
+				87A42CC51D4F5D68008D9708 /* Feedbax.swift */,
 				87D18E321D3F18B300982020 /* LaObjet.swift */,
 				875DD1C01D6AD8A900A5C250 /* Misc.swift */,
 				87CFDE971D7441AB00716188 /* Distribution.swift */,
@@ -945,10 +948,11 @@
 				87B1FD361D0546B500981CF4 /* Error.swift in Sources */,
 				875DD1B21D66E4DF00A5C250 /* mtlart.metal in Sources */,
 				87745FCC1D76D88800B90B5E /* RMSprop.swift in Sources */,
-				87A42CC71D4F5F58008D9708 /* Feedback.swift in Sources */,
+				87A42CC71D4F5F58008D9708 /* Feedbax.swift in Sources */,
 				8746B0731D7DC6460052C001 /* Refraction.swift in Sources */,
 				87BCEC001D4D765000FC3099 /* Gaussian.swift in Sources */,
 				87AE7C9D1D767B290061F229 /* GradientOptimizer.swift in Sources */,
+				870723AF1D7EDB9600A9333F /* Circular.swift in Sources */,
 				87CFDE981D7441AB00716188 /* Distribution.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -33,7 +33,7 @@ extension Cell {
 	@NSManaged private var input: Set<Edge>
 	@NSManaged private var output: Set<Edge>
 	@NSManaged private var bias: Bias
-	@NSManaged private var feedback: Feedback?
+	@NSManaged private var circular: Circular?
 	@NSManaged private var decay: Decay?
 }
 extension Cell {
@@ -73,9 +73,9 @@ extension Cell {
 	public var withDecay: Bool {
 		return decay != nil
 	}
-	public var withFeedback: Bool {
-		return feedback != nil
-	}
+//	public var withFeedback: Bool {
+//		return feedback != nil
+//	}
 }
 
 extension Cell {
@@ -191,7 +191,7 @@ extension Cell {
 		}
 	}
 	public var isRecurrent: Bool {
-		return feedback != nil || decay != nil
+		return circular != nil || decay != nil
 	}
 }
 extension Context {
