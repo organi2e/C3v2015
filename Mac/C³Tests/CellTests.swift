@@ -12,8 +12,14 @@ class CellTests: XCTestCase {
 	func testCollect() {
 		context.optimizerFactory = ConjugateGradient.factory(.FletcherReeves, η: 5e-1)
 		let I: Cell = try! context.newCell(.Gauss, width: 4, label: "I")
-		let H: Cell = try! context.newCell(.Gauss, width:64, label: "H", input: [I])
-		let O: Cell = try! context.newCell(.Gauss, width: 4, label: "O", input: [H])
+		let H: Cell = try! context.newCell(.Gauss, width:256, label: "H")
+		let G: Cell = try! context.newCell(.Gauss, width:256, label: "G")
+		let O: Cell = try! context.newCell(.Gauss, width: 4, label: "O")
+		
+		try!context.chainCell(output: H, input: I)
+		try!context.chainCell(output: G, input: H)
+		//try!context.chainCell(output: H, input: G)
+		try!context.chainCell(output: O, input: G)
 		
 		let IS: [[Bool]] = [
 			[false, false, false, true],
@@ -29,9 +35,10 @@ class CellTests: XCTestCase {
 			[true, false, false, false]
 		]
 		
-		for k in 0..<1024 {
+		for k in 0..<256 {
 			
-			for _ in 0..<16 {
+			for _ in 0..<64 {
+				
 				I.correct_clear()
 				O.collect_clear()
 				

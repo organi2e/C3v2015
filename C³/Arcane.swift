@@ -76,9 +76,10 @@ internal extension Arcane {
 		setPrimitiveValue(NSData(bytesNoCopy: cache.logμ, length: sizeof(Float)*count, freeWhenDone: false), forKey: Arcane.locationKey)
 		setPrimitiveValue(NSData(bytesNoCopy: cache.logσ, length: sizeof(Float)*count, freeWhenDone: false), forKey: Arcane.logscaleKey)
 		
+//		arc4random_buf(&cache.ψ, sizeof(UInt32)*count)
 		refresh()
 		
-		optimizer = (managedObjectContext as? Context)?.optimizerFactory(2*count) ?? μoptimizer
+		optimizer = (managedObjectContext as? Context)?.optimizerFactory(2*count) ?? optimizer
 		μoptimizer = (managedObjectContext as? Context)?.optimizerFactory(count) ?? μoptimizer
 		σoptimizer = (managedObjectContext as? Context)?.optimizerFactory(count) ?? σoptimizer
 	}
@@ -102,7 +103,10 @@ internal extension Arcane {
 		distribution.Δμ(Δ: gradμ * Δμ, μ: μ).getBytes(cache.gradμ)
 		distribution.Δσ(Δ: gradσ * Δσ, σ: σ).getBytes(cache.gradσ)
 		
-		optimizer.optimize(Δx: LaMatrice(cache.gradb, rows: 2*count, cols: 1, deallocator: nil), x: LaMatrice(cache.logb, rows: 2*count, cols: 1, deallocator: nil)).getBytes(cache.gradb)
+		optimizer.optimize(
+			Δx: LaMatrice(cache.gradb, rows: 2*count, cols: 1, deallocator: nil),
+			x: LaMatrice(cache.logb, rows: 2*count, cols: 1, deallocator: nil)
+		).getBytes(cache.gradb)
 		
 		willChangeValueForKey(Arcane.locationKey)
 		( logμ - gradμ ).getBytes(cache.logμ)
@@ -149,22 +153,30 @@ extension Arcane {
 		cblas_scopy(Int32(count), μ, 1, logμ, 1)
 	}
 	internal static func gradμ(gradμ: UnsafeMutablePointer<Float>, μ: UnsafePointer<Float>, count: Int) {
-		vDSP_vfill([Float(1)], gradμ, 1, vDSP_Length(count))
+		var one: Float = 1
+		vDSP_vfill(&one, gradμ, 1, vDSP_Length(count))
 	}
 	internal static func σ(σ: UnsafeMutablePointer<Float>, logσ: UnsafePointer<Float>, count: Int) {
-		vvexpf(σ, logσ, [Int32(count)])
-		vDSP_vsadd(σ, 1, [Float( 1)], σ, 1, vDSP_Length(count))
-		vvlogf(σ, σ, [Int32(count)])
+		var len: Int32 = Int32(count)
+		var one: Float = 1
+		vvexpf(σ, logσ, &len)
+		vDSP_vsadd(σ, 1, &one, σ, 1, vDSP_Length(count))
+		vvlogf(σ, σ, &len)
 	}
 	internal static func logσ(logσ: UnsafeMutablePointer<Float>, σ: UnsafePointer<Float>, count: Int) {
-		vvexpf(logσ, σ, [Int32(count)])
-		vDSP_vsadd(logσ, 1, [Float(-1)], logσ, 1, vDSP_Length(count))
-		vvlogf(logσ, logσ, [Int32(count)])
+		var len: Int32 = Int32(count)
+		var neg: Float = -1
+		vvexpf(logσ, σ, &len)
+		vDSP_vsadd(logσ, 1, &neg, logσ, 1, vDSP_Length(count))
+		vvlogf(logσ, logσ, &len)
 	}
 	internal static func gradσ(gradσ: UnsafeMutablePointer<Float>, σ: UnsafePointer<Float>, count: Int) {
+		var len: Int32 = Int32(count)
+		var neg: Float = -1
+		var pos: Float = 1
 		vDSP_vneg(σ, 1, gradσ, 1, vDSP_Length(count))
-		vvexpf(gradσ, gradσ, [Int32(count)])
-		vDSP_vsmsa(gradσ, 1, [Float(-1)], [Float(1)], gradσ, 1, vDSP_Length(count))
+		vvexpf(gradσ, gradσ, &len)
+		vDSP_vsmsa(gradσ, 1, &neg, &pos, gradσ, 1, vDSP_Length(count))
 	}
 }
 extension Arcane: RandomNumberGeneratable {
@@ -193,7 +205,7 @@ extension Arcane: RandomNumberGeneratable {
 		let count: Int = rows * cols
 		assert(cache.χ.count==count)
 		assert(cache.ψ.count==count)
-		arc4random_buf(&cache.ψ, sizeof(UInt32)*count)
+		arc4random_buf(UnsafeMutablePointer<Void>(cache.ψ), cache.ψ.count*sizeof(UInt32))
 		distribution.rng(UnsafeMutablePointer<Float>(cache.χ), ψ: cache.ψ, μ: cache.μ, σ: cache.σ, count: count)
 	}
 }

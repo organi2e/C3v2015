@@ -8,16 +8,20 @@
 import Metal
 import CoreData
 internal class Bias: Arcane {
-	private struct grad {
-		let μ: [Float]
-		let σ: [Float]
-	}
-	private var grads: RingBuffer<grad> = RingBuffer<grad>(array: [])
+	private var gradμ: [Float] = []
+	private var gradσ: [Float] = []
 }
 extension Bias {
 	@NSManaged private var output: Cell
 }
 extension Bias {
+	internal override func setup() {
+		super.setup()
+		if output.isRecurrent {
+			gradμ = [Float](count: rows*cols, repeatedValue: 0)
+			gradσ = [Float](count: rows*cols, repeatedValue: 0)
+		}
+	}
 	internal func collect() -> (LaObjet, LaObjet, LaObjet) {
 		return(χ, μ, σ)
 	}

@@ -7,16 +7,13 @@
 //
 import Accelerate
 import CoreData
-internal class Feedback: NSManagedObject {
-	/*
-	var gradient = (
-		mean: la_splat_from_float(0, Config.ATTR),
-		variance: la_splat_from_float(0, Config.ATTR)
-	)
-	*/
+internal class Feedback: Arcane {
+	
 }
 extension Feedback {
 	@NSManaged private var cell: Cell
+	
 }
 extension Feedback {
+	
 }
