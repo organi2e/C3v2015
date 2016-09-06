@@ -197,7 +197,7 @@ extension Cell {
 extension Context {
 	public func newCell (type: DistributionType, width: Int, label: String = "", recur: Bool = false, buffer: Bool = false, input: [Cell] = [] ) throws -> Cell {
 		guard let cell: Cell = new() else {
-			throw Error.CoreData.InsertionFails(entity: Cell.className())
+			throw Error.CoreData.InsertionFails(entity: Cell.self)
 		}
 		cell.label = label
 		cell.width = width

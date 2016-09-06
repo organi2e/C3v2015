@@ -156,7 +156,7 @@ extension Bias {
 extension Context {
 	internal func newBias(let output output: Cell) throws -> Bias {
 		guard let bias: Bias = new() else {
-			throw Error.CoreData.InsertionFails(entity: Bias.className())
+			throw Error.CoreData.InsertionFails(entity: Bias.self)
 		}
 		bias.output = output
 		bias.resize(rows: output.width, cols: 1)

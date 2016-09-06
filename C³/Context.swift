@@ -17,7 +17,7 @@ public class Context: NSManagedObjectContext {
 		enum CoreData: ErrorType, CustomStringConvertible {
 			case NoModelFound
 			case NoModelAvailable
-			case InsertionFails(entity: String)
+			case InsertionFails(entity: NSManagedObject.Type)
 			var description: String {
 				return ""
 			}
