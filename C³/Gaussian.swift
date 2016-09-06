@@ -30,6 +30,7 @@ internal class GaussianDistribution: Distribution {
 	static func rng(χ: UnsafeMutablePointer<Float>, ψ: UnsafePointer<UInt32>, μ: UnsafePointer<Float>, σ: UnsafePointer<Float>, count: Int) {
 		
 		let length: vDSP_Length = vDSP_Length(count)
+		
 		var half: Int32 = Int32(length/2)
 		var gain: Float = Float(1/(Double(UInt32.max)+1))
 		
@@ -67,6 +68,7 @@ internal class GaussianDistribution: Distribution {
 		vvlogf(UnsafeMutablePointer<Float>(ψ), UnsafeMutablePointer<Float>(ψ).advancedBy(count/2), [Int32(count/2)])
 		vDSP_vsmul(UnsafeMutablePointer<Float>(ψ), 1, [Float(-2.0)], UnsafeMutablePointer<Float>(ψ), 1, vDSP_Length(count/2))
 		vvsqrtf(UnsafeMutablePointer<Float>(ψ), UnsafeMutablePointer<Float>(ψ), [Int32(count/2)])
+		
 		vDSP_vmul(UnsafeMutablePointer<Float>(χ).advancedBy(0*count/2), 1, UnsafeMutablePointer<Float>(ψ), 1, UnsafeMutablePointer<Float>(χ).advancedBy(0*count/2), 1, vDSP_Length(count/2))
 		vDSP_vmul(UnsafeMutablePointer<Float>(χ).advancedBy(1*count/2), 1, UnsafeMutablePointer<Float>(ψ), 1, UnsafeMutablePointer<Float>(χ).advancedBy(1*count/2), 1, vDSP_Length(count/2))
 		
@@ -123,7 +125,7 @@ internal class GaussianDistribution: Distribution {
 		
 		vDSP_vmul(μ, 1, λ, 1, Δ.σ, 1, length)
 		vDSP_vsq(Δ.σ, 1, Δ.μ, 1, length)
-		cblas_sscal(len, nega, Δ.μ, 1)
+		vDSP_vneg(Δ.μ, 1, Δ.μ, 1, length)
 		
 		vvexpf(Δ.μ, Δ.μ, &len)
 		cblas_sscal(len, Float(0.5 * M_2_SQRTPI * M_SQRT1_2), Δ.μ, 1)
@@ -135,6 +137,7 @@ internal class GaussianDistribution: Distribution {
 		vDSP_vneg(Δ.σ, 1, Δ.σ, 1, length)
 		
 	}
+	/*
 	static func derivate(Δχ Δχ: [Float], Δμ: [Float], Δσ: [Float], Δ delta: [Float], μ mu: [Float], λ lambda: [Float]) {
 		
 		let χ: LaObjet = LaMatrice(Δχ, rows: Δχ.count, cols: 1, deallocator: nil)
@@ -151,6 +154,7 @@ internal class GaussianDistribution: Distribution {
 		( -1.0 * χ * μ * λ * λ ).getBytes(Δσ)
 		//vDSP_vneg(Δσ, 1, UnsafeMutablePointer<Float>(Δσ), 1, vDSP_Length(Δσ.count))
 	}
+	*/
 	static func synthesize(χ χ: UnsafeMutablePointer<Float>, μ: UnsafeMutablePointer<Float>, λ: UnsafeMutablePointer<Float>, refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)], count: Int) {
 		func σ(σ: LaObjet) -> LaObjet { return σ * σ }
 		var len: Int32 = Int32(count)
@@ -161,15 +165,5 @@ internal class GaussianDistribution: Distribution {
 		mix.μ.getBytes(μ)
 		mix.λ.getBytes(λ)
 		vvrsqrtf(UnsafeMutablePointer<Float>(λ), λ, &len)
-	}
-	static func synthesize(χ χ: [Float], μ: [Float], λ: [Float], refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) {
-		func σ(σ: LaObjet) -> LaObjet { return σ * σ }
-		let mix: (χ: LaObjet, μ: LaObjet, λ: LaObjet) = refer.reduce((LaValuer(0), LaValuer(0), LaValuer(0))) {
-			( $0.0.0 + $0.1.χ, $0.0.1 + $0.1.1, $0.0.2 + σ($0.1.σ) )
-		}
-		mix.χ.getBytes(χ)
-		mix.μ.getBytes(μ)
-		mix.λ.getBytes(λ)
-		vvrsqrtf(UnsafeMutablePointer<Float>(λ), λ, [Int32(λ.count)])
 	}
 }

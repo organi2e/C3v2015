@@ -30,7 +30,7 @@ let step: MTLComputePipelineState = try!device.newComputePipelineStateWithFuncti
 let tan: MTLComputePipelineState = try!device.newComputePipelineStateWithFunction(library.newFunctionWithName("tan4")!)
 let exp: MTLComputePipelineState = try!device.newComputePipelineStateWithFunction(library.newFunctionWithName("exp4")!)
 
-let N: Int = 1 << 18
+let N: Int = 1 << 20
 let P: Int = 256
 let a: [Float] = (0..<N).map { (_)in Float(arc4random())/Float(UInt32.max)-0.5}
 let b: [Float] = (0..<N).map { (_)in Float(arc4random())/Float(UInt32.max)-0.5}
@@ -132,6 +132,35 @@ do {
 	let cputoc = tic()
 	for p in 1...P {
 		cblas_saxpy(len, pi, a, 1, UnsafeMutablePointer<Float>(b), 1)
+	}
+	print(Double(3*N*P)/cputoc()/1_000_000_000.0, "GFLOPS (cblas)")
+}
+
+do {
+	let NOHINT: la_hint_t = la_hint_t(LA_NO_HINT)
+	let ATTR: la_attribute_t = la_attribute_t(LA_DEFAULT_ATTRIBUTES)
+	let length: vDSP_Length = vDSP_Length(N)
+	let cache: [Float] = a
+	var pi: Float = Float(M_PI)
+	let len: Int32 = Int32(length)
+	let cputoc = tic()
+	for p in 1...P {
+		vDSP_vmul(a, 1, b, 1, UnsafeMutablePointer<Float>(cache), 1, length)
+	}
+	print(Double(3*N*P)/cputoc()/1_000_000_000.0, "GFLOPS (vDSP) vector mul")
+}
+
+do {
+	let NOHINT: la_hint_t = la_hint_t(LA_NO_HINT)
+	let ATTR: la_attribute_t = la_attribute_t(LA_DEFAULT_ATTRIBUTES)
+	let length: vDSP_Length = vDSP_Length(N)
+	let cache: [Float] = a
+	var pi: Float = Float(M_PI)
+	let len: Int32 = Int32(length)
+	let cputoc = tic()
+	for p in 1...P {
+		cblas_ssbmv(CblasRowMajor, CblasLower, len, 0, 1, a, 1, b, 1, 0, UnsafeMutablePointer<Float>(cache), 1)
+		//cblas_saxpy(len, pi, a, 1, UnsafeMutablePointer<Float>(b), 1)
 	}
 	print(Double(3*N*P)/cputoc()/1_000_000_000.0, "GFLOPS (cblas)")
 }

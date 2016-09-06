@@ -214,7 +214,7 @@ class GaussianTests: XCTestCase {
 		var μd: [Float] = [Float](count: L, repeatedValue: 0)
 		var λd: [Float] = [Float](count: L, repeatedValue: 0)
 		
-		GaussianDistribution.synthesize(χ: χ, μ: μ, λ: λ, refer: refer)
+		GaussianDistribution.synthesize(χ: χ, μ: μ, λ: λ, refer: refer, count: L)
 		
 		for l in 0..<L {
 			for n in 0..<N {

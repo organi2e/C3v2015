@@ -80,6 +80,7 @@ internal class CauchyDistribution: Distribution {
 		vDSP_vneg(Δ.σ, 1, Δ.σ, 1, length)
 		
 	}
+	/*
 	static func derivate(Δχ Δχ: [Float], Δμ: [Float], Δσ: [Float], Δ delta: [Float], μ mu: [Float], λ lambda: [Float]) {
 		let χ: LaObjet = LaMatrice(Δχ, rows: Δχ.count, cols: 1, deallocator: nil)
 		let Δ: LaObjet = LaMatrice(delta, rows: delta.count, cols: 1, deallocator: nil)
@@ -97,6 +98,7 @@ internal class CauchyDistribution: Distribution {
 		(λχ*μ*λ).getBytes(Δσ)
 		vDSP_vneg(Δσ, 1, UnsafeMutablePointer<Float>(Δσ), 1, vDSP_Length(Δσ.count))
 	}
+	*/
 	static func gainχ(χ: LaObjet) -> (μ: LaObjet, σ: LaObjet) {
 		return (χ, χ)
 	}
@@ -123,6 +125,7 @@ internal class CauchyDistribution: Distribution {
 		mix.λ.getBytes(λ)
 		vvrsqrtf(UnsafeMutablePointer<Float>(λ), λ, &len)
 	}
+	/*
 	static func synthesize(χ χ: [Float], μ: [Float], λ: [Float], refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) {
 		let mix: (χ: LaObjet, μ: LaObjet, λ: LaObjet) = refer.reduce((LaValuer(0), LaValuer(0), LaValuer(0))) {
 			( $0.0.0 + $0.1.χ, $0.0.1 + $0.1.1, $0.0.2 + $0.1.σ )
@@ -132,6 +135,7 @@ internal class CauchyDistribution: Distribution {
 		mix.λ.getBytes(λ)
 		vvrecf(UnsafeMutablePointer<Float>(λ), λ, [Int32(λ.count)])
 	}
+	*/
 	static func est(χ: [Float], η: Float, K: Int, θ: Float = 1e-9) -> (μ: Float, σ: Float) {
 		
 		let count: Int = χ.count
