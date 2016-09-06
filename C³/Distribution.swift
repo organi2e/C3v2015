@@ -22,7 +22,7 @@ public protocol Distribution {
 	static func pdf(χ: Float, μ: Float, σ: Float) -> Float
 
 	static func rng(χ: UnsafeMutablePointer<Float>, ψ: UnsafePointer<UInt32>, μ: UnsafePointer<Float>, σ: UnsafePointer<Float>, count: Int)
-	static func rng(χ: [Float], ψ: [UInt32], μ: LaObjet, σ: LaObjet)
+	//static func rng(χ: [Float], ψ: [UInt32], μ: LaObjet, σ: LaObjet)
 	
 	static func gainχ(χ: LaObjet) -> (μ: LaObjet, σ: LaObjet)
 	

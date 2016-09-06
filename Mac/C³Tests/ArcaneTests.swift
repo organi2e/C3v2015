@@ -124,7 +124,7 @@ class ArcaneTest: XCTestCase {
 		let rows: Int = 2
 		let cols: Int = 1
 		
-		context.optimizerFactory = ConjugateGradient.factory(.HestenesStiefe)
+		context.optimizerFactory = Refraction.factory(r: 0.5, η: 0.5)
 		let a: Arcane! = context.new()
 
 		a.resize(rows: rows, cols: cols)
@@ -132,7 +132,7 @@ class ArcaneTest: XCTestCase {
 		
 		(0..<64).forEach {(_)in
 			
-			//print(a.μ.array)
+			print(a.μ.array)
 			print(a.σ.array)
 			
 			let gu: [Float] = ug(a.μ.array)

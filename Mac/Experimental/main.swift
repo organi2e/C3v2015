@@ -121,3 +121,17 @@ do {
 	}
 	print(Double(3*N*P)/cputoc()/1_000_000_000.0, "GFLOPS (vDSP)")
 }
+
+do {
+	let NOHINT: la_hint_t = la_hint_t(LA_NO_HINT)
+	let ATTR: la_attribute_t = la_attribute_t(LA_DEFAULT_ATTRIBUTES)
+	let length: vDSP_Length = vDSP_Length(N)
+	let cache: [Float] = a
+	var pi: Float = Float(M_PI)
+	let len: Int32 = Int32(length)
+	let cputoc = tic()
+	for p in 1...P {
+		cblas_saxpy(len, pi, a, 1, UnsafeMutablePointer<Float>(b), 1)
+	}
+	print(Double(3*N*P)/cputoc()/1_000_000_000.0, "GFLOPS (cblas)")
+}

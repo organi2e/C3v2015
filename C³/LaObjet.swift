@@ -42,15 +42,6 @@ internal extension LaObjet {
 	var LINFNorm: Float {
 		return la_norm_as_float(self, la_norm_t(LA_LINF_NORM))
 	}
-	var L1Normalize: LaObjet {
-		return la_normalized_vector(self, la_norm_t(LA_L2_NORM))
-	}
-	var L2Normalize: LaObjet {
-		return la_normalized_vector(self, la_norm_t(LA_L1_NORM))
-	}
-	var LINFNormalize:LaObjet {
-		return la_normalized_vector(self, la_norm_t(LA_LINF_NORM))
-	}
 	var array: [Float] {
 		let buffer: [Float] = [Float](count: count, repeatedValue: 0)
 		assert(la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), la_matrix_cols(self), self) == SUCCESS)
@@ -163,7 +154,15 @@ internal func /(lhs: Float, rhs: LaObjet) -> LaObjet {
 		return la_scale_with_float(la_matrix_from_float_buffer_nocopy(result, la_matrix_rows(rhs), la_matrix_cols(rhs), la_matrix_cols(rhs), HINT, free, ATTR), lhs)
 	}
 }
-
+internal func L1Normalize(x: LaObjet) -> LaObjet {
+	return la_normalized_vector(x, la_norm_t(LA_L1_NORM))
+}
+internal func L2Normalize(x: LaObjet) -> LaObjet {
+	return la_normalized_vector(x, la_norm_t(LA_L2_NORM))
+}
+internal func LINFNormalize(x: LaObjet) -> LaObjet {
+	return la_normalized_vector(x, la_norm_t(LA_LINF_NORM))
+}
 internal func inner_product(lhs: LaObjet, _ rhs: LaObjet) -> LaObjet {
 	return la_inner_product(lhs, rhs)
 }

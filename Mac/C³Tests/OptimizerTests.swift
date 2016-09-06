@@ -5,7 +5,6 @@
 //  Created by Kota Nakano on 8/30/16.
 //
 //
-/*
 import XCTest
 @testable import C3
 class OptimizerTests: XCTestCase {
@@ -22,16 +21,17 @@ class OptimizerTests: XCTestCase {
 		let X: Float = x[0]
 		let Y: Float = x[1]
 		return[
-			2*(X-2)/100,
-			2*(Y-8)
+			2*(X-0)/100,
+			2*(Y-0)
 		]
 	}
 	
 	func optimize(fp: UnsafeMutablePointer<FILE> = nil, factory: Int -> GradientOptimizer) {
 		let dim: Int = 2
 		let optimizer: GradientOptimizer = factory(dim)
-		var x: [Float] = (0..<dim).map {(_)in Float(M_PI)*Float(arc4random())/Float(arc4random())}
-		for _ in 0...80 {
+		//var x: [Float] = (0..<dim).map {(_)in Float(M_PI)*Float(arc4random())/Float(arc4random())}
+		var x: [Float] = [10, 10]
+		for _ in 0...64 {
 			if fp != nil {
 				fwrite(x, sizeof(Float), 2, fp)
 			}
@@ -88,6 +88,12 @@ class OptimizerTests: XCTestCase {
 		optimize(fp, factory: QuasiNewton.factory(.SymmetricRank1))
 		fclose(fp)
 	}
+	
+	func testRefract() {
+		let fp = fopen("/tmp/Refraction.raw", "wb")
+		optimize(fp, factory: Refraction.factory(r: 0.5, η: 0.5))
+		fclose(fp)
+	}
 }
 
 /*
@@ -97,9 +103,9 @@ clf()
 X, Y = meshgrid(arange(-12,12,0.1), arange(-12,12,0.1))
 Z = sqrt(X*X/100+Y*Y)
 contour(X, Y, Z, 8, colors='silver')
-for k in ['SGD', 'Momentum', 'Adam', 'RMSProp', 'SMORMS3', 'ConjugateGradient', 'QuasiNewton']:
+for k in ['SGD', 'Momentum', 'Refraction']:
 	x = fromfile('/tmp/%s.raw'%k, 'float32')
-	plot(x[0:2*i:2],x[1:2*i:2],label=k)
+	plot(x[0::2],x[1::2],label=k)
 	rc('font',family='Times New Roman')
 
 legend(loc=2)
@@ -127,5 +133,4 @@ for i in range(1,40):
 	draw()
 	show(block=False)
 	savefig('%03d.png'%i,figsize=(16,9),dpi=72)
-*/
 */

@@ -28,8 +28,22 @@ public class Refraction {
 }
 extension Refraction: GradientOptimizer {
 	public func optimize(Δx Δw: LaObjet, x: LaObjet) -> LaObjet {
-		let LN: LaObjet = inner_product(W, Δw)
-		(r * W + Δw).getBytes(w)
+		let N: LaObjet = L2Normalize(Δw)
+		let L: LaObjet = W
+		let LN: LaObjet = inner_product(L, N)
+		if let c: Float = LN.array.first {
+			let j: Float = 1 - r * r * ( 1 - c * c )
+			if 0 < j {
+				let T: LaObjet = r * L - ( r * c - sqrt( j ) ) * N
+				T.getBytes(w)
+				return η * T
+			} else {
+				let T: LaObjet = L - 2 * c * N
+				T.getBytes(w)
+				return η * T
+			}
+		}
+		L2Normalize(Δw).getBytes(w)
 		return η * W
 	}
 	public func reset() {
