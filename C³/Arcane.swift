@@ -9,6 +9,7 @@ import Accelerate
 import CoreData
 
 internal class Arcane: NSManagedObject {
+	private let group: dispatch_group_t = dispatch_group_create()
 	private var cache = (
 		ψ: Array<UInt32>(),
 		χ: Array<Float>(),
@@ -95,7 +96,9 @@ internal extension Arcane {
 		assert(Δσ.cols == cols)
 	
 		let count: Int = rows * cols
-			
+	
+		func update() {
+		
 		self.dynamicType.gradμ(cache.gradμ, μ: cache.μ, count: count)
 		self.dynamicType.gradσ(cache.gradσ, σ: cache.σ, count: count)
 			
@@ -116,6 +119,10 @@ internal extension Arcane {
 		didChangeValueForKey(self.dynamicType.logscaleKey)
 			
 		refresh()
+		}
+		//sync()
+		//dispatch_group_async(group, self.dynamicType.queue, update)
+		update()
 	}
 	internal func adjust(μ μ: Float, σ: Float) {
 		
@@ -178,6 +185,12 @@ extension Arcane {
 		vDSP_vsmsa(gradσ, 1, &neg, &pos, gradσ, 1, vDSP_Length(count))
 	}
 }
+extension Arcane {
+	private static let queue: dispatch_queue_t = dispatch_queue_create("com.organi2e.kotan.kn.C3.Arcane", DISPATCH_QUEUE_CONCURRENT)
+	internal func sync() {
+		dispatch_group_wait(group, DISPATCH_TIME_FOREVER)
+	}
+}
 extension Arcane: RandomNumberGeneratable {
 	internal var χ: LaObjet {
 		return LaMatrice(cache.χ, rows: rows, cols: cols, deallocator: nil)
@@ -205,7 +218,12 @@ extension Arcane: RandomNumberGeneratable {
 		let count: Int = rows * cols
 		assert(cache.χ.count==count)
 		assert(cache.ψ.count==count)
-		arc4random_buf(noise, count*sizeof(UInt32))
-		distribution.rng(UnsafeMutablePointer<Float>(cache.χ), ψ: cache.ψ, μ: cache.μ, σ: cache.σ, count: count)
+		func shuffle() {
+			arc4random_buf(noise, count*sizeof(UInt32))
+			distribution.rng(UnsafeMutablePointer<Float>(cache.χ), ψ: cache.ψ, μ: cache.μ, σ: cache.σ, count: count)
+		}
+		shuffle()
+		//sync()
+		//dispatch_group_async(group, self.dynamicType.queue, shuffle)
 	}
 }

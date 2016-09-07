@@ -139,13 +139,12 @@ extension Cell {
 			return LaMatrice(state.new.κ, rows: width, cols: 1, deallocator: nil)
 		}
 	}
-	public func correct(ignore: Set<Cell> = []) -> (LaObjet, LaObjet, LaObjet, Distribution.Type) {
+	public func correct(ignore: Set<Cell> = []) -> (LaObjet, LaObjet, LaObjet) {
 		if ignore.contains(self) {
 			return (
 				LaMatrice(delta.old.χ, rows: width, cols: 1, deallocator: nil),
 				LaMatrice(delta.old.μ, rows: width, cols: 1, deallocator: nil),
-				LaMatrice(delta.old.σ, rows: width, cols: 1, deallocator: nil),
-				distribution
+				LaMatrice(delta.old.σ, rows: width, cols: 1, deallocator: nil)
 			)
 		} else {
 			if !ready.contains(.δ) {
@@ -165,8 +164,7 @@ extension Cell {
 			return (
 				LaMatrice(delta.new.χ, rows: width, cols: 1, deallocator: nil),
 				LaMatrice(delta.new.μ, rows: width, cols: 1, deallocator: nil),
-				LaMatrice(delta.new.σ, rows: width, cols: 1, deallocator: nil),
-				distribution
+				LaMatrice(delta.new.σ, rows: width, cols: 1, deallocator: nil)
 			)
 		}
 	}
@@ -174,7 +172,8 @@ extension Cell {
 extension Cell {
 	public var active: [Bool] {
 		set {
-			NSData(bytesNoCopy: UnsafeMutablePointer(newValue.map({Float($0)})), length: sizeof(Float)*newValue.count, freeWhenDone: false).getBytes(UnsafeMutablePointer<Void>(state.new.κ), length: sizeof(Float)*state.new.κ.count)
+			let count: Int = min(width, newValue.count)
+			NSData(bytesNoCopy: UnsafeMutablePointer(newValue.map({Float($0)})), length: sizeof(Float)*count, freeWhenDone: false).getBytes(UnsafeMutablePointer<Void>(state.new.κ), length: sizeof(Float)*count)
 			ready.insert(.κ)
 		}
 		get {
@@ -183,7 +182,8 @@ extension Cell {
 	}
 	public var answer: [Bool] {
 		set {
-			NSData(bytesNoCopy: UnsafeMutablePointer(newValue.map({Float($0)})), length: sizeof(Float)*newValue.count, freeWhenDone: false).getBytes(UnsafeMutablePointer<Void>(state.new.ψ), length: sizeof(Float)*state.new.ψ.count)
+			let count: Int = min(width, newValue.count)
+			NSData(bytesNoCopy: UnsafeMutablePointer(newValue.map({Float($0)})), length: sizeof(Float)*count, freeWhenDone: false).getBytes(UnsafeMutablePointer<Void>(state.new.ψ), length: sizeof(Float)*count)
 			ready.insert(.ψ)
 		}
 		get {

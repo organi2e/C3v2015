@@ -23,6 +23,7 @@ extension Bias {
 		}
 	}
 	internal func collect() -> (LaObjet, LaObjet, LaObjet) {
+		//sync()
 		return(χ, μ, σ)
 	}
 }

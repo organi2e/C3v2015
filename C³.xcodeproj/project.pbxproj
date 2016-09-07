@@ -278,8 +278,8 @@
 		878C7A6B1D01AE66002CDFD1 /* C³ */ = {
 			isa = PBXGroup;
 			children = (
-				87ED4FDB1D7430F000019209 /* Arcane.swift */,
 				878985B61D050D42002C2A8D /* C³.xcdatamodeld */,
+				87ED4FDB1D7430F000019209 /* Arcane.swift */,
 				875DD1AD1D66DF9E00A5C250 /* Art.swift */,
 				87BCEBFA1D4D75A500FC3099 /* Bias.swift */,
 				873934A91D42FCF800888988 /* Blob.swift */,

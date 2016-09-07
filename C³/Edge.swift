@@ -22,6 +22,7 @@ extension Edge {
 extension Edge {
 	func collect(ignore: Set<Cell>) -> (χ: LaObjet, μ: LaObjet, σ: LaObjet) {
 		let state: LaObjet = input.collect(ignore)
+		//sync()
 		return(
 			χ: matrix_product(χ, state),
 			μ: matrix_product(μ, state),
