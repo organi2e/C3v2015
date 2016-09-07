@@ -130,7 +130,7 @@ extension Cell {
 			if !ready.contains(.κ) {
 				let refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)] = input.map { $0.collect(ignore.union([self])) } + [ bias.collect() ]
 				distribution.synthesize(χ: UnsafeMutablePointer<Float>(level.new.χ), μ: UnsafeMutablePointer<Float>(level.new.μ), λ: UnsafeMutablePointer<Float>(level.new.λ), refer: refer, count: width)
-				distribution.activate(UnsafeMutablePointer<Float>(state.new.κ), φ: level.new.χ, count: width)
+				self.dynamicType.step(y: UnsafeMutablePointer<Float>(state.new.κ), x: level.new.χ, count: width)
 				ready.insert(.κ)
 			}
 			return κ
@@ -189,7 +189,32 @@ extension Cell {
 	internal var _Δχ: LaObjet { return LaMatrice(delta.old.χ, rows: width, cols: 1, deallocator: nil) }
 	internal var _Δμ: LaObjet { return LaMatrice(delta.old.μ, rows: width, cols: 1, deallocator: nil) }
 	internal var _Δσ: LaObjet { return LaMatrice(delta.old.σ, rows: width, cols: 1, deallocator: nil) }
+
+	internal var φ: (χ: LaObjet, μ: LaObjet, λ: LaObjet) {
+		return (
+			χ: LaValuer(0),
+			μ: LaValuer(0),
+			λ: LaValuer(0)
+		)
+	}
 	
+}
+extension Cell {
+	internal static func step(y y: UnsafeMutablePointer<Float>, x: UnsafePointer<Float>, count: Int) {
+		let yref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(y)
+		let xref: UnsafePointer<float4> = UnsafePointer<float4>(x)
+		let zero: float4 = float4(0)
+		(0..<count/4).forEach {
+			yref[$0] = vector_step(zero, xref[$0])
+		}
+	}
+	internal static func sign(y y: UnsafeMutablePointer<Float>, x: UnsafePointer<Float>, count: Int) {
+		let yref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(y)
+		let xref: UnsafePointer<float4> = UnsafePointer<float4>(x)
+		(0..<count/4).forEach {
+			yref[$0] = vector_sign(xref[$0])
+		}
+	}
 }
 extension Cell {
 	public var active: [Bool] {
