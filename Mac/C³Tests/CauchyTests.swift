@@ -5,25 +5,49 @@
 //  Created by Kota Nakano on 8/29/16.
 //
 //
-/*
 import Accelerate
 import XCTest
 @testable import C3
 class CauchyTests: XCTestCase {
 	
-	func uniform(count: Int) -> [Float] {
+	func rmse(x: [Float], _ y: [Float]) -> Float {
+		let err: [Float] = zip(x, y).map { $0.0 - $0.1 }
+		let se: [Float] = err.map { $0 * $0 }
+		let mse: Float = se.reduce(0) { $0.0 + $0.1 }
+		let rmse: Float = sqrt(mse / Float(se.count))
+		return rmse
+	}
+	
+	func uniform(count: Int, a: Float, b: Float) -> [Float] {
 		return(0..<count).map {(_)in
-			Float(arc4random())/Float(arc4random())
+			a * Float(arc4random())/Float(arc4random()) + b
 		}
 	}
 	
-	func testDerivatevDSP() {
+	func testActivate() {
 		
 		let N: Int = 16
+		let x: [Float] = uniform(N - 2, a: 2.0, b: -1.0) + [0, -0]
+		let y: [Float] = uniform(N, a: 2.0, b: -1.0)
+		let z: [Float] = x.map { 0 < $0 ? 1 : 0 }
 		
-		let Δ: [Float] = uniform(N)
-		let μ: [Float] = uniform(N)
-		let λ: [Float] = uniform(N)
+		CauchyDistribution.activate(UnsafeMutablePointer<Float>(y), φ: x, count: N)
+		
+		if !y.elementsEqual(z) {
+			print(y)
+			print(z)
+			XCTFail()
+		}
+		
+	}
+	
+	func testDerivate() {
+		
+		let N: Int = 32
+		
+		let Δ: [Float] = uniform(N-2, a: 2.0, b: -1.0) + [0, 0]
+		let μ: [Float] = uniform(N, a: 2.0, b: -1.0)
+		let λ: [Float] = uniform(N, a: 1.0, b: 0.0)
 		
 		func error(x: Float) -> Float {
 			return 0 < x ? 1 : x < 0 ? -1 : 0
@@ -41,22 +65,22 @@ class CauchyTests: XCTestCase {
 		
 		CauchyDistribution.derivate((χ: UnsafeMutablePointer<Float>(Δχ_dst), μ: UnsafeMutablePointer<Float>(Δμ_dst), σ: UnsafeMutablePointer<Float>(Δσ_dst)), δ: Δ, μ: μ, λ: λ, count: N)
 		
-		let rmseΔχ: Float = zip(Δχ_src, Δχ_dst).map { $0.0 - $0.1 }.map { $0 * $0 }.reduce(0) { $0.0 + $0.1 }
-		if 1e-9 < rmseΔχ {
+		let rmseΔχ: Float = rmse(Δχ_src, Δχ_dst)
+		if 1e-7 < rmseΔχ {
 			XCTFail("rmseΔχ: \(rmseΔχ)")
 			print(Δχ_src)
 			print(Δχ_dst)
 		}
 		
-		let rmseΔμ: Float = zip(Δμ_src, Δμ_dst).map { $0.0 - $0.1 }.map { $0 * $0 }.reduce(0) { $0.0 + $0.1 }
-		if 1e-9 < rmseΔμ {
+		let rmseΔμ: Float = rmse(Δμ_src, Δμ_dst)
+		if 1e-7 < rmseΔμ || isnan(rmseΔμ) || isinf(rmseΔμ) {
 			XCTFail("rmseΔμ: \(rmseΔμ)")
 			print(Δμ_src)
 			print(Δμ_dst)
 		}
 		
-		let rmseΔσ: Float = zip(Δσ_src, Δσ_dst).map { $0.0 - $0.1 }.map { $0 * $0 }.reduce(0) { $0.0 + $0.1 }
-		if 1e-9 < rmseΔσ {
+		let rmseΔσ: Float = rmse(Δσ_src, Δσ_dst)
+		if 1e-7 < rmseΔσ || isnan(rmseΔσ) || isinf(rmseΔσ) {
 			XCTFail("rmseΔσ: \(rmseΔσ)")
 			print(Δσ_src)
 			print(Δσ_dst)
@@ -110,13 +134,13 @@ class CauchyTests: XCTestCase {
 	*/
 	func testΔ() {
 		
-		let Δd: [Float] = Array<Float>(arrayLiteral: 0, 1, 2, 3)
+		let Δd: [Float] = Array<Float>(arrayLiteral: 0, 1, 2, 4)
 		let Δ: LaObjet = LaMatrice(Δd, rows: Δd.count, cols: 1)
 		
-		let μd: [Float] = Array<Float>(arrayLiteral: 0, 1, 2, 3)
+		let μd: [Float] = Array<Float>(arrayLiteral: 1, 1, 2, 3)
 		let μ: LaObjet = LaMatrice(μd, rows: μd.count, cols: 1)
 		
-		let σd: [Float] = Array<Float>(arrayLiteral: 0, 1, 2, 3)
+		let σd: [Float] = Array<Float>(arrayLiteral: 2, 3, 5, 7)
 		let σ: LaObjet = LaMatrice(σd, rows: σd.count, cols: 1)
 		
 		let Δμ: LaObjet = CauchyDistribution.Δμ(Δ: Δ, μ: μ)
@@ -142,9 +166,9 @@ class CauchyTests: XCTestCase {
 		var refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)] = []
 		for _ in 0..<N {
 			let element: (χ: LaObjet, μ: LaObjet, σ: LaObjet) = (
-				LaMatrice(uniform(L), rows: L, cols: 1),
-				LaMatrice(uniform(L), rows: L, cols: 1),
-				LaMatrice(uniform(L), rows: L, cols: 1)
+				LaMatrice(uniform(L, a: 2, b: -1), rows: L, cols: 1),
+				LaMatrice(uniform(L, a: 1, b: 0), rows: L, cols: 1),
+				LaMatrice(uniform(L, a: 2, b: -1), rows: L, cols: 1)
 			)
 			refer.append(element)
 		}
@@ -164,18 +188,19 @@ class CauchyTests: XCTestCase {
 				μd[l] = μd[l] + refer[n].μ.array[l]
 				λd[l] = λd[l] + refer[n].σ.array[l]
 			}
-			λd[l] = 1/λd[l]
+			λd[l] = 1 / λd[l]
 		}
-		if 1e-9 < (LaMatrice(χd, rows: L, cols: 1, deallocator: nil) - LaMatrice(χ, rows: L, cols: 1, deallocator: nil)).length {
+		if 1e-9 < (LaMatrice(χd, rows: L, cols: 1, deallocator: nil) - LaMatrice(χ, rows: L, cols: 1, deallocator: nil)).L2Norm {
 			print(χd, χ)
 			XCTFail()
 		}
-		if 1e-9 < (LaMatrice(μd, rows: L, cols: 1, deallocator: nil) - LaMatrice(μ, rows: L, cols: 1, deallocator: nil)).length {
+		if 1e-9 < (LaMatrice(μd, rows: L, cols: 1, deallocator: nil) - LaMatrice(μ, rows: L, cols: 1, deallocator: nil)).L2Norm {
 			print(μd, μ)
 			XCTFail()
 		}
-		if 1e-9 < (LaMatrice(λd, rows: L, cols: 1, deallocator: nil) - LaMatrice(λ, rows: L, cols: 1, deallocator: nil)).length {
-			print(λd, λ)
+		if 1e-9 < (LaMatrice(λd, rows: L, cols: 1, deallocator: nil) - LaMatrice(λ, rows: L, cols: 1, deallocator: nil)).L2Norm {
+			print(λd)
+			print(λ)
 			XCTFail()
 		}
 		
@@ -218,4 +243,3 @@ class CauchyTests: XCTestCase {
 	}
 	
 }
-*/

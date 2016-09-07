@@ -19,7 +19,7 @@ internal class CauchyDistribution: Distribution {
 	static func pdf(χ: Float, μ: Float, σ: Float) -> Float {
 		let level: Double = (Double(χ)-Double(μ))/Double(σ)
 		return Float(
-			1.0 / ( M_PI * Double(σ) * ( 1.0 + level * level ) )
+			M_1_PI / ( Double(σ) * ( 1.0 + level * level ) )
 		)
 	}
 	//	static func cdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
@@ -34,23 +34,18 @@ internal class CauchyDistribution: Distribution {
 		vvtanpif(χ, χ, &len)
 		vDSP_vma(χ, 1, σ, 1, μ, 1, χ, 1, length)
 	}
-	static func rng(χ: [Float], ψ: [UInt32], μ: LaObjet, σ: LaObjet) {
-		let count: Int = χ.count
-		assert(μ.count==count)
-		assert(σ.count==count)
-		assert(ψ.count==count)
-		vDSP_vfltu32(ψ, 1, UnsafeMutablePointer<Float>(χ), 1, vDSP_Length(count))
-		vDSP_vsadd(χ, 1, [Float(0.5)], UnsafeMutablePointer<Float>(χ), 1, vDSP_Length(count))
-		vDSP_vsdiv(χ, 1, [Float(UInt32.max)+1.0], UnsafeMutablePointer<Float>(χ), 1, vDSP_Length(count))
-		vvtanpif(UnsafeMutablePointer<Float>(χ), χ, [Int32(count)])
-		(LaMatrice(χ, rows: min(μ.rows, σ.rows), cols: min(μ.cols, σ.cols), deallocator: nil)*σ+μ).eval(χ)
-	}
 	static func activate(κ: UnsafeMutablePointer<Float>, φ: UnsafePointer<Float>, count: Int) {
-		let κref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(κ)
-		let φref: UnsafePointer<float4> = UnsafePointer<float4>(φ)
-		(0..<count/4).forEach {
-			κref[$0] = vector_step(float4(0.0), φref[$0])
-		}
+		
+		let length: vDSP_Length = vDSP_Length(count)
+		
+		var zero: Float = 0.0
+		var half: Float = 0.5
+		
+		vDSP_vneg(φ, 1, κ, 1, length)
+		vDSP_vthrsc(κ, 1, &zero, &half, κ, 1, length)
+		vDSP_vneg(κ, 1, κ, 1, length)
+		vDSP_vsadd(κ, 1, &half, κ, 1, length)
+		
 	}
 	static func derivate(Δ: (χ: UnsafeMutablePointer<Float>, μ: UnsafeMutablePointer<Float>, σ: UnsafeMutablePointer<Float>), δ: UnsafePointer<Float>, μ: UnsafePointer<Float>, λ: UnsafePointer<Float>, count: Int) {
 		
@@ -80,25 +75,6 @@ internal class CauchyDistribution: Distribution {
 		vDSP_vneg(Δ.σ, 1, Δ.σ, 1, length)
 		
 	}
-	/*
-	static func derivate(Δχ Δχ: [Float], Δμ: [Float], Δσ: [Float], Δ delta: [Float], μ mu: [Float], λ lambda: [Float]) {
-		let χ: LaObjet = LaMatrice(Δχ, rows: Δχ.count, cols: 1, deallocator: nil)
-		let Δ: LaObjet = LaMatrice(delta, rows: delta.count, cols: 1, deallocator: nil)
-		let μ: LaObjet = LaMatrice(mu, rows: mu.count, cols: 1, deallocator: nil)
-		let λ: LaObjet = LaMatrice(lambda, rows: lambda.count, cols: 1, deallocator: nil)
-		
-		let λμ: LaObjet = λ * μ
-		(1 + λμ * λμ).getBytes(Δχ)
-		vvrecf(UnsafeMutablePointer<Float>(Δχ), Δχ, [Int32(Δχ.count)])
-		
-		(Float(M_1_PI)*Δ*χ).getBytes(Δχ)
-		
-		let λχ: LaObjet = λ * χ
-		(λχ).getBytes(Δμ)
-		(λχ*μ*λ).getBytes(Δσ)
-		vDSP_vneg(Δσ, 1, UnsafeMutablePointer<Float>(Δσ), 1, vDSP_Length(Δσ.count))
-	}
-	*/
 	static func gainχ(χ: LaObjet) -> (μ: LaObjet, σ: LaObjet) {
 		return (χ, χ)
 	}
@@ -123,19 +99,8 @@ internal class CauchyDistribution: Distribution {
 		mix.χ.getBytes(χ)
 		mix.μ.getBytes(μ)
 		mix.λ.getBytes(λ)
-		vvrsqrtf(UnsafeMutablePointer<Float>(λ), λ, &len)
+		vvrecf(UnsafeMutablePointer<Float>(λ), λ, &len)
 	}
-	/*
-	static func synthesize(χ χ: [Float], μ: [Float], λ: [Float], refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) {
-		let mix: (χ: LaObjet, μ: LaObjet, λ: LaObjet) = refer.reduce((LaValuer(0), LaValuer(0), LaValuer(0))) {
-			( $0.0.0 + $0.1.χ, $0.0.1 + $0.1.1, $0.0.2 + $0.1.σ )
-		}
-		mix.χ.getBytes(χ)
-		mix.μ.getBytes(μ)
-		mix.λ.getBytes(λ)
-		vvrecf(UnsafeMutablePointer<Float>(λ), λ, [Int32(λ.count)])
-	}
-	*/
 	static func est(χ: [Float], η: Float, K: Int, θ: Float = 1e-9) -> (μ: Float, σ: Float) {
 		
 		let count: Int = χ.count

@@ -89,36 +89,34 @@ internal extension Arcane {
 		self.dynamicType.σ(cache.σ, logσ: cache.logσ, count: count)
 	}
 	internal func update(distribution: Distribution.Type, Δμ: LaObjet, Δσ: LaObjet) {
-		
-		assert(Δμ.rows == rows)
-		assert(Δμ.cols == cols)
-		assert(Δσ.rows == rows)
-		assert(Δσ.cols == cols)
 	
 		let count: Int = rows * cols
-	
+		
+		assert(Δμ.count == count)
+		assert(Δσ.count == count)
+		
 		func update() {
 		
-		self.dynamicType.gradμ(cache.gradμ, μ: cache.μ, count: count)
-		self.dynamicType.gradσ(cache.gradσ, σ: cache.σ, count: count)
+			self.dynamicType.gradμ(cache.gradμ, μ: cache.μ, count: count)
+			self.dynamicType.gradσ(cache.gradσ, σ: cache.σ, count: count)
 			
-		distribution.Δμ(Δ: gradμ * Δμ, μ: μ).getBytes(cache.gradμ)
-		distribution.Δσ(Δ: gradσ * Δσ, σ: σ).getBytes(cache.gradσ)
+			distribution.Δμ(Δ: LaMatrice(cache.gradμ, rows: Δμ.rows, cols: Δμ.cols, deallocator: nil) * Δμ, μ: μ).getBytes(cache.gradμ)
+			distribution.Δσ(Δ: LaMatrice(cache.gradσ, rows: Δσ.rows, cols: Δσ.cols, deallocator: nil) * Δσ, σ: σ).getBytes(cache.gradσ)
 		
-		optimizer.optimize(
-			Δx: LaMatrice(cache.gradb, rows: 2*count, cols: 1, deallocator: nil),
-			x: LaMatrice(cache.logb, rows: 2*count, cols: 1, deallocator: nil)
-		).getBytes(cache.gradb)
+			optimizer.optimize(
+				Δx: LaMatrice(cache.gradb, rows: 2*count, cols: 1, deallocator: nil),
+				x: LaMatrice(cache.logb, rows: 2*count, cols: 1, deallocator: nil)
+				).getBytes(cache.gradb)
 			
-		willChangeValueForKey(self.dynamicType.locationKey)
-		( logμ - gradμ ).getBytes(cache.logμ)
-		didChangeValueForKey(self.dynamicType.locationKey)
+			willChangeValueForKey(self.dynamicType.locationKey)
+			( logμ - gradμ ).getBytes(cache.logμ)
+			didChangeValueForKey(self.dynamicType.locationKey)
 		
-		willChangeValueForKey(self.dynamicType.logscaleKey)
-		( logσ - gradσ ).getBytes(cache.logσ)
-		didChangeValueForKey(self.dynamicType.logscaleKey)
+			willChangeValueForKey(self.dynamicType.logscaleKey)
+			( logσ - gradσ ).getBytes(cache.logσ)
+			didChangeValueForKey(self.dynamicType.logscaleKey)
 			
-		refresh()
+			refresh()
 		}
 		//sync()
 		//dispatch_group_async(group, self.dynamicType.queue, update)

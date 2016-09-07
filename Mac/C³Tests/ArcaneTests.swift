@@ -5,14 +5,19 @@
 //  Created by Kota Nakano on 8/30/16.
 //
 //
-/*
 import XCTest
 @testable import C3
 class ArcaneTest: XCTestCase {
 	let context: Context = try!Context()
+	
 	func rmse(x: [Float], _ y: [Float]) -> Float {
-		return sqrt(zip(x, y).map { $0 - $1 }.map { $0 * $0 }.reduce(0) { $0.0 + $0.1 })
+		let err: [Float] = zip(x, y).map { $0.0 - $0.1 }
+		let se: [Float] = err.map { $0 * $0 }
+		let mse: Float = se.reduce(0) { $0.0 + $0.1 }
+		let rmse: Float = sqrt(mse / Float(se.count))
+		return rmse
 	}
+	
 	func uf(u: [Float]) -> Float{
 		return (
 			(u[0]+3)*(u[0]+3) +
@@ -133,8 +138,6 @@ class ArcaneTest: XCTestCase {
 		
 		(0..<64).forEach {(_)in
 			
-			print(a.μ.array)
-			print(a.σ.array)
 			
 			let gu: [Float] = ug(a.μ.array)
 			let gs: [Float] = sg(a.σ.array)
@@ -145,40 +148,50 @@ class ArcaneTest: XCTestCase {
 			
 		}
 		
-		print(a.μ.array)
-		print(a.σ.array)
-		
+	}
+	
+	func sign(x: Float) -> Float {
+		return 0 < x ? 1 : 0 > x ? -1 : 0
 	}
 	
 	func testGaussianUpdate() {
 		
-		let rows: Int = 16
-		let cols: Int = 16
+		let rows: Int = 4
+		let cols: Int = 4
 		
-//		let η: Float = 0.5
-
 		let μ: Float = (Float(arc4random())+1)/(Float(UInt32.max)+1) * 2.0 - 1.0
 		let σ: Float = (Float(arc4random())+1)/(Float(UInt32.max)+1)
 		let λ: Float = 1 / σ
 
 		let d: [Float] = uniform(rows*cols)
 		
-		let dχ: [Float] = d.map { $0 * exp(-0.5*(μ*λ)*(μ*λ))/Float(sqrt(2*M_PI)) }
+		let dχ: [Float] = d.map { sign($0) * exp(-0.5*(μ*λ)*(μ*λ)) / Float(sqrt(2*M_PI)) }
 		let dμ: [Float] = dχ.map { $0 * λ }
-		let dσ: [Float] = dχ.map { $0 * λ * -μ * λ }
+		let dσ: [Float] = dμ.map { $0 * -μ * λ * λ }
 		
 		let Δχ: [Float] = [Float](count: rows*cols, repeatedValue: 0)
 		let Δμ: [Float] = [Float](count: rows*cols, repeatedValue: 0)
 		let Δσ: [Float] = [Float](count: rows*cols, repeatedValue: 0)
 		
-		GaussianDistribution.derivate((χ: UnsafeMutablePointer<Float>(Δχ), μ: UnsafeMutablePointer<Float>(Δμ), σ: UnsafeMutablePointer<Float>(Δσ)), δ: d, μ: [Float](count: rows*cols, repeatedValue: μ), λ: [Float](count: rows*cols, repeatedValue: μ), count: rows*cols)
+		GaussianDistribution.derivate((	χ: UnsafeMutablePointer<Float>(Δχ),
+										μ: UnsafeMutablePointer<Float>(Δμ),
+										σ: UnsafeMutablePointer<Float>(Δσ)),
+		                              δ: d,
+		                              μ: [Float](count: rows*cols, repeatedValue: μ),
+		                              λ: [Float](count: rows*cols, repeatedValue: λ),
+		                              count: rows*cols
+		)
 		
 		if 1e-6 < rmse(dχ, Δχ) {
 			XCTFail()
+			print(dχ)
+			print(Δχ)
 		}
 		
 		if 1e-6 < rmse(dμ, Δμ) {
 			XCTFail()
+			print(dμ)
+			print(Δμ)
 		}
 		
 		if 1e-6 < rmse(dσ, Δσ) {
@@ -210,8 +223,8 @@ class ArcaneTest: XCTestCase {
 	
 	func testCauchyUpdate() {
 		
-		let rows: Int = 16
-		let cols: Int = 1
+		let rows: Int = 4
+		let cols: Int = 4
 		
 		//		let η: Float = 0.5
 		
@@ -221,9 +234,9 @@ class ArcaneTest: XCTestCase {
 		
 		let d: [Float] = uniform(rows*cols)
 		
-		let dχ: [Float] = d.map { $0 / ( 1 + μ * μ * λ * λ ) * Float(M_1_PI) }
+		let dχ: [Float] = d.map { sign($0) / ( 1 + μ * μ * λ * λ ) * Float(M_1_PI) }
 		let dμ: [Float] = dχ.map { $0 * λ }
-		let dσ: [Float] = dχ.map { $0 * -μ * λ * λ }
+		let dσ: [Float] = dμ.map { $0 * -μ * λ }
 		
 		let Δχ: [Float] = [Float](count: rows*cols, repeatedValue: 0)
 		let Δμ: [Float] = [Float](count: rows*cols, repeatedValue: 0)
@@ -268,4 +281,3 @@ class ArcaneTest: XCTestCase {
 
 	
 }
-*/

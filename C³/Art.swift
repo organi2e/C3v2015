@@ -9,6 +9,16 @@ import Accelerate
 import Metal
 import CoreData
 
+extension UInt8 {
+	var bitPattern: [Bool] {
+		return(0..<8).map { 1 == 1 & self >> $0 }
+	}
+	var oneHotEncoding: [Bool] {
+		let cmp: UInt16 = UInt16(self)
+		return(0..<256).map { $0 == cmp }
+	}
+}
+
 internal class Art: NSManagedObject {
 	internal private(set) var χ: MTLBuffer!
 	internal private(set) var μ: MTLBuffer!

@@ -17,7 +17,7 @@ internal protocol RandomNumberGeneratable {
 	var σ: LaObjet { get }
 	func shuffle(dist: Distribution.Type)
 }
-public protocol Distribution {
+internal protocol Distribution {
 	static func cdf(χ: Float, μ: Float, σ: Float) -> Float
 	static func pdf(χ: Float, μ: Float, σ: Float) -> Float
 

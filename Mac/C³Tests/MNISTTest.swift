@@ -15,10 +15,11 @@ class MNISTTests: XCTestCase {
 			let url: NSURL = try NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true).URLByAppendingPathComponent(MNISTTests.file)
 			let context: Context = try Context(storage: url)
 			if context.searchCell(width: 784, label: "MNIST_I").isEmpty {
-				let I: Cell = try context.newCell(.Gauss, width: 784, label: "MNIST_I")
-				let G: Cell = try context.newCell(.Gauss, width: 256, label: "MNIST_G")
-				let F: Cell = try context.newCell(.Gauss, width:  64, label: "MNIST_F")
-				let O: Cell = try context.newCell(.Gauss, width:  10, label: "MNIST_O")
+				let type: DistributionType = .Cauchy
+				let I: Cell = try context.newCell(type, width: 784, label: "MNIST_I")
+				let G: Cell = try context.newCell(type, width: 256, label: "MNIST_G")
+				let F: Cell = try context.newCell(type, width:  64, label: "MNIST_F")
+				let O: Cell = try context.newCell(type, width:  10, label: "MNIST_O")
 				
 				try context.chainCell(output: G, input: I)
 				try context.chainCell(output: F, input: G)
@@ -36,7 +37,7 @@ class MNISTTests: XCTestCase {
 		do {
 			let url: NSURL = try NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true).URLByAppendingPathComponent(MNISTTests.file)
 			let context: Context = try Context(storage: url)
-			context.optimizerFactory = ConjugateGradient.factory(.FletcherReeves, η: 1/16.0)
+			context.optimizerFactory = Momentum.factory(α: 0.5, r: 0.9, η: 1.0)
 			if let
 				I: Cell = context.searchCell(width: 784, label: "MNIST_I").last,
 				O: Cell = context.searchCell(width: 10,	label: "MNIST_O").last
@@ -46,7 +47,7 @@ class MNISTTests: XCTestCase {
 					let ID: [Bool] = image.pixel.map{ 128 < $0 }
 					let OD: [Bool] = (0..<10).map{ $0 == image.label }
 					var cnt: [Int] = [Int](count: 10, repeatedValue: 0)
-					(0..<64).forEach {(_)in
+					(0..<16).forEach {(_)in
 						O.collect_clear()
 						I.correct_clear()
 						

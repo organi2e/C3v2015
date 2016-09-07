@@ -45,15 +45,11 @@ extension Cell {
 			distributionType = newValue.rawValue
 		}
 	}
-	public var distribution: Distribution.Type {
+	internal var distribution: Distribution.Type {
 		switch type {
-		case .Gauss:
-			return GaussianDistribution.self
-		case .Cauchy:
-			return CauchyDistribution.self
-		case .False:
-			assertionFailure()
-			return FalseDistribution.self
+		case .Gauss: return GaussianDistribution.self
+		case .Cauchy: return CauchyDistribution.self
+		case .False: return FalseDistribution.self
 		}
 	}
 }
@@ -111,9 +107,9 @@ extension Cell {
 			input.forEach {
 				$0.collect_clear()
 			}
+			bias.collect_clear()
 			state.progress()
 			level.progress()
-			bias.collect_clear()
 		}
 	}
 	public func correct_clear() {
@@ -122,52 +118,73 @@ extension Cell {
 			output.forEach {
 				$0.correct_clear()
 			}
+			bias.correct_clear()
 			delta.progress()
 		}
 		ready.remove(.ψ)
 	}
 	public func collect(ignore: Set<Cell> = []) -> LaObjet {
 		if ignore.contains(self) {
-			return LaMatrice(state.old.κ, rows: width, cols: 1, deallocator: nil)
+			return _κ
 		} else {
 			if !ready.contains(.κ) {
-				ready.insert(.κ)
-				let refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)] = input.map { $0.collect(ignore) } + [ bias.collect() ]
+				let refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)] = input.map { $0.collect(ignore.union([self])) } + [ bias.collect() ]
 				distribution.synthesize(χ: UnsafeMutablePointer<Float>(level.new.χ), μ: UnsafeMutablePointer<Float>(level.new.μ), λ: UnsafeMutablePointer<Float>(level.new.λ), refer: refer, count: width)
 				distribution.activate(UnsafeMutablePointer<Float>(state.new.κ), φ: level.new.χ, count: width)
+				ready.insert(.κ)
 			}
-			return LaMatrice(state.new.κ, rows: width, cols: 1, deallocator: nil)
+			return κ
 		}
 	}
 	public func correct(ignore: Set<Cell> = []) -> (LaObjet, LaObjet, LaObjet) {
 		if ignore.contains(self) {
-			return (
-				LaMatrice(delta.old.χ, rows: width, cols: 1, deallocator: nil),
-				LaMatrice(delta.old.μ, rows: width, cols: 1, deallocator: nil),
-				LaMatrice(delta.old.σ, rows: width, cols: 1, deallocator: nil)
-			)
+			return (_Δχ, _Δμ, _Δσ)
 		} else {
 			if !ready.contains(.δ) {
-				ready.insert(.δ)
 				if ready.contains(.ψ) {
 					let ψ: LaObjet = LaMatrice(state.new.ψ, rows: width, cols: 1, deallocator: nil)
 					let κ: LaObjet = LaMatrice(state.new.κ, rows: width, cols: 1, deallocator: nil)
 					let δ: LaObjet = κ - ψ
 					δ.getBytes(state.new.δ)
 				} else {
-					let δ: LaObjet = output.map { $0.correct(ignore, ϰ: state.new.κ) } .reduce(LaValuer(0)) { $0.0 + $0.1 }
+					let δ: LaObjet = output.map { $0.correct(ignore.union([self])) } .reduce(LaValuer(0)) { $0.0 + $0.1 }
 					δ.getBytes(state.new.δ)
 				}
 				distribution.derivate((χ: UnsafeMutablePointer<Float>(delta.new.χ), μ: UnsafeMutablePointer<Float>(delta.new.μ), σ: UnsafeMutablePointer<Float>(delta.new.σ)), δ: state.new.δ, μ: level.new.μ, λ: level.new.λ, count: width)
-
+				ready.insert(.δ)
+				bias.update(distribution,
+					Δμ: Δμ,
+					Δσ: Δσ
+				)
 			}
-			return (
-				LaMatrice(delta.new.χ, rows: width, cols: 1, deallocator: nil),
-				LaMatrice(delta.new.μ, rows: width, cols: 1, deallocator: nil),
-				LaMatrice(delta.new.σ, rows: width, cols: 1, deallocator: nil)
-			)
+			return (Δχ, Δμ, Δσ)
 		}
 	}
+}
+extension Cell {
+	
+	private var κ: LaObjet { return LaMatrice(state.new.κ, rows: width, cols: 1, deallocator: nil) }
+	private var δ: LaObjet { return LaMatrice(state.new.δ, rows: width, cols: 1, deallocator: nil) }
+	
+	private var _κ: LaObjet { return LaMatrice(state.old.κ, rows: width, cols: 1, deallocator: nil) }
+	private var _δ: LaObjet { return LaMatrice(state.old.δ, rows: width, cols: 1, deallocator: nil) }
+	
+	private var χ: LaObjet { return LaMatrice(level.new.χ, rows: width, cols: 1, deallocator: nil) }
+	private var μ: LaObjet { return LaMatrice(level.new.μ, rows: width, cols: 1, deallocator: nil) }
+	private var λ: LaObjet { return LaMatrice(level.new.λ, rows: width, cols: 1, deallocator: nil) }
+	
+	private var _χ: LaObjet { return LaMatrice(level.old.χ, rows: width, cols: 1, deallocator: nil) }
+	private var _μ: LaObjet { return LaMatrice(level.old.μ, rows: width, cols: 1, deallocator: nil) }
+	private var _λ: LaObjet { return LaMatrice(level.old.λ, rows: width, cols: 1, deallocator: nil) }
+	
+	private var Δχ: LaObjet { return LaMatrice(delta.new.χ, rows: width, cols: 1, deallocator: nil) }
+	private var Δσ: LaObjet { return LaMatrice(delta.new.σ, rows: width, cols: 1, deallocator: nil) }
+	private var Δμ: LaObjet { return LaMatrice(delta.new.μ, rows: width, cols: 1, deallocator: nil) }
+	
+	private var _Δχ: LaObjet { return LaMatrice(delta.old.χ, rows: width, cols: 1, deallocator: nil) }
+	private var _Δμ: LaObjet { return LaMatrice(delta.old.μ, rows: width, cols: 1, deallocator: nil) }
+	private var _Δσ: LaObjet { return LaMatrice(delta.old.σ, rows: width, cols: 1, deallocator: nil) }
+	
 }
 extension Cell {
 	public var active: [Bool] {
@@ -178,11 +195,7 @@ extension Cell {
 			}
 		}
 		get {
-			if 0 < width {
-				return collect().array.map { Bool($0) }
-			} else {
-				return []
-			}
+			return 0 < width ? collect().array.map { Bool($0) } : []
 		}
 	}
 	public var answer: [Bool] {
@@ -193,11 +206,7 @@ extension Cell {
 			}
 		}
 		get {
-			if 0 < width {
-				return state.new.ψ.map { Bool($0) }
-			} else {
-				return []
-			}
+			return 0 < width ? state.new.ψ.map { Bool($0) } : []
 		}
 	}
 	public var isRecurrent: Bool {

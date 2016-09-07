@@ -5,7 +5,7 @@
 //  Created by Kota Nakano on 7/31/16.
 //
 //
-import Metal
+import Accelerate
 import CoreData
 internal class Bias: Arcane {
 	private var gradμ: [Float] = []
@@ -23,8 +23,16 @@ extension Bias {
 		}
 	}
 	internal func collect() -> (LaObjet, LaObjet, LaObjet) {
-		//sync()
 		return(χ, μ, σ)
+	}
+	internal func correct() {
+		let Δ: (χ: LaObjet, μ: LaObjet, σ: LaObjet) = output.correct()
+		do {
+			let I: LaObjet = LaIdentité(rows)
+			let Δμ: LaObjet = matrix_product(Δ.μ.T, I)
+			let Δσ: LaObjet = matrix_product(Δ.σ.T, I)
+			update(output.distribution, Δμ: Δμ, Δσ: Δσ)
+		}
 	}
 	internal func collect_clear() {
 		shuffle(output.distribution)
@@ -167,6 +175,7 @@ extension Context {
 		}
 		bias.output = output
 		bias.resize(rows: output.width, cols: 1)
+		bias.adjust(μ: 0, σ: 1)
 		return bias
 	}
 }

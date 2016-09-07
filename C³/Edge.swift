@@ -22,21 +22,21 @@ extension Edge {
 extension Edge {
 	func collect(ignore: Set<Cell>) -> (χ: LaObjet, μ: LaObjet, σ: LaObjet) {
 		let state: LaObjet = input.collect(ignore)
-		//sync()
 		return(
 			χ: matrix_product(χ, state),
 			μ: matrix_product(μ, state),
 			σ: matrix_product(σ, state)
 		)
 	}
-	func correct(ignore: Set<Cell>, ϰ: [Float]) -> LaObjet {
+	func correct(ignore: Set<Cell>) -> LaObjet {
 		let Δ: (χ: LaObjet, μ: LaObjet, σ: LaObjet) = output.correct(ignore)
+		let κ: LaObjet = input.collect()
 		let distribution: Distribution.Type = output.distribution
-		let weights: (μ: LaObjet, σ: LaObjet) = distribution.gainχ(LaMatrice(ϰ, rows: ϰ.count, cols: 1, deallocator: nil))
+		let weights: (μ: LaObjet, σ: LaObjet) = distribution.gainχ(κ)
 		let Δμ: LaObjet = outer_product(Δ.μ, weights.μ)
 		let Δσ: LaObjet = outer_product(Δ.σ, weights.σ)
 		update(distribution, Δμ: Δμ, Δσ: Δσ)
-		return matrix_product(χ.T, Δ.χ)
+		return matrix_product(χ.T, Δ.μ + Δ.σ)
 	}
 	func collect_clear() {
 		shuffle(output.distribution)
@@ -212,6 +212,7 @@ extension Context {
 		edge.output = output
 		edge.input = input
 		edge.resize(rows: output.width, cols: input.width)
+		edge.adjust(μ: 0, σ: 1/Float(input.width))
 		return edge
 	}
 }

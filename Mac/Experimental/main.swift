@@ -9,6 +9,10 @@ import Accelerate
 import Darwin
 import Metal
 import simd
+
+let NOHINT: la_hint_t = la_hint_t(LA_NO_HINT)
+let ATTR: la_attribute_t = la_attribute_t(LA_ATTRIBUTE_ENABLE_LOGGING)
+
 func tic() -> () -> Double {
 	var src: timeval = timeval()
 	gettimeofday(&src, nil)
@@ -116,8 +120,6 @@ for p in 1...P {
 print(Double(N*P)/gcd()/1_000_000_000.0, "GFLOPS")
 
 do {
-	let NOHINT: la_hint_t = la_hint_t(LA_NO_HINT)
-	let ATTR: la_attribute_t = la_attribute_t(LA_DEFAULT_ATTRIBUTES)
 	let length: vDSP_Length = vDSP_Length(N)
 	let cache: [Float] = [Float](count: Int(length), repeatedValue: 0)
 	var pi: Float = Float(M_PI)
@@ -131,8 +133,6 @@ do {
 }
 
 do {
-	let NOHINT: la_hint_t = la_hint_t(LA_NO_HINT)
-	let ATTR: la_attribute_t = la_attribute_t(LA_DEFAULT_ATTRIBUTES)
 	let length: vDSP_Length = vDSP_Length(N)
 	let cache: [Float] = [Float](count: Int(length), repeatedValue: 0)
 	var pi: Float = Float(M_PI)
@@ -144,8 +144,6 @@ do {
 }
 
 do {
-	let NOHINT: la_hint_t = la_hint_t(LA_NO_HINT)
-	let ATTR: la_attribute_t = la_attribute_t(LA_DEFAULT_ATTRIBUTES)
 	let length: vDSP_Length = vDSP_Length(N)
 	let cache: [Float] = a
 	var pi: Float = Float(M_PI)
@@ -158,8 +156,6 @@ do {
 }
 
 do {
-	let NOHINT: la_hint_t = la_hint_t(LA_NO_HINT)
-	let ATTR: la_attribute_t = la_attribute_t(LA_DEFAULT_ATTRIBUTES)
 	let length: vDSP_Length = vDSP_Length(N)
 	let cache: [Float] = a
 	var pi: Float = Float(M_PI)
@@ -172,8 +168,6 @@ do {
 }
 
 do {
-	let NOHINT: la_hint_t = la_hint_t(LA_NO_HINT)
-	let ATTR: la_attribute_t = la_attribute_t(LA_DEFAULT_ATTRIBUTES)
 	let length: vDSP_Length = vDSP_Length(N)
 	let cache: [Float] = a
 	var pi: Float = Float(M_PI)

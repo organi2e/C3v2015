@@ -5,6 +5,19 @@
 //  Created by Kota Nakano on 8/23/16.
 //
 //
+import Accelerate
+import XCTest
+import simd
+@testable import C3
+class ArtTests: XCTestCase {
+	func testUInt8BitPattern() {
+		let x: UInt8 = 10
+		let y: [Bool] = x.bitPattern
+		print(y)
+	}
+	
+}
+
 /*
 import Accelerate
 import XCTest
