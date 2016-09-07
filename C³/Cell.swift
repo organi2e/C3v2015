@@ -109,11 +109,11 @@ extension Cell {
 		if ready.contains(.κ) {
 			ready.remove(.κ)
 			input.forEach {
-				$0.collect_clear(distribution)
+				$0.collect_clear()
 			}
 			state.progress()
 			level.progress()
-			bias.shuffle(distribution)
+			bias.collect_clear()
 		}
 	}
 	public func correct_clear() {

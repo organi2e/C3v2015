@@ -26,6 +26,12 @@ extension Bias {
 		//sync()
 		return(χ, μ, σ)
 	}
+	internal func collect_clear() {
+		shuffle(output.distribution)
+	}
+	internal func correct_clear() {
+		
+	}
 }
 /*
 internal class Bias: Cauchy {
