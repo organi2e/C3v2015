@@ -25,14 +25,15 @@ extension Bias {
 	internal func collect() -> (LaObjet, LaObjet, LaObjet) {
 		return(χ, μ, σ)
 	}
-	internal func correct() {
-		let Δ: (χ: LaObjet, μ: LaObjet, σ: LaObjet) = output.correct()
+	internal func correct(ignore: Set<Cell>) -> LaObjet {
+		let Δ: (χ: LaObjet, μ: LaObjet, σ: LaObjet) = output.correct(ignore)
 		do {
 			let I: LaObjet = LaIdentité(rows)
 			let Δμ: LaObjet = matrix_product(Δ.μ.T, I)
 			let Δσ: LaObjet = matrix_product(Δ.σ.T, I)
 			update(output.distribution, Δμ: Δμ, Δσ: Δσ)
 		}
+		return Δ.χ
 	}
 	internal func collect_clear() {
 		shuffle(output.distribution)

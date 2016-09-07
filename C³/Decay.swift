@@ -27,7 +27,7 @@ extension Decay {
 }
 extension Decay {
 	
-	@nonobjc internal static let logλkey: String = "loglambda"
+	private static let logλkey: String = "loglambda"
 	
 	private func setup() {
 		if let context: Context = managedObjectContext as? Context {

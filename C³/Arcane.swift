@@ -100,13 +100,20 @@ internal extension Arcane {
 			self.dynamicType.gradμ(cache.gradμ, μ: cache.μ, count: count)
 			self.dynamicType.gradσ(cache.gradσ, σ: cache.σ, count: count)
 			
-			distribution.Δμ(Δ: LaMatrice(cache.gradμ, rows: Δμ.rows, cols: Δμ.cols, deallocator: nil) * Δμ, μ: μ).getBytes(cache.gradμ)
-			distribution.Δσ(Δ: LaMatrice(cache.gradσ, rows: Δσ.rows, cols: Δσ.cols, deallocator: nil) * Δσ, σ: σ).getBytes(cache.gradσ)
+			distribution.Δμ(
+				Δ: LaMatrice(cache.gradμ, rows: Δμ.rows, cols: Δμ.cols, deallocator: nil) * Δμ,
+				μ: LaMatrice(cache.μ, rows: Δμ.rows, cols: Δμ.cols, deallocator: nil))
+			.getBytes(cache.gradμ)
+			
+			distribution.Δσ(
+				Δ: LaMatrice(cache.gradσ, rows: Δσ.rows, cols: Δσ.cols, deallocator: nil) * Δσ,
+				σ: LaMatrice(cache.σ, rows: Δσ.rows, cols: Δσ.cols, deallocator: nil))
+			.getBytes(cache.gradσ)
 		
 			optimizer.optimize(
-				Δx: LaMatrice(cache.gradb, rows: 2*count, cols: 1, deallocator: nil),
-				x: LaMatrice(cache.logb, rows: 2*count, cols: 1, deallocator: nil)
-				).getBytes(cache.gradb)
+				Δx: LaMatrice(cache.gradb, rows: cache.gradb.count, cols: 1, deallocator: nil),
+				x: LaMatrice(cache.logb, rows: cache.logb.count, cols: 1, deallocator: nil)
+			).getBytes(cache.gradb)
 			
 			willChangeValueForKey(self.dynamicType.locationKey)
 			( logμ - gradμ ).getBytes(cache.logμ)

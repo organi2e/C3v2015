@@ -9,11 +9,9 @@ import Metal
 import CoreData
 
 internal class Edge: Arcane {
-	struct grad {
-		let μ: MTLBuffer
-		let σ: MTLBuffer
-	}
-	var grads: RingBuffer<grad> = RingBuffer<grad>(array: [])
+	private let gradχ: [Float] = []
+	private let gradμ: [Float] = []
+	private let gradσ: [Float] = []
 }
 extension Edge {
 	@NSManaged private var input: Cell
@@ -36,7 +34,7 @@ extension Edge {
 		let Δμ: LaObjet = outer_product(Δ.μ, weights.μ)
 		let Δσ: LaObjet = outer_product(Δ.σ, weights.σ)
 		update(distribution, Δμ: Δμ, Δσ: Δσ)
-		return matrix_product(χ.T, Δ.μ + Δ.σ)
+		return matrix_product(χ.T, Δ.χ)
 	}
 	func collect_clear() {
 		shuffle(output.distribution)

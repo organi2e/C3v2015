@@ -152,38 +152,43 @@ extension Cell {
 				}
 				distribution.derivate((χ: UnsafeMutablePointer<Float>(delta.new.χ), μ: UnsafeMutablePointer<Float>(delta.new.μ), σ: UnsafeMutablePointer<Float>(delta.new.σ)), δ: state.new.δ, μ: level.new.μ, λ: level.new.λ, count: width)
 				ready.insert(.δ)
+				/*
 				bias.update(distribution,
 					Δμ: Δμ,
 					Δσ: Δσ
-				)
+				)*/
+				bias.correct(ignore)
 			}
 			return (Δχ, Δμ, Δσ)
 		}
 	}
+	internal func chain(x: LaObjet) -> LaObjet {
+		return LaValuer(0)
+	}
 }
 extension Cell {
 	
-	private var κ: LaObjet { return LaMatrice(state.new.κ, rows: width, cols: 1, deallocator: nil) }
-	private var δ: LaObjet { return LaMatrice(state.new.δ, rows: width, cols: 1, deallocator: nil) }
+	internal var κ: LaObjet { return LaMatrice(state.new.κ, rows: width, cols: 1, deallocator: nil) }
+	internal var δ: LaObjet { return LaMatrice(state.new.δ, rows: width, cols: 1, deallocator: nil) }
 	
-	private var _κ: LaObjet { return LaMatrice(state.old.κ, rows: width, cols: 1, deallocator: nil) }
-	private var _δ: LaObjet { return LaMatrice(state.old.δ, rows: width, cols: 1, deallocator: nil) }
+	internal var _κ: LaObjet { return LaMatrice(state.old.κ, rows: width, cols: 1, deallocator: nil) }
+	internal var _δ: LaObjet { return LaMatrice(state.old.δ, rows: width, cols: 1, deallocator: nil) }
 	
-	private var χ: LaObjet { return LaMatrice(level.new.χ, rows: width, cols: 1, deallocator: nil) }
-	private var μ: LaObjet { return LaMatrice(level.new.μ, rows: width, cols: 1, deallocator: nil) }
-	private var λ: LaObjet { return LaMatrice(level.new.λ, rows: width, cols: 1, deallocator: nil) }
+	internal var χ: LaObjet { return LaMatrice(level.new.χ, rows: width, cols: 1, deallocator: nil) }
+	internal var μ: LaObjet { return LaMatrice(level.new.μ, rows: width, cols: 1, deallocator: nil) }
+	internal var λ: LaObjet { return LaMatrice(level.new.λ, rows: width, cols: 1, deallocator: nil) }
 	
-	private var _χ: LaObjet { return LaMatrice(level.old.χ, rows: width, cols: 1, deallocator: nil) }
-	private var _μ: LaObjet { return LaMatrice(level.old.μ, rows: width, cols: 1, deallocator: nil) }
-	private var _λ: LaObjet { return LaMatrice(level.old.λ, rows: width, cols: 1, deallocator: nil) }
+	internal var _χ: LaObjet { return LaMatrice(level.old.χ, rows: width, cols: 1, deallocator: nil) }
+	internal var _μ: LaObjet { return LaMatrice(level.old.μ, rows: width, cols: 1, deallocator: nil) }
+	internal var _λ: LaObjet { return LaMatrice(level.old.λ, rows: width, cols: 1, deallocator: nil) }
 	
-	private var Δχ: LaObjet { return LaMatrice(delta.new.χ, rows: width, cols: 1, deallocator: nil) }
-	private var Δσ: LaObjet { return LaMatrice(delta.new.σ, rows: width, cols: 1, deallocator: nil) }
-	private var Δμ: LaObjet { return LaMatrice(delta.new.μ, rows: width, cols: 1, deallocator: nil) }
+	internal var Δχ: LaObjet { return LaMatrice(delta.new.χ, rows: width, cols: 1, deallocator: nil) }
+	internal var Δσ: LaObjet { return LaMatrice(delta.new.σ, rows: width, cols: 1, deallocator: nil) }
+	internal var Δμ: LaObjet { return LaMatrice(delta.new.μ, rows: width, cols: 1, deallocator: nil) }
 	
-	private var _Δχ: LaObjet { return LaMatrice(delta.old.χ, rows: width, cols: 1, deallocator: nil) }
-	private var _Δμ: LaObjet { return LaMatrice(delta.old.μ, rows: width, cols: 1, deallocator: nil) }
-	private var _Δσ: LaObjet { return LaMatrice(delta.old.σ, rows: width, cols: 1, deallocator: nil) }
+	internal var _Δχ: LaObjet { return LaMatrice(delta.old.χ, rows: width, cols: 1, deallocator: nil) }
+	internal var _Δμ: LaObjet { return LaMatrice(delta.old.μ, rows: width, cols: 1, deallocator: nil) }
+	internal var _Δσ: LaObjet { return LaMatrice(delta.old.σ, rows: width, cols: 1, deallocator: nil) }
 	
 }
 extension Cell {

@@ -179,3 +179,9 @@ do {
 	}
 	print(Double(3*N*P)/cputoc()/1_000_000_000.0, "GFLOPS (cblas)")
 }
+
+do {
+	let a = la_splat_from_float(0, ATTR)
+	let b = la_splat_from_float(0, ATTR)
+	la_sum(a, b)
+}

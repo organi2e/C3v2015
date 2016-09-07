@@ -5,7 +5,7 @@
 //  Created by Kota Nakano on 8/1/16.
 //
 //
-
+import CoreData
 class Circular: Arcane {
 	private var grad: (μ: [Float], σ: [Float]) = (
 		μ: Array<Float>(),
@@ -23,8 +23,16 @@ extension Circular {
 		}
 	}
 }
+extension Circular {
+	internal func chain(x: (μ: LaObjet, σ: LaObjet)) -> (μ: LaObjet, σ: LaObjet) {
+		return (
+			μ: matrix_product(μ, x.μ),
+			σ: matrix_product(σ, x.σ)
+		)
+	}
+}
 extension Context {
-	@nonobjc internal func newCircular(let cell cell: Cell) throws -> Circular {
+	internal func newCircular(cell: Cell) throws -> Circular {
 		guard let circular: Circular = new() else {
 			throw Context.Error.CoreData.InsertionFails(entity: Circular.self)
 		}
@@ -33,3 +41,5 @@ extension Context {
 		return circular
 	}
 }
+
+

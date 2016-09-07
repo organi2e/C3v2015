@@ -443,7 +443,6 @@
 		87B1FD021D05461100981CF4 /* C³ */ = {
 			isa = PBXGroup;
 			children = (
-				870723AE1D7EDB9600A9333F /* Circular.swift */,
 				875DD28C1D6D81E000A5C250 /* mtldecay.metal */,
 				875DD1B11D66E4DF00A5C250 /* mtlart.metal */,
 				875DD1A61D66B33800A5C250 /* mtlcauchy.metal */,
@@ -462,6 +461,7 @@
 				87BCEBFB1D4D763D00FC3099 /* Bias.swift */,
 				873934B21D42FD7800888988 /* Blob.swift */,
 				87B1FD1E1D05466D00981CF4 /* Cell.swift */,
+				870723AE1D7EDB9600A9333F /* Circular.swift */,
 				87B1FD221D05466D00981CF4 /* Edge.swift */,
 				87B1FD1F1D05466D00981CF4 /* Config.swift */,
 				87B1FD201D05466D00981CF4 /* Context.swift */,
