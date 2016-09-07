@@ -53,8 +53,8 @@ public class MNIST {
 		}
 		return []
 	}
-	public static let train: [Image] = MNIST.load(image: "train-images.idx3-ubyte", label: "train-labels.idx1-ubyte")
-	public static let t10k: [Image] = MNIST.load(image: "t10k-images.idx3-ubyte", label: "t10k-labels.idx1-ubyte")
+	public static let train: [Image] = MNIST.load(image: "train-images-idx3-ubyte", label: "train-labels-idx1-ubyte")
+	public static let t10k: [Image] = MNIST.load(image: "t10k-images-idx3-ubyte", label: "t10k-labels-idx1-ubyte")
 }
 extension NSData {
 	func split(let cursor: Int) -> (NSData, NSData){

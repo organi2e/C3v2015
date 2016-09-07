@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model userDefinedModelVersionIdentifier="" type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="10174" systemVersion="15G1004" minimumToolsVersion="Xcode 7.0">
+<model userDefinedModelVersionIdentifier="" type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="10174" systemVersion="15G31" minimumToolsVersion="Xcode 7.0">
     <entity name="Arcane" representedClassName="C3.Arcane" syncable="YES">
         <attribute name="cols" attributeType="Integer 64" defaultValueString="0" syncable="YES"/>
         <attribute name="location" attributeType="Binary" syncable="YES"/>
@@ -20,13 +20,13 @@
         <attribute name="priority" attributeType="Integer 64" defaultValueString="0" syncable="YES"/>
         <attribute name="width" attributeType="Integer 64" minValueString="0" syncable="YES"/>
         <relationship name="bias" maxCount="1" deletionRule="Cascade" destinationEntity="Bias" inverseName="output" inverseEntity="Bias" syncable="YES"/>
+        <relationship name="circular" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="Circular" inverseName="cell" inverseEntity="Circular" syncable="YES"/>
         <relationship name="decay" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="Decay" inverseName="cell" inverseEntity="Decay" syncable="YES"/>
-        <relationship name="feedback" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="Circular" inverseName="cell" inverseEntity="Circular" syncable="YES"/>
         <relationship name="input" toMany="YES" deletionRule="Cascade" destinationEntity="Edge" inverseName="output" inverseEntity="Edge" syncable="YES"/>
         <relationship name="output" toMany="YES" deletionRule="Cascade" destinationEntity="Edge" inverseName="input" inverseEntity="Edge" syncable="YES"/>
     </entity>
     <entity name="Circular" representedClassName="C3.Circular" parentEntity="Arcane" syncable="YES">
-        <relationship name="cell" maxCount="1" deletionRule="Nullify" destinationEntity="Cell" inverseName="feedback" inverseEntity="Cell" syncable="YES"/>
+        <relationship name="cell" maxCount="1" deletionRule="Nullify" destinationEntity="Cell" inverseName="circular" inverseEntity="Cell" syncable="YES"/>
     </entity>
     <entity name="Decay" representedClassName="C3.Decay" syncable="YES">
         <attribute name="loglambda" attributeType="Binary" allowsExternalBinaryDataStorage="YES" syncable="YES"/>
@@ -45,9 +45,9 @@
         <element name="Bias" positionX="54" positionY="189" width="128" height="60"/>
         <element name="Blob" positionX="36" positionY="171" width="128" height="75"/>
         <element name="Cell" positionX="36" positionY="117" width="128" height="195"/>
+        <element name="Circular" positionX="36" positionY="171" width="128" height="60"/>
         <element name="Decay" positionX="36" positionY="171" width="128" height="75"/>
         <element name="Dict" positionX="18" positionY="81" width="128" height="75"/>
         <element name="Edge" positionX="54" positionY="108" width="128" height="75"/>
-        <element name="Circular" positionX="36" positionY="171" width="128" height="60"/>
     </elements>
 </model>

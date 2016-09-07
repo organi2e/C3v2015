@@ -24,6 +24,7 @@
 		874347D51D6F015200B54F70 /* Bridge.h in Headers */ = {isa = PBXBuildFile; fileRef = 874347D41D6F015200B54F70 /* Bridge.h */; };
 		874347D81D6F024600B54F70 /* clblas.cl in Resources */ = {isa = PBXBuildFile; fileRef = 874347D71D6F024600B54F70 /* clblas.cl */; };
 		8746B0731D7DC6460052C001 /* Refraction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8746B0721D7DC6460052C001 /* Refraction.swift */; };
+		8746B0761D7F987A0052C001 /* MNIST.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 878C7AA31D01AF13002CDFD1 /* MNIST.framework */; };
 		874D7F131D7D36F80055162F /* Chebyshev.swift in Sources */ = {isa = PBXBuildFile; fileRef = 874D7F121D7D36F80055162F /* Chebyshev.swift */; };
 		875DD1971D64532800A5C250 /* mtlrender.metal in Sources */ = {isa = PBXBuildFile; fileRef = 875DD1951D6452E100A5C250 /* mtlrender.metal */; };
 		875DD1AA1D66B4DF00A5C250 /* Cauchy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 875DD1A31D66B25300A5C250 /* Cauchy.swift */; };
@@ -318,6 +319,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8746B0761D7F987A0052C001 /* MNIST.framework in Frameworks */,
 				87B1FD0B1D05461200981CF4 /* C3.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

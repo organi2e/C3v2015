@@ -5,7 +5,6 @@
 //  Created by Kota Nakano on 8/30/16.
 //
 //
-/*
 import XCTest
 @testable import C3
 class OptimizerTests: XCTestCase {
@@ -134,5 +133,4 @@ for i in range(1,40):
 	draw()
 	show(block=False)
 	savefig('%03d.png'%i,figsize=(16,9),dpi=72)
-*/
 */

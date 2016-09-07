@@ -5,7 +5,6 @@
 //  Created by Kota Nakano on 6/7/16.
 //
 //
-/*
 import XCTest
 import MNIST
 @testable import C3
@@ -16,10 +15,10 @@ class MNISTTests: XCTestCase {
 			let url: NSURL = try NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true).URLByAppendingPathComponent(MNISTTests.file)
 			let context: Context = try Context(storage: url)
 			if context.searchCell(width: 784, label: "MNIST_I").isEmpty {
-				let I: Cell = try context.newCell(width: 784, label: "MNIST_I")
-				let G: Cell = try context.newCell(width: 256, label: "MNIST_G")
-				let F: Cell = try context.newCell(width: 256, label: "MNIST_F")
-				let O: Cell = try context.newCell(width:  16, label: "MNIST_O")
+				let I: Cell = try context.newCell(.Gauss, width: 784, label: "MNIST_I")
+				let G: Cell = try context.newCell(.Gauss, width: 256, label: "MNIST_G")
+				let F: Cell = try context.newCell(.Gauss, width: 256, label: "MNIST_F")
+				let O: Cell = try context.newCell(.Gauss, width:  10, label: "MNIST_O")
 				
 				try context.chainCell(output: G, input: I)
 				try context.chainCell(output: F, input: G)
@@ -37,24 +36,26 @@ class MNISTTests: XCTestCase {
 		do {
 			let url: NSURL = try NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true).URLByAppendingPathComponent(MNISTTests.file)
 			let context: Context = try Context(storage: url)
+			context.optimizerFactory = ConjugateGradient.factory(.FletcherReeves, η: 0.5)
 			if let
 				I: Cell = context.searchCell(width: 784, label: "MNIST_I").last,
-				O: Cell = context.searchCell(width: 16,	label: "MNIST_O").last
+				O: Cell = context.searchCell(width: 10,	label: "MNIST_O").last
 			{
-				try (0..<65536).forEach {
+				print(MNIST.train.count)
+				try (0..<1024).forEach {
 					let image: MNIST.Image = MNIST.train[Int(arc4random_uniform(UInt32(MNIST.train.count)))]
 					let ID: [Bool] = image.pixel.map{ 128 < $0 }
 					let OD: [Bool] = (0..<10).map{ $0 == image.label }
 					//var cnt: [Int] = [Int](count: 10, repeatedValue: 0)
 					(0..<64).forEach {(_)in
-						O.iClear()
-						I.oClear()
+						O.collect_clear()
+						I.correct_clear()
 						
 						O.answer = OD
 						I.active = ID
 							
 						O.collect()
-						I.correct(η: 1/64.0)
+						I.correct()
 							
 						//O.active[0..<10].enumerate().forEach { cnt[$0.0] = cnt[$0.0] + Int($0.1) }
 					}
@@ -78,7 +79,7 @@ class MNISTTests: XCTestCase {
 			let context: Context = try Context(storage: url)
 			if let
 				I: Cell = context.searchCell(width: 784, label: "MNIST_I").last,
-				O: Cell = context.searchCell(width: 16, label: "MNIST_O").last
+				O: Cell = context.searchCell(width: 10, label: "MNIST_O").last
 			{
 				(0..<64).forEach {
 					let image: MNIST.Image = MNIST.t10k[Int(arc4random_uniform(UInt32(MNIST.t10k.count)))]
@@ -87,8 +88,8 @@ class MNISTTests: XCTestCase {
 					var cnt: [Int] = [Int](count: 10, repeatedValue: 0)
 					(0..<64).forEach {(_)in
 						
-						I.oClear()
-						O.iClear()
+						O.collect_clear()
+						I.correct_clear()
 						
 						I.active = ID
 						O.active[0..<10].enumerate().forEach {
@@ -175,4 +176,3 @@ class MNISTTests: XCTestCase {
 	}
 */
 }
-*/

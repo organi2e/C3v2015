@@ -9,8 +9,7 @@ import Accelerate
 import CoreData
 
 internal class Arcane: NSManagedObject {
-	internal let group: dispatch_group_t = dispatch_group_create()
-	internal var cache = (
+	private var cache = (
 		ψ: Array<UInt32>(),
 		χ: Array<Float>(),
 		b: Array<Float>(),
@@ -76,7 +75,7 @@ internal extension Arcane {
 		setPrimitiveValue(NSData(bytesNoCopy: cache.logμ, length: sizeof(Float)*count, freeWhenDone: false), forKey: Arcane.locationKey)
 		setPrimitiveValue(NSData(bytesNoCopy: cache.logσ, length: sizeof(Float)*count, freeWhenDone: false), forKey: Arcane.logscaleKey)
 		
-//		arc4random_buf(&cache.ψ, sizeof(UInt32)*count)
+		arc4random_buf(&cache.ψ, sizeof(UInt32)*count)
 		refresh()
 		
 		optimizer = (managedObjectContext as? Context)?.optimizerFactory(2*count) ?? optimizer
@@ -94,12 +93,12 @@ internal extension Arcane {
 		assert(Δμ.cols == cols)
 		assert(Δσ.rows == rows)
 		assert(Δσ.cols == cols)
-		
+	
 		let count: Int = rows * cols
-		
+			
 		self.dynamicType.gradμ(cache.gradμ, μ: cache.μ, count: count)
 		self.dynamicType.gradσ(cache.gradσ, σ: cache.σ, count: count)
-		
+			
 		distribution.Δμ(Δ: gradμ * Δμ, μ: μ).getBytes(cache.gradμ)
 		distribution.Δσ(Δ: gradσ * Δσ, σ: σ).getBytes(cache.gradσ)
 		
@@ -107,15 +106,15 @@ internal extension Arcane {
 			Δx: LaMatrice(cache.gradb, rows: 2*count, cols: 1, deallocator: nil),
 			x: LaMatrice(cache.logb, rows: 2*count, cols: 1, deallocator: nil)
 		).getBytes(cache.gradb)
-		
-		willChangeValueForKey(Arcane.locationKey)
+			
+		willChangeValueForKey(self.dynamicType.locationKey)
 		( logμ - gradμ ).getBytes(cache.logμ)
-		didChangeValueForKey(Arcane.locationKey)
+		didChangeValueForKey(self.dynamicType.locationKey)
 		
-		willChangeValueForKey(Arcane.logscaleKey)
+		willChangeValueForKey(self.dynamicType.logscaleKey)
 		( logσ - gradσ ).getBytes(cache.logσ)
-		didChangeValueForKey(Arcane.logscaleKey)
-		
+		didChangeValueForKey(self.dynamicType.logscaleKey)
+			
 		refresh()
 	}
 	internal func adjust(μ μ: Float, σ: Float) {
@@ -123,14 +122,14 @@ internal extension Arcane {
 		let count: Int = rows * cols
 		
 		vDSP_vfill([μ], cache.μ, 1, vDSP_Length(count))
-		willChangeValueForKey(Arcane.locationKey)
+		willChangeValueForKey(self.dynamicType.locationKey)
 		self.dynamicType.logμ(cache.logμ, μ: cache.μ, count: count)
-		didChangeValueForKey(Arcane.locationKey)
+		didChangeValueForKey(self.dynamicType.locationKey)
 
 		vDSP_vfill([σ], cache.σ, 1, vDSP_Length(count))
-		willChangeValueForKey(Arcane.logscaleKey)
+		willChangeValueForKey(self.dynamicType.logscaleKey)
 		self.dynamicType.logσ(cache.logσ, σ: cache.σ, count: count)
-		didChangeValueForKey(Arcane.logscaleKey)
+		didChangeValueForKey(self.dynamicType.logscaleKey)
 
 	}
 	internal func resize(rows r: Int, cols c: Int) {
@@ -202,10 +201,11 @@ extension Arcane: RandomNumberGeneratable {
 		return LaMatrice(cache.logσ, rows: rows, cols: cols, deallocator: nil)
 	}
 	internal func shuffle(distribution: Distribution.Type) {
+		let noise: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(cache.ψ)
 		let count: Int = rows * cols
 		assert(cache.χ.count==count)
 		assert(cache.ψ.count==count)
-		arc4random_buf(UnsafeMutablePointer<Void>(cache.ψ), cache.ψ.count*sizeof(UInt32))
+		arc4random_buf(noise, count*sizeof(UInt32))
 		distribution.rng(UnsafeMutablePointer<Float>(cache.χ), ψ: cache.ψ, μ: cache.μ, σ: cache.σ, count: count)
 	}
 }

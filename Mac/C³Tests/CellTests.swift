@@ -63,7 +63,7 @@ class CellTests: XCTestCase {
 	}
 }
 /*
-class CellTests: XCTestCase {
+class MNISTTests: XCTestCase {
 	static let file: String = "test.sqlite"
 	
 	static let f: Bool = false
@@ -80,13 +80,13 @@ class CellTests: XCTestCase {
 	//let IS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [f,f,T,f],[f,f,f,T], [f,f,T,f], [f,T,f,f], [f,f,T,f]]
 	//let OS: [[Bool]] = [[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,f,f,f],[f,f,f,T], [f,f,T,f], [f,T,f,f], [T,T,T,T]]
 	
-	let context: Context = try!Context(storage: try!NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true).URLByAppendingPathComponent(CellTests.file))
+	let context: Context = try!Context(storage: try!NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true).URLByAppendingPathComponent(MNISTTests.file))
 	
 	func test0Insert() {
 		if context.searchCell(label: "I").isEmpty || context.searchCell(label: "O").isEmpty {
 			do {
-				let I: Cell = try context.newCell(width: 4, label: "I")
-				let H: Cell = try context.newCell(width: 64, recur: false, buffer: false, label: "H")
+				let I: Cell = try context.newCell(.Gauss, width: 4, label: "I")
+				let H: Cell = try context.newCell(.Gauss, width: 64, recur: false, buffer: false, label: "H")
 				let G: Cell = try context.newCell(width: 64, recur: false, buffer: false, label: "G")
 				let O: Cell = try context.newCell(width: 4, label: "O")
 				
