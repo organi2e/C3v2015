@@ -24,6 +24,25 @@ internal class CauchyDistribution: Distribution {
 	}
 	//	static func cdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
 	//	static func pdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
+	/*
+	internal static func uniform(let context context: Context, let χ: MTLBuffer, let bs: Int = 64) {
+		let count: Int = χ.length / sizeof(Float)
+		let φ: [uint] = [uint](count: 4*bs, repeatedValue: 0)
+		arc4random_buf(UnsafeMutablePointer<Void>(φ), sizeof(uint)*φ.count)
+		context.newComputeCommand(function: uniformKernel) {
+			$0.setBuffer(χ, offset: 0, atIndex: 0)
+			$0.setBytes(φ, length: sizeof(uint)*φ.count, atIndex: 1)
+			$0.setBytes([uint(13), uint(17), uint(5), uint(count/4)], length: sizeof(uint)*4, atIndex: 2)
+			$0.dispatchThreadgroups(MTLSize(width: bs, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
+		}
+	}
+	*/
+	
+	static func rng(context: Context, χ: MTLBuffer, μ: MTLBuffer, σ: MTLBuffer, count: Int) {
+		context.newComputeCommand(function: "cauchyRNG") {
+			$0.setBuffer(χ, offset: 0, atIndex: 0)
+		}
+	}
 	static func rng(χ: UnsafeMutablePointer<Float>, ψ: UnsafePointer<UInt32>, μ: UnsafePointer<Float>, σ: UnsafePointer<Float>, count: Int) {
 		let length: vDSP_Length = vDSP_Length(count)
 		var len: Int32 = Int32(length)

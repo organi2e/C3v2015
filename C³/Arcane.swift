@@ -7,19 +7,38 @@
 //
 import Accelerate
 import CoreData
-
+import Metal
 internal class Arcane: NSManagedObject {
-	private let group: dispatch_group_t = dispatch_group_create()
+
+	internal struct Buffer {
+		private let data: MTLBuffer
+		private let sync: dispatch_group_t = dispatch_group_create()
+		func enter() {
+			dispatch_group_enter(sync)
+		}
+		func leave() {
+			dispatch_group_leave(sync)
+		}
+		func merge() {
+			dispatch_group_wait(sync, DISPATCH_TIME_FOREVER)
+		}
+		var bytes: UnsafeMutablePointer<Float> {
+			return UnsafeMutablePointer<Float>(data.contents())
+		}
+	}
+	
+	private var value: Buffer! = nil
+	private var param: Buffer! = nil
+	private var cover: Buffer! = nil
+	private var deriv: Buffer! = nil
+	
 	private var cache = (
 		ψ: Array<UInt32>(),
-		χ: Array<Float>(),
-		b: Array<Float>(),
+		χ: UnsafeMutablePointer<Float>(nil),
 		μ: UnsafeMutablePointer<Float>(nil),
 		σ: UnsafeMutablePointer<Float>(nil),
-		logb: Array<Float>(),
 		logμ: UnsafeMutablePointer<Float>(nil),
 		logσ: UnsafeMutablePointer<Float>(nil),
-		gradb: Array<Float>(),
 		gradμ: UnsafeMutablePointer<Float>(nil),
 		gradσ: UnsafeMutablePointer<Float>(nil)
 	)
@@ -53,30 +72,35 @@ internal extension Arcane {
 	private static let logscaleKey: String = "logscale"
 	internal func setup() {
 		
+		guard let context: Context = managedObjectContext as? Context else {
+			fatalError(Context.Error.InvalidContext.rawValue)
+		}
+		
 		let count: Int = rows * cols
 		
-		cache.χ = Array<Float>(count: count, repeatedValue: 0)
+		value = Buffer(data: context.newBuffer(length: sizeof(Float)*2*count, options: .StorageModeShared))
+		param = Buffer(data: context.newBuffer(length: sizeof(Float)*2*count, options: .StorageModeShared))
+		cover = Buffer(data: context.newBuffer(length: sizeof(Float)*2*count, options: .StorageModeShared))
+		deriv = Buffer(data: context.newBuffer(length: sizeof(Float)*2*count, options: .StorageModeShared))
+		
+		cache.χ = value.bytes
 		cache.ψ = Array<UInt32>(count: count, repeatedValue: 0)
 		
-		cache.b = Array<Float>(count: 2*count, repeatedValue: 0)//ARC
-		cache.μ = UnsafeMutablePointer<Float>(cache.b).advancedBy(0*count)
-		cache.σ = UnsafeMutablePointer<Float>(cache.b).advancedBy(1*count)
+		cache.μ = param.bytes
+		cache.σ = cache.μ.advancedBy(count)
 		
-		cache.logb = Array<Float>(count: 2*count, repeatedValue: 0)//ARC
-		cache.logμ = UnsafeMutablePointer<Float>(cache.logb).advancedBy(0*count)
-		cache.logσ = UnsafeMutablePointer<Float>(cache.logb).advancedBy(1*count)
+		cache.logμ = cover.bytes
+		cache.logσ = cache.logμ.advancedBy(count)
 		
-		cache.gradb = Array<Float>(count: 2*count, repeatedValue: 0)//ARC
-		cache.gradμ = UnsafeMutablePointer<Float>(cache.gradb).advancedBy(0*count)
-		cache.gradσ = UnsafeMutablePointer<Float>(cache.gradb).advancedBy(1*count)
+		cache.gradμ = deriv.bytes
+		cache.gradσ = cache.gradμ.advancedBy(count)
 		
 		location.getBytes(cache.logμ, length: sizeof(Float)*count)
 		logscale.getBytes(cache.logσ, length: sizeof(Float)*count)
 		
-		setPrimitiveValue(NSData(bytesNoCopy: cache.logμ, length: sizeof(Float)*count, freeWhenDone: false), forKey: Arcane.locationKey)
-		setPrimitiveValue(NSData(bytesNoCopy: cache.logσ, length: sizeof(Float)*count, freeWhenDone: false), forKey: Arcane.logscaleKey)
+		setPrimitiveValue(NSData(bytesNoCopy: cache.logμ, length: sizeof(Float)*count, freeWhenDone: false), forKey: self.dynamicType.locationKey)
+		setPrimitiveValue(NSData(bytesNoCopy: cache.logσ, length: sizeof(Float)*count, freeWhenDone: false), forKey: self.dynamicType.logscaleKey)
 		
-		arc4random_buf(&cache.ψ, sizeof(UInt32)*count)
 		refresh()
 		
 		optimizer = (managedObjectContext as? Context)?.optimizerFactory(2*count) ?? optimizer
@@ -84,9 +108,12 @@ internal extension Arcane {
 		σoptimizer = (managedObjectContext as? Context)?.optimizerFactory(count) ?? σoptimizer
 	}
 	private func refresh() {
+		guard let context: Context = managedObjectContext as? Context else {
+			fatalError(Context.Error.InvalidContext.rawValue)
+		}
 		let count: Int = rows * cols
-		self.dynamicType.μ(cache.μ, logμ: cache.logμ, count: count)
-		self.dynamicType.σ(cache.σ, logσ: cache.logσ, count: count)
+		self.dynamicType.param(context, param: param, cover: cover, count: count)
+		self.dynamicType.deriv(context, deriv: deriv, param: param, count: count)
 	}
 	internal func update(distribution: Distribution.Type, Δμ: LaObjet, Δσ: LaObjet) {
 	
@@ -97,8 +124,7 @@ internal extension Arcane {
 		
 		func update() {
 		
-			self.dynamicType.gradμ(cache.gradμ, μ: cache.μ, count: count)
-			self.dynamicType.gradσ(cache.gradσ, σ: cache.σ, count: count)
+			deriv.merge()
 			
 			distribution.Δμ(
 				Δ: LaMatrice(cache.gradμ, rows: Δμ.rows, cols: Δμ.cols, deallocator: nil) * Δμ,
@@ -111,9 +137,9 @@ internal extension Arcane {
 			.getBytes(cache.gradσ)
 		
 			optimizer.optimize(
-				Δx: LaMatrice(cache.gradb, rows: cache.gradb.count, cols: 1, deallocator: nil),
-				x: LaMatrice(cache.logb, rows: cache.logb.count, cols: 1, deallocator: nil)
-			).getBytes(cache.gradb)
+				Δx: LaMatrice(deriv.bytes, rows: count, cols: 1, deallocator: nil),
+				x: LaMatrice(cover.bytes, rows: count, cols: 1, deallocator: nil)
+			).getBytes(deriv.bytes)
 			
 			willChangeValueForKey(self.dynamicType.locationKey)
 			( logμ - gradμ ).getBytes(cache.logμ)
@@ -190,12 +216,6 @@ extension Arcane {
 		vDSP_vsadd(gradσ, 1, &one, gradσ, 1, vDSP_Length(count))
 	}
 }
-extension Arcane {
-	private static let queue: dispatch_queue_t = dispatch_queue_create("com.organi2e.kotan.kn.C3.Arcane", DISPATCH_QUEUE_CONCURRENT)
-	internal func sync() {
-		dispatch_group_wait(group, DISPATCH_TIME_FOREVER)
-	}
-}
 extension Arcane: RandomNumberGeneratable {
 	internal var χ: LaObjet {
 		return LaMatrice(cache.χ, rows: rows, cols: cols, deallocator: nil)
@@ -221,14 +241,46 @@ extension Arcane: RandomNumberGeneratable {
 	internal func shuffle(distribution: Distribution.Type) {
 		let noise: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(cache.ψ)
 		let count: Int = rows * cols
-		assert(cache.χ.count==count)
 		assert(cache.ψ.count==count)
 		func shuffle() {
 			arc4random_buf(noise, count*sizeof(UInt32))
+			param.merge()
 			distribution.rng(UnsafeMutablePointer<Float>(cache.χ), ψ: cache.ψ, μ: cache.μ, σ: cache.σ, count: count)
 		}
 		shuffle()
 		//sync()
 		//dispatch_group_async(group, self.dynamicType.queue, shuffle)
+	}
+}
+extension Arcane {
+	internal static func param(context: Context, param: Buffer, cover: Buffer, count: Int) {
+		param.enter()
+		context.newComputeCommand(function: "arcaneValue", complete: param.leave) {
+			$0.setBuffer(param.data, offset: sizeof(Float)*0*count, atIndex: 0)
+			$0.setBuffer(param.data, offset: sizeof(Float)*1*count, atIndex: 1)
+			$0.setBuffer(cover.data, offset: sizeof(Float)*0*count, atIndex: 2)
+			$0.setBuffer(cover.data, offset: sizeof(Float)*1*count, atIndex: 3)
+			$0.dispatchThreadgroups(MTLSize(width: count/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
+		}
+	}
+	internal static func conver(context: Context, cover: Buffer, param: Buffer, count: Int) {
+		cover.enter()
+		context.newComputeCommand(function: "arcaneValue", complete: cover.leave) {
+			$0.setBuffer(cover.data, offset: sizeof(Float)*0*count, atIndex: 0)
+			$0.setBuffer(cover.data, offset: sizeof(Float)*1*count, atIndex: 1)
+			$0.setBuffer(param.data, offset: sizeof(Float)*0*count, atIndex: 2)
+			$0.setBuffer(param.data, offset: sizeof(Float)*1*count, atIndex: 3)
+			$0.dispatchThreadgroups(MTLSize(width: count/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
+		}
+	}
+	internal static func deriv(context: Context, deriv: Buffer, param: Buffer, count: Int) {
+		deriv.enter()
+		context.newComputeCommand(function: "arcaneGradient", complete: deriv.leave) {
+			$0.setBuffer(deriv.data, offset: sizeof(Float)*0*count, atIndex: 0)
+			$0.setBuffer(deriv.data, offset: sizeof(Float)*1*count, atIndex: 1)
+			$0.setBuffer(param.data, offset: sizeof(Float)*0*count, atIndex: 2)
+			$0.setBuffer(param.data, offset: sizeof(Float)*1*count, atIndex: 3)
+			$0.dispatchThreadgroups(MTLSize(width: count/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
+		}
 	}
 }

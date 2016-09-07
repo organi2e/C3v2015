@@ -33,11 +33,14 @@ let sign: MTLComputePipelineState = try!device.newComputePipelineStateWithFuncti
 let step: MTLComputePipelineState = try!device.newComputePipelineStateWithFunction(library.newFunctionWithName("step4")!)
 let tan: MTLComputePipelineState = try!device.newComputePipelineStateWithFunction(library.newFunctionWithName("tan4")!)
 let exp: MTLComputePipelineState = try!device.newComputePipelineStateWithFunction(library.newFunctionWithName("exp4")!)
+let pdf4: MTLComputePipelineState = try!device.newComputePipelineStateWithFunction(library.newFunctionWithName("pdf4")!)
+let cauchy4: MTLComputePipelineState = try!device.newComputePipelineStateWithFunction(library.newFunctionWithName("cauchy4")!)
 
-let N: Int = 1 << 20
+let N: Int = 1 << 16
 let P: Int = 256
-let a: [Float] = (0..<N).map { (_)in Float(arc4random())/Float(UInt32.max)-0.5}
-let b: [Float] = (0..<N).map { (_)in Float(arc4random())/Float(UInt32.max)-0.5}
+var a: [Float] = (0..<N).map { (_)in Float(arc4random())/Float(UInt32.max)-0.5}
+var b: [Float] = (0..<N).map { (_)in Float(arc4random())/Float(UInt32.max)-0.5}
+var c: [Float] = (0..<N).map { (_)in Float(arc4random())/Float(UInt32.max)-0.5}
 
 let mtlA: MTLBuffer = device.newBufferWithBytes(a, length: sizeof(Float)*N, options: .StorageModeShared)
 let mtlB: MTLBuffer = device.newBufferWithBytes(b, length: sizeof(Float)*N, options: .StorageModeShared)
@@ -59,7 +62,25 @@ for p in 1...P {
 	if p == P { command.waitUntilCompleted(); print("wait") }
 }
 
-print(Double(N*P)/mtltoc()/1_000_000_000.0, "GFLOPS")
+print(Double(N*P)/mtltoc()/1_000_000_000.0, "GFLOPS (metal sign)")
+
+do {
+	let mtltoc = tic()
+	
+	for p in 1...P {
+		let command = queue.commandBuffer()
+		var encoder = command.computeCommandEncoder()
+		encoder.setComputePipelineState(sign)
+		encoder.setBuffer(mtlC, offset: 0, atIndex: 0)
+		encoder.setBuffer(mtlA, offset: 0, atIndex: 1)
+		encoder.dispatchThreadgroups(group, threadsPerThreadgroup: local)
+		encoder.endEncoding()
+		command.commit()
+		if p == P { command.waitUntilCompleted(); print("wait") }
+	}
+	
+	print(Double(N*P)/mtltoc()/1_000_000_000.0, "GFLOPS (metal sign)")
+}
 
 do {
 	let length: vDSP_Length = vDSP_Length(N)
@@ -181,7 +202,102 @@ do {
 }
 
 do {
-	let a = la_splat_from_float(0, ATTR)
-	let b = la_splat_from_float(0, ATTR)
-	la_sum(a, b)
+	let cputoc = tic()
+	let length: vDSP_Length = vDSP_Length(N)
+	
+	var len: Int32 = Int32(N)
+	
+	var zero: Float = 0
+	var posi: Float = 0.5
+	var nega: Float = -0.5
+	for _ in 1...P {
+		vDSP_vneg(a, 1, &b, 1, length)
+		vDSP_vlim(a, 1, &zero, &posi, &a, 1, length)
+		vDSP_vlim(b, 1, &zero, &nega, &b, 1, length)
+		vDSP_vadd(a, 1, b, 1, &a, 1, length)//Δ.χ = sign(δ)
+	
+		vDSP_vmul(a, 1, b, 1, &b, 1, length)//Δ.σ = μ * λ
+		vDSP_vsq(b, 1, &c, 1, length)//Δ.μ = ( μ * λ ) ^ 2
+		cblas_sscal(len, nega, &c, 1)//Δ.μ = -0.5 * ( μ * λ ) ^ 2
+	
+		vvexpf(&a, a, &len)
+		cblas_sscal(len, Float(0.5 * M_2_SQRTPI * M_SQRT1_2), &b, 1)
+		vDSP_vmul(c, 1, b, 1, &a, 1, length)
+	
+		vDSP_vmul(a, 1, c, 1, &b, 1, length)
+		vDSP_vmul(b, 1, c, 1, &b, 1, length)
+		vDSP_vmul(c, 1, a, 1, &c, 1, length)
+		vDSP_vneg(c, 1, &c, 1, length)
+	}
+	print(Double(N*P)/cputoc()/1_000_000_000.0, "GFLOPS (gaussian, vDSP)")
 }
+
+do {
+	let cputoc = tic()
+	for p in 1...P {
+		let command = queue.commandBuffer()
+		var encoder = command.computeCommandEncoder()
+		encoder.setComputePipelineState(pdf4)
+		encoder.setBuffer(mtlC, offset: 0, atIndex: 0)
+		encoder.setBuffer(mtlC, offset: 0, atIndex: 1)
+		encoder.setBuffer(mtlA, offset: 0, atIndex: 2)
+		encoder.setBuffer(mtlB, offset: 0, atIndex: 3)
+		encoder.dispatchThreadgroups(group, threadsPerThreadgroup: local)
+		encoder.endEncoding()
+		command.commit()
+		if p == P { command.waitUntilCompleted(); print("wait") }
+	}
+	print(Double(N*P)/cputoc()/1_000_000_000.0, "GFLOPS (gaussian, mtl)")
+}
+
+do {
+	let cputoc = tic()
+	for p in 1...P {
+		let command = queue.commandBuffer()
+		var encoder = command.computeCommandEncoder()
+		encoder.setComputePipelineState(cauchy4)
+		encoder.setBuffer(mtlC, offset: 0, atIndex: 0)
+		encoder.setBuffer(mtlC, offset: 0, atIndex: 1)
+		encoder.setBuffer(mtlA, offset: 0, atIndex: 2)
+		encoder.setBuffer(mtlB, offset: 0, atIndex: 3)
+		encoder.dispatchThreadgroups(group, threadsPerThreadgroup: local)
+		encoder.endEncoding()
+		command.commit()
+		if p == P { command.waitUntilCompleted(); print("wait") }
+	}
+	print(Double(N*P)/cputoc()/1_000_000_000.0, "GFLOPS (cauchy, mtl)")
+}
+
+do {
+	let cputoc = tic()
+	
+	
+	let length: vDSP_Length = vDSP_Length(N)
+	
+	var len: Int32 = Int32(N)
+	
+	var one: Float = 1.0
+	var zero: Float = 0
+	var posi: Float = 0.5
+	var nega: Float = -0.5
+	
+	for _ in 1...P {
+		vDSP_vneg(a, 1, &c, 1, length)
+		vDSP_vlim(b, 1, &zero, &posi, &b, 1, length)
+		vDSP_vlim(c, 1, &zero, &nega, &c, 1, length)
+		vDSP_vadd(b, 1, c, 1, &a, 1, length)
+	
+		vDSP_vmul(b, 1, c, 1, &c, 1, length)
+		vDSP_vsq(c, 1, &c, 1, length)
+		vDSP_vsadd(b, 1, &one, &c, 1, length)
+	
+		cblas_sscal(len, Float(M_1_PI), &c, 1)
+		vvdivf(&b, a, c, &len)
+	
+		vDSP_vmul(b, 1, a, 1, &b, 1, length)
+		vDSP_vmul(b, 1, c, 1, &c, 1, length)
+		vDSP_vneg(c, 1, &c, 1, length)
+	}
+	print(Double(N*P)/cputoc()/1_000_000_000.0, "GFLOPS (cauchy, vDSP)")
+}
+

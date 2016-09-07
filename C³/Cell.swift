@@ -76,7 +76,11 @@ extension Cell {
 
 extension Cell {
 	internal func setup() {
+		guard let context: Context = managedObjectContext as? Context else {
+			fatalError(Context.Error.InvalidContext.rawValue)
+		}
 		let count: Int = 2
+		
 		state = RingBuffer<(ψ: [Float], κ: [Float], δ: [Float])>(array: (0..<count).map{(_)in
 			(
 				ψ: [Float](count: width, repeatedValue: 0),

@@ -44,6 +44,28 @@ kernel void sign(device float * const y [[ buffer(0) ]],
 	y[n] = sign(x[n]);
 }
 
+kernel void pdf4(device float4 * const y [[ buffer(0) ]],
+				 const device float4 * const x [[ buffer(1) ]],
+				 const device float4 * const u [[ buffer(2) ]],
+				 const device float4 * const s [[ buffer(3) ]],
+				 uint const n [[ thread_position_in_grid ]],
+				 uint const N [[ threads_per_grid ]]) {
+	float4 const sigma = s[n];
+	float4 const level = (x[n]-u[n])/sigma;
+	y[n] = exp(-0.5*level*level)/sigma/0.78;
+}
+
+kernel void cauchy4(device float4 * const y [[ buffer(0) ]],
+					const device float4 * const x [[ buffer(1) ]],
+					const device float4 * const u [[ buffer(2) ]],
+					const device float4 * const s [[ buffer(3) ]],
+					uint const n [[ thread_position_in_grid ]],
+					uint const N [[ threads_per_grid ]]) {
+	float4 const sigma = s[n];
+	float4 const level = (x[n]-u[n])/sigma;
+	y[n] = 1/(1+level*level)/3.14/sigma;
+}
+
 kernel void gemm1x1(device float * const C [[ buffer(0) ]],
 					device const float * const A [[ buffer(1) ]],
 					device const float * const B [[ buffer(2) ]],

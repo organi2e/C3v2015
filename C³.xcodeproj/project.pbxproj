@@ -122,6 +122,7 @@
 		874347D11D6F014200B54F70 /* Bridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Bridge.h; path = CL3/Bridge.h; sourceTree = "<group>"; };
 		874347D61D6F023B00B54F70 /* clblas.cl */ = {isa = PBXFileReference; explicitFileType = text; name = clblas.cl; path = CL3/clblas.cl; sourceTree = "<group>"; };
 		8746B0631D7DC61E0052C001 /* Refraction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Refraction.swift; path = "C³/Refraction.swift"; sourceTree = "<group>"; };
+		8746B0791D80711D0052C001 /* mtlarcane.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = mtlarcane.metal; path = "C³/mtlarcane.metal"; sourceTree = "<group>"; };
 		874D7F141D7D742E0055162F /* Chebyshev.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Chebyshev.swift; path = "C³/Chebyshev.swift"; sourceTree = "<group>"; };
 		874F0BC41D3FC4C0005A2B62 /* AsyncValue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AsyncValue.swift; path = NLA/AsyncValue.swift; sourceTree = "<group>"; };
 		87591AE11D3C45C400BD9248 /* blas.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = blas.metal; path = Computer/blas.metal; sourceTree = "<group>"; };
@@ -317,6 +318,7 @@
 				87745FD01D76E82300B90B5E /* Adam.swift */,
 				8746B0631D7DC61E0052C001 /* Refraction.swift */,
 				870723AA1D7EDB7A00A9333F /* Circular.swift */,
+				8746B0791D80711D0052C001 /* mtlarcane.metal */,
 			);
 			name = "C³";
 			sourceTree = "<group>";
