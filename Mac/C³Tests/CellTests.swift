@@ -11,10 +11,10 @@ class CellTests: XCTestCase {
 	let context: Context = try!Context()
 	func testCollect() {
 		context.optimizerFactory = ConjugateGradient.factory(.FletcherReeves, η: 5e-1)
-		let I: Cell = try! context.newCell(.Gauss, width: 4, label: "I")
-		let H: Cell = try! context.newCell(.Gauss, width:256, label: "H")
-		let G: Cell = try! context.newCell(.Gauss, width:256, label: "G")
-		let O: Cell = try! context.newCell(.Gauss, width: 4, label: "O")
+		let I: Cell = try! context.newCell(.Gauss, width:10, label: "I")
+		let H: Cell = try! context.newCell(.Gauss, width:64, label: "H")
+		let G: Cell = try! context.newCell(.Gauss, width:64, label: "G")
+		let O: Cell = try! context.newCell(.Gauss, width:10, label: "O")
 		
 		try!context.chainCell(output: H, input: I)
 		try!context.chainCell(output: G, input: H)
@@ -22,17 +22,17 @@ class CellTests: XCTestCase {
 		try!context.chainCell(output: O, input: G)
 		
 		let IS: [[Bool]] = [
-			[false, false, false, true],
-			[false, false, true, false],
-			[false, false, true,  true],
-			[false, true, false, false]
+			[false, false, false, true, true, true, true, true, true, true],
+			[false, false, true, false, true, true, true, true, true, true],
+			[false, false, true,  true, true, true, true, true, true, true],
+			[false, true, false, false, true, true, true, true, true, true]
 		]
 		
 		let OS: [[Bool]] = [
-			[false, false, false, true],
-			[false, false, true, false],
-			[false, true, false, false],
-			[true, false, false, false]
+			[false, false, false, true, true, true, true, true, true, true],
+			[false, false, true, false, true, true, true, true, true, true],
+			[false, true, false, false, true, true, true, true, true,false],
+			[true, false, false, false, true, true, true, true, true, true]
 		]
 		
 		for k in 0..<256 {
@@ -42,8 +42,8 @@ class CellTests: XCTestCase {
 				I.correct_clear()
 				O.collect_clear()
 				
-				O.answer = OS[k%4]
-				I.active = IS[k%4]
+				O.answer = OS[k%OS.count]
+				I.active = IS[k%IS.count]
 			
 				O.collect()
 				I.correct()
@@ -55,7 +55,7 @@ class CellTests: XCTestCase {
 			I.correct_clear()
 			O.collect_clear()
 			
-			I.active = IS[k%4]
+			I.active = IS[k%IS.count]
 			print(O.active)
 			
 		}

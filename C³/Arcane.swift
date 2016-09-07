@@ -178,11 +178,11 @@ extension Arcane {
 	}
 	internal static func gradσ(gradσ: UnsafeMutablePointer<Float>, σ: UnsafePointer<Float>, count: Int) {
 		var len: Int32 = Int32(count)
-		var neg: Float = -1
-		var pos: Float = 1
+		var one: Float = 1
 		vDSP_vneg(σ, 1, gradσ, 1, vDSP_Length(count))
 		vvexpf(gradσ, gradσ, &len)
-		vDSP_vsmsa(gradσ, 1, &neg, &pos, gradσ, 1, vDSP_Length(count))
+		vDSP_vneg(gradσ, 1, gradσ, 1, vDSP_Length(count))
+		vDSP_vsadd(gradσ, 1, &one, gradσ, 1, vDSP_Length(count))
 	}
 }
 extension Arcane {

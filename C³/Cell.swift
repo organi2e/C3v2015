@@ -172,22 +172,32 @@ extension Cell {
 extension Cell {
 	public var active: [Bool] {
 		set {
-			let count: Int = min(width, newValue.count)
-			NSData(bytesNoCopy: UnsafeMutablePointer(newValue.map({Float($0)})), length: sizeof(Float)*count, freeWhenDone: false).getBytes(UnsafeMutablePointer<Void>(state.new.κ), length: sizeof(Float)*count)
-			ready.insert(.κ)
+			if 0 < width {
+				NSData(bytesNoCopy: UnsafeMutablePointer(newValue.map({Float($0)})), length: sizeof(Float)*newValue.count, freeWhenDone: false).getBytes(UnsafeMutablePointer<Void>(state.new.κ), length: sizeof(Float)*state.new.κ.count)
+				ready.insert(.κ)
+			}
 		}
 		get {
-			return collect().array.map { Bool($0) }
+			if 0 < width {
+				return collect().array.map { Bool($0) }
+			} else {
+				return []
+			}
 		}
 	}
 	public var answer: [Bool] {
 		set {
-			let count: Int = min(width, newValue.count)
-			NSData(bytesNoCopy: UnsafeMutablePointer(newValue.map({Float($0)})), length: sizeof(Float)*count, freeWhenDone: false).getBytes(UnsafeMutablePointer<Void>(state.new.ψ), length: sizeof(Float)*count)
-			ready.insert(.ψ)
+			if 0 < width {
+				NSData(bytesNoCopy: UnsafeMutablePointer(newValue.map({Float($0)})), length: sizeof(Float)*state.new.ψ.count, freeWhenDone: false).getBytes(UnsafeMutablePointer<Void>(state.new.ψ), length: sizeof(Float)*state.new.ψ.count)
+				ready.insert(.ψ)
+			}
 		}
 		get {
-			return state.new.ψ.map { Bool($0) }
+			if 0 < width {
+				return state.new.ψ.map { Bool($0) }
+			} else {
+				return []
+			}
 		}
 	}
 	public var isRecurrent: Bool {

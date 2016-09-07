@@ -17,7 +17,7 @@ class MNISTTests: XCTestCase {
 			if context.searchCell(width: 784, label: "MNIST_I").isEmpty {
 				let I: Cell = try context.newCell(.Gauss, width: 784, label: "MNIST_I")
 				let G: Cell = try context.newCell(.Gauss, width: 256, label: "MNIST_G")
-				let F: Cell = try context.newCell(.Gauss, width: 256, label: "MNIST_F")
+				let F: Cell = try context.newCell(.Gauss, width:  64, label: "MNIST_F")
 				let O: Cell = try context.newCell(.Gauss, width:  10, label: "MNIST_O")
 				
 				try context.chainCell(output: G, input: I)
@@ -36,17 +36,16 @@ class MNISTTests: XCTestCase {
 		do {
 			let url: NSURL = try NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true).URLByAppendingPathComponent(MNISTTests.file)
 			let context: Context = try Context(storage: url)
-			context.optimizerFactory = ConjugateGradient.factory(.FletcherReeves, η: 0.5)
+			context.optimizerFactory = ConjugateGradient.factory(.FletcherReeves, η: 1/16.0)
 			if let
 				I: Cell = context.searchCell(width: 784, label: "MNIST_I").last,
 				O: Cell = context.searchCell(width: 10,	label: "MNIST_O").last
 			{
-				print(MNIST.train.count)
-				try (0..<1024).forEach {
+				try (0..<256).forEach {
 					let image: MNIST.Image = MNIST.train[Int(arc4random_uniform(UInt32(MNIST.train.count)))]
 					let ID: [Bool] = image.pixel.map{ 128 < $0 }
 					let OD: [Bool] = (0..<10).map{ $0 == image.label }
-					//var cnt: [Int] = [Int](count: 10, repeatedValue: 0)
+					var cnt: [Int] = [Int](count: 10, repeatedValue: 0)
 					(0..<64).forEach {(_)in
 						O.collect_clear()
 						I.correct_clear()
@@ -57,10 +56,10 @@ class MNISTTests: XCTestCase {
 						O.collect()
 						I.correct()
 							
-						//O.active[0..<10].enumerate().forEach { cnt[$0.0] = cnt[$0.0] + Int($0.1) }
+						O.active.enumerate().forEach { cnt[$0.0] = cnt[$0.0] + Int($0.1) }
 					}
-					print("epoch: \($0)")
-					//print($0, zip(OD, cnt).map{ $0.0 ? "[\($0.1)]" : "\($0.1)"})
+					//print("epoch: \($0)")
+					print($0, zip(OD, cnt).map{ $0.0 ? "[\($0.1)]" : "\($0.1)"})
 					context.join()
 					try context.save()
 				}
