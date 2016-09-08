@@ -16,7 +16,7 @@ public class Cell: NSManagedObject {
 		case κ
 		case δ
 	}
-	
+	private let group: dispatch_group_t = dispatch_group_create()
 	private var ready: Set<Ready> = Set<Ready>()
 	private var state: RingBuffer<(ψ: [Float], κ: [Float], δ: [Float])> = RingBuffer<(ψ: [Float], κ: [Float], δ: [Float])>(array: [])
 	private var level: RingBuffer<(χ: [Float], μ: [Float], λ: [Float])> = RingBuffer<(χ: [Float], μ: [Float], λ: [Float])>(array: [])
@@ -245,6 +245,17 @@ extension Cell {
 	}
 	public var isRecurrent: Bool {
 		return circular != nil || decay != nil
+	}
+}
+extension Cell {
+	internal func enter() {
+		dispatch_group_enter(group)
+	}
+	internal func leave() {
+		dispatch_group_leave(group)
+	}
+	internal func merge() {
+		dispatch_group_wait(group, DISPATCH_TIME_FOREVER)
 	}
 }
 extension Context {

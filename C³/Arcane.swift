@@ -253,7 +253,7 @@ extension Arcane: RandomNumberGeneratable {
 	}
 }
 extension Arcane {
-	internal static func refresh(context: Context, param: deriv: Buffer, cover: Buffer, count: Int) {
+	/*internal static func refresh(context: Context, param: deriv: Buffer, cover: Buffer, count: Int) {
 		param.enter()
 		context.newComputeCommand(function: "arcaneRefresh", complete: param.leave) {
 			$0.setBuffer(param.data, offset: sizeof(Float)*0*count, atIndex: 0)
@@ -262,7 +262,7 @@ extension Arcane {
 			$0.setBuffer(cover.data, offset: sizeof(Float)*1*count, atIndex: 3)
 			$0.dispatchThreadgroups(MTLSize(width: (count-1)/4+1, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
 		}
-	}
+	}*/
 	internal static func param(context: Context, param: Buffer, cover: Buffer, count: Int) {
 		param.enter()
 		context.newComputeCommand(function: "arcaneValue", complete: param.leave) {
