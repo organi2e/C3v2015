@@ -5,7 +5,6 @@
 //  Created by Kota Nakano on 7/31/16.
 //
 //
-import Accelerate
 import CoreData
 internal class Bias: Arcane {
 	private var gradμ: [Float] = []
@@ -25,8 +24,8 @@ extension Bias {
 	internal func collect() -> (LaObjet, LaObjet, LaObjet) {
 		return(χ, μ, σ)
 	}
-	internal func correct(ignore: Set<Cell>) -> LaObjet {
-		let Δ: (χ: LaObjet, μ: LaObjet, σ: LaObjet) = output.correct(ignore)
+	internal func correct(compute: Compute, ignore: Set<Cell>) -> LaObjet {
+		let Δ: (χ: LaObjet, μ: LaObjet, σ: LaObjet) = output.correct(compute: compute, ignore: ignore)
 		do {
 			let I: LaObjet = LaIdentité(rows)
 			let Δμ: LaObjet = matrix_product(Δ.μ.T, I)
@@ -35,8 +34,8 @@ extension Bias {
 		}
 		return Δ.χ
 	}
-	internal func collect_clear() {
-		shuffle(output.distribution)
+	internal func collect_clear(compute: Compute) {
+		
 	}
 	internal func correct_clear() {
 		

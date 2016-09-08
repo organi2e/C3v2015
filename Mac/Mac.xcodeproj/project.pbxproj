@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		87062F881D813B68009F13B4 /* Command.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87062F871D813B68009F13B4 /* Command.swift */; };
 		870723AF1D7EDB9600A9333F /* Circular.swift in Sources */ = {isa = PBXBuildFile; fileRef = 870723AE1D7EDB9600A9333F /* Circular.swift */; };
 		870EA92C1D54ADD3008C3380 /* mtlblas.metal in Sources */ = {isa = PBXBuildFile; fileRef = 870EA9261D54ADBF008C3380 /* mtlblas.metal */; };
 		870EA92D1D54ADD3008C3380 /* mtlmath.metal in Sources */ = {isa = PBXBuildFile; fileRef = 870EA9271D54ADBF008C3380 /* mtlmath.metal */; };
@@ -171,6 +172,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		87062F871D813B68009F13B4 /* Command.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Command.swift; path = "../../C³/Command.swift"; sourceTree = "<group>"; };
 		870723AE1D7EDB9600A9333F /* Circular.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Circular.swift; path = "../../C³/Circular.swift"; sourceTree = "<group>"; };
 		870EA9261D54ADBF008C3380 /* mtlblas.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = mtlblas.metal; path = "../../C³/mtlblas.metal"; sourceTree = "<group>"; };
 		870EA9271D54ADBF008C3380 /* mtlmath.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = mtlmath.metal; path = "../../C³/mtlmath.metal"; sourceTree = "<group>"; };
@@ -456,6 +458,7 @@
 		87B1FD021D05461100981CF4 /* C³ */ = {
 			isa = PBXGroup;
 			children = (
+				87062F871D813B68009F13B4 /* Command.swift */,
 				87C3563C1D8124AC00F618CE /* Data.swift */,
 				8746B0881D80712E0052C001 /* mtlarcane.metal */,
 				875DD28C1D6D81E000A5C250 /* mtldecay.metal */,
@@ -489,8 +492,8 @@
 				87C356391D81231000F618CE /* ManagedObject.swift */,
 				875DD1C01D6AD8A900A5C250 /* Misc.swift */,
 				87CFDE971D7441AB00716188 /* Distribution.swift */,
-				87BCEBFF1D4D765000FC3099 /* Gaussian.swift */,
 				875DD1A31D66B25300A5C250 /* Cauchy.swift */,
+				87BCEBFF1D4D765000FC3099 /* Gaussian.swift */,
 				874D7F121D7D36F80055162F /* Chebyshev.swift */,
 				87AE7C9C1D767B290061F229 /* GradientOptimizer.swift */,
 				87AE7C9F1D76D1EB0061F229 /* Momentum.swift */,
@@ -976,6 +979,7 @@
 				87AE7C9D1D767B290061F229 /* GradientOptimizer.swift in Sources */,
 				870723AF1D7EDB9600A9333F /* Circular.swift in Sources */,
 				87CFDE981D7441AB00716188 /* Distribution.swift in Sources */,
+				87062F881D813B68009F13B4 /* Command.swift in Sources */,
 				87C356371D811DA600F618CE /* Buffer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

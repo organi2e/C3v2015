@@ -10,6 +10,8 @@ import XCTest
 @testable import C3
 class CauchyTests: XCTestCase {
 	
+	let context: Context = try!Context()
+	
 	func rmse(x: [Float], _ y: [Float]) -> Float {
 		let err: [Float] = zip(x, y).map { $0.0 - $0.1 }
 		let se: [Float] = err.map { $0 * $0 }
@@ -214,17 +216,15 @@ class CauchyTests: XCTestCase {
 		
 		let rows: Int = 256
 		let cols: Int = 256
-		let ψ: [UInt32] = [UInt32](count: rows*cols, repeatedValue: 0)
-		let μ: [Float] = [Float](count: rows*cols, repeatedValue: srcμ)
-		let σ: [Float] = [Float](count: rows*cols, repeatedValue: srcσ)
-		let χ: [Float] = [Float](count: rows*cols, repeatedValue: 0.0)
+		let μ: Buffer = context.newBuffer([Float](count: rows*cols, repeatedValue: srcμ))
+		let σ: Buffer = context.newBuffer([Float](count: rows*cols, repeatedValue: srcσ))
+		let χ: Buffer = context.newBuffer(length: sizeof(Float)*rows*cols)
 		
-		arc4random_buf(UnsafeMutablePointer<Void>(ψ), sizeof(UInt32)*rows*cols)
-		
-		CauchyDistribution.rng(UnsafeMutablePointer<Float>(χ), ψ: ψ, μ: μ, σ: σ, count: rows*cols)
+		CauchyDistribution.rng(context, χ: χ, μ: μ, σ: σ, count: rows*cols)
+		context.join()
 		//CauchyDistribution.rng(χ, ψ: ψ, μ: LaMatrice(μ, rows: rows, cols: cols, deallocator: nil), σ: LaMatrice(σ, rows: rows, cols: cols, deallocator: nil))
 		
-		let(dstμ, dstσ) = CauchyDistribution.est(χ, η: 0.8, K: 1024)
+		let(dstμ, dstσ) = CauchyDistribution.est(χ.vecteur.array, η: 0.8, K: 1024)
 		
 		print(srcμ, dstμ)
 		print(srcσ, dstσ)

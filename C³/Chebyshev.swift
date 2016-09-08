@@ -10,6 +10,21 @@ import CoreData
 import simd
 
 internal class ChebyshevDistribution: Distribution {
+	
+	func cdf(compute: Compute, χ: Buffer, μ: Buffer, λ: Buffer) {}
+	func pdf(compute: Compute, χ: Buffer, μ: Buffer, λ: Buffer) {}
+	func rng(compute: Compute, χ: Buffer, μ: Buffer, σ: Buffer) {}
+	func gainχ(χ: LaObjet) -> (μ: LaObjet, σ: LaObjet) {
+		return(χ, LaValuer(1))
+	}
+	func Δμ(Δ Δ: LaObjet, μ: LaObjet) -> LaObjet {
+		return Δ
+	}
+	func Δσ(Δ Δ: LaObjet, σ: LaObjet) -> LaObjet {
+		return Δ
+	}
+	func synthesize(χ χ: Buffer, μ: Buffer, λ: Buffer, refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) {}
+	/*
 	static func cdf(χ: Float, μ: Float, σ: Float) -> Float {
 		return Float(
 			0.0
@@ -28,6 +43,8 @@ internal class ChebyshevDistribution: Distribution {
 	}
 	static func rng(χ: UnsafeMutablePointer<Float>, ψ: UnsafePointer<UInt32>, μ: UnsafePointer<Float>, σ: UnsafePointer<Float>, count: Int) {
 	}
+	
+	static func generate(context: Context, compute: Compute, χ: Buffer, μ: Buffer, σ: Buffer) {}
 	static func rng(χ: [Float], ψ: [UInt32], μ: LaObjet, σ: LaObjet) {
 		let count: Int = χ.count
 		assert(μ.count==count)
@@ -144,4 +161,5 @@ internal class ChebyshevDistribution: Distribution {
 			Float(est.y)
 		)
 	}
+	*/
 }

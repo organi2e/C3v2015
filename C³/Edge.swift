@@ -18,26 +18,26 @@ extension Edge {
 	@NSManaged private var output: Cell
 }
 extension Edge {
-	func collect(ignore: Set<Cell>) -> (χ: LaObjet, μ: LaObjet, σ: LaObjet) {
-		let state: LaObjet = input.collect(ignore)
+	func collect(context: Context, compute: Compute, ignore: Set<Cell>) -> (χ: LaObjet, μ: LaObjet, σ: LaObjet) {
+		let state: LaObjet = input.collect(context, compute: compute, ignore: ignore)
 		return(
 			χ: matrix_product(χ, state),
 			μ: matrix_product(μ, state),
 			σ: matrix_product(σ, state)
 		)
 	}
-	func correct(ignore: Set<Cell>) -> LaObjet {
-		let Δ: (χ: LaObjet, μ: LaObjet, σ: LaObjet) = output.correct(ignore)
-		let κ: LaObjet = input.collect()
-		let distribution: Distribution.Type = output.distribution
+	func correct(compute: Compute, ignore: Set<Cell>) -> LaObjet {
+		let Δ: (χ: LaObjet, μ: LaObjet, σ: LaObjet) = output.correct(compute: compute, ignore: ignore)
+		let κ: LaObjet = LaValuer(0)
+		let distribution: Distribution = output.distribution
 		let weights: (μ: LaObjet, σ: LaObjet) = distribution.gainχ(κ)
 		let Δμ: LaObjet = outer_product(Δ.μ, weights.μ)
 		let Δσ: LaObjet = outer_product(Δ.σ, weights.σ)
 		update(distribution, Δμ: Δμ, Δσ: Δσ)
 		return matrix_product(χ.T, Δ.χ)
 	}
-	func collect_clear() {
-		shuffle(output.distribution)
+	func collect_clear(compute: Compute) {
+		refresh(compute: compute, distribution: output.distribution)
 		input.collect_clear()
 	}
 	func correct_clear() {

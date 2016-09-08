@@ -8,25 +8,27 @@
 
 #include <metal_stdlib>
 using namespace metal;
-
-float4 cauchyPDF(float4 const, float4 const, float const);
-float4 cauchyCDF(float4 const, float4 const, float const);
-
-float4 cauchyPDF(float4 const mu, float4 const sigma, float const pi) {
-	return sigma / ( mu * mu + sigma * sigma ) / pi;
+kernel void cauchyCDF(device float4 * const value [[ buffer(0) ]],
+					  device const float4 * const mu [[ buffer(1) ]],
+					  device const float4 * const lambda [[ buffer(2) ]],
+					  constant const float & M_1_PI [[ buffer(3) ]],
+					  uint const n [[ thread_position_in_grid ]],
+					  uint const N [[ threads_per_grid ]]) {
+	float4 m = mu[n];
+	float4 l = lambda[n];
+	float4 v = m * l;
+	value[n] = M_1_PI * atan(v) + 0.5;
 }
-
-float4 cauchyCDF(float4 const mu, float4 const sigma, float const pi) {
-	return atan ( mu / sigma ) / pi + 0.5;
-}
-
-kernel void cauchyShuffle(device float4 * const value [[ buffer(0) ]],
-						  device const float4 * const mu [[ buffer(1) ]],
-						  device const float4 * const sigma [[ buffer(2) ]],
-						  device const float4 * const uniform [[ buffer(3) ]],
-						  uint const n [[ thread_position_in_grid ]],
-						  uint const N [[ threads_per_grid ]]) {
-	value[n] = mu[n] + sigma[n] * tanpi ( uniform [ n ] - 0.5 );
+kernel void cauchyPDF(device float4 * const value [[ buffer(0) ]],
+					  device const float4 * const mu [[ buffer(1) ]],
+					  device const float4 * const lambda [[ buffer(2) ]],
+					  constant const float & M_1_PI [[ buffer(3) ]],
+					  uint const n [[ thread_position_in_grid ]],
+					  uint const N [[ threads_per_grid ]]) {
+	float4 m = mu[n];
+	float4 l = lambda[n];
+	float4 v = m * l;
+	value[n] = M_1_PI * l / ( 1 + v * v );
 }
 kernel void cauchyRNG(device float4 * const value [[ buffer(0) ]],
 					  device const float4 * const mu [[ buffer(1) ]],
@@ -41,7 +43,7 @@ kernel void cauchyRNG(device float4 * const value [[ buffer(0) ]],
 	uint const K = param.w;
 	uint4 seq = select(seeds[t], -1, seeds[t]==0);
 	for ( uint k = t ; k < K ; k += T ) {
-		float4 const u = (float4(seq)+0.5)/4294967296.0;
+		float4 const u = ( float4 ( seq ) + 0.5 ) / 4294967296.0;
 		value [ k ] = tanpi( u - 0.5 ) * sigma [ k ] + mu [ k ];
 		seq ^= seq >> a;
 		seq ^= seq << b;

@@ -6,21 +6,34 @@
 //
 //
 
-import Accelerate
 import CoreData
-import simd
 public class Cell: NSManagedObject {
-	
+
 	private enum Ready {
-		case ψ
-		case κ
-		case δ
+		case state
+		case train
+		case delta
 	}
-	private let group: dispatch_group_t = dispatch_group_create()
+	
+	private struct Level {
+		let φ: Buffer
+		let μ: Buffer
+		let λ: Buffer
+	}
+	
 	private var ready: Set<Ready> = Set<Ready>()
-	private var state: RingBuffer<(ψ: [Float], κ: [Float], δ: [Float])> = RingBuffer<(ψ: [Float], κ: [Float], δ: [Float])>(array: [])
-	private var level: RingBuffer<(χ: [Float], μ: [Float], λ: [Float])> = RingBuffer<(χ: [Float], μ: [Float], λ: [Float])>(array: [])
-	private var delta: RingBuffer<(χ: [Float], μ: [Float], σ: [Float])> = RingBuffer<(χ: [Float], μ: [Float], σ: [Float])>(array: [])
+	
+	private var state: RingBuffer<Buffer> = RingBuffer<Buffer>(array: [])
+	private var train: RingBuffer<Buffer> = RingBuffer<Buffer>(array: [])
+	private var error: RingBuffer<Buffer> = RingBuffer<Buffer>(array: [])
+	private var nabla: RingBuffer<Buffer> = RingBuffer<Buffer>(array: [])
+	
+	private var level: RingBuffer<Level> = RingBuffer<Level>(array: [])
+	
+	internal private(set) var distribution: Distribution = FalseDistribution()
+	
+	private var activate: Pipeline?
+	private var derivate: Pipeline?
 	
 }
 
@@ -43,13 +56,6 @@ extension Cell {
 		}
 		set {
 			distributionType = newValue.rawValue
-		}
-	}
-	internal var distribution: Distribution.Type {
-		switch type {
-		case .Gauss: return GaussianDistribution.self
-		case .Cauchy: return CauchyDistribution.self
-		case .False: return FalseDistribution.self
 		}
 	}
 }
@@ -79,91 +85,175 @@ extension Cell {
 		guard let context: Context = managedObjectContext as? Context else {
 			fatalError(Context.Error.InvalidContext.rawValue)
 		}
+		activate = try?context.newPipeline("cellActivate")
+		derivate = try?context.newPipeline("cellDerivate")
+		switch type {
+		case .False:
+			distribution = FalseDistribution()
+		case .Cauchy:
+			distribution = try!CauchyDistribution(context: context)
+		case .Gauss:
+			distribution = try!GaussianDistribution(context: context)
+		}
+		
 		let count: Int = 2
 		
-		state = RingBuffer<(ψ: [Float], κ: [Float], δ: [Float])>(array: (0..<count).map{(_)in
-			(
-				ψ: [Float](count: width, repeatedValue: 0),
-				κ: [Float](count: width, repeatedValue: 0),
-				δ: [Float](count: width, repeatedValue: 0)
-			)
+		state = RingBuffer<Buffer>(array: (0..<count).map {(_)in
+			context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared)
 		})
-		level = RingBuffer<(χ: [Float], μ: [Float], λ: [Float])>(array: (0..<count).map{(_)in
-			(
-				χ: [Float](count: width, repeatedValue: 0),
-				μ: [Float](count: width, repeatedValue: 0),
-				λ: [Float](count: width, repeatedValue: 0)
-			)
+		train = RingBuffer<Buffer>(array: (0..<count).map {(_)in
+			context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared)
 		})
-		delta = RingBuffer<(χ: [Float], μ: [Float], σ: [Float])>(array: (0..<count).map{(_)in
-			(
-				χ: [Float](count: width, repeatedValue: 0),
-				μ: [Float](count: width, repeatedValue: 0),
-				σ: [Float](count: width, repeatedValue: 0)
+		error = RingBuffer<Buffer>(array: (0..<count).map {(_)in
+			context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared)
+		})
+		nabla = RingBuffer<Buffer>(array: (0..<count).map {(_)in
+			context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared)
+		})
+		level = RingBuffer<Level>(array: (0..<count).map {(_)in
+			Level(
+				φ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared),
+				μ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared),
+				λ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared)
 			)
 		})
 	}
 }
 extension Cell {
 	public func collect_clear() {
-		if ready.contains(.κ) {
-			ready.remove(.κ)
-			input.forEach {
-				$0.collect_clear()
+		if ready.contains(.state) {
+			ready.remove(.state)
+			
+			guard let context: Context = managedObjectContext as? Context else {
+				assertionFailure()
+				return
 			}
-			bias.collect_clear()
+			let command: Command = context.newCommand()
+			let compute: Compute = command.computeCommandEncoder()
+
+			input.forEach {
+				$0.collect_clear(compute)
+			}
+			bias.collect_clear(compute)
+			
+			train.progress()
 			state.progress()
 			level.progress()
+			
+			compute.endEncoding()
+			command.commit()
 		}
 	}
 	public func correct_clear() {
-		if ready.contains(.δ) {
-			ready.remove(.δ)
+		if ready.contains(.delta) {
+			ready.remove(.delta)
 			output.forEach {
 				$0.correct_clear()
 			}
 			bias.correct_clear()
-			delta.progress()
+			nabla.progress()
 		}
-		ready.remove(.ψ)
+		ready.remove(.train)
 	}
-	public func collect(ignore: Set<Cell> = []) -> LaObjet {
-		if ignore.contains(self) {
-			return _κ
-		} else {
-			if !ready.contains(.κ) {
-				let refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)] = input.map { $0.collect(ignore.union([self])) } + [ bias.collect() ]
-				distribution.synthesize(χ: UnsafeMutablePointer<Float>(level.new.χ), μ: UnsafeMutablePointer<Float>(level.new.μ), λ: UnsafeMutablePointer<Float>(level.new.λ), refer: refer, count: width)
-				self.dynamicType.step(y: UnsafeMutablePointer<Float>(state.new.κ), x: level.new.χ, count: width)
-				ready.insert(.κ)
-			}
-			return κ
+	public func collect() {
+		guard let context: Context = managedObjectContext as? Context else {
+			fatalError(Context.Error.InvalidContext.rawValue)
 		}
+		let command: Command = context.newCommand()
+		let compute: Compute = command.computeCommandEncoder()
+		collect(context, compute: compute, ignore: [])
+		compute.endEncoding()
+		command.commit()
+		command.waitUntilCompleted()
 	}
-	public func correct(ignore: Set<Cell> = []) -> (LaObjet, LaObjet, LaObjet) {
+	internal func collect(context: Context, compute parent: Compute, ignore: Set<Cell>) -> LaObjet {
 		if ignore.contains(self) {
-			return (_Δχ, _Δμ, _Δσ)
+			return _χ
 		} else {
-			if !ready.contains(.δ) {
-				if ready.contains(.ψ) {
-					let ψ: LaObjet = LaMatrice(state.new.ψ, rows: width, cols: 1, deallocator: nil)
-					let κ: LaObjet = LaMatrice(state.new.κ, rows: width, cols: 1, deallocator: nil)
-					let δ: LaObjet = κ - ψ
-					δ.getBytes(state.new.δ)
+			if !ready.contains(.state) {
+				
+				let command: Command = context.newCommand()
+				let compute: Compute = command.computeCommandEncoder()
+				
+				let refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)] = input.map { $0.collect(context, compute: compute, ignore: ignore.union([self])) } + [ bias.collect() ]
+				
+				compute.endEncoding()
+				command.commit()
+				command.waitUntilCompleted()
+				
+				distribution.synthesize(χ: level.new.φ, μ: level.new.μ, λ: level.new.λ, refer: refer)
+				
+				if let activate: Pipeline = activate {
+					parent.setComputePipelineState(activate)
+					parent.setBuffer(state.new, offset: 0, atIndex: 0)
+					parent.setBuffer(level.new.φ, offset: 0, atIndex: 1)
+					parent.dispatch(grid: ((width+3)/4, 1, 1), threads: (1, 1, 1))
 				} else {
-					let δ: LaObjet = output.map { $0.correct(ignore.union([self])) } .reduce(LaValuer(0)) { $0.0 + $0.1 }
-					δ.getBytes(state.new.δ)
+					let yref: UnsafeMutablePointer<Float> = state.new.bytes
+					let xref: UnsafeMutablePointer<Float> = level.new.φ.bytes
+					for k in 0..<width {
+						yref[k] = 0 < xref[k] ? 1 : 0
+					}
+					assertionFailure()
 				}
-				distribution.derivate((χ: UnsafeMutablePointer<Float>(delta.new.χ), μ: UnsafeMutablePointer<Float>(delta.new.μ), σ: UnsafeMutablePointer<Float>(delta.new.σ)), δ: state.new.δ, μ: level.new.μ, λ: level.new.λ, count: width)
-				ready.insert(.δ)
-				/*
-				bias.update(distribution,
-					Δμ: Δμ,
-					Δσ: Δσ
-				)*/
-				bias.correct(ignore)
+				
+				ready.insert(.state)
 			}
-			return (Δχ, Δμ, Δσ)
+			return χ
+		}
+	}
+	public func correct() {
+		guard let context: Context = managedObjectContext as? Context else {
+			fatalError(Context.Error.InvalidContext.rawValue)
+		}
+		let command: Command = context.newCommand()
+		let compute: Compute = command.computeCommandEncoder()
+		correct(compute: compute, ignore: [])
+		compute.endEncoding()
+		command.commit()
+		command.waitUntilCompleted()
+	}
+	internal func correct(compute child: Compute, ignore: Set<Cell>) -> (LaObjet, LaObjet, LaObjet) {
+		if ignore.contains(self) {
+			return (_Δ, _ϝ, -1 * _ϝ * _μ * _λ)
+		} else {
+			if !ready.contains(.delta) {
+				
+				guard let context: Context = managedObjectContext as? Context else {
+					fatalError(Context.Error.InvalidContext.rawValue)
+				}
+				
+				let command: Command = context.newCommand()
+				let compute: Compute = command.computeCommandEncoder()
+				
+				let δ: LaObjet = ready.contains(.train) ? χ - ψ : output.map { $0.correct(compute, ignore: ignore.union([self])) } .reduce(LaValuer(0)) { $0.0 + $0.1 }
+				
+				compute.endEncoding()
+				command.commit()
+				command.waitUntilCompleted()
+				
+				δ.getBytes(error.new.bytes)
+				
+				if let derivate: Pipeline = derivate {
+					child.setComputePipelineState(derivate)
+					child.setBuffer(error.new, offset: 0, atIndex: 0)
+					child.setBuffer(error.new, offset: 0, atIndex: 1)
+					child.dispatch(grid: ((width+3)/4, 1, 1), threads: (1, 1, 1))
+				} else {
+					assertionFailure()
+				}
+				distribution.pdf(child, χ: nabla.new, μ: level.new.μ, λ: level.new.λ)
+				
+				ready.insert(.delta)
+				do {
+					let command: Command = context.newCommand()
+					let compute: Compute = command.computeCommandEncoder()
+					bias.correct(compute, ignore: ignore)
+					compute.endEncoding()
+					command.commit()
+				}
+			}
+			return (Δ, ϝ, -1 * ϝ * μ * λ)
 		}
 	}
 	internal func chain(x: LaObjet) -> LaObjet {
@@ -172,90 +262,53 @@ extension Cell {
 }
 extension Cell {
 	
-	internal var κ: LaObjet { return LaMatrice(state.new.κ, rows: width, cols: 1, deallocator: nil) }
-	internal var δ: LaObjet { return LaMatrice(state.new.δ, rows: width, cols: 1, deallocator: nil) }
+	internal var χ: LaObjet { return LaMatrice(state.new.bytes, rows: width, cols: 1, deallocator: nil) }
+	internal var ψ: LaObjet { return LaMatrice(train.new.bytes, rows: width, cols: 1, deallocator: nil) }
+	internal var Δ: LaObjet { return LaMatrice(error.new.bytes, rows: width, cols: 1, deallocator: nil) }
+	internal var ϝ: LaObjet { return LaMatrice(nabla.new.bytes, rows: width, cols: 1, deallocator: nil) }
 	
-	internal var _κ: LaObjet { return LaMatrice(state.old.κ, rows: width, cols: 1, deallocator: nil) }
-	internal var _δ: LaObjet { return LaMatrice(state.old.δ, rows: width, cols: 1, deallocator: nil) }
+	internal var _χ: LaObjet { return LaMatrice(state.old.bytes, rows: width, cols: 1, deallocator: nil) }
+	internal var _ψ: LaObjet { return LaMatrice(train.old.bytes, rows: width, cols: 1, deallocator: nil) }
+	internal var _Δ: LaObjet { return LaMatrice(error.old.bytes, rows: width, cols: 1, deallocator: nil) }
+	internal var _ϝ: LaObjet { return LaMatrice(nabla.old.bytes, rows: width, cols: 1, deallocator: nil) }
 	
-	internal var χ: LaObjet { return LaMatrice(level.new.χ, rows: width, cols: 1, deallocator: nil) }
-	internal var μ: LaObjet { return LaMatrice(level.new.μ, rows: width, cols: 1, deallocator: nil) }
-	internal var λ: LaObjet { return LaMatrice(level.new.λ, rows: width, cols: 1, deallocator: nil) }
-	
-	internal var _χ: LaObjet { return LaMatrice(level.old.χ, rows: width, cols: 1, deallocator: nil) }
-	internal var _μ: LaObjet { return LaMatrice(level.old.μ, rows: width, cols: 1, deallocator: nil) }
-	internal var _λ: LaObjet { return LaMatrice(level.old.λ, rows: width, cols: 1, deallocator: nil) }
-	
-	internal var Δχ: LaObjet { return LaMatrice(delta.new.χ, rows: width, cols: 1, deallocator: nil) }
-	internal var Δσ: LaObjet { return LaMatrice(delta.new.σ, rows: width, cols: 1, deallocator: nil) }
-	internal var Δμ: LaObjet { return LaMatrice(delta.new.μ, rows: width, cols: 1, deallocator: nil) }
-	
-	internal var _Δχ: LaObjet { return LaMatrice(delta.old.χ, rows: width, cols: 1, deallocator: nil) }
-	internal var _Δμ: LaObjet { return LaMatrice(delta.old.μ, rows: width, cols: 1, deallocator: nil) }
-	internal var _Δσ: LaObjet { return LaMatrice(delta.old.σ, rows: width, cols: 1, deallocator: nil) }
+	internal var φ: LaObjet { return LaMatrice(level.new.φ.bytes, rows: width, cols: 1, deallocator: nil) }
+	internal var μ: LaObjet { return LaMatrice(level.new.μ.bytes, rows: width, cols: 1, deallocator: nil) }
+	internal var λ: LaObjet { return LaMatrice(level.new.λ.bytes, rows: width, cols: 1, deallocator: nil) }
 
-	internal var φ: (χ: LaObjet, μ: LaObjet, λ: LaObjet) {
-		return (
-			χ: LaValuer(0),
-			μ: LaValuer(0),
-			λ: LaValuer(0)
-		)
-	}
-	
-}
-extension Cell {
-	internal static func step(y y: UnsafeMutablePointer<Float>, x: UnsafePointer<Float>, count: Int) {
-		let yref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(y)
-		let xref: UnsafePointer<float4> = UnsafePointer<float4>(x)
-		let zero: float4 = float4(0)
-		(0..<count/4).forEach {
-			yref[$0] = vector_step(zero, xref[$0])
-		}
-	}
-	internal static func sign(y y: UnsafeMutablePointer<Float>, x: UnsafePointer<Float>, count: Int) {
-		let yref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(y)
-		let xref: UnsafePointer<float4> = UnsafePointer<float4>(x)
-		(0..<count/4).forEach {
-			yref[$0] = vector_sign(xref[$0])
-		}
-	}
+	internal var _φ: LaObjet { return LaMatrice(level.old.φ.bytes, rows: width, cols: 1, deallocator: nil) }
+	internal var _μ: LaObjet { return LaMatrice(level.old.μ.bytes, rows: width, cols: 1, deallocator: nil) }
+	internal var _λ: LaObjet { return LaMatrice(level.old.λ.bytes, rows: width, cols: 1, deallocator: nil) }
+
 }
 extension Cell {
 	public var active: [Bool] {
 		set {
 			if 0 < width {
-				NSData(bytesNoCopy: UnsafeMutablePointer(newValue.map({Float($0)})), length: sizeof(Float)*newValue.count, freeWhenDone: false).getBytes(UnsafeMutablePointer<Void>(state.new.κ), length: sizeof(Float)*state.new.κ.count)
-				ready.insert(.κ)
+				var ref: [Float] = newValue.map { Float($0) }
+				Data(bytesNoCopy: &ref, length: sizeof(Float)*ref.count, freeWhenDone: false).getBytes(state.new.bytes, length: state.new.length)
+				ready.insert(.state)
 			}
 		}
 		get {
-			return 0 < width ? collect().array.map { Bool($0) } : []
+			collect()
+			return 0 < width ? UnsafeMutableBufferPointer<Float>(start: state.new.bytes, count: state.new.length/sizeof(Float)) .map { Bool($0) } : []
 		}
 	}
 	public var answer: [Bool] {
 		set {
 			if 0 < width {
-				NSData(bytesNoCopy: UnsafeMutablePointer(newValue.map({Float($0)})), length: sizeof(Float)*state.new.ψ.count, freeWhenDone: false).getBytes(UnsafeMutablePointer<Void>(state.new.ψ), length: sizeof(Float)*state.new.ψ.count)
-				ready.insert(.ψ)
+				var ref: [Float] = newValue.map { Float($0) }
+				Data(bytesNoCopy: &ref, length: sizeof(Float)*ref.count, freeWhenDone: false).getBytes(train.new.bytes, length: train.new.length)
+				ready.insert(.train)
 			}
 		}
 		get {
-			return 0 < width ? state.new.ψ.map { Bool($0) } : []
+			return 0 < width ? UnsafeMutableBufferPointer<Float>(start: train.new.bytes, count: train.new.length/sizeof(Float)) .map { Bool($0) } : []
 		}
 	}
 	public var isRecurrent: Bool {
 		return circular != nil || decay != nil
-	}
-}
-extension Cell {
-	internal func enter() {
-		dispatch_group_enter(group)
-	}
-	internal func leave() {
-		dispatch_group_leave(group)
-	}
-	internal func merge() {
-		dispatch_group_wait(group, DISPATCH_TIME_FOREVER)
 	}
 }
 extension Context {

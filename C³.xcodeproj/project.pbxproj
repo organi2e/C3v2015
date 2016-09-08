@@ -108,6 +108,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		87062F781D813B43009F13B4 /* Command.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Command.swift; path = "C³/Command.swift"; sourceTree = "<group>"; };
 		870723AA1D7EDB7A00A9333F /* Circular.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Circular.swift; path = "C³/Circular.swift"; sourceTree = "<group>"; };
 		870EA91B1D54AD77008C3380 /* mtlblas.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = mtlblas.metal; path = "C³/mtlblas.metal"; sourceTree = "<group>"; };
 		870EA9241D54AD9A008C3380 /* mtlrand.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = mtlrand.metal; path = "C³/mtlrand.metal"; sourceTree = "<group>"; };
@@ -325,6 +326,7 @@
 				8746B0791D80711D0052C001 /* mtlarcane.metal */,
 				87C356381D81230200F618CE /* ManagedObject.swift */,
 				87C3563B1D81249B00F618CE /* Data.swift */,
+				87062F781D813B43009F13B4 /* Command.swift */,
 			);
 			name = "C³";
 			sourceTree = "<group>";

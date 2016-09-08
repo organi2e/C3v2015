@@ -18,6 +18,15 @@ internal protocol RandomNumberGeneratable {
 	func shuffle(dist: Distribution.Type)
 }
 internal protocol Distribution {
+	
+	func cdf(compute: Compute, χ: Buffer, μ: Buffer, λ: Buffer)
+	func pdf(compute: Compute, χ: Buffer, μ: Buffer, λ: Buffer)
+	func rng(compute: Compute, χ: Buffer, μ: Buffer, σ: Buffer)
+	func gainχ(χ: LaObjet) -> (μ: LaObjet, σ: LaObjet)
+	func Δμ(Δ Δ: LaObjet, μ: LaObjet) -> LaObjet
+	func Δσ(Δ Δ: LaObjet, σ: LaObjet) -> LaObjet
+	func synthesize(χ χ: Buffer, μ: Buffer, λ: Buffer, refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)])
+	/*
 	static func cdf(χ: Float, μ: Float, σ: Float) -> Float
 	static func pdf(χ: Float, μ: Float, σ: Float) -> Float
 
@@ -36,11 +45,27 @@ internal protocol Distribution {
 	
 	static func synthesize(χ χ: UnsafeMutablePointer<Float>, μ: UnsafeMutablePointer<Float>, λ: UnsafeMutablePointer<Float>, refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)], count: Int)
 	//static func synthesize(χ χ: [Float], μ: [Float], λ: [Float], refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)])
-	
+	*/
 }
 internal class FalseDistribution: Distribution {
+	
+	func cdf(compute: Compute, χ: Buffer, μ: Buffer, λ: Buffer) {}
+	func pdf(compute: Compute, χ: Buffer, μ: Buffer, λ: Buffer) {}
+	func rng(compute: Compute, χ: Buffer, μ: Buffer, σ: Buffer) {}
+	func Δμ(Δ Δ: LaObjet, μ: LaObjet) -> LaObjet {
+		return LaValuer(1)
+	}
+	func Δσ(Δ Δ: LaObjet, σ: LaObjet) -> LaObjet {
+		return LaValuer(1)
+	}
+	func gainχ(χ: LaObjet) -> (μ: LaObjet, σ: LaObjet) {
+		return(χ, LaValuer(1))
+	}
+	func synthesize(χ χ: Buffer, μ: Buffer, λ: Buffer, refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) {}
+	/*
 	static func cdf(χ: Float, μ: Float, σ: Float) -> Float { return μ >= χ ? 0 : 1 }
 	static func pdf(χ: Float, μ: Float, σ: Float) -> Float { return μ != χ ? 0 : 1 }
+	static func generate(context: Context, compute: Compute, χ: Buffer, μ: Buffer, σ: Buffer) {}
 	static func rng(χ: UnsafeMutablePointer<Float>, ψ: UnsafePointer<UInt32>, μ: UnsafePointer<Float>, σ: UnsafePointer<Float>, count: Int) {
 		
 	}
@@ -92,4 +117,5 @@ internal class FalseDistribution: Distribution {
 		mix.μ.getBytes(μ)
 		vDSP_vclr(UnsafeMutablePointer<Float>(λ), 1, vDSP_Length(λ.count))
 	}
+	*/
 }

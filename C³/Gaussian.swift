@@ -8,6 +8,25 @@
 import Accelerate
 import simd
 internal class GaussianDistribution: Distribution {
+	
+	init(context: Context) throws {
+		
+	}
+	
+	func cdf(compute: Compute, χ: Buffer, μ: Buffer, λ: Buffer) {}
+	func pdf(compute: Compute, χ: Buffer, μ: Buffer, λ: Buffer) {}
+	func rng(compute: Compute, χ: Buffer, μ: Buffer, σ: Buffer) {}
+	func gainχ(χ: LaObjet) -> (μ: LaObjet, σ: LaObjet) {
+		return(χ, χ*χ)
+	}
+	func Δμ(Δ Δ: LaObjet, μ: LaObjet) -> LaObjet {
+		return Δ
+	}
+	func Δσ(Δ Δ: LaObjet, σ: LaObjet) -> LaObjet {
+		return Δ
+	}
+	func synthesize(χ χ: Buffer, μ: Buffer, λ: Buffer, refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) {}
+	/*
 	static func cdf(χ: Float, μ: Float, σ: Float) -> Float {
 		let level: Double = ( Double(χ) - Double(μ) ) / Double(σ)
 		return Float(
@@ -19,16 +38,6 @@ internal class GaussianDistribution: Distribution {
 		return Float(
 			M_SQRT1_2*M_2_SQRTPI*exp(-0.5*level*level)/Double(σ)
 		)
-	}
-	static func pdf(buffer: [Float], μ: Float, σ: Float) {
-	
-	}
-	/*
-	static func cdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
-	static func pdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
-	*/
-	static func rng(context: Context, χ: Buffer, μ: Buffer, σ: Buffer, count: Int) {
-	
 	}
 	static func rng(χ: UnsafeMutablePointer<Float>, ψ: UnsafePointer<UInt32>, μ: UnsafePointer<Float>, σ: UnsafePointer<Float>, count: Int) {
 		
@@ -167,4 +176,5 @@ internal class GaussianDistribution: Distribution {
 		mix.λ.getBytes(λ)
 		vvrsqrtf(UnsafeMutablePointer<Float>(λ), λ, &len)
 	}
+	*/
 }

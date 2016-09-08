@@ -175,6 +175,15 @@ extension Context {
 		}
 		return true
 	}
+	internal func newCommand() -> Command {
+		return mtl.queue.commandBuffer()
+	}
+	internal func newPipeline(name: String) throws -> Pipeline {
+		guard let function: MTLFunction = mtl.functions[name] else {
+			throw Context.Error.Metal.PipelineNotAvailable(function: name)
+		}
+		return try mtl.device.newComputePipelineStateWithFunction(function)
+	}
 	internal func newComputeCommand (sync sync: Bool = false, function name: String, grid: (Int, Int, Int), threads: (Int, Int, Int), schedule: (()->())? = nil, complete: (()->())? = nil, configure: MTLComputeCommandEncoder->()) -> Bool {
 			if computePipelineCache.indexForKey(name) == nil {
 				guard let function: MTLFunction = mtl.functions[name] else {

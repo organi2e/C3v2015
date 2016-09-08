@@ -6,10 +6,108 @@
 //
 //
 import Accelerate
-import CoreData
-import simd
-
 internal class CauchyDistribution: Distribution {
+	
+	private let cdf: Pipeline
+	private let pdf: Pipeline
+	private let rng: Pipeline
+	
+	init(context: Context) throws {
+		cdf = try context.newPipeline("cauchyCDF")
+		pdf = try context.newPipeline("cauchyPDF")
+		rng = try context.newPipeline("cauchyRNG")
+	}
+	
+	func cdf(compute: Compute, χ: Buffer, μ: Buffer, λ: Buffer) {
+		
+		let length: Int = min(χ.length, μ.length, λ.length)
+		let count: Int = length / sizeof(Float)
+		var m_1_pi: Float = Float(M_1_PI)
+		
+		assert(length==χ.length)
+		assert(length==μ.length)
+		assert(length==λ.length)
+		
+		compute.setComputePipelineState(cdf)
+		compute.setBuffer(χ, offset: 0, atIndex: 0)
+		compute.setBuffer(μ, offset: 0, atIndex: 1)
+		compute.setBuffer(λ, offset: 0, atIndex: 2)
+		compute.setBytes(&m_1_pi, length: sizeofValue(m_1_pi), atIndex: 3)
+		compute.dispatch(grid: ((count+3)/4, 1, 1), threads: (1, 1, 1))
+		
+	}
+	func pdf(compute: Compute, χ: Buffer, μ: Buffer, λ: Buffer) {
+		
+		let length: Int = min(χ.length, μ.length, λ.length)
+		let count: Int = length / sizeof(Float)
+		var m_1_pi: Float = Float(M_1_PI)
+		
+		assert(length==χ.length)
+		assert(length==μ.length)
+		assert(length==λ.length)
+		
+		compute.setComputePipelineState(pdf)
+		compute.setBuffer(χ, offset: 0, atIndex: 0)
+		compute.setBuffer(μ, offset: 0, atIndex: 1)
+		compute.setBuffer(λ, offset: 0, atIndex: 2)
+		compute.setBytes(&m_1_pi, length: sizeofValue(m_1_pi), atIndex: 3)
+		compute.dispatch(grid: ((count+3)/4, 1, 1), threads: (1, 1, 1))
+		
+	}
+	func rng(compute: Compute, χ: Buffer, μ: Buffer, σ: Buffer) {
+	
+		let length: Int = min(χ.length, μ.length, σ.length)
+		let count: Int = length / sizeof(Float)
+		
+		let block: Int = 256
+		let cache: [uint] = [uint](count: block, repeatedValue: 0)
+		let param: [uint] = [uint]([13, 17, 5, uint(count+3)/4])
+		
+		assert(length==χ.length)
+		assert(length==μ.length)
+		assert(length==σ.length)
+		
+		compute.setComputePipelineState(rng)
+		compute.setBuffer(χ, offset: 0, atIndex: 0)
+		compute.setBuffer(μ, offset: 0, atIndex: 1)
+		compute.setBuffer(σ, offset: 0, atIndex: 2)
+		compute.setBytes(cache, length: sizeof(uint)*cache.count, atIndex: 3)
+		compute.setBytes(param, length: sizeof(uint)*param.count, atIndex: 4)
+		compute.dispatch(grid: (block/4, 1, 1), threads: (1, 1, 1))
+		
+	}
+	func gainχ(χ: LaObjet) -> (μ: LaObjet, σ: LaObjet) {
+		return(χ, χ)
+	}
+	func Δμ(Δ Δ: LaObjet, μ: LaObjet) -> LaObjet {
+		return Δ
+	}
+	func Δσ(Δ Δ: LaObjet, σ: LaObjet) -> LaObjet {
+		return Δ
+	}
+	func synthesize(χ χ: Buffer, μ: Buffer, λ: Buffer, refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) {
+		
+		let length: Int = min(χ.length, μ.length, λ.length)
+		let count: Int = length / sizeof(Float)
+		
+		assert(length==χ.length)
+		assert(length==μ.length)
+		assert(length==λ.length)
+		
+		let mix: (χ: LaObjet, μ: LaObjet, λ: LaObjet) = refer.reduce((LaValuer(0), LaValuer(0), LaValuer(0))) {
+			( $0.0.0 + $0.1.χ, $0.0.1 + $0.1.1, $0.0.2 + $0.1.σ )
+		}
+		
+		mix.χ.getBytes(χ.bytes)
+		mix.μ.getBytes(μ.bytes)
+		mix.λ.getBytes(λ.bytes)
+		
+		vvrecf(λ.bytes, λ.bytes, [Int32(count)])
+		
+	}
+	
+	/*
+	static func generate(context: Context, compute: Compute, χ: Buffer, μ: Buffer, σ: Buffer) {}
 	static func cdf(χ: Float, μ: Float, σ: Float) -> Float {
 		let level: Double = (Double(χ)-Double(μ))/Double(σ)
 		return Float(
@@ -37,11 +135,38 @@ internal class CauchyDistribution: Distribution {
 		}
 	}
 	*/
+	static func rng(encoder: MTLComputeCommandEncoder, χ: Buffer, μ: Buffer, σ: Buffer) {
+		let count: Int = min(χ.length, μ.length, σ.length) / sizeof(Float)
+		
+		assert(count*sizeof(Float)==χ.length)
+		assert(count*sizeof(Float)==μ.length)
+		assert(count*sizeof(Float)==σ.length)
+		
+		let block: Int = 256
+		let cache: [UInt32] = [UInt32](count: block, repeatedValue: 0)
+		
+
+		encoder.setBuffer(χ, offset: 0, atIndex: 0)
+		encoder.setBuffer(μ, offset: 0, atIndex: 1)
+		encoder.setBuffer(σ, offset: 0, atIndex: 2)
+		encoder.setBytes(cache, length: sizeof(UInt32)*cache.count, atIndex: 3)
+		encoder.setBytes([uint(13), uint(17), uint(5), uint((count+3)/4)], length: sizeof(uint)*4, atIndex: 4)
+		encoder.dispatchThreadgroups(MTLSize(width: block/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
+		
+	}
 	static func rng(context: Context, χ: Buffer, μ: Buffer, σ: Buffer, count: Int) {
-		context.newComputeCommand(sync: true, function: "cauchyRNG", grid: (count/4, 1, 1), threads: (1, 1, 1)) {
+		let bs: Int = 64
+		let seed: UnsafeMutablePointer<uint> = UnsafeMutablePointer<uint>.alloc(4*bs)
+		arc4random_buf(seed, sizeof(uint)*4*bs)
+		func complete() {
+			seed.dealloc(4*bs)
+		}
+		context.newComputeCommand(sync: true, function: "cauchyRNG", grid: (bs, 1, 1), threads: (1, 1, 1), complete: complete) {
 			$0.setBuffer(χ, offset: 0, atIndex: 0)
 			$0.setBuffer(μ, offset: 0, atIndex: 1)
 			$0.setBuffer(σ, offset: 0, atIndex: 2)
+			$0.setBytes(seed, length: sizeof(uint)*4*bs, atIndex: 3)
+			$0.setBytes([uint(13), uint(17), uint(5), uint((count+3)/4)], length: sizeof(uint)*4, atIndex: 4)
 		}
 	}
 	static func rng(χ: UnsafeMutablePointer<Float>, ψ: UnsafePointer<UInt32>, μ: UnsafePointer<Float>, σ: UnsafePointer<Float>, count: Int) {
@@ -189,4 +314,5 @@ internal class CauchyDistribution: Distribution {
 			Float(est.y)
 		)
 	}
+	*/
 }

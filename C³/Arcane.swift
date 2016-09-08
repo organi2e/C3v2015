@@ -5,6 +5,7 @@
 //  Created by Kota Nakano on 8/29/16.
 //
 //
+import Accelerate
 internal class Arcane: ManagedObject {
 
 	private var value: Buffer! = nil
@@ -18,6 +19,9 @@ internal class Arcane: ManagedObject {
 	//private var optimizer: GradientOptimizer = SGD()
 	private var μoptimizer: GradientOptimizer = SGD()
 	private var σoptimizer: GradientOptimizer = SGD()
+	
+	private var refreshKernel: Pipeline?
+	
 }
 internal extension Arcane {
 	@NSManaged private var location: Data
@@ -59,89 +63,92 @@ internal extension Arcane {
 		gradlogmu = context.newBuffer(length: length, options: .StorageModeShared)
 		gradlogsigma = context.newBuffer(length: length, options: .StorageModeShared)
 		
+		refreshKernel = try?context.newPipeline("arcaneRefresh")
+		
 		location.getBytes(logmu.bytes, length: logmu.length)
 		logscale.getBytes(logsigma.bytes, length: logsigma.length)
 		
 		setPrimitiveValue(Data(bytesNoCopy: logmu.bytes, length: logmu.length, freeWhenDone: false), forKey: self.dynamicType.locationKey)
 		setPrimitiveValue(Data(bytesNoCopy: logsigma.bytes, length: logsigma.length, freeWhenDone: false), forKey: self.dynamicType.logscaleKey)
 		
-		refresh()
+		μoptimizer = context.optimizerFactory(count)
+		σoptimizer = context.optimizerFactory(count)
 		
-		μoptimizer = (managedObjectContext as? Context)?.optimizerFactory(count) ?? μoptimizer
-		σoptimizer = (managedObjectContext as? Context)?.optimizerFactory(count) ?? σoptimizer
 	}
-	private func refresh() {
-		guard let context: Context = managedObjectContext as? Context else {
-			fatalError(Context.Error.InvalidContext.rawValue)
-		}
+	internal func refresh(compute compute: Compute, distribution: Distribution) {
 		let count: Int = rows * cols
-		self.dynamicType.refresh(context, μ: mu, σ: sigma, gradlogμ: gradlogmu, gradlogσ: gradlogsigma, logμ: logmu, logσ: logsigma, count: count)
-		//self.dynamicType.param(context, param: param, cover: cover, count: count)
-		//self.dynamicType.deriv(context, deriv: deriv, param: param, count: count)
-		//self.dynamicType.μ(cache.μ, logμ: cache.logμ, count: count)
-		//self.dynamicType.σ(cache.σ, logσ: cache.logσ, count: count)
+		willAccessValueForKey(self.dynamicType.locationKey)
+		willAccessValueForKey(self.dynamicType.logscaleKey)
+		if let refreshKernel: Pipeline = refreshKernel {
+			compute.setComputePipelineState(refreshKernel)
+			compute.setBuffer(mu, offset: 0, atIndex: 0)
+			compute.setBuffer(sigma, offset: 0, atIndex: 1)
+			compute.setBuffer(gradlogmu, offset: 0, atIndex: 2)
+			compute.setBuffer(gradlogsigma, offset: 0, atIndex: 3)
+			compute.setBuffer(logmu, offset: 0, atIndex: 4)
+			compute.setBuffer(logsigma, offset: 0, atIndex: 5)
+			compute.dispatch(grid: ((count+3)/4, 1, 1), threads: (1, 1, 1))
+		} else {
+			assertionFailure()
+		}
+		didAccessValueForKey(self.dynamicType.logscaleKey)
+		didAccessValueForKey(self.dynamicType.locationKey)
+		
+		distribution.rng(compute, χ: value, μ: mu, σ: sigma)
 	}
-	internal func update(distribution: Distribution.Type, Δμ: LaObjet, Δσ: LaObjet) {
+	internal func update(distribution: Distribution, Δμ: LaObjet, Δσ: LaObjet) {
 	
 		let count: Int = rows * cols
 		
 		assert(Δμ.count == count)
 		assert(Δσ.count == count)
 		
-		func update() {
-			
-			distribution.Δμ(
-				Δ: LaMatrice(gradlogmu.bytes, rows: Δμ.rows, cols: Δμ.cols, deallocator: nil) * Δμ,
-				μ: LaMatrice(mu.bytes, rows: Δμ.rows, cols: Δμ.cols, deallocator: nil))
-			.getBytes(gradlogmu.bytes)
-			
-			μoptimizer.optimize(
-				Δx: LaMatrice(gradlogmu.bytes, rows: count, cols: 1, deallocator: nil),
-				x: LaMatrice(logmu.bytes, rows: count, cols: 1, deallocator: nil)
-			).getBytes(gradlogmu.bytes)
-			
-			distribution.Δσ(
-				Δ: LaMatrice(gradlogsigma.bytes, rows: Δσ.rows, cols: Δσ.cols, deallocator: nil) * Δσ,
-				σ: LaMatrice(logsigma.bytes, rows: Δσ.rows, cols: Δσ.cols, deallocator: nil))
-			.getBytes(gradlogsigma.bytes)
+		distribution.Δμ(
+			Δ: LaMatrice(gradlogmu.bytes, rows: Δμ.rows, cols: Δμ.cols, deallocator: nil) * Δμ,
+			μ: LaMatrice(mu.bytes, rows: Δμ.rows, cols: Δμ.cols, deallocator: nil))
+		.getBytes(gradlogmu.bytes)
 		
-			μoptimizer.optimize(
-				Δx: LaMatrice(gradlogsigma.bytes, rows: count, cols: 1, deallocator: nil),
-				x: LaMatrice(logsigma.bytes, rows: count, cols: 1, deallocator: nil)
-			).getBytes(gradlogsigma.bytes)
-			
-			willChangeValueForKey(self.dynamicType.locationKey)
-			( logμ - gradlogμ ).getBytes(logmu.bytes)
-			didChangeValueForKey(self.dynamicType.locationKey)
+		μoptimizer.optimize(
+			Δx: LaMatrice(gradlogmu.bytes, rows: count, cols: 1, deallocator: nil),
+			x: LaMatrice(logmu.bytes, rows: count, cols: 1, deallocator: nil)
+		).getBytes(gradlogmu.bytes)
 		
-			willChangeValueForKey(self.dynamicType.logscaleKey)
-			( logσ - gradlogσ ).getBytes(logsigma.bytes)
-			didChangeValueForKey(self.dynamicType.logscaleKey)
-			
-			refresh()
-		}
-		//sync()
-		//dispatch_group_async(group, self.dynamicType.queue, update)
-		update()
+		distribution.Δσ(
+			Δ: LaMatrice(gradlogsigma.bytes, rows: Δσ.rows, cols: Δσ.cols, deallocator: nil) * Δσ,
+			σ: LaMatrice(logsigma.bytes, rows: Δσ.rows, cols: Δσ.cols, deallocator: nil))
+		.getBytes(gradlogsigma.bytes)
+	
+		σoptimizer.optimize(
+			Δx: LaMatrice(gradlogsigma.bytes, rows: count, cols: 1, deallocator: nil),
+			x: LaMatrice(logsigma.bytes, rows: count, cols: 1, deallocator: nil)
+		).getBytes(gradlogsigma.bytes)
+		
+		willChangeValueForKey(self.dynamicType.locationKey)
+		( logμ - gradlogμ ).getBytes(logmu.bytes)
+		didChangeValueForKey(self.dynamicType.locationKey)
+	
+		willChangeValueForKey(self.dynamicType.logscaleKey)
+		( logσ - gradlogσ ).getBytes(logsigma.bytes)
+		didChangeValueForKey(self.dynamicType.logscaleKey)
+
 	}
-	internal func adjust(μ μ: Float, σ: Float) {
+	internal func adjust(μ m: Float, σ s: Float) {
 		
 		let count: Int = rows * cols
 		
-		LaMatrice(μ, rows: rows, cols: cols).getBytes(mu.bytes)
-		LaMatrice(σ, rows: rows, cols: cols).getBytes(sigma.bytes)
+		LaMatrice(m, rows: rows, cols: cols).getBytes(mu.bytes)
+		LaMatrice(s, rows: rows, cols: cols).getBytes(sigma.bytes)
 		
-		func schedule() {
-			willChangeValueForKey(self.dynamicType.locationKey)
-			willChangeValueForKey(self.dynamicType.logscaleKey)
-		}
-		func complete() {
-			didChangeValueForKey(self.dynamicType.locationKey)
-			didChangeValueForKey(self.dynamicType.logscaleKey)
-		}
+		willChangeValueForKey(self.dynamicType.locationKey)
+		μ.getBytes(logmu.bytes)
+		didChangeValueForKey(self.dynamicType.locationKey)
 		
+		willChangeValueForKey(self.dynamicType.logscaleKey)
+		vvexpf(logsigma.bytes, sigma.bytes, [Int32(count)])
+		vDSP_vsadd(logsigma.bytes, 1, [Float(-1)], logsigma.bytes, 1, vDSP_Length(count))
+		vvlogf(logsigma.bytes, logsigma.bytes, [Int32(count)])
+		didChangeValueForKey(self.dynamicType.logscaleKey)
 		
-
 	}
 	internal func resize(rows r: Int, cols c: Int) {
 		
@@ -156,42 +163,6 @@ internal extension Arcane {
 		setup()
 	}
 }
-/*
-extension Arcane {
-	internal static func μ(μ: UnsafeMutablePointer<Float>, logμ: UnsafePointer<Float>, count: Int) {
-		cblas_scopy(Int32(count), logμ, 1, μ, 1)
-	}
-	internal static func logμ(logμ: UnsafeMutablePointer<Float>, μ: UnsafePointer<Float>, count: Int) {
-		cblas_scopy(Int32(count), μ, 1, logμ, 1)
-	}
-	internal static func gradμ(gradμ: UnsafeMutablePointer<Float>, μ: UnsafePointer<Float>, count: Int) {
-		var one: Float = 1
-		vDSP_vfill(&one, gradμ, 1, vDSP_Length(count))
-	}
-	internal static func σ(σ: UnsafeMutablePointer<Float>, logσ: UnsafePointer<Float>, count: Int) {
-		var len: Int32 = Int32(count)
-		var one: Float = 1
-		vvexpf(σ, logσ, &len)
-		vDSP_vsadd(σ, 1, &one, σ, 1, vDSP_Length(count))
-		vvlogf(σ, σ, &len)
-	}
-	internal static func logσ(logσ: UnsafeMutablePointer<Float>, σ: UnsafePointer<Float>, count: Int) {
-		var len: Int32 = Int32(count)
-		var neg: Float = -1
-		vvexpf(logσ, σ, &len)
-		vDSP_vsadd(logσ, 1, &neg, logσ, 1, vDSP_Length(count))
-		vvlogf(logσ, logσ, &len)
-	}
-	internal static func gradσ(gradσ: UnsafeMutablePointer<Float>, σ: UnsafePointer<Float>, count: Int) {
-		var len: Int32 = Int32(count)
-		var one: Float = 1
-		vDSP_vneg(σ, 1, gradσ, 1, vDSP_Length(count))
-		vvexpf(gradσ, gradσ, &len)
-		vDSP_vneg(gradσ, 1, gradσ, 1, vDSP_Length(count))
-		vDSP_vsadd(gradσ, 1, &one, gradσ, 1, vDSP_Length(count))
-	}
-}
-*/
 extension Arcane: RandomNumberGeneratable {
 	internal var χ: LaObjet {
 		return LaMatrice(value.bytes, rows: rows, cols: cols, deallocator: nil)
@@ -218,18 +189,5 @@ extension Arcane: RandomNumberGeneratable {
 		
 		//sync()
 		//dispatch_group_async(group, self.dynamicType.queue, shuffle)
-	}
-}
-extension Arcane {
-	internal class var refreshKernel: String { return "arcaneRefresh" }
-	internal static func refresh(context: Context, μ: Buffer, σ: Buffer, gradlogμ: Buffer, gradlogσ: Buffer, logμ: Buffer, logσ: Buffer, count: Int) {
-		context.newComputeCommand(sync: true, function: refreshKernel, grid: (count/4, 1, 1), threads: (1, 1, 1)) {
-			$0.setBuffer(μ, offset: 0, atIndex: 0)
-			$0.setBuffer(σ, offset: 0, atIndex: 1)
-			$0.setBuffer(logμ, offset: 0, atIndex: 2)
-			$0.setBuffer(logσ, offset: 0, atIndex: 3)
-			$0.setBuffer(gradlogμ, offset: 0, atIndex: 4)
-			$0.setBuffer(gradlogσ, offset: 0, atIndex: 5)
-		}
 	}
 }
