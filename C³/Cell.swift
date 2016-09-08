@@ -178,7 +178,7 @@ extension Cell {
 				let command: Command = context.newCommand()
 				let compute: Compute = command.computeCommandEncoder()
 				
-				let refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)] = input.map { $0.collect(compute, ignore: ignore.union([self])) } + [ bias.collect() ]
+				let refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)] = input.map { $0.collect(compute, ignore: ignore.union([self])) } + [ bias.collect(compute) ]
 				
 				compute.endEncoding()
 				command.commit()
@@ -261,9 +261,10 @@ extension Cell {
 				do {
 					let command: Command = context.newCommand()
 					let compute: Compute = command.computeCommandEncoder()
-					bias.correct(compute, ignore: ignore)
+					//bias.correct(compute, ignore: ignore)
 					compute.endEncoding()
 					command.commit()
+					command.waitUntilCompleted()
 				}
 			}
 			return (Δ, ϝ, -1 * ϝ * μ * λ)

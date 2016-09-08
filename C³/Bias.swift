@@ -21,7 +21,7 @@ extension Bias {
 			gradσ = [Float](count: rows*cols, repeatedValue: 0)
 		}
 	}
-	internal func collect() -> (LaObjet, LaObjet, LaObjet) {
+	internal func collect(compute: Compute) -> (LaObjet, LaObjet, LaObjet) {
 		return(χ, μ, σ)
 	}
 	internal func correct(compute: Compute, ignore: Set<Cell>) -> LaObjet {
@@ -35,7 +35,7 @@ extension Bias {
 		return Δ.χ
 	}
 	internal func collect_clear(compute: Compute) {
-		
+		refresh(compute: compute, distribution: output.distribution)
 	}
 	internal func correct_clear() {
 		
