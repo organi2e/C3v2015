@@ -37,10 +37,11 @@ internal class CauchyDistribution: Distribution {
 		}
 	}
 	*/
-	
-	static func rng(context: Context, χ: MTLBuffer, μ: MTLBuffer, σ: MTLBuffer, count: Int) {
-		context.newComputeCommand(function: "cauchyRNG") {
+	static func rng(context: Context, χ: Buffer, μ: Buffer, σ: Buffer, count: Int) {
+		context.newComputeCommand(sync: true, function: "cauchyRNG", grid: (count/4, 1, 1), threads: (1, 1, 1)) {
 			$0.setBuffer(χ, offset: 0, atIndex: 0)
+			$0.setBuffer(μ, offset: 0, atIndex: 1)
+			$0.setBuffer(σ, offset: 0, atIndex: 2)
 		}
 	}
 	static func rng(χ: UnsafeMutablePointer<Float>, ψ: UnsafePointer<UInt32>, μ: UnsafePointer<Float>, σ: UnsafePointer<Float>, count: Int) {

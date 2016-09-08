@@ -175,6 +175,39 @@ extension Context {
 		}
 		return true
 	}
+	internal func newComputeCommand (sync sync: Bool = false, function name: String, grid: (Int, Int, Int), threads: (Int, Int, Int), schedule: (()->())? = nil, complete: (()->())? = nil, configure: MTLComputeCommandEncoder->()) -> Bool {
+			if computePipelineCache.indexForKey(name) == nil {
+				guard let function: MTLFunction = mtl.functions[name] else {
+					assertionFailure(name)
+					return false
+				}
+				if let pipeline: MTLComputePipelineState = try?mtl.device.newComputePipelineStateWithFunction(function) {
+					computePipelineCache.updateValue(pipeline, forKey: name)
+				}
+			}
+			if let pipeline: MTLComputePipelineState = computePipelineCache[name] {
+				let command: MTLCommandBuffer = mtl.queue.commandBuffer()
+				if let schedule: ()->() = schedule {
+					command.addScheduledHandler {(_)in
+						schedule()
+					}
+				}
+				if let complete: ()->() = complete {
+					command.addCompletedHandler {(_)in
+						complete()
+					}
+				}
+				let encoder: MTLComputeCommandEncoder = command.computeCommandEncoder()
+				encoder.setComputePipelineState(pipeline)
+				configure(encoder)
+				encoder.dispatchThreadgroups(MTLSize(width: grid.0, height: grid.1, depth: grid.2), threadsPerThreadgroup: MTLSize(width: threads.0, height: threads.1, depth: threads.2))
+				encoder.endEncoding()
+				command.commit()
+				if sync { command.waitUntilCompleted() }
+			} else {
+				return false
+			}
+			return true	}
 	internal func newComputeCommand ( let sync sync: Bool = false, let function name: String, let schedule: (()->())? = nil, let complete: (()->())? = nil, let configure: (MTLComputeCommandEncoder->())) -> Bool {
 		if computePipelineCache.indexForKey(name) == nil {
 			guard let function: MTLFunction = mtl.functions[name] else {
@@ -254,13 +287,13 @@ extension Context {
 		let descriptor: MTLTextureDescriptor = MTLTextureDescriptor.texture2DDescriptorWithPixelFormat(pixelFormat, width: width, height: height, mipmapped: mipmap)
 		return mtl.device.newTextureWithDescriptor(descriptor)
 	}
-	public func newBuffer(let length length: Int, let options: MTLResourceOptions = .CPUCacheModeDefaultCache ) -> MTLBuffer {
+	public func newBuffer(let length length: Int, let options: MTLResourceOptions = .CPUCacheModeDefaultCache ) -> Buffer {
 		return mtl.device.newBufferWithLength(length, options: options)
 	}
-	public func newBuffer(let data data: NSData, let options: MTLResourceOptions = .CPUCacheModeDefaultCache ) -> MTLBuffer {
+	public func newBuffer(let data data: NSData, let options: MTLResourceOptions = .CPUCacheModeDefaultCache ) -> Buffer {
 		return mtl.device.newBufferWithBytes(data.bytes, length: data.length, options: options)
 	}
-	public func newBuffer(let buffer: [Float], let options: MTLResourceOptions = .CPUCacheModeDefaultCache ) -> MTLBuffer {
+	public func newBuffer(let buffer: [Float], let options: MTLResourceOptions = .CPUCacheModeDefaultCache ) -> Buffer {
 		return mtl.device.newBufferWithBytes(buffer, length: sizeof(Float)*buffer.count, options: options)
 	}
 	internal func newBufferFromBuffer(let buffer: MTLBuffer) -> [Float] {

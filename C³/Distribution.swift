@@ -21,6 +21,7 @@ internal protocol Distribution {
 	static func cdf(χ: Float, μ: Float, σ: Float) -> Float
 	static func pdf(χ: Float, μ: Float, σ: Float) -> Float
 
+	static func rng(context: Context, χ: Buffer, μ: Buffer, σ: Buffer, count: Int)
 	static func rng(χ: UnsafeMutablePointer<Float>, ψ: UnsafePointer<UInt32>, μ: UnsafePointer<Float>, σ: UnsafePointer<Float>, count: Int)
 	//static func rng(χ: [Float], ψ: [UInt32], μ: LaObjet, σ: LaObjet)
 	
@@ -42,6 +43,9 @@ internal class FalseDistribution: Distribution {
 	static func pdf(χ: Float, μ: Float, σ: Float) -> Float { return μ != χ ? 0 : 1 }
 	static func rng(χ: UnsafeMutablePointer<Float>, ψ: UnsafePointer<UInt32>, μ: UnsafePointer<Float>, σ: UnsafePointer<Float>, count: Int) {
 		
+	}
+	static func rng(context: Context, χ: Buffer, μ: Buffer, σ: Buffer, count: Int) {
+	
 	}
 	static func rng(χ: [Float], ψ: [UInt32], μ: LaObjet, σ: LaObjet) {
 		μ.getBytes(χ)

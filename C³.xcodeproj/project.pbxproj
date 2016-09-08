@@ -178,6 +178,9 @@
 		87BCEBF01D4D745900FC3099 /* Decay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Decay.swift; path = "C³/Decay.swift"; sourceTree = "<group>"; };
 		87BCEBF91D4D746400FC3099 /* Gaussian.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Gaussian.swift; path = "C³/Gaussian.swift"; sourceTree = "<group>"; };
 		87BCEBFA1D4D75A500FC3099 /* Bias.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Bias.swift; path = "C³/Bias.swift"; sourceTree = "<group>"; };
+		87C356271D811D4300F618CE /* Buffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Buffer.swift; path = "C³/Buffer.swift"; sourceTree = "<group>"; };
+		87C356381D81230200F618CE /* ManagedObject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ManagedObject.swift; path = "C³/ManagedObject.swift"; sourceTree = "<group>"; };
+		87C3563B1D81249B00F618CE /* Data.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Data.swift; path = "C³/Data.swift"; sourceTree = "<group>"; };
 		87C516CE1D3F72B400E3F36B /* statistics.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = statistics.metal; path = NLA/statistics.metal; sourceTree = "<group>"; };
 		87C516CF1D3F72E000E3F36B /* Unit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Unit.swift; path = NLA/Unit.swift; sourceTree = "<group>"; };
 		87C516D41D3F742500E3F36B /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Config.swift; path = NLA/Config.swift; sourceTree = "<group>"; };
@@ -282,6 +285,7 @@
 				878985B61D050D42002C2A8D /* C³.xcdatamodeld */,
 				87ED4FDB1D7430F000019209 /* Arcane.swift */,
 				875DD1AD1D66DF9E00A5C250 /* Art.swift */,
+				87C356271D811D4300F618CE /* Buffer.swift */,
 				87BCEBFA1D4D75A500FC3099 /* Bias.swift */,
 				873934A91D42FCF800888988 /* Blob.swift */,
 				878985B81D050D42002C2A8D /* Cell.swift */,
@@ -319,6 +323,8 @@
 				8746B0631D7DC61E0052C001 /* Refraction.swift */,
 				870723AA1D7EDB7A00A9333F /* Circular.swift */,
 				8746B0791D80711D0052C001 /* mtlarcane.metal */,
+				87C356381D81230200F618CE /* ManagedObject.swift */,
+				87C3563B1D81249B00F618CE /* Data.swift */,
 			);
 			name = "C³";
 			sourceTree = "<group>";

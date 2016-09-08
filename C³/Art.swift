@@ -18,7 +18,6 @@ extension UInt8 {
 		return(0..<256).map { $0 == cmp }
 	}
 }
-
 internal class Art: NSManagedObject {
 	internal private(set) var χ: MTLBuffer!
 	internal private(set) var μ: MTLBuffer!

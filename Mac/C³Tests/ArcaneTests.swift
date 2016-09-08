@@ -47,7 +47,7 @@ class ArcaneTest: XCTestCase {
 			Float(arc4random())/Float(UInt32.max)
 		}
 	}
-	
+	/*
 	func testμσ() {
 		
 		let count: Int = 16
@@ -115,7 +115,7 @@ class ArcaneTest: XCTestCase {
 			print(gradσ_dst)
 		}
 		
-	}
+	}*/
 	
 	func testUpdate() {
 		let a: Arcane! = context.new()

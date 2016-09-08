@@ -46,13 +46,13 @@ kernel void arcaneRefresh(device float4 * mu [[ buffer(0) ]],
 						  uint const n [[ thread_position_in_grid ]],
 						  uint const N [[ threads_per_grid ]]) {
 	
+	mu [ n ] = logmu [ n ];
+	gradmu [ n ] = 1;
+	
 	float4 const s = exp ( logsigma [ n ] );
 	float4 const S = s + 1;
 	
-	mu [ n ] = logmu [ n ];
 	sigma [ n ] = log ( S );
-	
-	gradmu [ n ] = 1;
 	gradsigma [ n ] = s / S;
 	
 }

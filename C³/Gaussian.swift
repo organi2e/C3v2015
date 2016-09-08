@@ -27,6 +27,9 @@ internal class GaussianDistribution: Distribution {
 	static func cdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
 	static func pdf(χ: LaObjet, μ: LaObjet, σ: LaObjet) -> LaObjet
 	*/
+	static func rng(context: Context, χ: Buffer, μ: Buffer, σ: Buffer, count: Int) {
+	
+	}
 	static func rng(χ: UnsafeMutablePointer<Float>, ψ: UnsafePointer<UInt32>, μ: UnsafePointer<Float>, σ: UnsafePointer<Float>, count: Int) {
 		
 		let length: vDSP_Length = vDSP_Length(count)

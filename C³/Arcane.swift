@@ -5,51 +5,23 @@
 //  Created by Kota Nakano on 8/29/16.
 //
 //
-import Accelerate
-import CoreData
-import Metal
-internal class Arcane: NSManagedObject {
+internal class Arcane: ManagedObject {
 
-	internal struct Buffer {
-		private let data: MTLBuffer
-		private let sync: dispatch_group_t = dispatch_group_create()
-		func enter() {
-			dispatch_group_enter(sync)
-		}
-		func leave() {
-			dispatch_group_leave(sync)
-		}
-		func merge() {
-			dispatch_group_wait(sync, DISPATCH_TIME_FOREVER)
-		}
-		var bytes: UnsafeMutablePointer<Float> {
-			return UnsafeMutablePointer<Float>(data.contents())
-		}
-	}
-	
 	private var value: Buffer! = nil
-	private var param: Buffer! = nil
-	private var cover: Buffer! = nil
-	private var deriv: Buffer! = nil
+	private var mu: Buffer! = nil
+	private var sigma: Buffer! = nil
+	private var logmu: Buffer! = nil
+	private var logsigma: Buffer! = nil
+	private var gradlogmu: Buffer! = nil
+	private var gradlogsigma: Buffer! = nil
 	
-	private var cache = (
-		ψ: Array<UInt32>(),
-		χ: UnsafeMutablePointer<Float>(nil),
-		μ: UnsafeMutablePointer<Float>(nil),
-		σ: UnsafeMutablePointer<Float>(nil),
-		logμ: UnsafeMutablePointer<Float>(nil),
-		logσ: UnsafeMutablePointer<Float>(nil),
-		gradμ: UnsafeMutablePointer<Float>(nil),
-		gradσ: UnsafeMutablePointer<Float>(nil)
-	)
-	
-	private var optimizer: GradientOptimizer = SGD()
+	//private var optimizer: GradientOptimizer = SGD()
 	private var μoptimizer: GradientOptimizer = SGD()
 	private var σoptimizer: GradientOptimizer = SGD()
 }
 internal extension Arcane {
-	@NSManaged private var location: NSData
-	@NSManaged private var logscale: NSData
+	@NSManaged private var location: Data
+	@NSManaged private var logscale: Data
 	@NSManaged internal var rows: Int
 	@NSManaged internal var cols: Int
 }
@@ -62,7 +34,7 @@ internal extension Arcane {
 		super.awakeFromFetch()
 		setup()
 	}
-	internal override func awakeFromSnapshotEvents(flags: NSSnapshotEventType) {
+	internal override func awakeFromSnapshotEvents(flags: SnapshotEventType) {
 		super.awakeFromSnapshotEvents(flags)
 		setup()
 	}
@@ -77,33 +49,24 @@ internal extension Arcane {
 		}
 		
 		let count: Int = rows * cols
+		let length: Int = sizeof(Float) * ( ( count + 3 ) / 4 ) * 4
 		
-		value = Buffer(data: context.newBuffer(length: sizeof(Float)*2*count, options: .StorageModeShared))
-		param = Buffer(data: context.newBuffer(length: sizeof(Float)*2*count, options: .StorageModeShared))
-		cover = Buffer(data: context.newBuffer(length: sizeof(Float)*2*count, options: .StorageModeShared))
-		deriv = Buffer(data: context.newBuffer(length: sizeof(Float)*2*count, options: .StorageModeShared))
+		value = context.newBuffer(length: length, options: .StorageModeShared)
+		mu = context.newBuffer(length: length, options: .StorageModeShared)
+		sigma = context.newBuffer(length: length, options: .StorageModeShared)
+		logmu = context.newBuffer(length: length, options: .StorageModeShared)
+		logsigma = context.newBuffer(length: length, options: .StorageModeShared)
+		gradlogmu = context.newBuffer(length: length, options: .StorageModeShared)
+		gradlogsigma = context.newBuffer(length: length, options: .StorageModeShared)
 		
-		cache.χ = value.bytes
-		cache.ψ = Array<UInt32>(count: count, repeatedValue: 0)
+		location.getBytes(logmu.bytes, length: logmu.length)
+		logscale.getBytes(logsigma.bytes, length: logsigma.length)
 		
-		cache.μ = param.bytes
-		cache.σ = cache.μ.advancedBy(count)
-		
-		cache.logμ = cover.bytes
-		cache.logσ = cache.logμ.advancedBy(count)
-		
-		cache.gradμ = deriv.bytes
-		cache.gradσ = cache.gradμ.advancedBy(count)
-		
-		location.getBytes(cache.logμ, length: sizeof(Float)*count)
-		logscale.getBytes(cache.logσ, length: sizeof(Float)*count)
-		
-		setPrimitiveValue(NSData(bytesNoCopy: cache.logμ, length: sizeof(Float)*count, freeWhenDone: false), forKey: self.dynamicType.locationKey)
-		setPrimitiveValue(NSData(bytesNoCopy: cache.logσ, length: sizeof(Float)*count, freeWhenDone: false), forKey: self.dynamicType.logscaleKey)
+		setPrimitiveValue(Data(bytesNoCopy: logmu.bytes, length: logmu.length, freeWhenDone: false), forKey: self.dynamicType.locationKey)
+		setPrimitiveValue(Data(bytesNoCopy: logsigma.bytes, length: logsigma.length, freeWhenDone: false), forKey: self.dynamicType.logscaleKey)
 		
 		refresh()
 		
-		optimizer = (managedObjectContext as? Context)?.optimizerFactory(2*count) ?? optimizer
 		μoptimizer = (managedObjectContext as? Context)?.optimizerFactory(count) ?? μoptimizer
 		σoptimizer = (managedObjectContext as? Context)?.optimizerFactory(count) ?? σoptimizer
 	}
@@ -112,8 +75,11 @@ internal extension Arcane {
 			fatalError(Context.Error.InvalidContext.rawValue)
 		}
 		let count: Int = rows * cols
-		self.dynamicType.param(context, param: param, cover: cover, count: count)
-		self.dynamicType.deriv(context, deriv: deriv, param: param, count: count)
+		self.dynamicType.refresh(context, μ: mu, σ: sigma, gradlogμ: gradlogmu, gradlogσ: gradlogsigma, logμ: logmu, logσ: logsigma, count: count)
+		//self.dynamicType.param(context, param: param, cover: cover, count: count)
+		//self.dynamicType.deriv(context, deriv: deriv, param: param, count: count)
+		//self.dynamicType.μ(cache.μ, logμ: cache.logμ, count: count)
+		//self.dynamicType.σ(cache.σ, logσ: cache.logσ, count: count)
 	}
 	internal func update(distribution: Distribution.Type, Δμ: LaObjet, Δσ: LaObjet) {
 	
@@ -123,30 +89,33 @@ internal extension Arcane {
 		assert(Δσ.count == count)
 		
 		func update() {
-		
-			deriv.merge()
 			
 			distribution.Δμ(
-				Δ: LaMatrice(cache.gradμ, rows: Δμ.rows, cols: Δμ.cols, deallocator: nil) * Δμ,
-				μ: LaMatrice(cache.μ, rows: Δμ.rows, cols: Δμ.cols, deallocator: nil))
-			.getBytes(cache.gradμ)
+				Δ: LaMatrice(gradlogmu.bytes, rows: Δμ.rows, cols: Δμ.cols, deallocator: nil) * Δμ,
+				μ: LaMatrice(mu.bytes, rows: Δμ.rows, cols: Δμ.cols, deallocator: nil))
+			.getBytes(gradlogmu.bytes)
+			
+			μoptimizer.optimize(
+				Δx: LaMatrice(gradlogmu.bytes, rows: count, cols: 1, deallocator: nil),
+				x: LaMatrice(logmu.bytes, rows: count, cols: 1, deallocator: nil)
+			).getBytes(gradlogmu.bytes)
 			
 			distribution.Δσ(
-				Δ: LaMatrice(cache.gradσ, rows: Δσ.rows, cols: Δσ.cols, deallocator: nil) * Δσ,
-				σ: LaMatrice(cache.σ, rows: Δσ.rows, cols: Δσ.cols, deallocator: nil))
-			.getBytes(cache.gradσ)
+				Δ: LaMatrice(gradlogsigma.bytes, rows: Δσ.rows, cols: Δσ.cols, deallocator: nil) * Δσ,
+				σ: LaMatrice(logsigma.bytes, rows: Δσ.rows, cols: Δσ.cols, deallocator: nil))
+			.getBytes(gradlogsigma.bytes)
 		
-			optimizer.optimize(
-				Δx: LaMatrice(deriv.bytes, rows: count, cols: 1, deallocator: nil),
-				x: LaMatrice(cover.bytes, rows: count, cols: 1, deallocator: nil)
-			).getBytes(deriv.bytes)
+			μoptimizer.optimize(
+				Δx: LaMatrice(gradlogsigma.bytes, rows: count, cols: 1, deallocator: nil),
+				x: LaMatrice(logsigma.bytes, rows: count, cols: 1, deallocator: nil)
+			).getBytes(gradlogsigma.bytes)
 			
 			willChangeValueForKey(self.dynamicType.locationKey)
-			( logμ - gradμ ).getBytes(cache.logμ)
+			( logμ - gradlogμ ).getBytes(logmu.bytes)
 			didChangeValueForKey(self.dynamicType.locationKey)
 		
 			willChangeValueForKey(self.dynamicType.logscaleKey)
-			( logσ - gradσ ).getBytes(cache.logσ)
+			( logσ - gradlogσ ).getBytes(logsigma.bytes)
 			didChangeValueForKey(self.dynamicType.logscaleKey)
 			
 			refresh()
@@ -159,15 +128,19 @@ internal extension Arcane {
 		
 		let count: Int = rows * cols
 		
-		vDSP_vfill([μ], cache.μ, 1, vDSP_Length(count))
-		willChangeValueForKey(self.dynamicType.locationKey)
-		self.dynamicType.logμ(cache.logμ, μ: cache.μ, count: count)
-		didChangeValueForKey(self.dynamicType.locationKey)
-
-		vDSP_vfill([σ], cache.σ, 1, vDSP_Length(count))
-		willChangeValueForKey(self.dynamicType.logscaleKey)
-		self.dynamicType.logσ(cache.logσ, σ: cache.σ, count: count)
-		didChangeValueForKey(self.dynamicType.logscaleKey)
+		LaMatrice(μ, rows: rows, cols: cols).getBytes(mu.bytes)
+		LaMatrice(σ, rows: rows, cols: cols).getBytes(sigma.bytes)
+		
+		func schedule() {
+			willChangeValueForKey(self.dynamicType.locationKey)
+			willChangeValueForKey(self.dynamicType.logscaleKey)
+		}
+		func complete() {
+			didChangeValueForKey(self.dynamicType.locationKey)
+			didChangeValueForKey(self.dynamicType.logscaleKey)
+		}
+		
+		
 
 	}
 	internal func resize(rows r: Int, cols c: Int) {
@@ -176,12 +149,14 @@ internal extension Arcane {
 		cols = c
 
 		let count: Int = rows * cols
-		location = NSData(bytes: [Float](count: count, repeatedValue: 0), length: sizeof(Float)*count)
-		logscale = NSData(bytes: [Float](count: count, repeatedValue: 0), length: sizeof(Float)*count)
+		
+		location = Data(bytes: [Float](count: count, repeatedValue: 0), length: sizeof(Float)*count)
+		logscale = Data(bytes: [Float](count: count, repeatedValue: 0), length: sizeof(Float)*count)
 		
 		setup()
 	}
 }
+/*
 extension Arcane {
 	internal static func μ(μ: UnsafeMutablePointer<Float>, logμ: UnsafePointer<Float>, count: Int) {
 		cblas_scopy(Int32(count), logμ, 1, μ, 1)
@@ -216,81 +191,45 @@ extension Arcane {
 		vDSP_vsadd(gradσ, 1, &one, gradσ, 1, vDSP_Length(count))
 	}
 }
+*/
 extension Arcane: RandomNumberGeneratable {
 	internal var χ: LaObjet {
-		return LaMatrice(cache.χ, rows: rows, cols: cols, deallocator: nil)
+		return LaMatrice(value.bytes, rows: rows, cols: cols, deallocator: nil)
 	}
 	internal var μ: LaObjet {
-		return LaMatrice(cache.μ, rows: rows, cols: cols, deallocator: nil)
+		return LaMatrice(mu.bytes, rows: rows, cols: cols, deallocator: nil)
 	}
 	internal var σ: LaObjet {
-		return LaMatrice(cache.σ, rows: rows, cols: cols, deallocator: nil)
-	}
-	private var gradμ: LaObjet {
-		return LaMatrice(cache.gradμ, rows: rows, cols: cols, deallocator: nil)
-	}
-	private var gradσ: LaObjet {
-		return LaMatrice(cache.gradσ, rows: rows, cols: cols, deallocator: nil)
+		return LaMatrice(sigma.bytes, rows: rows, cols: cols, deallocator: nil)
 	}
 	private var logμ: LaObjet {
-		return LaMatrice(cache.logμ, rows: rows, cols: cols, deallocator: nil)
+		return LaMatrice(logmu.bytes, rows: rows, cols: cols, deallocator: nil)
 	}
 	private var logσ: LaObjet {
-		return LaMatrice(cache.logσ, rows: rows, cols: cols, deallocator: nil)
+		return LaMatrice(logsigma.bytes, rows: rows, cols: cols, deallocator: nil)
+	}
+	private var gradlogμ: LaObjet {
+		return LaMatrice(gradlogmu.bytes, rows: rows, cols: cols, deallocator: nil)
+	}
+	private var gradlogσ: LaObjet {
+		return LaMatrice(gradlogsigma.bytes, rows: rows, cols: cols, deallocator: nil)
 	}
 	internal func shuffle(distribution: Distribution.Type) {
-		let noise: UnsafeMutablePointer<Float> = UnsafeMutablePointer<Float>(cache.ψ)
-		let count: Int = rows * cols
-		assert(cache.ψ.count==count)
-		func shuffle() {
-			arc4random_buf(noise, count*sizeof(UInt32))
-			param.merge()
-			distribution.rng(UnsafeMutablePointer<Float>(cache.χ), ψ: cache.ψ, μ: cache.μ, σ: cache.σ, count: count)
-		}
-		shuffle()
+		
 		//sync()
 		//dispatch_group_async(group, self.dynamicType.queue, shuffle)
 	}
 }
 extension Arcane {
-	/*internal static func refresh(context: Context, param: deriv: Buffer, cover: Buffer, count: Int) {
-		param.enter()
-		context.newComputeCommand(function: "arcaneRefresh", complete: param.leave) {
-			$0.setBuffer(param.data, offset: sizeof(Float)*0*count, atIndex: 0)
-			$0.setBuffer(param.data, offset: sizeof(Float)*1*count, atIndex: 1)
-			$0.setBuffer(cover.data, offset: sizeof(Float)*0*count, atIndex: 2)
-			$0.setBuffer(cover.data, offset: sizeof(Float)*1*count, atIndex: 3)
-			$0.dispatchThreadgroups(MTLSize(width: (count-1)/4+1, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
-		}
-	}*/
-	internal static func param(context: Context, param: Buffer, cover: Buffer, count: Int) {
-		param.enter()
-		context.newComputeCommand(function: "arcaneValue", complete: param.leave) {
-			$0.setBuffer(param.data, offset: sizeof(Float)*0*count, atIndex: 0)
-			$0.setBuffer(param.data, offset: sizeof(Float)*1*count, atIndex: 1)
-			$0.setBuffer(cover.data, offset: sizeof(Float)*0*count, atIndex: 2)
-			$0.setBuffer(cover.data, offset: sizeof(Float)*1*count, atIndex: 3)
-			$0.dispatchThreadgroups(MTLSize(width: count/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
-		}
-	}
-	internal static func conver(context: Context, cover: Buffer, param: Buffer, count: Int) {
-		cover.enter()
-		context.newComputeCommand(function: "arcaneLogValue", complete: cover.leave) {
-			$0.setBuffer(cover.data, offset: sizeof(Float)*0*count, atIndex: 0)
-			$0.setBuffer(cover.data, offset: sizeof(Float)*1*count, atIndex: 1)
-			$0.setBuffer(param.data, offset: sizeof(Float)*0*count, atIndex: 2)
-			$0.setBuffer(param.data, offset: sizeof(Float)*1*count, atIndex: 3)
-			$0.dispatchThreadgroups(MTLSize(width: count/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
-		}
-	}
-	internal static func deriv(context: Context, deriv: Buffer, param: Buffer, count: Int) {
-		deriv.enter()
-		context.newComputeCommand(function: "arcaneGradient", complete: deriv.leave) {
-			$0.setBuffer(deriv.data, offset: sizeof(Float)*0*count, atIndex: 0)
-			$0.setBuffer(deriv.data, offset: sizeof(Float)*1*count, atIndex: 1)
-			$0.setBuffer(param.data, offset: sizeof(Float)*0*count, atIndex: 2)
-			$0.setBuffer(param.data, offset: sizeof(Float)*1*count, atIndex: 3)
-			$0.dispatchThreadgroups(MTLSize(width: count/4, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
+	internal class var refreshKernel: String { return "arcaneRefresh" }
+	internal static func refresh(context: Context, μ: Buffer, σ: Buffer, gradlogμ: Buffer, gradlogσ: Buffer, logμ: Buffer, logσ: Buffer, count: Int) {
+		context.newComputeCommand(sync: true, function: refreshKernel, grid: (count/4, 1, 1), threads: (1, 1, 1)) {
+			$0.setBuffer(μ, offset: 0, atIndex: 0)
+			$0.setBuffer(σ, offset: 0, atIndex: 1)
+			$0.setBuffer(logμ, offset: 0, atIndex: 2)
+			$0.setBuffer(logσ, offset: 0, atIndex: 3)
+			$0.setBuffer(gradlogμ, offset: 0, atIndex: 4)
+			$0.setBuffer(gradlogσ, offset: 0, atIndex: 5)
 		}
 	}
 }
