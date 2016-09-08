@@ -253,6 +253,16 @@ extension Arcane: RandomNumberGeneratable {
 	}
 }
 extension Arcane {
+	internal static func refresh(context: Context, param: deriv: Buffer, cover: Buffer, count: Int) {
+		param.enter()
+		context.newComputeCommand(function: "arcaneRefresh", complete: param.leave) {
+			$0.setBuffer(param.data, offset: sizeof(Float)*0*count, atIndex: 0)
+			$0.setBuffer(param.data, offset: sizeof(Float)*1*count, atIndex: 1)
+			$0.setBuffer(cover.data, offset: sizeof(Float)*0*count, atIndex: 2)
+			$0.setBuffer(cover.data, offset: sizeof(Float)*1*count, atIndex: 3)
+			$0.dispatchThreadgroups(MTLSize(width: (count-1)/4+1, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 1, height: 1, depth: 1))
+		}
+	}
 	internal static func param(context: Context, param: Buffer, cover: Buffer, count: Int) {
 		param.enter()
 		context.newComputeCommand(function: "arcaneValue", complete: param.leave) {
@@ -265,7 +275,7 @@ extension Arcane {
 	}
 	internal static func conver(context: Context, cover: Buffer, param: Buffer, count: Int) {
 		cover.enter()
-		context.newComputeCommand(function: "arcaneValue", complete: cover.leave) {
+		context.newComputeCommand(function: "arcaneLogValue", complete: cover.leave) {
 			$0.setBuffer(cover.data, offset: sizeof(Float)*0*count, atIndex: 0)
 			$0.setBuffer(cover.data, offset: sizeof(Float)*1*count, atIndex: 1)
 			$0.setBuffer(param.data, offset: sizeof(Float)*0*count, atIndex: 2)

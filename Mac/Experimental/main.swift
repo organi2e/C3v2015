@@ -36,7 +36,7 @@ let exp: MTLComputePipelineState = try!device.newComputePipelineStateWithFunctio
 let pdf4: MTLComputePipelineState = try!device.newComputePipelineStateWithFunction(library.newFunctionWithName("pdf4")!)
 let cauchy4: MTLComputePipelineState = try!device.newComputePipelineStateWithFunction(library.newFunctionWithName("cauchy4")!)
 
-let N: Int = 1 << 16
+let N: Int = 1 << 20
 let P: Int = 256
 var a: [Float] = (0..<N).map { (_)in Float(arc4random())/Float(UInt32.max)-0.5}
 var b: [Float] = (0..<N).map { (_)in Float(arc4random())/Float(UInt32.max)-0.5}
@@ -233,6 +233,9 @@ do {
 }
 
 do {
+	let group: MTLSize = MTLSize(width: N/4, height: 1, depth: 1)
+	let local: MTLSize = MTLSize(width: 1, height: 1, depth: 1)
+
 	let cputoc = tic()
 	for p in 1...P {
 		let command = queue.commandBuffer()

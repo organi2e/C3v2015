@@ -37,4 +37,22 @@ kernel void arcaneGradient(device float4 * const gradmu [[ buffer(0) ]],
 	gradmu [ n ] = 1;
 	gradsigma [ n ] = 1 - exp ( - sigma [ n ] );
 }
-
+kernel void arcaneRefresh(device float4 * mu [[ buffer(0) ]],
+						  device float4 * sigma [[ buffer(1) ]],
+						  device float4 * gradmu [[ buffer(2) ]],
+						  device float4 * gradsigma [[ buffer(3) ]],
+						  const device float4 * const logmu [[ buffer(4) ]],
+						  const device float4 * const logsigma [[ buffer(5) ]],
+						  uint const n [[ thread_position_in_grid ]],
+						  uint const N [[ threads_per_grid ]]) {
+	
+	float4 const s = exp ( logsigma [ n ] );
+	float4 const S = s + 1;
+	
+	mu [ n ] = logmu [ n ];
+	sigma [ n ] = log ( S );
+	
+	gradmu [ n ] = 1;
+	gradsigma [ n ] = s / S;
+	
+}
