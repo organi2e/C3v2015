@@ -24,15 +24,14 @@ extension Bias {
 	internal func collect(compute: Compute) -> (LaObjet, LaObjet, LaObjet) {
 		return(χ, μ, σ)
 	}
-	internal func correct(compute: Compute, ignore: Set<Cell>) -> LaObjet {
-		let Δ: (χ: LaObjet, μ: LaObjet, σ: LaObjet) = output.correct(compute: compute, ignore: ignore)
+	internal func correct(compute: Compute, ignore: Set<Cell>) {
+		let(Δ, gradμ, gradσ) = output.correct(compute, ignore: ignore)
 		do {
 			let I: LaObjet = LaIdentité(rows)
-			let Δμ: LaObjet = matrix_product(Δ.μ.T, I)
-			let Δσ: LaObjet = matrix_product(Δ.σ.T, I)
+			let Δμ: LaObjet = matrix_product((Δ*gradμ).T, I)
+			let Δσ: LaObjet = matrix_product((Δ*gradσ).T, I)
 			update(output.distribution, Δμ: Δμ, Δσ: Δσ)
 		}
-		return Δ.χ
 	}
 	internal func collect_clear(compute: Compute) {
 		refresh(compute: compute, distribution: output.distribution)

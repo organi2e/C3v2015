@@ -160,44 +160,43 @@ extension Cell {
 		}
 		let command: Command = context.newCommand()
 		let compute: Compute = command.computeCommandEncoder()
-		collect(compute: compute, ignore: [])
+		collect(compute, ignore: [])
 		compute.endEncoding()
 		command.commit()
 		command.waitUntilCompleted()
 	}
-	internal func collect(compute parent: Compute, ignore: Set<Cell>) -> LaObjet {
+	internal func collect(compute: Compute, ignore: Set<Cell>) -> LaObjet {
 		if ignore.contains(self) {
 			return _χ
 		} else {
 			if !ready.contains(.state) {
 				
-				guard let context: Context = managedObjectContext as? Context else {
-					fatalError(Context.Error.InvalidContext.rawValue)
+				if let context: Context = managedObjectContext as? Context {
+					
+					let command: Command = context.newCommand()
+					let compute: Compute = command.computeCommandEncoder()
+					
+					let refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)] = input.map { $0.collect(compute, ignore: ignore.union([self])) } + [ bias.collect(compute) ]
+					
+					compute.endEncoding()
+					command.commit()
+					command.waitUntilCompleted()
+					
+					distribution.synthesize(χ: level.new.φ, μ: level.new.μ, λ: level.new.λ, refer: refer)
+				
+				} else {
+					assertionFailure(Context.Error.InvalidContext.rawValue)
+					
 				}
 				
-				let command: Command = context.newCommand()
-				let compute: Compute = command.computeCommandEncoder()
-				
-				let refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)] = input.map { $0.collect(compute, ignore: ignore.union([self])) } + [ bias.collect(compute) ]
-				
-				compute.endEncoding()
-				command.commit()
-				command.waitUntilCompleted()
-				
-				distribution.synthesize(χ: level.new.φ, μ: level.new.μ, λ: level.new.λ, refer: refer)
-				
 				if let activate: Pipeline = activate {
-					parent.setComputePipelineState(activate)
-					parent.setBuffer(state.new, offset: 0, atIndex: 0)
-					parent.setBuffer(level.new.φ, offset: 0, atIndex: 1)
-					parent.dispatch(grid: ((width+3)/4, 1, 1), threads: (1, 1, 1))
+					compute.setComputePipelineState(activate)
+					compute.setBuffer(state.new, offset: 0, atIndex: 0)
+					compute.setBuffer(level.new.φ, offset: 0, atIndex: 1)
+					compute.dispatch(grid: ((width+3)/4, 1, 1), threads: (1, 1, 1))
 				} else {
-					let yref: UnsafeMutablePointer<Float> = state.new.bytes
-					let xref: UnsafeMutablePointer<Float> = level.new.φ.bytes
-					for k in 0..<width {
-						yref[k] = 0 < xref[k] ? 1 : 0
-					}
 					assertionFailure()
+					
 				}
 				
 				ready.insert(.state)
@@ -206,66 +205,54 @@ extension Cell {
 		}
 	}
 	public func correct() {
-		guard let context: Context = managedObjectContext as? Context else {
-			fatalError(Context.Error.InvalidContext.rawValue)
-		}
+		guard let context: Context = managedObjectContext as? Context else { fatalError(Context.Error.InvalidContext.rawValue) }
 		let command: Command = context.newCommand()
 		let compute: Compute = command.computeCommandEncoder()
-		correct(compute: compute, ignore: [])
+		correct(compute, ignore: [])
 		compute.endEncoding()
 		command.commit()
 		command.waitUntilCompleted()
 	}
-	internal func correct(compute child: Compute, ignore: Set<Cell>) -> (LaObjet, LaObjet, LaObjet) {
+	internal func correct(compute: Compute, ignore: Set<Cell>) -> (Δ: LaObjet, gradμ: LaObjet, gradσ: LaObjet) {
 		if ignore.contains(self) {
 			return (_Δ, _ϝ, -1 * _ϝ * _μ * _λ)
 		} else {
 			if !ready.contains(.delta) {
 				
-				guard let context: Context = managedObjectContext as? Context else {
-					fatalError(Context.Error.InvalidContext.rawValue)
-				}
-				
-				let command: Command = context.newCommand()
-				let compute: Compute = command.computeCommandEncoder()
-				
-				let δ: LaObjet = ready.contains(.train) ? χ - ψ : output.map { $0.correct(compute, ignore: ignore.union([self])) } .reduce(LaValuer(0)) { $0.0 + $0.1 }
-				
-				compute.endEncoding()
-				command.commit()
-				command.waitUntilCompleted()
-				
-				δ.getBytes(error.new.bytes)
-				
-				do {
+				if let context: Context = managedObjectContext as? Context {
+
 					let command: Command = context.newCommand()
 					let compute: Compute = command.computeCommandEncoder()
 					
-					if let derivate: Pipeline = derivate {
-						compute.setComputePipelineState(derivate)
-						compute.setBuffer(error.new, offset: 0, atIndex: 0)
-						compute.setBuffer(error.new, offset: 0, atIndex: 1)
-						compute.dispatch(grid: ((width+3)/4, 1, 1), threads: (1, 1, 1))
-					} else {
-						assertionFailure()
-					}
+					let δ: LaObjet = ready.contains(.train) ? χ - ψ : output.map { $0.correct(compute, ignore: ignore.union([self])) } .reduce(LaValuer(0)) { $0.0 + $0.1 }
+					
+					compute.endEncoding()
+					command.commit()
+					command.waitUntilCompleted()
+					
+					δ.getBytes(error.new.bytes)
+
+				} else {
+					assertionFailure(Context.Error.InvalidContext.rawValue)
+					
+				}
+				if let derivate: Pipeline = derivate {
+					
+					compute.setComputePipelineState(derivate)
+					compute.setBuffer(error.new, offset: 0, atIndex: 0)
+					compute.setBuffer(error.new, offset: 0, atIndex: 1)
+					compute.dispatch(grid: ((width+3)/4, 1, 1), threads: (1, 1, 1))
+					
 					distribution.pdf(compute, χ: nabla.new, μ: level.new.μ, λ: level.new.λ)
 
-					compute.endEncoding()
-					command.commit()
-					command.waitUntilCompleted()
+				} else {
+					assertionFailure()
+					
 				}
-				
 				
 				ready.insert(.delta)
-				do {
-					let command: Command = context.newCommand()
-					let compute: Compute = command.computeCommandEncoder()
-					//bias.correct(compute, ignore: ignore)
-					compute.endEncoding()
-					command.commit()
-					command.waitUntilCompleted()
-				}
+				
+				bias.correct(compute, ignore: ignore)
 			}
 			return (Δ, ϝ, -1 * ϝ * μ * λ)
 		}
