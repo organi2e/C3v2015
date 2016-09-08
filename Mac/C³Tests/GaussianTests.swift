@@ -9,6 +9,7 @@ import Accelerate
 import simd
 import XCTest
 @testable import C3
+/*
 class GaussianTests: XCTestCase {
 	
 	let posi: Float = 1
@@ -184,3 +185,4 @@ class GaussianTests: XCTestCase {
 		XCTAssert(rmseσ < 1e-3)
     }
 }
+*/

@@ -95,7 +95,7 @@ extension Cell {
 		case .Gauss:
 			distribution = try!GaussianDistribution(context: context)
 		}
-		
+		print(distribution)
 		let count: Int = 2
 		
 		state = RingBuffer<Buffer>(array: (0..<count).map {(_)in
@@ -161,16 +161,20 @@ extension Cell {
 		}
 		let command: Command = context.newCommand()
 		let compute: Compute = command.computeCommandEncoder()
-		collect(context, compute: compute, ignore: [])
+		collect(compute: compute, ignore: [])
 		compute.endEncoding()
 		command.commit()
 		command.waitUntilCompleted()
 	}
-	internal func collect(context: Context, compute parent: Compute, ignore: Set<Cell>) -> LaObjet {
+	internal func collect(compute parent: Compute, ignore: Set<Cell>) -> LaObjet {
 		if ignore.contains(self) {
 			return _χ
 		} else {
 			if !ready.contains(.state) {
+				
+				guard let context: Context = managedObjectContext as? Context else {
+					fatalError(Context.Error.InvalidContext.rawValue)
+				}
 				
 				let command: Command = context.newCommand()
 				let compute: Compute = command.computeCommandEncoder()

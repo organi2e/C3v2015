@@ -19,7 +19,7 @@ extension Edge {
 }
 extension Edge {
 	func collect(context: Context, compute: Compute, ignore: Set<Cell>) -> (χ: LaObjet, μ: LaObjet, σ: LaObjet) {
-		let state: LaObjet = input.collect(context, compute: compute, ignore: ignore)
+		let state: LaObjet = input.collect(compute: compute, ignore: ignore)
 		return(
 			χ: matrix_product(χ, state),
 			μ: matrix_product(μ, state),
@@ -28,9 +28,8 @@ extension Edge {
 	}
 	func correct(compute: Compute, ignore: Set<Cell>) -> LaObjet {
 		let Δ: (χ: LaObjet, μ: LaObjet, σ: LaObjet) = output.correct(compute: compute, ignore: ignore)
-		let κ: LaObjet = LaValuer(0)
 		let distribution: Distribution = output.distribution
-		let weights: (μ: LaObjet, σ: LaObjet) = distribution.gainχ(κ)
+		let weights: (μ: LaObjet, σ: LaObjet) = distribution.gainχ(input.χ)
 		let Δμ: LaObjet = outer_product(Δ.μ, weights.μ)
 		let Δσ: LaObjet = outer_product(Δ.σ, weights.σ)
 		update(distribution, Δμ: Δμ, Δσ: Δσ)

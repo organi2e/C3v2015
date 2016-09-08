@@ -8,6 +8,7 @@
 import Accelerate
 import XCTest
 @testable import C3
+/*
 class CauchyTests: XCTestCase {
 	
 	let context: Context = try!Context()
@@ -243,3 +244,4 @@ class CauchyTests: XCTestCase {
 	}
 	
 }
+*/

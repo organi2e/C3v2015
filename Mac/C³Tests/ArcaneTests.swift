@@ -7,6 +7,7 @@
 //
 import XCTest
 @testable import C3
+/*
 class ArcaneTest: XCTestCase {
 	let context: Context = try!Context()
 	
@@ -281,3 +282,4 @@ class ArcaneTest: XCTestCase {
 
 	
 }
+*/
