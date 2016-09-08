@@ -8,11 +8,10 @@
 import Accelerate
 import XCTest
 @testable import C3
-/*
 class CauchyTests: XCTestCase {
 	
 	let context: Context = try!Context()
-	
+
 	func rmse(x: [Float], _ y: [Float]) -> Float {
 		let err: [Float] = zip(x, y).map { $0.0 - $0.1 }
 		let se: [Float] = err.map { $0 * $0 }
@@ -27,6 +26,30 @@ class CauchyTests: XCTestCase {
 		}
 	}
 	
+	func testPDF() {
+		
+		let distribution: Distribution = try!CauchyDistribution(context: context)
+		let N: Int = 16
+		
+		let λd: [Float] = uniform(N, a: 1, b: 0)
+		let μd: [Float] = uniform(N, a: 2, b: -1)
+		let χd: [Float] = zip(μd, λd).map { 1 / ( 1 + $0.0 * $0.0 * $0.1 * $0.1 ) * $0.1 / Float(M_PI) }
+		
+		let λ: Buffer = context.newBuffer(λd)
+		let μ: Buffer = context.newBuffer(μd)
+		let χ: Buffer = context.newBuffer(length: sizeof(Float)*N)
+		
+		let command: Command = context.newCommand()
+		let compute: Compute = command.computeCommandEncoder()
+		
+		distribution.pdf(compute, χ: χ, μ: μ, λ: λ)
+		
+		compute.endEncoding()
+		command.commit()
+		command.waitUntilCompleted()
+		
+	}
+	/*
 	func testActivate() {
 		
 		let N: Int = 16
@@ -43,7 +66,8 @@ class CauchyTests: XCTestCase {
 		}
 		
 	}
-	
+	*/
+	/*
 	func testDerivate() {
 		
 		let N: Int = 32
@@ -90,6 +114,7 @@ class CauchyTests: XCTestCase {
 		}
 		
 	}
+	*/
 	/*
 	func testDerivate() {
 		
@@ -146,8 +171,10 @@ class CauchyTests: XCTestCase {
 		let σd: [Float] = Array<Float>(arrayLiteral: 2, 3, 5, 7)
 		let σ: LaObjet = LaMatrice(σd, rows: σd.count, cols: 1)
 		
-		let Δμ: LaObjet = CauchyDistribution.Δμ(Δ: Δ, μ: μ)
-		let Δσ: LaObjet = CauchyDistribution.Δσ(Δ: Δ, σ: σ)
+		let distribution: Distribution = try!CauchyDistribution(context: context)
+		
+		let Δμ: LaObjet = distribution.Δμ(Δ: Δ, μ: μ)
+		let Δσ: LaObjet = distribution.Δσ(Δ: Δ, σ: σ)
 		
 		XCTAssert(Δμ.array.elementsEqual(Δ.array))
 		XCTAssert(Δσ.array.elementsEqual(Δ.array))
@@ -158,7 +185,9 @@ class CauchyTests: XCTestCase {
 		let χd: [Float] = Array<Float>(arrayLiteral: 0, 1, 2, 3)
 		let χ: LaObjet = LaMatrice(χd, rows: χd.count, cols: 1)
 		
-		let weight = CauchyDistribution.gainχ(χ)
+		let distribution: Distribution = try!CauchyDistribution(context: context)
+		let weight = distribution.gainχ(χ)
+		
 		XCTAssert(weight.0.array.elementsEqual(χd))
 		XCTAssert(weight.1.array.elementsEqual(χd))
 	}
@@ -175,15 +204,16 @@ class CauchyTests: XCTestCase {
 			)
 			refer.append(element)
 		}
-		let χ: [Float] = [Float](count: L, repeatedValue: 0)
-		let μ: [Float] = [Float](count: L, repeatedValue: 0)
-		let λ: [Float] = [Float](count: L, repeatedValue: 0)
-		
 		var χd: [Float] = [Float](count: L, repeatedValue: 0)
 		var μd: [Float] = [Float](count: L, repeatedValue: 0)
 		var λd: [Float] = [Float](count: L, repeatedValue: 0)
 		
-		CauchyDistribution.synthesize(χ: UnsafeMutablePointer<Float>(χ), μ: UnsafeMutablePointer<Float>(μ), λ: UnsafeMutablePointer<Float>(λ), refer: refer, count: L)
+		let χ: Buffer = context.newBuffer(χd)
+		let μ: Buffer = context.newBuffer(μd)
+		let λ: Buffer = context.newBuffer(λd)
+		
+		let distribution: Distribution = try!CauchyDistribution(context: context)
+		distribution.synthesize(χ: χ, μ: μ, λ: λ, refer: refer)
 		
 		for l in 0..<L {
 			for n in 0..<N {
@@ -193,15 +223,15 @@ class CauchyTests: XCTestCase {
 			}
 			λd[l] = 1 / λd[l]
 		}
-		if 1e-9 < (LaMatrice(χd, rows: L, cols: 1, deallocator: nil) - LaMatrice(χ, rows: L, cols: 1, deallocator: nil)).L2Norm {
+		if 1e-9 < (LaMatrice(χd, rows: L, cols: 1, deallocator: nil) - χ.vecteur).L2Norm {
 			print(χd, χ)
 			XCTFail()
 		}
-		if 1e-9 < (LaMatrice(μd, rows: L, cols: 1, deallocator: nil) - LaMatrice(μ, rows: L, cols: 1, deallocator: nil)).L2Norm {
+		if 1e-9 < (LaMatrice(μd, rows: L, cols: 1, deallocator: nil) - μ.vecteur).L2Norm {
 			print(μd, μ)
 			XCTFail()
 		}
-		if 1e-9 < (LaMatrice(λd, rows: L, cols: 1, deallocator: nil) - LaMatrice(λ, rows: L, cols: 1, deallocator: nil)).L2Norm {
+		if 1e-9 < (LaMatrice(λd, rows: L, cols: 1, deallocator: nil) - λ.vecteur).L2Norm {
 			print(λd)
 			print(λ)
 			XCTFail()
@@ -215,17 +245,31 @@ class CauchyTests: XCTestCase {
 		let srcμ: Float = Float(arc4random())/Float(UInt32.max) * 2.0 - 1.0
 		let srcσ: Float = 1.0 + Float(M_PI) * Float(arc4random())/Float(UInt32.max)
 		
-		let rows: Int = 256
-		let cols: Int = 256
-		let μ: Buffer = context.newBuffer([Float](count: rows*cols, repeatedValue: srcμ))
-		let σ: Buffer = context.newBuffer([Float](count: rows*cols, repeatedValue: srcσ))
-		let χ: Buffer = context.newBuffer(length: sizeof(Float)*rows*cols)
+		let rows: Int = 16
+		let cols: Int = 16
 		
-		CauchyDistribution.rng(context, χ: χ, μ: μ, σ: σ, count: rows*cols)
-		context.join()
+		let μd: [Float] = [Float](count: rows*cols, repeatedValue: srcμ)
+		let σd: [Float] = [Float](count: rows*cols, repeatedValue: srcσ)
+		
+		let μ: Buffer = context.newBuffer(μd)
+		let σ: Buffer = context.newBuffer(σd)
+		let χ: Buffer = context.newBuffer(length: sizeof(Float)*rows*cols)
+
+		let distribution: CauchyDistribution = try!CauchyDistribution(context: context)
+		let command: Command = context.newCommand()
+		let compute: Compute = command.computeCommandEncoder()
+		
+		distribution.rng(compute, χ: χ, μ: μ, σ: σ)
+		
+		compute.endEncoding()
+		command.commit()
+		command.waitUntilCompleted()
+		
 		//CauchyDistribution.rng(χ, ψ: ψ, μ: LaMatrice(μ, rows: rows, cols: cols, deallocator: nil), σ: LaMatrice(σ, rows: rows, cols: cols, deallocator: nil))
 		
-		let(dstμ, dstσ) = CauchyDistribution.est(χ.vecteur.array, η: 0.8, K: 1024)
+		print(χ.vecteur.array)
+		
+		let(dstμ, dstσ) = distribution.est(χ.vecteur.array, η: 0.8, K: 1024)
 		
 		print(srcμ, dstμ)
 		print(srcσ, dstσ)
@@ -244,4 +288,3 @@ class CauchyTests: XCTestCase {
 	}
 	
 }
-*/

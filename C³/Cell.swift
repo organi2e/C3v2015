@@ -95,7 +95,6 @@ extension Cell {
 		case .Gauss:
 			distribution = try!GaussianDistribution(context: context)
 		}
-		print(distribution)
 		let count: Int = 2
 		
 		state = RingBuffer<Buffer>(array: (0..<count).map {(_)in
@@ -179,7 +178,7 @@ extension Cell {
 				let command: Command = context.newCommand()
 				let compute: Compute = command.computeCommandEncoder()
 				
-				let refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)] = input.map { $0.collect(context, compute: compute, ignore: ignore.union([self])) } + [ bias.collect() ]
+				let refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)] = input.map { $0.collect(compute, ignore: ignore.union([self])) } + [ bias.collect() ]
 				
 				compute.endEncoding()
 				command.commit()
@@ -238,15 +237,25 @@ extension Cell {
 				
 				δ.getBytes(error.new.bytes)
 				
-				if let derivate: Pipeline = derivate {
-					child.setComputePipelineState(derivate)
-					child.setBuffer(error.new, offset: 0, atIndex: 0)
-					child.setBuffer(error.new, offset: 0, atIndex: 1)
-					child.dispatch(grid: ((width+3)/4, 1, 1), threads: (1, 1, 1))
-				} else {
-					assertionFailure()
+				do {
+					let command: Command = context.newCommand()
+					let compute: Compute = command.computeCommandEncoder()
+					
+					if let derivate: Pipeline = derivate {
+						compute.setComputePipelineState(derivate)
+						compute.setBuffer(error.new, offset: 0, atIndex: 0)
+						compute.setBuffer(error.new, offset: 0, atIndex: 1)
+						compute.dispatch(grid: ((width+3)/4, 1, 1), threads: (1, 1, 1))
+					} else {
+						assertionFailure()
+					}
+					distribution.pdf(compute, χ: nabla.new, μ: level.new.μ, λ: level.new.λ)
+
+					compute.endEncoding()
+					command.commit()
+					command.waitUntilCompleted()
 				}
-				distribution.pdf(child, χ: nabla.new, μ: level.new.μ, λ: level.new.λ)
+				
 				
 				ready.insert(.delta)
 				do {
