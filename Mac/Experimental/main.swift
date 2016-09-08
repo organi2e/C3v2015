@@ -48,37 +48,20 @@ let mtlC: MTLBuffer = device.newBufferWithLength(sizeof(Float)*N, options: .Stor
 
 let group: MTLSize = MTLSize(width: N/4, height: 1, depth: 1)
 let local: MTLSize = MTLSize(width: 1, height: 1, depth: 1)
-let mtltoc = tic()
-
-for p in 1...P {
-	let command = queue.commandBuffer()
-	var encoder = command.computeCommandEncoder()
-	encoder.setComputePipelineState(sign)
-	encoder.setBuffer(mtlC, offset: 0, atIndex: 0)
-	encoder.setBuffer(mtlA, offset: 0, atIndex: 1)
-	encoder.dispatchThreadgroups(group, threadsPerThreadgroup: local)
-	encoder.endEncoding()
-	command.commit()
-	if p == P { command.waitUntilCompleted(); print("wait") }
-}
-
-print(Double(N*P)/mtltoc()/1_000_000_000.0, "GFLOPS (metal sign)")
 
 do {
 	let mtltoc = tic()
-	
+	let command = queue.commandBuffer()
+	let encoder = command.computeCommandEncoder()
 	for p in 1...P {
-		let command = queue.commandBuffer()
-		var encoder = command.computeCommandEncoder()
 		encoder.setComputePipelineState(sign)
 		encoder.setBuffer(mtlC, offset: 0, atIndex: 0)
 		encoder.setBuffer(mtlA, offset: 0, atIndex: 1)
 		encoder.dispatchThreadgroups(group, threadsPerThreadgroup: local)
-		encoder.endEncoding()
-		command.commit()
-		if p == P { command.waitUntilCompleted(); print("wait") }
 	}
-	
+	encoder.endEncoding()
+	command.commit()
+	command.waitUntilCompleted()
 	print(Double(N*P)/mtltoc()/1_000_000_000.0, "GFLOPS (metal sign)")
 }
 
@@ -235,39 +218,38 @@ do {
 do {
 	let group: MTLSize = MTLSize(width: N/4, height: 1, depth: 1)
 	let local: MTLSize = MTLSize(width: 1, height: 1, depth: 1)
-
+	let command = queue.commandBuffer()
+	let encoder = command.computeCommandEncoder()
 	let cputoc = tic()
 	for p in 1...P {
-		let command = queue.commandBuffer()
-		var encoder = command.computeCommandEncoder()
 		encoder.setComputePipelineState(pdf4)
 		encoder.setBuffer(mtlC, offset: 0, atIndex: 0)
 		encoder.setBuffer(mtlC, offset: 0, atIndex: 1)
 		encoder.setBuffer(mtlA, offset: 0, atIndex: 2)
 		encoder.setBuffer(mtlB, offset: 0, atIndex: 3)
 		encoder.dispatchThreadgroups(group, threadsPerThreadgroup: local)
-		encoder.endEncoding()
-		command.commit()
-		if p == P { command.waitUntilCompleted(); print("wait") }
 	}
+	encoder.endEncoding()
+	command.commit()
+	command.waitUntilCompleted()
 	print(Double(N*P)/cputoc()/1_000_000_000.0, "GFLOPS (gaussian, mtl)")
 }
 
 do {
 	let cputoc = tic()
+	let command = queue.commandBuffer()
+	var encoder = command.computeCommandEncoder()
 	for p in 1...P {
-		let command = queue.commandBuffer()
-		var encoder = command.computeCommandEncoder()
 		encoder.setComputePipelineState(cauchy4)
 		encoder.setBuffer(mtlC, offset: 0, atIndex: 0)
 		encoder.setBuffer(mtlC, offset: 0, atIndex: 1)
 		encoder.setBuffer(mtlA, offset: 0, atIndex: 2)
 		encoder.setBuffer(mtlB, offset: 0, atIndex: 3)
 		encoder.dispatchThreadgroups(group, threadsPerThreadgroup: local)
-		encoder.endEncoding()
-		command.commit()
-		if p == P { command.waitUntilCompleted(); print("wait") }
 	}
+	encoder.endEncoding()
+	command.commit()
+	command.waitUntilCompleted()
 	print(Double(N*P)/cputoc()/1_000_000_000.0, "GFLOPS (cauchy, mtl)")
 }
 
