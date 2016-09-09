@@ -7,6 +7,7 @@
 //
 
 import CoreData
+import simd
 public class Cell: NSManagedObject {
 
 	private enum Ready {
@@ -186,7 +187,6 @@ extension Cell {
 					assertionFailure(Context.Error.InvalidContext.rawValue)
 					
 				}
-				
 				if let activate: Pipeline = activate {
 					
 					compute.setComputePipelineState(activate)
@@ -197,10 +197,13 @@ extension Cell {
 					/* add cpu work here */
 					
 				} else {
+					let yref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(state.new.bytes)
+					let xref: UnsafePointer<float4> = UnsafePointer<float4>(level.new.φ.bytes)
+					(0..<(width+3)/4).forEach {
+						yref[$0] = step(xref[$0], edge: float4(0))
+					}
 					assertionFailure()
-					
 				}
-				
 				ready.insert(.state)
 			}
 			return χ
@@ -246,6 +249,8 @@ extension Cell {
 					assertionFailure(Context.Error.InvalidContext.rawValue)
 					
 				}
+				distribution.pdf(compute, χ: nabla.new, μ: level.new.μ, λ: level.new.λ)//gpu
+				/*
 				if let derivate: Pipeline = derivate {
 					
 					compute.setComputePipelineState(derivate)
@@ -253,15 +258,19 @@ extension Cell {
 					compute.setBuffer(error.new, offset: 0, atIndex: 1)
 					compute.dispatch(grid: ((width+3)/4, 1, 1), threads: (1, 1, 1))//gpu
 					
-					distribution.pdf(compute, χ: nabla.new, μ: level.new.μ, λ: level.new.λ)//gpu
+				
 					
 					/* add cpu work here */
 					
 				} else {
+					let yref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(state.new.bytes)
+					let xref: UnsafePointer<float4> = UnsafePointer<float4>(level.new.φ.bytes)
+					(0..<(width+3)/4).forEach {
+						yref[$0] = sign(xref[$0])
+					}
 					assertionFailure()
-					
 				}
-				
+				*/
 				ready.insert(.delta)
 				
 				/* add gpu work here */
@@ -276,7 +285,25 @@ extension Cell {
 		return LaValuer(0)
 	}
 }
+
 extension Cell {
+	
+	internal static func step(y y: UnsafeMutablePointer<Float>, x: UnsafePointer<Float>, count: Int) {
+		let yref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(y)
+		let xref: UnsafePointer<float4> = UnsafePointer<float4>(x)
+		let zero: float4 = float4(0)
+		(0..<count/4).forEach {
+			yref[$0] = vector_step(zero, xref[$0])
+		}
+	}
+	
+	internal static func sign(y y: UnsafeMutablePointer<Float>, x: UnsafePointer<Float>, count: Int) {
+		let yref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(y)
+		let xref: UnsafePointer<float4> = UnsafePointer<float4>(x)
+		(0..<count/4).forEach {
+			yref[$0] = vector_sign(xref[$0])
+		}
+	}
 	
 	internal var χ: LaObjet { return LaMatrice(state.new.bytes, rows: width, cols: 1, deallocator: nil) }
 	internal var ψ: LaObjet { return LaMatrice(train.new.bytes, rows: width, cols: 1, deallocator: nil) }
