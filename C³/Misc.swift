@@ -5,7 +5,6 @@
 //  Created by Kota Nakano on 8/22/16.
 //
 //
-import Accelerate
 internal struct RingBuffer<T> {
 	private var cursor: Int
 	private let buffer: [T]

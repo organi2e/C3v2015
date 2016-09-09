@@ -48,9 +48,7 @@ internal extension Arcane {
 	private static let logscaleKey: String = "logscale"
 	internal func setup() {
 		
-		guard let context: Context = managedObjectContext as? Context else {
-			fatalError(Context.Error.InvalidContext.rawValue)
-		}
+		guard let context: Context = managedObjectContext as? Context else { fatalError(Context.Error.InvalidContext.rawValue) }
 		
 		let count: Int = rows * cols
 		let length: Int = sizeof(Float) * ( ( count + 3 ) / 4 ) * 4
@@ -75,10 +73,13 @@ internal extension Arcane {
 		σoptimizer = context.optimizerFactory(count)
 		
 	}
-	internal func refresh(compute compute: Compute, distribution: Distribution) {
+	internal func refresh(compute: Compute, distribution: Distribution) {
+		
 		let count: Int = rows * cols
+		
 		willAccessValueForKey(self.dynamicType.locationKey)
 		willAccessValueForKey(self.dynamicType.logscaleKey)
+		
 		if let refreshKernel: Pipeline = refreshKernel {
 			compute.setComputePipelineState(refreshKernel)
 			compute.setBuffer(mu, offset: 0, atIndex: 0)
@@ -88,9 +89,12 @@ internal extension Arcane {
 			compute.setBuffer(logmu, offset: 0, atIndex: 4)
 			compute.setBuffer(logsigma, offset: 0, atIndex: 5)
 			compute.dispatch(grid: ((count+3)/4, 1, 1), threads: (1, 1, 1))
+			
 		} else {
 			assertionFailure()
+			
 		}
+		
 		didAccessValueForKey(self.dynamicType.logscaleKey)
 		didAccessValueForKey(self.dynamicType.locationKey)
 		
@@ -161,6 +165,7 @@ internal extension Arcane {
 		logscale = Data(bytes: [Float](count: count, repeatedValue: 0), length: sizeof(Float)*count)
 		
 		setup()
+		
 	}
 }
 extension Arcane: RandomNumberGeneratable {
@@ -184,10 +189,5 @@ extension Arcane: RandomNumberGeneratable {
 	}
 	private var gradlogσ: LaObjet {
 		return LaMatrice(gradlogsigma.bytes, rows: rows, cols: cols, deallocator: nil)
-	}
-	internal func shuffle(distribution: Distribution.Type) {
-		
-		//sync()
-		//dispatch_group_async(group, self.dynamicType.queue, shuffle)
 	}
 }

@@ -27,14 +27,14 @@ extension Bias {
 	internal func correct(compute: Compute, ignore: Set<Cell>) {
 		let(Δ, gradμ, gradσ) = output.correct(compute, ignore: ignore)
 		do {
-			let I: LaObjet = LaIdentité(rows)
-			let Δμ: LaObjet = matrix_product((Δ*gradμ).T, I)
-			let Δσ: LaObjet = matrix_product((Δ*gradσ).T, I)
+			//let I: LaObjet = LaIdentité(rows)
+			let Δμ: LaObjet = (Δ*gradμ)//matrix_product((Δ*gradμ).T, I)
+			let Δσ: LaObjet = (Δ*gradσ)//matrix_product((Δ*gradσ).T, I)
 			update(output.distribution, Δμ: Δμ, Δσ: Δσ)
 		}
 	}
 	internal func collect_clear(compute: Compute) {
-		refresh(compute: compute, distribution: output.distribution)
+		refresh(compute, distribution: output.distribution)
 	}
 	internal func correct_clear() {
 		

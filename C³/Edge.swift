@@ -5,9 +5,7 @@
 //  Created by Kota Nakano on 6/1/16.
 //
 //
-import Metal
 import CoreData
-
 internal class Edge: Arcane {
 	private let gradχ: [Float] = []
 	private let gradμ: [Float] = []
@@ -27,16 +25,16 @@ extension Edge {
 		)
 	}
 	func correct(compute: Compute, ignore: Set<Cell>) -> LaObjet {
-		let (Δ, gradμ, gradσ) = output.correct(compute, ignore: ignore)
+		let (Δ, gμ, gσ) = output.correct(compute, ignore: ignore)
 		let distribution: Distribution = output.distribution
-		let (gμ, gσ) = distribution.gainχ(input.χ)
-		let Δμ: LaObjet = outer_product(Δ*gradμ, gμ)
-		let Δσ: LaObjet = outer_product(Δ*gradσ, gσ)
+		let (μ, σ) = distribution.gainχ(input.χ)
+		let Δμ: LaObjet = outer_product(Δ * gμ, μ)
+		let Δσ: LaObjet = outer_product(Δ * gσ, σ)
 		update(distribution, Δμ: Δμ, Δσ: Δσ)
 		return matrix_product(χ.T, Δ)
 	}
 	func collect_clear(compute: Compute) {
-		refresh(compute: compute, distribution: output.distribution)
+		refresh(compute, distribution: output.distribution)
 		input.collect_clear()
 	}
 	func correct_clear() {

@@ -82,11 +82,12 @@ extension Cell {
 
 extension Cell {
 	internal func setup() {
-		guard let context: Context = managedObjectContext as? Context else {
-			fatalError(Context.Error.InvalidContext.rawValue)
-		}
+		
+		guard let context: Context = managedObjectContext as? Context else { fatalError(Context.Error.InvalidContext.rawValue) }
+		
 		activate = try?context.newPipeline("cellActivate")
 		derivate = try?context.newPipeline("cellDerivate")
+		
 		switch type {
 		case .False:
 			distribution = FalseDistribution()
@@ -95,44 +96,29 @@ extension Cell {
 		case .Gauss:
 			distribution = try!GaussianDistribution(context: context)
 		}
+		
 		let count: Int = 2
 		
-		state = RingBuffer<Buffer>(array: (0..<count).map {(_)in
-			context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared)
-		})
-		train = RingBuffer<Buffer>(array: (0..<count).map {(_)in
-			context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared)
-		})
-		error = RingBuffer<Buffer>(array: (0..<count).map {(_)in
-			context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared)
-		})
-		nabla = RingBuffer<Buffer>(array: (0..<count).map {(_)in
-			context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared)
-		})
-		level = RingBuffer<Level>(array: (0..<count).map {(_)in
-			Level(
-				φ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared),
-				μ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared),
-				λ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared)
-			)
-		})
+		state = RingBuffer<Buffer>(array: (0..<count).map {(_) in context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared) })
+		train = RingBuffer<Buffer>(array: (0..<count).map {(_) in context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared) })
+		error = RingBuffer<Buffer>(array: (0..<count).map {(_) in context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared) })
+		nabla = RingBuffer<Buffer>(array: (0..<count).map {(_) in context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared) })
+		level = RingBuffer<Level>(array: (0..<count).map {(_) in Level(φ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared), μ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared), λ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared)) })
 	}
 }
 extension Cell {
 	public func collect_clear() {
 		if ready.contains(.state) {
+			
 			ready.remove(.state)
 			
-			guard let context: Context = managedObjectContext as? Context else {
-				assertionFailure()
-				return
-			}
+			guard let context: Context = managedObjectContext as? Context else { fatalError(Context.Error.InvalidContext.rawValue) }
+			
 			let command: Command = context.newCommand()
 			let compute: Compute = command.computeCommandEncoder()
-
-			input.forEach {
-				$0.collect_clear(compute)
-			}
+			
+			input.forEach { $0.collect_clear( compute ) }
+			
 			bias.collect_clear(compute)
 			
 			train.progress()
@@ -141,26 +127,32 @@ extension Cell {
 			
 			compute.endEncoding()
 			command.commit()
+
 		}
 	}
 	public func correct_clear() {
+		
 		if ready.contains(.delta) {
+			
 			ready.remove(.delta)
-			output.forEach {
-				$0.correct_clear()
-			}
+			
+			output.forEach { $0.correct_clear() }
+			
 			bias.correct_clear()
+			
 			nabla.progress()
+			
 		}
+		
 		ready.remove(.train)
 	}
 	public func collect() {
-		guard let context: Context = managedObjectContext as? Context else {
-			fatalError(Context.Error.InvalidContext.rawValue)
-		}
+		guard let context: Context = managedObjectContext as? Context else { fatalError(Context.Error.InvalidContext.rawValue) }
 		let command: Command = context.newCommand()
 		let compute: Compute = command.computeCommandEncoder()
+		
 		collect(compute, ignore: [])
+		
 		compute.endEncoding()
 		command.commit()
 		command.waitUntilCompleted()
@@ -168,32 +160,42 @@ extension Cell {
 	internal func collect(compute: Compute, ignore: Set<Cell>) -> LaObjet {
 		if ignore.contains(self) {
 			return _χ
+			
 		} else {
 			if !ready.contains(.state) {
 				
 				if let context: Context = managedObjectContext as? Context {
 					
 					let command: Command = context.newCommand()
-					let compute: Compute = command.computeCommandEncoder()
+					let collect: Compute = command.computeCommandEncoder()
 					
-					let refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)] = input.map { $0.collect(compute, ignore: ignore.union([self])) } + [ bias.collect(compute) ]
+					let refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)] = input.map { $0.collect(collect, ignore: ignore.union([self])) } + [ bias.collect(collect) ]
 					
-					compute.endEncoding()
+					collect.endEncoding()
 					command.commit()
+					
+					/* add cpu work here */
+					
 					command.waitUntilCompleted()
 					
-					distribution.synthesize(χ: level.new.φ, μ: level.new.μ, λ: level.new.λ, refer: refer)
-				
+					/* add gpu work here */
+					
+					distribution.synthesize(χ: level.new.φ, μ: level.new.μ, λ: level.new.λ, refer: refer)//cpu
+					
 				} else {
 					assertionFailure(Context.Error.InvalidContext.rawValue)
 					
 				}
 				
 				if let activate: Pipeline = activate {
+					
 					compute.setComputePipelineState(activate)
 					compute.setBuffer(state.new, offset: 0, atIndex: 0)
 					compute.setBuffer(level.new.φ, offset: 0, atIndex: 1)
-					compute.dispatch(grid: ((width+3)/4, 1, 1), threads: (1, 1, 1))
+					compute.dispatch(grid: ((width+3)/4, 1, 1), threads: (1, 1, 1))//gpu
+					
+					/* add cpu work here */
+					
 				} else {
 					assertionFailure()
 					
@@ -206,32 +208,40 @@ extension Cell {
 	}
 	public func correct() {
 		guard let context: Context = managedObjectContext as? Context else { fatalError(Context.Error.InvalidContext.rawValue) }
+		
 		let command: Command = context.newCommand()
 		let compute: Compute = command.computeCommandEncoder()
+		
 		correct(compute, ignore: [])
+		
 		compute.endEncoding()
 		command.commit()
 		command.waitUntilCompleted()
+		
 	}
 	internal func correct(compute: Compute, ignore: Set<Cell>) -> (Δ: LaObjet, gradμ: LaObjet, gradσ: LaObjet) {
 		if ignore.contains(self) {
 			return (_Δ, _ϝ, -1 * _ϝ * _μ * _λ)
+			
 		} else {
 			if !ready.contains(.delta) {
 				
 				if let context: Context = managedObjectContext as? Context {
 
 					let command: Command = context.newCommand()
-					let compute: Compute = command.computeCommandEncoder()
+					let collect: Compute = command.computeCommandEncoder()
+
+					let δ: LaObjet = ready.contains(.train) ? χ - ψ : output.map { $0.correct(collect, ignore: ignore.union([self])) } .reduce(LaValuer(0)) { $0.0 + $0.1 }
 					
-					let δ: LaObjet = ready.contains(.train) ? χ - ψ : output.map { $0.correct(compute, ignore: ignore.union([self])) } .reduce(LaValuer(0)) { $0.0 + $0.1 }
+					collect.endEncoding()
 					
-					compute.endEncoding()
 					command.commit()
 					command.waitUntilCompleted()
 					
-					δ.getBytes(error.new.bytes)
-
+					/* add gpu work here */
+					
+					δ.getBytes(error.new.bytes)//cpu
+					
 				} else {
 					assertionFailure(Context.Error.InvalidContext.rawValue)
 					
@@ -241,10 +251,12 @@ extension Cell {
 					compute.setComputePipelineState(derivate)
 					compute.setBuffer(error.new, offset: 0, atIndex: 0)
 					compute.setBuffer(error.new, offset: 0, atIndex: 1)
-					compute.dispatch(grid: ((width+3)/4, 1, 1), threads: (1, 1, 1))
+					compute.dispatch(grid: ((width+3)/4, 1, 1), threads: (1, 1, 1))//gpu
 					
-					distribution.pdf(compute, χ: nabla.new, μ: level.new.μ, λ: level.new.λ)
-
+					distribution.pdf(compute, χ: nabla.new, μ: level.new.μ, λ: level.new.λ)//gpu
+					
+					/* add cpu work here */
+					
 				} else {
 					assertionFailure()
 					
@@ -252,7 +264,10 @@ extension Cell {
 				
 				ready.insert(.delta)
 				
-				bias.correct(compute, ignore: ignore)
+				/* add gpu work here */
+				
+				bias.correct(compute, ignore: ignore)//cpu
+				
 			}
 			return (Δ, ϝ, -1 * ϝ * μ * λ)
 		}

@@ -9,11 +9,13 @@ import Accelerate
 import simd
 internal class CauchyDistribution: Distribution {
 	
+	private let cache: [uint]
 	private let cdf: Pipeline
 	private let pdf: Pipeline
 	private let rng: Pipeline
 	
 	init(context: Context) throws {
+		cache = [uint](count: 256, repeatedValue: 0)
 		cdf = try context.newPipeline("cauchyCDF")
 		pdf = try context.newPipeline("cauchyPDF")
 		rng = try context.newPipeline("cauchyRNG")
@@ -60,15 +62,14 @@ internal class CauchyDistribution: Distribution {
 		let length: Int = min(χ.length, μ.length, σ.length)
 		let count: Int = length / sizeof(Float)
 		
-		let block: Int = 256
-		let cache: [uint] = [uint](count: block, repeatedValue: 0)
+		let block: Int = cache.count
 		let param: [uint] = [uint]([13, 17, 5, uint(count+3)/4])
 		
 		assert(length==χ.length)
 		assert(length==μ.length)
 		assert(length==σ.length)
 		
-		arc4random_buf(UnsafeMutablePointer<Void>(cache), sizeof(uint)*cache.count)
+		arc4random_buf(UnsafeMutablePointer<Void>(cache), sizeof(uint)*block)
 		
 		compute.setComputePipelineState(rng)
 		compute.setBuffer(χ, offset: 0, atIndex: 0)

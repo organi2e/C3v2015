@@ -48,6 +48,10 @@ class CauchyTests: XCTestCase {
 		command.commit()
 		command.waitUntilCompleted()
 		
+		let rmseχ: Float = rmse(χd, χ.vecteur.array)
+		if 1e-7 < rmseχ {
+			XCTFail()
+		}
 	}
 	/*
 	func testActivate() {
@@ -264,8 +268,6 @@ class CauchyTests: XCTestCase {
 		compute.endEncoding()
 		command.commit()
 		command.waitUntilCompleted()
-		
-		//CauchyDistribution.rng(χ, ψ: ψ, μ: LaMatrice(μ, rows: rows, cols: cols, deallocator: nil), σ: LaMatrice(σ, rows: rows, cols: cols, deallocator: nil))
 		
 		print(χ.vecteur.array)
 		

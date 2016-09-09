@@ -15,7 +15,6 @@ internal protocol RandomNumberGeneratable {
 	var χ: LaObjet { get }
 	var μ: LaObjet { get }
 	var σ: LaObjet { get }
-	func shuffle(dist: Distribution.Type)
 }
 internal protocol Distribution {
 	
