@@ -9,18 +9,21 @@ import Accelerate
 import simd
 internal class CauchyDistribution: Distribution {
 	
+	private static let CDF: String = "cauchyCDF"
+	private static let PDF: String = "cauchyPDF"
+	private static let RNG: String = "cauchyRNG"
+	
 	private let cache: Buffer
 	private let cdf: Pipeline
 	private let pdf: Pipeline
 	private let rng: Pipeline
 	
-	init(context: Context, bs: Int = 1024) throws {
-		cache = context.newBuffer(length: sizeof(uint)*bs, options: .CPUCacheModeWriteCombined)
-		cdf = try context.newPipeline("cauchyCDF")
-		pdf = try context.newPipeline("cauchyPDF")
-		rng = try context.newPipeline("cauchyRNG")
+	init(context: Context, block: Int = 256) throws {
+		cache = context.newBuffer(length: sizeof(uint)*4*block, options: .CPUCacheModeWriteCombined)
+		cdf = try context.newPipeline(self.dynamicType.CDF)
+		pdf = try context.newPipeline(self.dynamicType.PDF)
+		rng = try context.newPipeline(self.dynamicType.RNG)
 	}
-	
 	func cdf(compute: Compute, χ: Buffer, μ: Buffer, λ: Buffer) {
 		
 		let length: Int = min(χ.length, μ.length, λ.length)
@@ -63,7 +66,6 @@ internal class CauchyDistribution: Distribution {
 		let count: Int = length / sizeof(Float)
 		
 		let block: Int = cache.length / sizeof(uint)
-		let param: [uint] = [uint]([13, 17, 5, uint(count+3)/4])
 		
 		assert(length==χ.length)
 		assert(length==μ.length)
@@ -76,12 +78,18 @@ internal class CauchyDistribution: Distribution {
 		compute.setBuffer(μ, offset: 0, atIndex: 1)
 		compute.setBuffer(σ, offset: 0, atIndex: 2)
 		compute.setBuffer(cache, offset: 0, atIndex: 3)
-		compute.setBytes(param, length: sizeof(uint)*param.count, atIndex: 4)
+		compute.setBytes([uint]([13, 17, 5, uint(count+3)/4]), length: sizeof(uint)*4, atIndex: 4)
 		compute.dispatch(grid: (block/4, 1, 1), threads: (1, 1, 1))
 		
 	}
 	func gainχ(χ: LaObjet) -> (μ: LaObjet, σ: LaObjet) {
 		return(χ, χ)
+	}
+	func grad(ϝ: LaObjet, μ: LaObjet, λ: LaObjet) -> (gradμ: LaObjet, gradσ: LaObjet) {
+		return (
+			gradμ: ϝ,
+			gradσ: ϝ
+		)
 	}
 	func Δμ(Δ Δ: LaObjet, μ: LaObjet) -> LaObjet {
 		return Δ
@@ -98,9 +106,7 @@ internal class CauchyDistribution: Distribution {
 		assert(length==μ.length)
 		assert(length==λ.length)
 		
-		let mix: (χ: LaObjet, μ: LaObjet, λ: LaObjet) = refer.reduce((LaValuer(0), LaValuer(0), LaValuer(0))) {
-			( $0.0.0 + $0.1.χ, $0.0.1 + $0.1.1, $0.0.2 + $0.1.σ )
-		}
+		let mix: (χ: LaObjet, μ: LaObjet, λ: LaObjet) = refer.reduce((LaValuer(0), LaValuer(0), LaValuer(0))) { ( $0.0.0 + $0.1.χ, $0.0.1 + $0.1.μ, $0.0.2 + $0.1.σ ) }
 		
 		mix.χ.getBytes(χ.bytes)
 		mix.μ.getBytes(μ.bytes)

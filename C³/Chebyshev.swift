@@ -11,9 +11,15 @@ import simd
 
 internal class ChebyshevDistribution: Distribution {
 	
-	func cdf(compute: Compute, χ: Buffer, μ: Buffer, λ: Buffer) {}
-	func pdf(compute: Compute, χ: Buffer, μ: Buffer, λ: Buffer) {}
-	func rng(compute: Compute, χ: Buffer, μ: Buffer, σ: Buffer) {}
+	func cdf(compute: Compute, χ: Buffer, μ: Buffer, λ: Buffer) {
+	
+	}
+	func pdf(compute: Compute, χ: Buffer, μ: Buffer, λ: Buffer) {
+	
+	}
+	func rng(compute: Compute, χ: Buffer, μ: Buffer, σ: Buffer) {
+		
+	}
 	func gainχ(χ: LaObjet) -> (μ: LaObjet, σ: LaObjet) {
 		return(χ, LaValuer(1))
 	}
@@ -23,7 +29,9 @@ internal class ChebyshevDistribution: Distribution {
 	func Δσ(Δ Δ: LaObjet, σ: LaObjet) -> LaObjet {
 		return Δ
 	}
-	func synthesize(χ χ: Buffer, μ: Buffer, λ: Buffer, refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) {}
+	func synthesize(χ χ: Buffer, μ: Buffer, λ: Buffer, refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) {
+	
+	}
 	/*
 	static func cdf(χ: Float, μ: Float, σ: Float) -> Float {
 		return Float(

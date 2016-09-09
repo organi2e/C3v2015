@@ -5,12 +5,11 @@
 //  Created by Kota Nakano on 8/29/16.
 //
 //
-import Accelerate
-import simd
 import XCTest
 @testable import C3
-/*
 class GaussianTests: XCTestCase {
+	
+	let context: Context = try!Context()
 	
 	let posi: Float = 1
 	let nega: Float = -1
@@ -22,24 +21,14 @@ class GaussianTests: XCTestCase {
 		}
 	}
 	
-	func testActivate() {
-		let X: [Float] = uniform(512) + [Float](count: 512, repeatedValue: 0)
-		let Y: [Float] = X.map { zero < $0 ? posi : zero }
-		let Z: [Float] = X.map { (_)in zero }
-		
-		GaussianDistribution.activate(UnsafeMutablePointer<Float>(Z), φ: X, count: X.count)
-		
-		XCTAssert(Z.elementsEqual(Y))
-	}
-	
-	func rmse(x: [Float], _ y: [Float]) -> Float {
+	func rmse( x: [Float], _ y: [Float]) -> Float {
 		let err: [Float] = zip(x, y).map { $0.0 - $0.1 }
 		let se: [Float] = err.map { $0 * $0 }
 		let mse: Float = se.reduce(0) { $0.0 + $0.1 }
 		let rmse: Float = sqrt(mse / Float(se.count))
 		return rmse
 	}
-	
+	/*
 	func testDerivatevDSP() {
 		
 		let N: Int = 16
@@ -92,38 +81,108 @@ class GaussianTests: XCTestCase {
 		}
 		
 	}
+	*/
+	
+	func testCDF() {
+		
+		let distribution: Distribution = try!GaussianDistribution(context: context)
+		let N: Int = 16
+		
+		let λd: [Float] = uniform(N)
+		let μd: [Float] = uniform(N).map { $0 * 2 - 1 }
+		let χd: [Float] = zip(μd, λd).map { 0.5 * ( 1 + erf( $0.0 * $0.1 * Float(M_SQRT1_2) ) ) }
+		
+		let λ: Buffer = context.newBuffer(λd)
+		let μ: Buffer = context.newBuffer(μd)
+		let χ: Buffer = context.newBuffer(length: sizeof(Float)*N)
+		
+		let command: Command = context.newCommand()
+		let compute: Compute = command.computeCommandEncoder()
+		
+		distribution.cdf(compute, χ: χ, μ: μ, λ: λ)
+		
+		compute.endEncoding()
+		command.commit()
+		command.waitUntilCompleted()
+		
+		let rmseχ: Float = rmse(χd, χ.vecteur.array)
+		if 1e-7 < rmseχ {
+			print(χd)
+			print(χ.vecteur.array)
+			XCTFail()
+		}
+		
+	}
+	
+	func testPDF() {
+		
+		let distribution: Distribution = try!GaussianDistribution(context: context)
+		let N: Int = 16
+		
+		let λd: [Float] = uniform(N)
+		let μd: [Float] = uniform(N) .map { $0 * 2 - 1 }
+		let χd: [Float] = zip(μd, λd) .map { $0.1 * exp( -0.5 * $0.0 * $0.0 * $0.1 * $0.1 ) / sqrt( 2.0 * Float ( M_PI ) ) }
+		
+		let λ: Buffer = context.newBuffer(λd)
+		let μ: Buffer = context.newBuffer(μd)
+		let χ: Buffer = context.newBuffer(length: sizeof(Float)*N)
+		
+		let command: Command = context.newCommand()
+		let compute: Compute = command.computeCommandEncoder()
+		
+		distribution.pdf(compute, χ: χ, μ: μ, λ: λ)
+		
+		compute.endEncoding()
+		command.commit()
+		command.waitUntilCompleted()
+		
+		
+		let rmseχ: Float = rmse(χd, χ.vecteur.array)
+		if 1e-7 < rmseχ {
+			print(χd)
+			print(χ.vecteur.array)
+			XCTFail()
+		}
+	}
+	
 	func testΔ() {
 		
-		let Δd: [Float] = Array<Float>(arrayLiteral: 0, 1, 2, 3)
+		let distr: GaussianDistribution = try!GaussianDistribution(context: context)
+		
+		let Δd: [Float] = Array<Float>(arrayLiteral: 2, 3, 5, 7)
 		let Δ: LaObjet = LaMatrice(Δd, rows: Δd.count, cols: 1)
 		
-		let μd: [Float] = Array<Float>(arrayLiteral: 0, 1, 2, 3)
+		let μd: [Float] = Array<Float>(arrayLiteral: 1, 1, 2, 3)
 		let μ: LaObjet = LaMatrice(μd, rows: μd.count, cols: 1)
 		
-		let σd: [Float] = Array<Float>(arrayLiteral: 0, 1, 2, 3)
+		let σd: [Float] = Array<Float>(arrayLiteral: 1, 2, 4, 8)
 		let σ: LaObjet = LaMatrice(σd, rows: σd.count, cols: 1)
 		
-		let Δμ: LaObjet = GaussianDistribution.Δμ(Δ: Δ, μ: μ)
-		let Δσ: LaObjet = GaussianDistribution.Δσ(Δ: Δ, σ: σ)
+		let Δμ: LaObjet = distr.Δμ(Δ: Δ, μ: μ)
+		let Δσ: LaObjet = distr.Δσ(Δ: Δ, σ: σ)
 		
-		XCTAssert(Δ.array.elementsEqual(Δμ.array))
-		XCTAssert(zip(Δ.array, σ.array).map { $0 * $1 }.elementsEqual(Δσ.array))
-		
+		print(Δμ.array)
+		print(Δσ.array)
 		
 		//XCTAssert(Δσ.array.elementsEqual(zip(Δ, σ).map { 2 * $0 * $1 * $1 }))
 		
 	}
 	
 	func testGain() {
-		let χd: [Float] = Array<Float>(arrayLiteral: 0, 1, 2, 3)
-		let χ: LaObjet = LaMatrice(χd, rows: χd.count, cols: 1)
 		
-		let weight = GaussianDistribution.gainχ(χ)
+		let distr: GaussianDistribution = try!GaussianDistribution(context: context)
+		
+		let χd: [Float] = Array<Float>(arrayLiteral: 0, 1, 2, 3)
+		let χ: Buffer = context.newBuffer(χd)
+		
+		let weight = distr.gainχ(χ.vecteur)
 		XCTAssert(weight.0.array.elementsEqual(χd))
 		XCTAssert(weight.1.array.elementsEqual(χd.map { $0 * $0 }))
+		
 	}
 	
 	func testSynthesize() {
+		
 		let N: Int = 16
 		let L: Int = 16
 		var refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)] = []
@@ -135,15 +194,17 @@ class GaussianTests: XCTestCase {
 			)
 			refer.append(element)
 		}
-		let χ: [Float] = [Float](count: L, repeatedValue: 0)
-		let μ: [Float] = [Float](count: L, repeatedValue: 0)
-		let λ: [Float] = [Float](count: L, repeatedValue: 0)
 		
-		var χd: [Float] = [Float](count: L, repeatedValue: 0)
-		var μd: [Float] = [Float](count: L, repeatedValue: 0)
-		var λd: [Float] = [Float](count: L, repeatedValue: 0)
+		var μd: [Float] = [Float](count: N, repeatedValue: 0.0)
+		var λd: [Float] = [Float](count: N, repeatedValue: 0.0)
+		var χd: [Float] = [Float](count: N, repeatedValue: 0.0)
 		
-		GaussianDistribution.synthesize(χ: UnsafeMutablePointer<Float>(χ), μ: UnsafeMutablePointer<Float>(μ), λ: UnsafeMutablePointer<Float>(λ), refer: refer, count: L)
+		let μ: Buffer = context.newBuffer(μd)
+		let λ: Buffer = context.newBuffer(λd)
+		let χ: Buffer = context.newBuffer(χd)
+		
+		let distr: GaussianDistribution = try!GaussianDistribution(context: context)
+		distr.synthesize(χ: χ, μ: μ, λ: λ, refer: refer)
 		
 		for l in 0..<L {
 			for n in 0..<N {
@@ -151,38 +212,52 @@ class GaussianTests: XCTestCase {
 				μd[l] = μd[l] + refer[n].μ.array[l]
 				λd[l] = λd[l] + ( refer[n].σ.array[l] * refer[n].σ.array[l] )
 			}
-			λd[l] = rsqrt(λd[l])
+			λd[l] = 1 / sqrt(λd[l])
 		}
-		XCTAssert((LaMatrice(χd, rows: L, cols: 1, deallocator: nil) - LaMatrice(χ, rows: L, cols: 1, deallocator: nil)).length<1e-7)
-		XCTAssert((LaMatrice(μd, rows: L, cols: 1, deallocator: nil) - LaMatrice(μ, rows: L, cols: 1, deallocator: nil)).length<1e-7)
-		XCTAssert((LaMatrice(λd, rows: L, cols: 1, deallocator: nil) - LaMatrice(λ, rows: L, cols: 1, deallocator: nil)).length<1e-7)
+		
+		XCTAssert((LaMatrice(χd, rows: L, cols: 1, deallocator: nil) - χ.vecteur).length < 1e-7)
+		XCTAssert((LaMatrice(μd, rows: L, cols: 1, deallocator: nil) - μ.vecteur).length < 1e-7)
+		XCTAssert((LaMatrice(λd, rows: L, cols: 1, deallocator: nil) - λ.vecteur).length < 1e-7)
 
 	}
 	
     func testRNG() {
 
+		let distr: GaussianDistribution = try!GaussianDistribution(context: context)
+		
 		let srcμ: Float = Float(arc4random())/Float(UInt32.max) * 2.0 - 1.0
-		let srcσ: Float = 1.0 + Float(M_PI) * Float(arc4random())/Float(UInt32.max)
+		let srcσ: Float = 1.0 + Float(M_PI) * Float(arc4random()) / Float( UInt32.max )
 
-		let N: Int = 1024 * 1024
-		let ψ: [UInt32] = [UInt32](count: N, repeatedValue: 0)
-		let μ: [Float] = [Float](count: N, repeatedValue: srcμ)
-		let σ: [Float] = [Float](count: N, repeatedValue: srcσ)
-		let χ: [Float] = [Float](count: N, repeatedValue: 0.0)
+		let N: Int = 8192
+		let μd: [Float] = [Float](count: N, repeatedValue: srcμ)
+		let σd: [Float] = [Float](count: N, repeatedValue: srcσ)
+		let χd: [Float] = [Float](count: N, repeatedValue: 0.0)
 		
-		arc4random_buf(UnsafeMutablePointer<Void>(ψ), sizeof(UInt32)*N)
+		let μ: Buffer = context.newBuffer(μd)
+		let σ: Buffer = context.newBuffer(σd)
+		let χ: Buffer = context.newBuffer(χd)
 		
-		GaussianDistribution.rng(UnsafeMutablePointer<Float>(χ), ψ: ψ, μ: μ, σ: σ, count: N)
+		let command: Command = context.newCommand()
+		let compute: Compute = command.computeCommandEncoder()
 		
-		let(dstμ, dstσ) = GaussianDistribution.est(χ)
+		distr.rng(compute, χ: χ, μ: μ, σ: σ)
 		
-		print(srcμ, dstμ)
-		print(srcσ, dstσ)
+		compute.endEncoding()
+		command.commit()
+		command.waitUntilCompleted()
+		
+		let (dstμ, dstσ) = distr.est(χ)
 		
 		let rmseμ: Float = ( srcμ - dstμ ) * ( srcμ - dstμ )
 		let rmseσ: Float = ( srcσ - dstσ ) * ( srcσ - dstσ )
-		XCTAssert(rmseμ < 1e-3)
-		XCTAssert(rmseσ < 1e-3)
+		
+		if 1e-3 < rmseμ {
+			print(srcμ, dstμ)
+			XCTFail()
+		}
+		if 1e-3 < rmseσ {
+			print(srcσ, dstσ)
+			XCTFail()
+		}
     }
 }
-*/

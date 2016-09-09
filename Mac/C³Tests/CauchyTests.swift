@@ -26,6 +26,35 @@ class CauchyTests: XCTestCase {
 		}
 	}
 	
+	func testCDF() {
+		
+		let distribution: Distribution = try!CauchyDistribution(context: context)
+		let N: Int = 16
+		
+		let λd: [Float] = uniform(N, a: 1, b: 0)
+		let μd: [Float] = uniform(N, a: 2, b: -1)
+		let χd: [Float] = zip(μd, λd).map { 0.5 + atan($0.0*$0.1) / Float(M_PI) }
+		
+		let λ: Buffer = context.newBuffer(λd)
+		let μ: Buffer = context.newBuffer(μd)
+		let χ: Buffer = context.newBuffer(length: sizeof(Float)*N)
+		
+		let command: Command = context.newCommand()
+		let compute: Compute = command.computeCommandEncoder()
+		
+		distribution.cdf(compute, χ: χ, μ: μ, λ: λ)
+		
+		compute.endEncoding()
+		command.commit()
+		command.waitUntilCompleted()
+		
+		let rmseχ: Float = rmse(χd, χ.vecteur.array)
+		if 1e-7 < rmseχ {
+			XCTFail()
+		}
+		
+	}
+	
 	func testPDF() {
 		
 		let distribution: Distribution = try!CauchyDistribution(context: context)
@@ -53,6 +82,7 @@ class CauchyTests: XCTestCase {
 			XCTFail()
 		}
 	}
+	
 	/*
 	func testActivate() {
 		

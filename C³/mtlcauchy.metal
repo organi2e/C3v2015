@@ -53,7 +53,7 @@ kernel void cauchyRNG(device float4 * const value [[ buffer(0) ]],
 		
 		float4 const u = ( float4 ( seq ) + 0.5 ) / 4294967296.0;
 		
-		value [ k ] = tanpi ( u - 0.5 ) * sigma [ k ] + mu [ k ];
+		value [ k ] = mu [ k ] + sigma [ k ] * tanpi ( u - 0.5 );
 		
 		seq ^= seq >> a;
 		seq ^= seq << b;

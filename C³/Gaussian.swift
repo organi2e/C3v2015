@@ -9,23 +9,117 @@ import Accelerate
 import simd
 internal class GaussianDistribution: Distribution {
 	
-	init(context: Context) throws {
-		
+	private static let CDF: String = "gaussCDF"
+	private static let PDF: String = "gaussPDF"
+	private static let RNG: String = "gaussRNG"
+	
+	private let cache: Buffer
+	private let cdf: Pipeline
+	private let pdf: Pipeline
+	private let rng: Pipeline
+	
+	init(context: Context, block: Int = 256) throws {
+		cache = context.newBuffer(length: sizeof(uint)*4*block, options: .CPUCacheModeWriteCombined)
+		cdf = try context.newPipeline(self.dynamicType.CDF)
+		pdf = try context.newPipeline(self.dynamicType.PDF)
+		rng = try context.newPipeline(self.dynamicType.RNG)
 	}
 	
-	func cdf(compute: Compute, χ: Buffer, μ: Buffer, λ: Buffer) {}
-	func pdf(compute: Compute, χ: Buffer, μ: Buffer, λ: Buffer) {}
-	func rng(compute: Compute, χ: Buffer, μ: Buffer, σ: Buffer) {}
-	func gainχ(χ: LaObjet) -> (μ: LaObjet, σ: LaObjet) {
-		return(χ, χ*χ)
+	func cdf(compute: Compute, χ: Buffer, μ: Buffer, λ: Buffer) {
+		
+		let length: Int = min(χ.length, μ.length, λ.length)
+		let count: Int = length / sizeof(Float)
+		var _M_SQRT1_2: Float = Float(M_SQRT1_2)
+		
+		assert(length==χ.length)
+		assert(length==μ.length)
+		assert(length==λ.length)
+		
+		compute.setComputePipelineState(cdf)
+		compute.setBuffer(χ, offset: 0, atIndex: 0)
+		compute.setBuffer(μ, offset: 0, atIndex: 1)
+		compute.setBuffer(λ, offset: 0, atIndex: 2)
+		compute.setBytes(&_M_SQRT1_2, length: sizeof(Float), atIndex: 3)
+		compute.dispatch(grid: ((count+3)/4, 1, 1), threads: (1, 1, 1))
+		
 	}
+	func pdf(compute: Compute, χ: Buffer, μ: Buffer, λ: Buffer) {
+		
+		let length: Int = min(χ.length, μ.length, λ.length)
+		let count: Int = length / sizeof(Float)
+		var _M_SQRT1_2PI: Float = Float(0.5*M_2_SQRTPI*M_SQRT1_2)
+		
+		assert(length==χ.length)
+		assert(length==μ.length)
+		assert(length==λ.length)
+		
+		compute.setComputePipelineState(pdf)
+		compute.setBuffer(χ, offset: 0, atIndex: 0)
+		compute.setBuffer(μ, offset: 0, atIndex: 1)
+		compute.setBuffer(λ, offset: 0, atIndex: 2)
+		compute.setBytes(&_M_SQRT1_2PI, length: sizeof(Float), atIndex: 3)
+		compute.dispatch(grid: ((count+3)/4, 1, 1), threads: (1, 1, 1))
+		
+	}
+	func rng(compute: Compute, χ: Buffer, μ: Buffer, σ: Buffer) {
+		
+		let length: Int = min(χ.length, μ.length, σ.length)
+		let count: Int = length / sizeof(Float)
+		
+		let block: Int = cache.length / sizeof(uint)
+		
+		assert(length==χ.length)
+		assert(length==μ.length)
+		assert(length==σ.length)
+		
+		arc4random_buf(cache.bytes, cache.length)
+		
+		compute.setComputePipelineState(rng)
+		compute.setBuffer(χ, offset: 0, atIndex: 0)
+		compute.setBuffer(μ, offset: 0, atIndex: 1)
+		compute.setBuffer(σ, offset: 0, atIndex: 2)
+		compute.setBuffer(cache, offset: 0, atIndex: 3)
+		compute.setBytes([uint]([13, 17, 5, uint(count+3)/4]), length: sizeof(uint)*4, atIndex: 4)
+		compute.dispatch(grid: (block/4, 1, 1), threads: (1, 1, 1))
+		
+	}
+
+	func gainχ(χ: LaObjet) -> (μ: LaObjet, σ: LaObjet) {
+		return(χ, χ * χ)
+	}
+	
 	func Δμ(Δ Δ: LaObjet, μ: LaObjet) -> LaObjet {
 		return Δ
 	}
+	
 	func Δσ(Δ Δ: LaObjet, σ: LaObjet) -> LaObjet {
-		return Δ
+		return Δ * σ
 	}
-	func synthesize(χ χ: Buffer, μ: Buffer, λ: Buffer, refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) {}
+	func synthesize(χ χ: Buffer, μ: Buffer, λ: Buffer, refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) {
+		
+		let length: Int = min(χ.length, μ.length, λ.length)
+		let count: Int = length / sizeof(Float)
+		
+		assert( length == χ.length )
+		assert( length == μ.length )
+		assert( length == λ.length )
+		
+		let φ: (χ: LaObjet, μ: LaObjet, σ: LaObjet) = (χ: LaValuer(0), μ: LaValuer(0), σ: LaValuer(0))
+		let mix: (χ: LaObjet, μ: LaObjet, σ: LaObjet) = refer.reduce(φ) { ( $0.0.χ + $0.1.χ, $0.0.μ + $0.1.μ, $0.0.σ + ( $0.1.σ * $0.1.σ ) )  }
+		
+		mix.χ.getBytes(χ.bytes)
+		mix.μ.getBytes(μ.bytes)
+		mix.σ.getBytes(λ.bytes)
+		
+		vvrsqrtf(λ.bytes, λ.bytes, [Int32(count)])
+
+	}
+	func est(χ: Buffer) -> (μ: Float, σ: Float) {
+		var μ: Float = 0.0
+		var σ: Float = 1.0
+		vDSP_normalize(χ.bytes, 1, nil, 1, &μ, &σ, vDSP_Length(χ.length/sizeof(Float)))
+		return (μ, σ)
+	}
 	/*
 	static func cdf(χ: Float, μ: Float, σ: Float) -> Float {
 		let level: Double = ( Double(χ) - Double(μ) ) / Double(σ)

@@ -70,6 +70,8 @@ internal extension LaObjet {
 	}
 }
 
+internal prefix func -(lhs: LaObjet) -> LaObjet { return la_scale_with_float(lhs, -1) }
+
 internal func +(lhs: LaObjet, rhs: LaObjet) -> LaObjet { return la_sum(lhs, rhs) }
 internal func +(lhs: LaObjet, rhs: Float) -> LaObjet { return la_sum(lhs, la_splat_from_float(rhs, ATTR)) }
 internal func +(lhs: Float, rhs: LaObjet) -> LaObjet { return la_sum(la_splat_from_float(lhs, ATTR), rhs) }
