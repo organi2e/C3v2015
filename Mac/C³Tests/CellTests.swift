@@ -14,13 +14,13 @@ class CellTests: XCTestCase {
 		let type: DistributionType = .Cauchy
 		let I: Cell = try! context.newCell(type, width: 4, label: "I")
 		let H: Cell = try! context.newCell(type, width:256, label: "H")
-		//let G: Cell = try! context.newCell(type, width:256, label: "G")
+		let G: Cell = try! context.newCell(type, width:256, label: "G")
 		let O: Cell = try! context.newCell(type, width: 4, label: "O")
 		
 		try!context.chainCell(output: H, input: I)
-		//try!context.chainCell(output: G, input: H)
+		try!context.chainCell(output: G, input: H)
 		//try!context.chainCell(output: H, input: G)
-		try!context.chainCell(output: O, input: H)
+		try!context.chainCell(output: O, input: G)
 		
 		let IS: [[Bool]] = [
 			UInt8(3).bitPattern,
@@ -35,7 +35,7 @@ class CellTests: XCTestCase {
 			UInt8(0).oneHotEncoding
 		]
 		
-		for k in 0..<1024 {
+		for k in 0..<256 {
 			//print("epoch: \(k)", terminator: "\r")
 			for _ in 0..<16 {
 				
