@@ -9,13 +9,13 @@ import Accelerate
 import simd
 internal class CauchyDistribution: Distribution {
 	
-	private let cache: [uint]
+	private let cache: Buffer
 	private let cdf: Pipeline
 	private let pdf: Pipeline
 	private let rng: Pipeline
 	
-	init(context: Context) throws {
-		cache = [uint](count: 256, repeatedValue: 0)
+	init(context: Context, bs: Int = 1024) throws {
+		cache = context.newBuffer(length: sizeof(uint)*bs, options: .CPUCacheModeWriteCombined)
 		cdf = try context.newPipeline("cauchyCDF")
 		pdf = try context.newPipeline("cauchyPDF")
 		rng = try context.newPipeline("cauchyRNG")
@@ -62,20 +62,20 @@ internal class CauchyDistribution: Distribution {
 		let length: Int = min(χ.length, μ.length, σ.length)
 		let count: Int = length / sizeof(Float)
 		
-		let block: Int = cache.count
+		let block: Int = cache.length / sizeof(uint)
 		let param: [uint] = [uint]([13, 17, 5, uint(count+3)/4])
 		
 		assert(length==χ.length)
 		assert(length==μ.length)
 		assert(length==σ.length)
 		
-		arc4random_buf(UnsafeMutablePointer<Void>(cache), sizeof(uint)*block)
+		arc4random_buf(cache.bytes, cache.length)
 		
 		compute.setComputePipelineState(rng)
 		compute.setBuffer(χ, offset: 0, atIndex: 0)
 		compute.setBuffer(μ, offset: 0, atIndex: 1)
 		compute.setBuffer(σ, offset: 0, atIndex: 2)
-		compute.setBytes(cache, length: sizeof(uint)*cache.count, atIndex: 3)
+		compute.setBuffer(cache, offset: 0, atIndex: 3)
 		compute.setBytes(param, length: sizeof(uint)*param.count, atIndex: 4)
 		compute.dispatch(grid: (block/4, 1, 1), threads: (1, 1, 1))
 		

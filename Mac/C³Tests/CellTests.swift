@@ -13,8 +13,8 @@ class CellTests: XCTestCase {
 		context.optimizerFactory = SGD.factory(η: 0.5)
 		let type: DistributionType = .Cauchy
 		let I: Cell = try! context.newCell(type, width: 4, label: "I")
-		let H: Cell = try! context.newCell(type, width:256, label: "H")
-		let G: Cell = try! context.newCell(type, width:256, label: "G")
+		let H: Cell = try! context.newCell(type, width:1024, label: "H")
+		let G: Cell = try! context.newCell(type, width:1024, label: "G")
 		let O: Cell = try! context.newCell(type, width: 4, label: "O")
 		
 		try!context.chainCell(output: H, input: I)

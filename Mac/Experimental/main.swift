@@ -113,6 +113,31 @@ do {
 	print(Double(N*P)/smdtoc()/1_000_000_000.0, "GFLOPS (simd sign)")
 }
 
+do {
+	let smdtoc = tic()
+	let aref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(a)
+	var bref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(b)
+	
+	let queue: dispatch_queue_t = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0)
+	
+	let B: Int = 4
+	let S: Int = ( N + B - 1 ) / B
+	
+	for p in 1...P {
+		
+		dispatch_apply(B, queue) {
+			let via: Int = $0 * S
+			let dst: Int = $0 * S + S
+			(via..<dst).forEach {
+				if 4 * $0 < N {
+					bref[$0] = vector_sign(aref[$0])
+				}
+			}
+		}
+	}
+	print(Double(N*P)/smdtoc()/1_000_000_000.0, "GFLOPS (simd sign, GCD)")
+}
+
 let gcd = tic()
 for p in 1...P {
 	dispatch_apply(N/4, dispatch) {

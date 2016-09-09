@@ -5,12 +5,11 @@
 //  Created by Kota Nakano on 6/1/16.
 //
 //
-
 import CoreData
-import simd
 public class Cell: NSManagedObject {
 
 	private let group: dispatch_group_t = dispatch_group_create()
+	
 	private enum Ready {
 		case state
 		case train
@@ -32,10 +31,7 @@ public class Cell: NSManagedObject {
 	
 	private var level: RingBuffer<Level> = RingBuffer<Level>(array: [])
 	
-	internal private(set) var distribution: Distribution = FalseDistribution()
-	
-	private var activate: Pipeline?
-	private var derivate: Pipeline?
+	internal var distribution: Distribution = FalseDistribution()
 	
 }
 
@@ -87,9 +83,6 @@ extension Cell {
 		
 		guard let context: Context = managedObjectContext as? Context else { fatalError(Context.Error.InvalidContext.rawValue) }
 		
-		activate = try?context.newPipeline("cellActivate")
-		derivate = try?context.newPipeline("cellDerivate")
-		
 		switch type {
 		case .False:
 			distribution = FalseDistribution()
@@ -105,7 +98,11 @@ extension Cell {
 		train = RingBuffer<Buffer>(array: (0..<count).map {(_) in context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared) })
 		error = RingBuffer<Buffer>(array: (0..<count).map {(_) in context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared) })
 		nabla = RingBuffer<Buffer>(array: (0..<count).map {(_) in context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared) })
-		level = RingBuffer<Level>(array: (0..<count).map {(_) in Level(φ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared), μ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared), λ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared)) })
+		level = RingBuffer<Level>(array: (0..<count).map {(_) in Level(
+			φ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared),
+			μ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared),
+			λ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared))
+		})
 	}
 }
 extension Cell {
@@ -119,8 +116,8 @@ extension Cell {
 				let command: Command = context.newCommand()
 				let compute: Compute = command.computeCommandEncoder()
 				
-				dispatch_group_enter(group)
-				func complete(command: Command) { dispatch_group_leave(group) }
+				enter()
+				func complete(command: Command) { leave() }
 				
 				input.forEach { $0.collect_clear( compute ) }
 				bias.collect_clear(compute)
@@ -165,7 +162,7 @@ extension Cell {
 				
 				let refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)] = input.map { $0.collect(ignore.union([self])) } + [ bias.collect() ]
 					
-				dispatch_group_wait(group, DISPATCH_TIME_FOREVER)
+				merge()
 				distribution.synthesize(χ: level.new.φ, μ: level.new.μ, λ: level.new.λ, refer: refer)//cpu
 				
 				if let context: Context = managedObjectContext as? Context {
@@ -173,8 +170,8 @@ extension Cell {
 					let command: Command = context.newCommand()
 					let compute: Compute = command.computeCommandEncoder()
 				
-					dispatch_group_enter(group)
-					func complete(command: Command) { dispatch_group_leave(group) }
+					enter()
+					func complete(command: Command) { leave() }
 				
 					distribution.pdf(compute, χ: nabla.new, μ: level.new.μ, λ: level.new.λ)//gpu
 					
@@ -186,13 +183,7 @@ extension Cell {
 					assertionFailure(Context.Error.InvalidContext.rawValue)
 					
 				}
-				
-				let yref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(state.new.bytes)
-				let xref: UnsafePointer<float4> = UnsafePointer<float4>(level.new.φ.bytes)
-				(0..<(width+3)/4).forEach {
-					yref[$0] = step(xref[$0], edge: float4(0))
-				}
-
+				step(y: state.new, x: level.new.φ)
 				ready.insert(.state)
 			}
 			return χ
@@ -207,18 +198,14 @@ extension Cell {
 				
 				let δ: LaObjet = ready.contains(.train) ? χ - ψ : output.map { $0.correct(ignore.union([self])) } .reduce(LaValuer(0)) { $0.0 + $0.1 }
 				δ.getBytes(error.new.bytes)//cpu
-					
-				let yref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(state.new.bytes)
-				let xref: UnsafePointer<float4> = UnsafePointer<float4>(level.new.φ.bytes)
-				(0..<(width+3)/4).forEach {
-					yref[$0] = sign(xref[$0])
-				}
+				
+				sign(y: error.new, x: error.new)
 				ready.insert(.delta)
 				
 				bias.correct(ignore)//cpu
 				
 			}
-			dispatch_group_wait(group, DISPATCH_TIME_FOREVER)
+			merge()
 			return (Δ, ϝ, -1 * ϝ * μ * λ)
 		}
 	}
@@ -226,7 +213,17 @@ extension Cell {
 		return LaValuer(0)
 	}
 }
-
+extension Cell {
+	func enter() {
+		dispatch_group_enter(group)
+	}
+	func leave() {
+		dispatch_group_leave(group)
+	}
+	func merge() {
+		dispatch_group_wait(group, DISPATCH_TIME_FOREVER)
+	}
+}
 extension Cell {
 	
 	internal var χ: LaObjet { return LaMatrice(state.new.bytes, rows: width, cols: 1, deallocator: nil) }
