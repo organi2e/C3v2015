@@ -64,6 +64,7 @@
 		878C7AAB1D01AF13002CDFD1 /* MNIST.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 878C7AA31D01AF13002CDFD1 /* MNIST.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		878C7AC71D01AF92002CDFD1 /* MNIST.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878C7AC61D01AF92002CDFD1 /* MNIST.swift */; };
 		878C7AE51D01B044002CDFD1 /* MNIST.h in Headers */ = {isa = PBXBuildFile; fileRef = 878C7AA51D01AF13002CDFD1 /* MNIST.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		879AB7981D826A8F00F42717 /* libcompression.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 879AB7971D826A8F00F42717 /* libcompression.tbd */; };
 		87A42CC71D4F5F58008D9708 /* Feedbax.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87A42CC51D4F5D68008D9708 /* Feedbax.swift */; };
 		87AE7C941D7559990061F229 /* QuasiNewton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87AE7C921D7558F80061F229 /* QuasiNewton.swift */; };
 		87AE7C971D755E720061F229 /* OptimizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87AE7C951D755CBF0061F229 /* OptimizerTests.swift */; };
@@ -91,7 +92,6 @@
 		87C356371D811DA600F618CE /* Buffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87C356361D811DA600F618CE /* Buffer.swift */; };
 		87C3563A1D81231000F618CE /* ManagedObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87C356391D81231000F618CE /* ManagedObject.swift */; };
 		87C3563D1D8124AC00F618CE /* Data.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87C3563C1D8124AC00F618CE /* Data.swift */; };
-		87C3563F1D812AE200F618CE /* libcompression.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 87C3563E1D812AE200F618CE /* libcompression.tbd */; };
 		87CFDE871D74321A00716188 /* Arcane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87ED4FDA1D7430E100019209 /* Arcane.swift */; };
 		87CFDE981D7441AB00716188 /* Distribution.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87CFDE971D7441AB00716188 /* Distribution.swift */; };
 		87CFDE9A1D744BD600716188 /* GaussianTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87CFDE991D744BD600716188 /* GaussianTests.swift */; };
@@ -233,6 +233,7 @@
 		878C7AA51D01AF13002CDFD1 /* MNIST.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MNIST.h; sourceTree = "<group>"; };
 		878C7AA71D01AF13002CDFD1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		878C7AC61D01AF92002CDFD1 /* MNIST.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MNIST.swift; path = ../../MNIST/MNIST.swift; sourceTree = "<group>"; };
+		879AB7971D826A8F00F42717 /* libcompression.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libcompression.tbd; path = usr/lib/libcompression.tbd; sourceTree = SDKROOT; };
 		87A42CC51D4F5D68008D9708 /* Feedbax.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Feedbax.swift; path = "../../C³/Feedbax.swift"; sourceTree = "<group>"; };
 		87AE7C921D7558F80061F229 /* QuasiNewton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = QuasiNewton.swift; path = "../../C³/QuasiNewton.swift"; sourceTree = "<group>"; };
 		87AE7C951D755CBF0061F229 /* OptimizerTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OptimizerTests.swift; sourceTree = "<group>"; };
@@ -262,7 +263,6 @@
 		87C356361D811DA600F618CE /* Buffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Buffer.swift; path = "../../C³/Buffer.swift"; sourceTree = "<group>"; };
 		87C356391D81231000F618CE /* ManagedObject.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = ManagedObject.swift; path = "../../C³/ManagedObject.swift"; sourceTree = "<group>"; };
 		87C3563C1D8124AC00F618CE /* Data.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Data.swift; path = "../../C³/Data.swift"; sourceTree = "<group>"; };
-		87C3563E1D812AE200F618CE /* libcompression.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libcompression.tbd; path = usr/lib/libcompression.tbd; sourceTree = SDKROOT; };
 		87CFDE971D7441AB00716188 /* Distribution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Distribution.swift; path = "../../C³/Distribution.swift"; sourceTree = "<group>"; };
 		87CFDE991D744BD600716188 /* GaussianTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GaussianTests.swift; sourceTree = "<group>"; };
 		87CFDE9B1D753C2200716188 /* ArcaneTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ArcaneTests.swift; sourceTree = "<group>"; };
@@ -325,7 +325,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				87C3563F1D812AE200F618CE /* libcompression.tbd in Frameworks */,
+				879AB7981D826A8F00F42717 /* libcompression.tbd in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -399,7 +399,6 @@
 		878C7A571D01AE4D002CDFD1 = {
 			isa = PBXGroup;
 			children = (
-				87C3563E1D812AE200F618CE /* libcompression.tbd */,
 				87D3F17A1D6CB1C300FA8C80 /* Analyzer */,
 				878C7A901D01AF05002CDFD1 /* sandbox */,
 				87B1FD021D05461100981CF4 /* C³ */,
@@ -410,6 +409,7 @@
 				874347AA1D6EF8E500B54F70 /* CL3Tests */,
 				87F2A6C81D73C8190090A509 /* Experimental */,
 				878C7A741D01AEEC002CDFD1 /* Products */,
+				879AB7991D826A9500F42717 /* Dependency */,
 			);
 			sourceTree = "<group>";
 		};
@@ -453,6 +453,14 @@
 				878C7AA71D01AF13002CDFD1 /* Info.plist */,
 			);
 			path = MNIST;
+			sourceTree = "<group>";
+		};
+		879AB7991D826A9500F42717 /* Dependency */ = {
+			isa = PBXGroup;
+			children = (
+				879AB7971D826A8F00F42717 /* libcompression.tbd */,
+			);
+			name = Dependency;
 			sourceTree = "<group>";
 		};
 		87B1FD021D05461100981CF4 /* C³ */ = {
