@@ -16,16 +16,16 @@ extension Edge {
 	@NSManaged private var output: Cell
 }
 extension Edge {
-	func collect(compute: Compute, ignore: Set<Cell>) -> (χ: LaObjet, μ: LaObjet, σ: LaObjet) {
-		let state: LaObjet = input.collect(compute, ignore: ignore)
+	func collect(ignore: Set<Cell>) -> (χ: LaObjet, μ: LaObjet, σ: LaObjet) {
+		let state: LaObjet = input.collect(ignore)
 		return(
 			χ: matrix_product(χ, state),
 			μ: matrix_product(μ, state),
 			σ: matrix_product(σ, state)
 		)
 	}
-	func correct(compute: Compute, ignore: Set<Cell>) -> LaObjet {
-		let (Δ, gμ, gσ) = output.correct(compute, ignore: ignore)
+	func correct(ignore: Set<Cell>) -> LaObjet {
+		let (Δ, gμ, gσ) = output.correct(ignore)
 		let distribution: Distribution = output.distribution
 		let (μ, σ) = distribution.gainχ(input.χ)
 		let Δμ: LaObjet = outer_product(Δ * gμ, μ)

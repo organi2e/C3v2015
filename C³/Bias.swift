@@ -21,11 +21,11 @@ extension Bias {
 			gradσ = [Float](count: rows*cols, repeatedValue: 0)
 		}
 	}
-	internal func collect(compute: Compute) -> (LaObjet, LaObjet, LaObjet) {
+	internal func collect() -> (LaObjet, LaObjet, LaObjet) {
 		return(χ, μ, σ)
 	}
-	internal func correct(compute: Compute, ignore: Set<Cell>) {
-		let(Δ, gradμ, gradσ) = output.correct(compute, ignore: ignore)
+	internal func correct(ignore: Set<Cell>) {
+		let(Δ, gradμ, gradσ) = output.correct(ignore)
 		do {
 			//let I: LaObjet = LaIdentité(rows)
 			let Δμ: LaObjet = (Δ*gradμ)//matrix_product((Δ*gradμ).T, I)

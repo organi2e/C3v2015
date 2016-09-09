@@ -10,6 +10,7 @@ import CoreData
 import simd
 public class Cell: NSManagedObject {
 
+	private let group: dispatch_group_t = dispatch_group_create()
 	private enum Ready {
 		case state
 		case train
@@ -113,22 +114,30 @@ extension Cell {
 			
 			ready.remove(.state)
 			
-			guard let context: Context = managedObjectContext as? Context else { fatalError(Context.Error.InvalidContext.rawValue) }
-			
-			let command: Command = context.newCommand()
-			let compute: Compute = command.computeCommandEncoder()
-			
-			input.forEach { $0.collect_clear( compute ) }
-			
-			bias.collect_clear(compute)
+			if let context: Context = managedObjectContext as? Context {
+				
+				let command: Command = context.newCommand()
+				let compute: Compute = command.computeCommandEncoder()
+				
+				dispatch_group_enter(group)
+				func complete(command: Command) { dispatch_group_leave(group) }
+				
+				input.forEach { $0.collect_clear( compute ) }
+				bias.collect_clear(compute)
+				
+				compute.endEncoding()
+				command.addCompletedHandler(complete)
+				command.commit()
+				
+			} else {
+				assertionFailure(Context.Error.InvalidContext.rawValue)
+				
+			}
 			
 			train.progress()
 			state.progress()
 			level.progress()
 			
-			compute.endEncoding()
-			command.commit()
-
 		}
 	}
 	public func correct_clear() {
@@ -147,137 +156,69 @@ extension Cell {
 		
 		ready.remove(.train)
 	}
-	public func collect() {
-		guard let context: Context = managedObjectContext as? Context else { fatalError(Context.Error.InvalidContext.rawValue) }
-		let command: Command = context.newCommand()
-		let compute: Compute = command.computeCommandEncoder()
-		
-		collect(compute, ignore: [])
-		
-		compute.endEncoding()
-		command.commit()
-		command.waitUntilCompleted()
-	}
-	internal func collect(compute: Compute, ignore: Set<Cell>) -> LaObjet {
+	public func collect(ignore: Set<Cell>=[]) -> LaObjet {
 		if ignore.contains(self) {
 			return _χ
 			
 		} else {
 			if !ready.contains(.state) {
 				
+				let refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)] = input.map { $0.collect(ignore.union([self])) } + [ bias.collect() ]
+					
+				dispatch_group_wait(group, DISPATCH_TIME_FOREVER)
+				distribution.synthesize(χ: level.new.φ, μ: level.new.μ, λ: level.new.λ, refer: refer)//cpu
+				
 				if let context: Context = managedObjectContext as? Context {
 					
 					let command: Command = context.newCommand()
-					let collect: Compute = command.computeCommandEncoder()
+					let compute: Compute = command.computeCommandEncoder()
+				
+					dispatch_group_enter(group)
+					func complete(command: Command) { dispatch_group_leave(group) }
+				
+					distribution.pdf(compute, χ: nabla.new, μ: level.new.μ, λ: level.new.λ)//gpu
 					
-					let refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)] = input.map { $0.collect(collect, ignore: ignore.union([self])) } + [ bias.collect(collect) ]
-					
-					collect.endEncoding()
+					compute.endEncoding()
+					command.addCompletedHandler(complete)
 					command.commit()
-					
-					/* add cpu work here */
-					
-					command.waitUntilCompleted()
-					
-					/* add gpu work here */
-					
-					distribution.synthesize(χ: level.new.φ, μ: level.new.μ, λ: level.new.λ, refer: refer)//cpu
 					
 				} else {
 					assertionFailure(Context.Error.InvalidContext.rawValue)
 					
 				}
-				if let activate: Pipeline = activate {
-					
-					compute.setComputePipelineState(activate)
-					compute.setBuffer(state.new, offset: 0, atIndex: 0)
-					compute.setBuffer(level.new.φ, offset: 0, atIndex: 1)
-					compute.dispatch(grid: ((width+3)/4, 1, 1), threads: (1, 1, 1))//gpu
-					
-					/* add cpu work here */
-					
-				} else {
-					let yref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(state.new.bytes)
-					let xref: UnsafePointer<float4> = UnsafePointer<float4>(level.new.φ.bytes)
-					(0..<(width+3)/4).forEach {
-						yref[$0] = step(xref[$0], edge: float4(0))
-					}
-					assertionFailure()
+				
+				let yref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(state.new.bytes)
+				let xref: UnsafePointer<float4> = UnsafePointer<float4>(level.new.φ.bytes)
+				(0..<(width+3)/4).forEach {
+					yref[$0] = step(xref[$0], edge: float4(0))
 				}
+
 				ready.insert(.state)
 			}
 			return χ
 		}
 	}
-	public func correct() {
-		guard let context: Context = managedObjectContext as? Context else { fatalError(Context.Error.InvalidContext.rawValue) }
-		
-		let command: Command = context.newCommand()
-		let compute: Compute = command.computeCommandEncoder()
-		
-		correct(compute, ignore: [])
-		
-		compute.endEncoding()
-		command.commit()
-		command.waitUntilCompleted()
-		
-	}
-	internal func correct(compute: Compute, ignore: Set<Cell>) -> (Δ: LaObjet, gradμ: LaObjet, gradσ: LaObjet) {
+	internal func correct(ignore: Set<Cell>=[]) -> (Δ: LaObjet, gradμ: LaObjet, gradσ: LaObjet) {
 		if ignore.contains(self) {
 			return (_Δ, _ϝ, -1 * _ϝ * _μ * _λ)
 			
 		} else {
 			if !ready.contains(.delta) {
 				
-				if let context: Context = managedObjectContext as? Context {
-
-					let command: Command = context.newCommand()
-					let collect: Compute = command.computeCommandEncoder()
-
-					let δ: LaObjet = ready.contains(.train) ? χ - ψ : output.map { $0.correct(collect, ignore: ignore.union([self])) } .reduce(LaValuer(0)) { $0.0 + $0.1 }
+				let δ: LaObjet = ready.contains(.train) ? χ - ψ : output.map { $0.correct(ignore.union([self])) } .reduce(LaValuer(0)) { $0.0 + $0.1 }
+				δ.getBytes(error.new.bytes)//cpu
 					
-					collect.endEncoding()
-					
-					command.commit()
-					command.waitUntilCompleted()
-					
-					/* add gpu work here */
-					
-					δ.getBytes(error.new.bytes)//cpu
-					
-				} else {
-					assertionFailure(Context.Error.InvalidContext.rawValue)
-					
+				let yref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(state.new.bytes)
+				let xref: UnsafePointer<float4> = UnsafePointer<float4>(level.new.φ.bytes)
+				(0..<(width+3)/4).forEach {
+					yref[$0] = sign(xref[$0])
 				}
-				distribution.pdf(compute, χ: nabla.new, μ: level.new.μ, λ: level.new.λ)//gpu
-				/*
-				if let derivate: Pipeline = derivate {
-					
-					compute.setComputePipelineState(derivate)
-					compute.setBuffer(error.new, offset: 0, atIndex: 0)
-					compute.setBuffer(error.new, offset: 0, atIndex: 1)
-					compute.dispatch(grid: ((width+3)/4, 1, 1), threads: (1, 1, 1))//gpu
-					
-				
-					
-					/* add cpu work here */
-					
-				} else {
-					let yref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(state.new.bytes)
-					let xref: UnsafePointer<float4> = UnsafePointer<float4>(level.new.φ.bytes)
-					(0..<(width+3)/4).forEach {
-						yref[$0] = sign(xref[$0])
-					}
-					assertionFailure()
-				}
-				*/
 				ready.insert(.delta)
 				
-				/* add gpu work here */
-				
-				bias.correct(compute, ignore: ignore)//cpu
+				bias.correct(ignore)//cpu
 				
 			}
+			dispatch_group_wait(group, DISPATCH_TIME_FOREVER)
 			return (Δ, ϝ, -1 * ϝ * μ * λ)
 		}
 	}
@@ -287,23 +228,6 @@ extension Cell {
 }
 
 extension Cell {
-	
-	internal static func step(y y: UnsafeMutablePointer<Float>, x: UnsafePointer<Float>, count: Int) {
-		let yref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(y)
-		let xref: UnsafePointer<float4> = UnsafePointer<float4>(x)
-		let zero: float4 = float4(0)
-		(0..<count/4).forEach {
-			yref[$0] = vector_step(zero, xref[$0])
-		}
-	}
-	
-	internal static func sign(y y: UnsafeMutablePointer<Float>, x: UnsafePointer<Float>, count: Int) {
-		let yref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(y)
-		let xref: UnsafePointer<float4> = UnsafePointer<float4>(x)
-		(0..<count/4).forEach {
-			yref[$0] = vector_sign(xref[$0])
-		}
-	}
 	
 	internal var χ: LaObjet { return LaMatrice(state.new.bytes, rows: width, cols: 1, deallocator: nil) }
 	internal var ψ: LaObjet { return LaMatrice(train.new.bytes, rows: width, cols: 1, deallocator: nil) }
