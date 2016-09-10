@@ -99,6 +99,7 @@ internal extension Arcane {
 		didAccessValueForKey(self.dynamicType.locationKey)
 		
 		distribution.rng(compute, χ: value, μ: mu, σ: sigma)
+		
 	}
 	internal func update(distribution: Distribution, Δμ: LaObjet, Δσ: LaObjet) {
 	

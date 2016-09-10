@@ -10,12 +10,12 @@ import XCTest
 class CellTests: XCTestCase {
 	let context: Context = try!Context()
 	func testCollect() {
-		context.optimizerFactory = SGD.factory(η: 0.5)
+		context.optimizerFactory = SGD.factory(η: 0.1)
 		let type: DistributionType = .Cauchy
 		let I: Cell = try! context.newCell(type, width: 4, label: "I")
-		let H: Cell = try! context.newCell(type, width:64, label: "H", input: [I])
-		let G: Cell = try! context.newCell(type, width:64, label: "G", input: [H])
-		let F: Cell = try! context.newCell(type, width:64, label: "F", input: [G])
+		let H: Cell = try! context.newCell(type, width:256, label: "H", input: [I])
+		let G: Cell = try! context.newCell(type, width:256, label: "G", input: [H])
+		let F: Cell = try! context.newCell(type, width:256, label: "F", input: [G])
 		let O: Cell = try! context.newCell(type, width: 4, label: "O", input: [F])
 		
 		let IS: [[Bool]] = [
@@ -31,7 +31,7 @@ class CellTests: XCTestCase {
 			UInt8(0).oneHotEncoding
 		]
 		
-		for k in 0..<4096 {
+		for k in 0..<1024 {
 			//print("epoch: \(k)", terminator: "\r")
 			for _ in 0..<16 {
 				

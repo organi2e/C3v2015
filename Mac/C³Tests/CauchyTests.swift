@@ -227,9 +227,12 @@ class CauchyTests: XCTestCase {
 	}
 	
 	func testSynthesize() {
+		
 		let N: Int = 4
 		let L: Int = 16
+		
 		var refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)] = []
+		
 		for _ in 0..<N {
 			let element: (χ: LaObjet, μ: LaObjet, σ: LaObjet) = (
 				LaMatrice(uniform(L, a: 2, b: -1), rows: L, cols: 1),
@@ -279,8 +282,8 @@ class CauchyTests: XCTestCase {
 		let srcμ: Float = Float(arc4random())/Float(UInt32.max) * 2.0 - 1.0
 		let srcσ: Float = 1.0 + Float(M_PI) * Float(arc4random())/Float(UInt32.max)
 		
-		let rows: Int = 16
-		let cols: Int = 16
+		let rows: Int = 256
+		let cols: Int = 256
 		
 		let μd: [Float] = [Float](count: rows*cols, repeatedValue: srcμ)
 		let σd: [Float] = [Float](count: rows*cols, repeatedValue: srcσ)
@@ -298,8 +301,6 @@ class CauchyTests: XCTestCase {
 		compute.endEncoding()
 		command.commit()
 		command.waitUntilCompleted()
-		
-		print(χ.vecteur.array)
 		
 		let(dstμ, dstσ) = distribution.est(χ.vecteur.array, η: 0.8, K: 1024)
 		

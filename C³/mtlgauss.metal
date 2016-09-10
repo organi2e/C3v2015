@@ -16,7 +16,7 @@ kernel void gaussCDF(device float4 * const value [[ buffer(0) ]],
 					 uint const N [[ threads_per_grid ]]) {
 	float4 const x = mu [ n ] * lambda [ n ] * M_1_SQRT2;
 	float4 const t = 1 / ( 1 + 0.5 * abs ( x ) );
-	float4 const c = 1 - t * exp ( - x * x -  1.26551223 + t * ( 1.00002368 + t * ( 0.37409196 + t * ( 0.09678418 + t * ( -0.18628806 + t * ( 0.27886807 + t * ( -1.13520398 + t * ( 1.48851587 + t * ( -0.82215223 + t * ( 0.17087277 ) ) ) ) ) ) ) ) ) );//approximation of erf with Horner's method
+	float4 const c = 1 - t * fast :: exp ( - x * x -  1.26551223 + t * ( 1.00002368 + t * ( 0.37409196 + t * ( 0.09678418 + t * ( - 0.18628806 + t * ( 0.27886807 + t * ( - 1.13520398 + t * ( 1.48851587 + t * ( - 0.82215223 + t * ( 0.17087277 ) ) ) ) ) ) ) ) ) );//approximation of erf with Horner's method
 	value [ n ] = 0.5 * ( 1 + select ( c, -c, x < 0 ) );
 }
 kernel void gaussPDF(device float4 * const value [[ buffer(0) ]],
@@ -33,6 +33,19 @@ kernel void gaussPDF(device float4 * const value [[ buffer(0) ]],
 	value [ n ] = exp( - 0.5 * v * v ) * l * M_1_SQRT2PI;
 	
 }
+/*
+kernel void gaussRNG(device float4 * const value [[ buffer(0) ]],
+					 device const float4 * const mu [[ buffer(1) ]],
+					 device const float4 * const sigma [[ buffer(2) ]],
+					 constant uint4 * const seeds [[ buffer(3) ]],
+					 uint const t [[ thread_position_in_grid ]],
+					 uint const T [[ threads_per_grid ]]) {
+	
+	float4 const u = ( float4 ( seeds[ t ] ) + 1 ) / 4294967296.0;
+	value [ t ] = mu [ t ] + sigma [ t ] * float4( fast :: cospi( 2 * u.xy ), fast :: sinpi( 2 * u.xy ) ) * fast :: sqrt( -2 * fast :: log( u.zw ).xyxy );
+	
+}
+*/
 kernel void gaussRNG(device float4 * const value [[ buffer(0) ]],
 					 device const float4 * const mu [[ buffer(1) ]],
 					 device const float4 * const sigma [[ buffer(2) ]],
@@ -51,29 +64,11 @@ kernel void gaussRNG(device float4 * const value [[ buffer(0) ]],
 	for ( uint k = t ; k < K ; k += T ) {
 		
 		float4 const u = ( float4 ( seq ) + 1 ) / 4294967296.0;
-		value [ k ] = mu [ k ] + sigma [ k ] * float4( cospi( 2.0 * u.xy ), sinpi( 2.0 * u.xy ) ) * sqrt( -2.0 * log( u.zw ).xyxy );
+		value [ k ] = mu [ k ] + sigma [ k ] * float4( fast :: cospi( 2 * u.xy ), fast :: sinpi( 2 * u.xy ) ) * fast :: sqrt( -2 * fast :: log( u.zw ).xyxy );
 		
 		seq ^= seq >> a;
 		seq ^= seq << b;
 		seq ^= seq >> c;
 		
 	}
-}
-
-
-float4 gaussPDF(float4 const, float4 const, float const);
-
-float4 gaussPDF(float4 const mu, float4 const sigma, float const M_PI) {
-	float4 v = mu / sigma;
-	return exp(-0.5*v*v)*rsqrt(2.0*M_PI)/sigma;
-}
-
-kernel void gaussShuffle(device float4 * const value [[ buffer(0) ]],
-						 device const float4 * const mu [[ buffer(1) ]],
-						 device const float4 * const sigma [[ buffer(2) ]],
-						 device const float4 * const uniform [[ buffer(3) ]],
-						 uint const n [[ thread_position_in_grid ]],
-						 uint const N [[ threads_per_grid ]]) {
-	float4 u = uniform[n];
-	value[n] = mu[n] + sigma[n] * float4(cospi(2.0*u.xy), sinpi(2.0*u.xy)).xzyw * sqrt(-2.0*log(u.zw).xxyy);
 }

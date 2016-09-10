@@ -19,7 +19,7 @@ kernel void cauchyCDF(device float4 * const value [[ buffer(0) ]],
 	float4 const l = lambda [ n ];
 	float4 const v = m * l;
 	
-	value[n] = M_1_PI * atan(v) + 0.5;
+	value [ n ] = M_1_PI * fast :: atan(v) + 0.5;
 }
 kernel void cauchyPDF(device float4 * const value [[ buffer(0) ]],
 					  device const float4 * const mu [[ buffer(1) ]],
@@ -32,7 +32,7 @@ kernel void cauchyPDF(device float4 * const value [[ buffer(0) ]],
 	float4 const l = lambda [ n ];
 	float4 const v = m * l;
 	
-	value[n] = M_1_PI * l / ( 1 + v * v );
+	value [ n ] = M_1_PI * l / ( 1 + v * v );
 }
 kernel void cauchyRNG(device float4 * const value [[ buffer(0) ]],
 					  device const float4 * const mu [[ buffer(1) ]],
@@ -53,7 +53,7 @@ kernel void cauchyRNG(device float4 * const value [[ buffer(0) ]],
 		
 		float4 const u = ( float4 ( seq ) + 0.5 ) / 4294967296.0;
 		
-		value [ k ] = mu [ k ] + sigma [ k ] * tanpi ( u - 0.5 );
+		value [ k ] = mu [ k ] + sigma [ k ] * fast :: tanpi ( u - 0.5 );
 		
 		seq ^= seq >> a;
 		seq ^= seq << b;

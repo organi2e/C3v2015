@@ -34,8 +34,8 @@ extension Edge {
 		return matrix_product(χ.T, Δ)
 	}
 	func collect_clear(compute: Compute) {
-		refresh(compute, distribution: output.distribution)
 		input.collect_clear()
+		refresh(compute, distribution: output.distribution)
 	}
 	func correct_clear() {
 		output.correct_clear()

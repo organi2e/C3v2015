@@ -12,7 +12,8 @@ internal class GaussianDistribution: Distribution {
 	private static let CDF: String = "gaussCDF"
 	private static let PDF: String = "gaussPDF"
 	private static let RNG: String = "gaussRNG"
-	
+
+	private let group: dispatch_group_t = dispatch_group_create()
 	private let cache: Buffer
 	private let cdf: Pipeline
 	private let pdf: Pipeline
@@ -20,6 +21,7 @@ internal class GaussianDistribution: Distribution {
 	
 	init(context: Context, block: Int = 256) throws {
 		cache = context.newBuffer(length: sizeof(uint)*4*block, options: .CPUCacheModeWriteCombined)
+		arc4random_buf(cache.bytes, cache.length)
 		cdf = try context.newPipeline(self.dynamicType.CDF)
 		pdf = try context.newPipeline(self.dynamicType.PDF)
 		rng = try context.newPipeline(self.dynamicType.RNG)
@@ -71,7 +73,7 @@ internal class GaussianDistribution: Distribution {
 		assert(length==χ.length)
 		assert(length==μ.length)
 		assert(length==σ.length)
-		
+
 		arc4random_buf(cache.bytes, cache.length)
 		
 		compute.setComputePipelineState(rng)
