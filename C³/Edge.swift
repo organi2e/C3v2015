@@ -31,7 +31,8 @@ extension Edge {
 		let Δμ: LaObjet = outer_product(Δ * gμ, μ)
 		let Δσ: LaObjet = outer_product(Δ * gσ, σ)
 		update(distribution, Δμ: Δμ, Δσ: Δσ)
-		return matrix_product(χ.T, Δ)
+		return matrix_product(self.μ.T, Δ * gμ)
+		//return matrix_product(self.σ.T, Δ * gσ)
 	}
 	func collect_clear(compute: Compute) {
 		input.collect_clear()

@@ -10,8 +10,8 @@ import XCTest
 class CellTests: XCTestCase {
 	let context: Context = try!Context()
 	func testCollect() {
-		context.optimizerFactory = SGD.factory(η: 0.1)
-		let type: DistributionType = .Cauchy
+		context.optimizerFactory = SGD.factory(η: 0.05)
+		let type: DistributionType = .Gauss
 		let I: Cell = try! context.newCell(type, width: 4, label: "I")
 		let H: Cell = try! context.newCell(type, width:256, label: "H", input: [I])
 		let G: Cell = try! context.newCell(type, width:256, label: "G", input: [H])
@@ -31,9 +31,9 @@ class CellTests: XCTestCase {
 			UInt8(0).oneHotEncoding
 		]
 		
-		for k in 0..<1024 {
+		for k in 0..<1024*2 {
 			//print("epoch: \(k)", terminator: "\r")
-			for _ in 0..<16 {
+			for _ in 0..<1 {
 				
 				I.correct_clear()
 				O.collect_clear()
