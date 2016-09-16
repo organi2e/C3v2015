@@ -18,15 +18,16 @@ extension Edge {
 extension Edge {
 	func collect(ignore: Set<Cell>) -> (χ: LaObjet, μ: LaObjet, σ: LaObjet) {
 		let state: LaObjet = input.collect(ignore)
+		let distribution: SymmetricStableDistribution = output.distribution
 		return(
 			χ: matrix_product(χ, state),
-			μ: matrix_product(μ, state),
-			σ: matrix_product(σ, state)
+			μ: matrix_product(distribution.μ(μ), distribution.μ(state)),
+			σ: matrix_product(distribution.σ(σ), distribution.σ(state))
 		)
 	}
 	func correct(ignore: Set<Cell>) -> LaObjet {
 		let (Δ, gμ, gσ) = output.correct(ignore)
-		let distribution: Distribution = output.distribution
+		let distribution: SymmetricStableDistribution = output.distribution
 		let (μ, σ) = distribution.gainχ(input.χ)
 		let Δμ: LaObjet = outer_product(Δ * gμ, μ)
 		let Δσ: LaObjet = outer_product(Δ * gσ, σ)

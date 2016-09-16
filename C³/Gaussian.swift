@@ -7,8 +7,8 @@
 //
 import Accelerate
 import simd
-internal class GaussianDistribution: Distribution {
-	
+internal class GaussianDistribution: SymmetricStableDistribution {
+	static var N: Float { return 2 }
 	private static let CDF: String = "gaussCDF"
 	private static let PDF: String = "gaussPDF"
 	private static let RNG: String = "gaussRNG"
@@ -85,7 +85,26 @@ internal class GaussianDistribution: Distribution {
 		compute.dispatch(grid: (block/4, 1, 1), threads: (1, 1, 1))
 		
 	}
-
+	func μ(μ: LaObjet) -> LaObjet {
+		return μ
+	}
+	func σ(σ: LaObjet) -> LaObjet {
+		return σ * σ
+	}
+	func λ(λ: Buffer, σ: Buffer) {
+		var length: Int32 = Int32(min(λ.length, σ.length)/sizeof(Float))
+		vvrsqrtf(λ.bytes, σ.bytes, &length)
+	}
+	func gradμ(μ: LaObjet) -> LaObjet {
+		return LaIdentité(μ.count)
+	}
+	func gradσ(σ: LaObjet) -> LaObjet {
+		return σ
+	}
+	func gradλ(λ: LaObjet) -> LaObjet {
+		return λ * λ * λ
+	}
+	
 	func gainχ(χ: LaObjet) -> (μ: LaObjet, σ: LaObjet) {
 		return(χ, χ * χ)
 	}
@@ -96,25 +115,6 @@ internal class GaussianDistribution: Distribution {
 	
 	func Δσ(Δ Δ: LaObjet, σ: LaObjet) -> LaObjet {
 		return Δ * σ
-	}
-	func synthesize(χ χ: Buffer, μ: Buffer, λ: Buffer, refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) {
-		
-		let length: Int = min(χ.length, μ.length, λ.length)
-		let count: Int = length / sizeof(Float)
-		
-		assert( length == χ.length )
-		assert( length == μ.length )
-		assert( length == λ.length )
-		
-		let φ: (χ: LaObjet, μ: LaObjet, σ: LaObjet) = (χ: LaValuer(0), μ: LaValuer(0), σ: LaValuer(0))
-		let mix: (χ: LaObjet, μ: LaObjet, σ: LaObjet) = refer.reduce(φ) { ( $0.0.χ + $0.1.χ, $0.0.μ + $0.1.μ, $0.0.σ + ( $0.1.σ * $0.1.σ ) )  }
-		
-		mix.χ.getBytes(χ.bytes)
-		mix.μ.getBytes(μ.bytes)
-		mix.σ.getBytes(λ.bytes)
-		
-		vvrsqrtf(λ.bytes, λ.bytes, [Int32(count)])
-
 	}
 	func est(χ: Buffer) -> (μ: Float, σ: Float) {
 		var μ: Float = 0.0

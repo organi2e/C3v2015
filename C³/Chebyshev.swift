@@ -8,9 +8,9 @@
 import Accelerate
 import CoreData
 import simd
-
+/*
 internal class ChebyshevDistribution: Distribution {
-	
+	static var N: Float { return Float.infinity }
 	func cdf(compute: Compute, χ: Buffer, μ: Buffer, λ: Buffer) {
 	
 	}
@@ -20,6 +20,12 @@ internal class ChebyshevDistribution: Distribution {
 	func rng(compute: Compute, χ: Buffer, μ: Buffer, σ: Buffer) {
 		
 	}
+	func μ(μ: LaObjet) -> LaObjet {
+		return μ
+	}
+	func σ(σ: LaObjet) -> LaObjet {
+		return σ
+	}
 	func gainχ(χ: LaObjet) -> (μ: LaObjet, σ: LaObjet) {
 		return(χ, LaValuer(1))
 	}
@@ -28,9 +34,6 @@ internal class ChebyshevDistribution: Distribution {
 	}
 	func Δσ(Δ Δ: LaObjet, σ: LaObjet) -> LaObjet {
 		return Δ
-	}
-	func synthesize(χ χ: Buffer, μ: Buffer, λ: Buffer, refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) {
-	
 	}
 	/*
 	static func cdf(χ: Float, μ: Float, σ: Float) -> Float {
@@ -171,3 +174,4 @@ internal class ChebyshevDistribution: Distribution {
 	}
 	*/
 }
+*/

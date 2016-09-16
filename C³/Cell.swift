@@ -31,7 +31,7 @@ public class Cell: NSManagedObject {
 	
 	private var level: RingBuffer<Level> = RingBuffer<Level>(array: [])
 	
-	internal var distribution: Distribution = FalseDistribution()
+	internal var distribution: SymmetricStableDistribution = PulseDistribution()
 	
 }
 
@@ -85,7 +85,7 @@ extension Cell {
 		
 		switch type {
 		case .False:
-			distribution = FalseDistribution()
+			distribution = PulseDistribution()
 		case .Cauchy:
 			distribution = try!CauchyDistribution(context: context)
 		case .Gauss:
@@ -160,10 +160,17 @@ extension Cell {
 		} else {
 			if !ready.contains(.state) {
 				
-				let refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)] = input.map { $0.collect(ignore.union([self])) } + [ bias.collect() ]
-					
+				let refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)] = input.map { $0.collect(ignore.union([self])) }
+				
+				let mix: (χ: LaObjet, μ: LaObjet, σ: LaObjet) = refer.reduce(bias.collect()) { ( $0.0.χ + $0.1.χ, $0.0.μ + $0.1.μ, $0.0.σ + $0.1.σ ) }
+				
 				merge()
-				distribution.synthesize(χ: level.new.φ, μ: level.new.μ, λ: level.new.λ, refer: refer)//cpu
+				
+				mix.χ.getBytes(level.new.φ.bytes)
+				mix.μ.getBytes(level.new.μ.bytes)
+				mix.σ.getBytes(level.new.λ.bytes)
+				
+				distribution.λ(level.new.λ, σ: level.new.λ)
 				
 				if let context: Context = managedObjectContext as? Context {
 					

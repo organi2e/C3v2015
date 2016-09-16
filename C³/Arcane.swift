@@ -101,7 +101,7 @@ internal extension Arcane {
 		distribution.rng(compute, χ: value, μ: mu, σ: sigma)
 		
 	}
-	internal func update(distribution: Distribution, Δμ: LaObjet, Δσ: LaObjet) {
+	internal func update(distribution: SymmetricStableDistribution, Δμ: LaObjet, Δσ: LaObjet) {
 	
 		let count: Int = rows * cols
 		

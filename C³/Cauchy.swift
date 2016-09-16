@@ -7,8 +7,8 @@
 //
 import Accelerate
 import simd
-internal class CauchyDistribution: Distribution {
-	
+internal class CauchyDistribution: SymmetricStableDistribution {
+	static var N: Float { return 1 }
 	private static let CDF: String = "cauchyCDF"
 	private static let PDF: String = "cauchyPDF"
 	private static let RNG: String = "cauchyRNG"
@@ -82,6 +82,13 @@ internal class CauchyDistribution: Distribution {
 		compute.dispatch(grid: (block/4, 1, 1), threads: (1, 1, 1))
 		
 	}
+	func μ(μ: LaObjet) -> LaObjet {
+		return μ
+	}
+	func σ(σ: LaObjet) -> LaObjet {
+		return σ
+	}
+	
 	func gainχ(χ: LaObjet) -> (μ: LaObjet, σ: LaObjet) {
 		return(χ, χ)
 	}
@@ -97,23 +104,9 @@ internal class CauchyDistribution: Distribution {
 	func Δσ(Δ Δ: LaObjet, σ: LaObjet) -> LaObjet {
 		return Δ
 	}
-	func synthesize(χ χ: Buffer, μ: Buffer, λ: Buffer, refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) {
-		
-		let length: Int = min(χ.length, μ.length, λ.length)
-		let count: Int = length / sizeof(Float)
-		
-		assert(length==χ.length)
-		assert(length==μ.length)
-		assert(length==λ.length)
-		
-		let mix: (χ: LaObjet, μ: LaObjet, λ: LaObjet) = refer.reduce((LaValuer(0), LaValuer(0), LaValuer(0))) { ( $0.0.0 + $0.1.χ, $0.0.1 + $0.1.μ, $0.0.2 + $0.1.σ ) }
-		
-		mix.χ.getBytes(χ.bytes)
-		mix.μ.getBytes(μ.bytes)
-		mix.λ.getBytes(λ.bytes)
-		
-		vvrecf(λ.bytes, λ.bytes, [Int32(count)])
-		
+	func λ(λ: Buffer, σ: Buffer) {
+		var length: Int32 = Int32(min(λ.length, σ.length)/sizeof(Float))
+		vvrecf(λ.bytes, σ.bytes, &length)
 	}
 	func est(χ: [Float], η: Float, K: Int, θ: Float = 1e-9) -> (μ: Float, σ: Float) {
 		

@@ -23,12 +23,15 @@ func tic() -> () -> Double {
 		return Double(dst.tv_sec-src.tv_sec)+1.0*1e-6*Double(dst.tv_usec-src.tv_usec)
 	}
 }
-
+/*
 let dispatch: dispatch_queue_t = dispatch_queue_create("label", DISPATCH_QUEUE_SERIAL)
 
 let device: MTLDevice = MTLCreateSystemDefaultDevice()!
 let library: MTLLibrary = device.newDefaultLibrary()!
 let queue: MTLCommandQueue = device.newCommandQueue()
+
+let gemm1x1: MTLComputePipelineState = try!device.newComputePipelineStateWithFunction(library.newFunctionWithName("gemm1x1")!)
+let gemm4x4: MTLComputePipelineState = try!device.newComputePipelineStateWithFunction(library.newFunctionWithName("gemm4x4")!)
 let sign: MTLComputePipelineState = try!device.newComputePipelineStateWithFunction(library.newFunctionWithName("sign4")!)
 let step: MTLComputePipelineState = try!device.newComputePipelineStateWithFunction(library.newFunctionWithName("step4")!)
 let tan: MTLComputePipelineState = try!device.newComputePipelineStateWithFunction(library.newFunctionWithName("tan4")!)
@@ -36,17 +39,19 @@ let exp: MTLComputePipelineState = try!device.newComputePipelineStateWithFunctio
 let pdf4: MTLComputePipelineState = try!device.newComputePipelineStateWithFunction(library.newFunctionWithName("pdf4")!)
 let cauchy4: MTLComputePipelineState = try!device.newComputePipelineStateWithFunction(library.newFunctionWithName("cauchy4")!)
 
-let N: Int = 1 << 20
+let M: Int = 1 << 10
+let N: Int = 1 << 10
+let L: Int = M * N
 let P: Int = 256
-var a: [Float] = (0..<N).map { (_)in Float(arc4random())/Float(UInt32.max)-0.5}
-var b: [Float] = (0..<N).map { (_)in Float(arc4random())/Float(UInt32.max)-0.5}
-var c: [Float] = (0..<N).map { (_)in Float(arc4random())/Float(UInt32.max)-0.5}
+var a: [Float] = (0..<L).map { (_)in Float(arc4random())/Float(UInt32.max)-0.5}
+var b: [Float] = (0..<L).map { (_)in Float(arc4random())/Float(UInt32.max)-0.5}
+var c: [Float] = (0..<L).map { (_)in Float(arc4random())/Float(UInt32.max)-0.5}
 
-let mtlA: MTLBuffer = device.newBufferWithBytes(a, length: sizeof(Float)*N, options: .StorageModeShared)
-let mtlB: MTLBuffer = device.newBufferWithBytes(b, length: sizeof(Float)*N, options: .StorageModeShared)
-let mtlC: MTLBuffer = device.newBufferWithLength(sizeof(Float)*N, options: .StorageModeShared)
+let mtlA: MTLBuffer = device.newBufferWithBytes(a, length: sizeof(Float)*L, options: .StorageModeShared)
+let mtlB: MTLBuffer = device.newBufferWithBytes(b, length: sizeof(Float)*L, options: .StorageModeShared)
+let mtlC: MTLBuffer = device.newBufferWithLength(sizeof(Float)*L, options: .StorageModeShared)
 
-let group: MTLSize = MTLSize(width: N/4, height: 1, depth: 1)
+let group: MTLSize = MTLSize(width: L/4, height: 1, depth: 1)
 let local: MTLSize = MTLSize(width: 1, height: 1, depth: 1)
 
 do {
@@ -62,11 +67,11 @@ do {
 	encoder.endEncoding()
 	command.commit()
 	command.waitUntilCompleted()
-	print(Double(N*P)/mtltoc()/1_000_000_000.0, "GFLOPS (metal sign)")
+	print(Double(L*P)/mtltoc()/1_000_000_000.0, "GFLOPS (metal sign)")
 }
 
 do {
-	let length: vDSP_Length = vDSP_Length(N)
+	let length: vDSP_Length = vDSP_Length(L)
 	let cache: [Float] = [Float](count: Int(length), repeatedValue: 0)
 	
 	var zero: Float = 0.0
@@ -80,11 +85,11 @@ do {
 		vDSP_vthrsc(UnsafeMutablePointer<Float>(cache), 1, &zero, &nega, UnsafeMutablePointer<Float>(cache), 1, length)
 		vDSP_vadd(UnsafeMutablePointer<Float>(cache), 1, UnsafeMutablePointer<Float>(b), 1, UnsafeMutablePointer<Float>(b), 1, length)
 	}
-	print(Double(N*P)/cputoc()/1_000_000_000.0, "GFLOPS (vDSP sign, vthrsc)")
+	print(Double(L*P)/cputoc()/1_000_000_000.0, "GFLOPS (vDSP sign, vthrsc)")
 }
 
 do {
-	let length: vDSP_Length = vDSP_Length(N)
+	let length: vDSP_Length = vDSP_Length(L)
 	let cache: [Float] = [Float](count: Int(length), repeatedValue: 0)
 	
 	var zero: Float = 0.0
@@ -98,7 +103,7 @@ do {
 		vDSP_vlim(UnsafeMutablePointer<Float>(cache), 1, &zero, &nega, UnsafeMutablePointer<Float>(cache), 1, length)
 		vDSP_vadd(UnsafeMutablePointer<Float>(cache), 1, UnsafeMutablePointer<Float>(b), 1, UnsafeMutablePointer<Float>(b), 1, length)
 	}
-	print(Double(N*P)/cputoc()/1_000_000_000.0, "GFLOPS (vDSP sign, vlim)")
+	print(Double(L*P)/cputoc()/1_000_000_000.0, "GFLOPS (vDSP sign, vlim)")
 }
 
 do {
@@ -106,13 +111,23 @@ do {
 	let aref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(a)
 	var bref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(b)
 	for p in 1...P {
-		(0..<N/4).forEach {
+		(0..<L/4).forEach {
 			bref[$0] = -vector_sign(-aref[$0])
 		}
 	}
-	print(Double(N*P)/smdtoc()/1_000_000_000.0, "GFLOPS (simd sign)")
+	print(Double(L*P)/smdtoc()/1_000_000_000.0, "GFLOPS (simd sign)")
+}
+*/
+do {
+	let x: [Float] = [1,2,3,4]
+	let y: [Float] = [1,1,1,1]
+	let X: la_object_t = la_matrix_from_float_buffer(x, 2, 2, 2, NOHINT, ATTR)
+	let Y: la_object_t = la_normalized_vector(X, la_norm_t(LA_L2_NORM))
+	la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(y), 2, Y)
+	print(y)
 }
 
+/*j    
 do {
 	let smdtoc = tic()
 	let aref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(a)
@@ -121,35 +136,38 @@ do {
 	let queue: dispatch_queue_t = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0)
 	
 	let B: Int = 4
-	let S: Int = ( N + B - 1 ) / B
+	let S: Int = ( L + B - 1 ) / B
 	
 	for p in 1...P {
-		
 		dispatch_apply(B, queue) {
 			let via: Int = $0 * S
 			let dst: Int = $0 * S + S
 			(via..<dst).forEach {
-				if 4 * $0 < N {
-					bref[$0] = vector_sign(aref[$0])
+				if $0 < L {
+					//bref[$0] = vector_sign(aref[$0])
 				}
 			}
 		}
 	}
-	print(Double(N*P)/smdtoc()/1_000_000_000.0, "GFLOPS (simd sign, GCD)")
+	print(Double(L*P)/smdtoc()/1_000_000_000.0, "GFLOPS (simd sign, GCD)")
 }
-
+*/
+/*
 let gcd = tic()
 for p in 1...P {
-	dispatch_apply(N/4, dispatch) {
+	dispatch_apply(L/4, dispatch) {
 		var aref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(a)
 		var bref: UnsafeMutablePointer<float4> = UnsafeMutablePointer<float4>(b)
 		bref[$0] = vtanpif(aref[$0])
 	}
 }
-print(Double(N*P)/gcd()/1_000_000_000.0, "GFLOPS")
+print(Double(L*P)/gcd()/1_000_000_000.0, "GFLOPS")
 
 do {
-	let length: vDSP_Length = vDSP_Length(N)
+	
+}
+do {
+	let length: vDSP_Length = vDSP_Length(L)
 	let cache: [Float] = [Float](count: Int(length), repeatedValue: 0)
 	var pi: Float = Float(M_PI)
 	let A: la_object_t = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(a), la_count_t(length), 1, 1, NOHINT, nil, ATTR)
@@ -158,22 +176,22 @@ do {
 	for p in 1...P {
 		la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(cache), 1, la_scale_with_float(la_sum(A, B), pi))
 	}
-	print(Double(3*N*P)/cputoc()/1_000_000_000.0, "GFLOPS (la_object_t)")
+	print(Double(3*L*P)/cputoc()/1_000_000_000.0, "GFLOPS (la_object_t)")
 }
 
 do {
-	let length: vDSP_Length = vDSP_Length(N)
+	let length: vDSP_Length = vDSP_Length(L)
 	let cache: [Float] = [Float](count: Int(length), repeatedValue: 0)
 	var pi: Float = Float(M_PI)
 	let cputoc = tic()
 	for p in 1...P {
 		vDSP_vasm(a, 1, b, 1, &pi, UnsafeMutablePointer<Float>(cache), 1, length)
 	}
-	print(Double(3*N*P)/cputoc()/1_000_000_000.0, "GFLOPS (vDSP)")
+	print(Double(3*L*P)/cputoc()/1_000_000_000.0, "GFLOPS (vDSP)")
 }
 
 do {
-	let length: vDSP_Length = vDSP_Length(N)
+	let length: vDSP_Length = vDSP_Length(L)
 	let cache: [Float] = a
 	var pi: Float = Float(M_PI)
 	let len: Int32 = Int32(length)
@@ -181,11 +199,11 @@ do {
 	for p in 1...P {
 		cblas_saxpy(len, pi, a, 1, UnsafeMutablePointer<Float>(b), 1)
 	}
-	print(Double(3*N*P)/cputoc()/1_000_000_000.0, "GFLOPS (cblas)")
+	print(Double(3*L*P)/cputoc()/1_000_000_000.0, "GFLOPS (cblas)")
 }
 
 do {
-	let length: vDSP_Length = vDSP_Length(N)
+	let length: vDSP_Length = vDSP_Length(L)
 	let cache: [Float] = a
 	var pi: Float = Float(M_PI)
 	let len: Int32 = Int32(length)
@@ -193,11 +211,11 @@ do {
 	for p in 1...P {
 		vDSP_vmul(a, 1, b, 1, UnsafeMutablePointer<Float>(cache), 1, length)
 	}
-	print(Double(3*N*P)/cputoc()/1_000_000_000.0, "GFLOPS (vDSP) vector mul")
+	print(Double(3*L*P)/cputoc()/1_000_000_000.0, "GFLOPS (vDSP) vector mul")
 }
 
 do {
-	let length: vDSP_Length = vDSP_Length(N)
+	let length: vDSP_Length = vDSP_Length(L)
 	let cache: [Float] = a
 	var pi: Float = Float(M_PI)
 	let len: Int32 = Int32(length)
@@ -206,14 +224,14 @@ do {
 		cblas_ssbmv(CblasRowMajor, CblasLower, len, 0, 1, a, 1, b, 1, 0, UnsafeMutablePointer<Float>(cache), 1)
 		//cblas_saxpy(len, pi, a, 1, UnsafeMutablePointer<Float>(b), 1)
 	}
-	print(Double(3*N*P)/cputoc()/1_000_000_000.0, "GFLOPS (cblas)")
+	print(Double(3*L*P)/cputoc()/1_000_000_000.0, "GFLOPS (cblas)")
 }
 
 do {
 	let cputoc = tic()
-	let length: vDSP_Length = vDSP_Length(N)
+	let length: vDSP_Length = vDSP_Length(L)
 	
-	var len: Int32 = Int32(N)
+	var len: Int32 = Int32(L)
 	
 	var zero: Float = 0
 	var posi: Float = 0.5
@@ -237,11 +255,11 @@ do {
 		vDSP_vmul(c, 1, a, 1, &c, 1, length)
 		vDSP_vneg(c, 1, &c, 1, length)
 	}
-	print(Double(N*P)/cputoc()/1_000_000_000.0, "GFLOPS (gaussian, vDSP)")
+	print(Double(L*P)/cputoc()/1_000_000_000.0, "GFLOPS (gaussian, vDSP)")
 }
 
 do {
-	let group: MTLSize = MTLSize(width: N/4, height: 1, depth: 1)
+	let group: MTLSize = MTLSize(width: L/4, height: 1, depth: 1)
 	let local: MTLSize = MTLSize(width: 1, height: 1, depth: 1)
 	let command = queue.commandBuffer()
 	let encoder = command.computeCommandEncoder()
@@ -257,7 +275,7 @@ do {
 	encoder.endEncoding()
 	command.commit()
 	command.waitUntilCompleted()
-	print(Double(N*P)/cputoc()/1_000_000_000.0, "GFLOPS (gaussian, mtl)")
+	print(Double(L*P)/cputoc()/1_000_000_000.0, "GFLOPS (gaussian, mtl)")
 }
 
 do {
@@ -275,16 +293,16 @@ do {
 	encoder.endEncoding()
 	command.commit()
 	command.waitUntilCompleted()
-	print(Double(N*P)/cputoc()/1_000_000_000.0, "GFLOPS (cauchy, mtl)")
+	print(Double(L*P)/cputoc()/1_000_000_000.0, "GFLOPS (cauchy, mtl)")
 }
 
 do {
 	let cputoc = tic()
 	
 	
-	let length: vDSP_Length = vDSP_Length(N)
+	let length: vDSP_Length = vDSP_Length(L)
 	
-	var len: Int32 = Int32(N)
+	var len: Int32 = Int32(L)
 	
 	var one: Float = 1.0
 	var zero: Float = 0
@@ -308,6 +326,7 @@ do {
 		vDSP_vmul(b, 1, c, 1, &c, 1, length)
 		vDSP_vneg(c, 1, &c, 1, length)
 	}
-	print(Double(N*P)/cputoc()/1_000_000_000.0, "GFLOPS (cauchy, vDSP)")
+	print(Double(L*P)/cputoc()/1_000_000_000.0, "GFLOPS (cauchy, vDSP)")
 }
+*/
 

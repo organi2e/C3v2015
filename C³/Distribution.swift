@@ -16,15 +16,48 @@ internal protocol RandomNumberGeneratable {
 	var μ: LaObjet { get }
 	var σ: LaObjet { get }
 }
-internal protocol Distribution {
+internal class PulseDistribution: SymmetricStableDistribution {
+	func cdf(compute: Compute, χ: Buffer, μ: Buffer, λ: Buffer) {
+		for k in 0..<min(χ.length, μ.length)/sizeof(Float) {
+			χ.bytes[k] = 0 < μ.bytes[k] ? 1 : 0
+		}
+	}
+	func pdf(compute: Compute, χ: Buffer, μ: Buffer, λ: Buffer) {
+		for k in 0..<min(χ.length, μ.length)/sizeof(Float) {
+			χ.bytes[k] = 0 == μ.bytes[k] ? 1 : 0
+		}
+	}
+	func rng(compute: Compute, χ: Buffer, μ: Buffer, σ: Buffer) {
+		cblas_scopy(Int32(min(χ.length, μ.length)/sizeof(Float)), μ.bytes, 1, χ.bytes, 1)
+	}
+	func gainχ(χ: LaObjet) -> (μ: LaObjet, σ: LaObjet) { return(LaValuer(0), LaValuer(0))}
+	func Δμ(Δ Δ: LaObjet, μ: LaObjet) -> LaObjet { return LaValuer(0) }
+	func Δσ(Δ Δ: LaObjet, σ: LaObjet) -> LaObjet { return LaValuer(0) }
 	
-	func cdf(compute: Compute, χ: Buffer, μ: Buffer, λ: Buffer)
-	func pdf(compute: Compute, χ: Buffer, μ: Buffer, λ: Buffer)
-	func rng(compute: Compute, χ: Buffer, μ: Buffer, σ: Buffer)
+	func μ(μ: LaObjet) -> LaObjet {
+		return μ
+	}
+	func σ(σ: LaObjet) -> LaObjet {
+		return LaValuer(0)
+	}
+	func λ(λ: Buffer, σ: Buffer) {
+		vvrecf(λ.bytes, σ.bytes, [Int32(min(λ.length, σ.length)/sizeof(Float))])
+	}
+}
+internal protocol SymmetricStableDistribution: StableDistribution {
 	func gainχ(χ: LaObjet) -> (μ: LaObjet, σ: LaObjet)
 	func Δμ(Δ Δ: LaObjet, μ: LaObjet) -> LaObjet
 	func Δσ(Δ Δ: LaObjet, σ: LaObjet) -> LaObjet
-	func synthesize(χ χ: Buffer, μ: Buffer, λ: Buffer, refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)])
+}
+internal protocol StableDistribution: Distribution {
+	func μ(μ: LaObjet) -> LaObjet
+	func σ(σ: LaObjet) -> LaObjet
+	func λ(λ: Buffer, σ: Buffer)
+}
+internal protocol Distribution {
+	func cdf(compute: Compute, χ: Buffer, μ: Buffer, λ: Buffer)
+	func pdf(compute: Compute, χ: Buffer, μ: Buffer, λ: Buffer)
+	func rng(compute: Compute, χ: Buffer, μ: Buffer, σ: Buffer)
 	/*
 	static func cdf(χ: Float, μ: Float, σ: Float) -> Float
 	static func pdf(χ: Float, μ: Float, σ: Float) -> Float
@@ -47,10 +80,17 @@ internal protocol Distribution {
 	*/
 }
 internal class FalseDistribution: Distribution {
-	
+	static var N: Float { return Float.NaN }
 	func cdf(compute: Compute, χ: Buffer, μ: Buffer, λ: Buffer) {}
 	func pdf(compute: Compute, χ: Buffer, μ: Buffer, λ: Buffer) {}
 	func rng(compute: Compute, χ: Buffer, μ: Buffer, σ: Buffer) {}
+	
+	func μ(μ: LaObjet) -> LaObjet {
+		return μ
+	}
+	func σ(σ: LaObjet) -> LaObjet {
+		return σ
+	}
 	func Δμ(Δ Δ: LaObjet, μ: LaObjet) -> LaObjet {
 		return LaValuer(1)
 	}
@@ -60,7 +100,6 @@ internal class FalseDistribution: Distribution {
 	func gainχ(χ: LaObjet) -> (μ: LaObjet, σ: LaObjet) {
 		return(χ, LaValuer(1))
 	}
-	func synthesize(χ χ: Buffer, μ: Buffer, λ: Buffer, refer: [(χ: LaObjet, μ: LaObjet, σ: LaObjet)]) {}
 	/*
 	static func cdf(χ: Float, μ: Float, σ: Float) -> Float { return μ >= χ ? 0 : 1 }
 	static func pdf(χ: Float, μ: Float, σ: Float) -> Float { return μ != χ ? 0 : 1 }
