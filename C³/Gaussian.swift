@@ -85,13 +85,19 @@ internal class GaussianDistribution: SymmetricStableDistribution {
 		compute.dispatch(grid: (block/4, 1, 1), threads: (1, 1, 1))
 		
 	}
-	func μ(μ: LaObjet) -> LaObjet {
+	func μrate(μ: LaObjet) -> LaObjet {
 		return μ
 	}
-	func σ(σ: LaObjet) -> LaObjet {
+	func σrate(σ: LaObjet) -> LaObjet {
 		return σ * σ
 	}
-	func λ(λ: Buffer, σ: Buffer) {
+	func xrate(x: LaObjet) -> LaObjet {
+		return x
+	}
+	func yrate(y: LaObjet, dy: LaObjet) -> LaObjet {
+		return y * dy
+	}
+	func λrate(λ: Buffer, σ: Buffer) {
 		var length: Int32 = Int32(min(λ.length, σ.length)/sizeof(Float))
 		vvrsqrtf(λ.bytes, σ.bytes, &length)
 	}
@@ -104,7 +110,15 @@ internal class GaussianDistribution: SymmetricStableDistribution {
 	func gradλ(λ: LaObjet) -> LaObjet {
 		return λ * λ * λ
 	}
-	
+	static func test1(λ: LaObjet) -> LaObjet {
+		return -λ * λ * λ
+	}
+	static func test2(b: LaObjet) -> LaObjet {
+		return b * b
+	}
+	static func test3(y: LaObjet) -> LaObjet {
+		return y
+	}
 	func gainχ(χ: LaObjet) -> (μ: LaObjet, σ: LaObjet) {
 		return(χ, χ * χ)
 	}

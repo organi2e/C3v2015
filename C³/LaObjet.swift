@@ -30,8 +30,8 @@ internal extension LaObjet {
 	var T: LaObjet {
 		return la_transpose(self)
 	}
-	var length: Float {
-		return la_norm_as_float(self, la_norm_t(LA_L2_NORM))
+	var length: Int {
+		return Int(la_vector_length(self))
 	}
 	var L1Norm: Float {
 		return la_norm_as_float(self, la_norm_t(LA_L1_NORM))
@@ -47,7 +47,7 @@ internal extension LaObjet {
 		assert(la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(buffer), la_matrix_cols(self), self) == SUCCESS)
 		return buffer
 	}
-	var issplat: Bool {
+	var isSplat: Bool {
 		return la_matrix_cols(self) == 0 && la_matrix_rows(self) == 0
 	}
 	subscript(index: Int) -> LaObjet {

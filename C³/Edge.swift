@@ -21,18 +21,15 @@ extension Edge {
 		let distribution: SymmetricStableDistribution = output.distribution
 		return(
 			χ: matrix_product(χ, state),
-			μ: matrix_product(distribution.μ(μ), distribution.μ(state)),
-			σ: matrix_product(distribution.σ(σ), distribution.σ(state))
+			μ: matrix_product(distribution.μrate(μ), distribution.μrate(state)),
+			σ: matrix_product(distribution.σrate(σ), distribution.σrate(state))
 		)
 	}
 	func correct(ignore: Set<Cell>) -> LaObjet {
-		let (Δ, gμ, gσ) = output.correct(ignore)
+		let (Δμ, Δσ) = output.correct(ignore)
 		let distribution: SymmetricStableDistribution = output.distribution
-		let (μ, σ) = distribution.gainχ(input.χ)
-		let Δμ: LaObjet = outer_product(Δ * gμ, μ)
-		let Δσ: LaObjet = outer_product(Δ * gσ, σ)
-		update(distribution, Δμ: Δμ, Δσ: Δσ)
-		return matrix_product(self.μ.T, Δ * gμ)
+		update(Δμ: Δμ, Δσ: Δσ)
+		return matrix_product(self.μ.T, Δμ)
 		//return matrix_product(self.σ.T, Δ * gσ)
 	}
 	func collect_clear(compute: Compute) {

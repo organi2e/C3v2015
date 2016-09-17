@@ -27,32 +27,45 @@ internal class PulseDistribution: SymmetricStableDistribution {
 			χ.bytes[k] = 0 == μ.bytes[k] ? 1 : 0
 		}
 	}
+	func gradient(compute: Compute, gradμ: Buffer, gradλ: Buffer, μ: Buffer, λ: Buffer) {
+	
+	}
 	func rng(compute: Compute, χ: Buffer, μ: Buffer, σ: Buffer) {
 		cblas_scopy(Int32(min(χ.length, μ.length)/sizeof(Float)), μ.bytes, 1, χ.bytes, 1)
 	}
-	func gainχ(χ: LaObjet) -> (μ: LaObjet, σ: LaObjet) { return(LaValuer(0), LaValuer(0))}
-	func Δμ(Δ Δ: LaObjet, μ: LaObjet) -> LaObjet { return LaValuer(0) }
-	func Δσ(Δ Δ: LaObjet, σ: LaObjet) -> LaObjet { return LaValuer(0) }
-	
-	func μ(μ: LaObjet) -> LaObjet {
+	func μrate(μ: LaObjet) -> LaObjet {
 		return μ
 	}
-	func σ(σ: LaObjet) -> LaObjet {
+	func σrate(σ: LaObjet) -> LaObjet {
 		return LaValuer(0)
 	}
-	func λ(λ: Buffer, σ: Buffer) {
+	func λrate(λ: Buffer, σ: Buffer) {
 		vvrecf(λ.bytes, σ.bytes, [Int32(min(λ.length, σ.length)/sizeof(Float))])
+	}
+	func μxrate(x: LaObjet) -> LaObjet {
+		return LaValuer(1)
+	}
+	func μyrate(y: LaObjet, dy: LaObjet) -> LaObjet {
+		return LaValuer(1)
+	}
+	func σxrate(x: LaObjet) -> LaObjet {
+		return LaValuer(0)
+	}
+	func σyrate(y: LaObjet, dy: LaObjet) -> LaObjet {
+		return LaValuer(0)
 	}
 }
 internal protocol SymmetricStableDistribution: StableDistribution {
-	func gainχ(χ: LaObjet) -> (μ: LaObjet, σ: LaObjet)
-	func Δμ(Δ Δ: LaObjet, μ: LaObjet) -> LaObjet
-	func Δσ(Δ Δ: LaObjet, σ: LaObjet) -> LaObjet
+	func μxrate(x: LaObjet) -> LaObjet
+	func μyrate(y: LaObjet, dy: LaObjet) -> LaObjet
+	func σxrate(x: LaObjet) -> LaObjet
+	func σyrate(y: LaObjet, dy: LaObjet) -> LaObjet
 }
 internal protocol StableDistribution: Distribution {
-	func μ(μ: LaObjet) -> LaObjet
-	func σ(σ: LaObjet) -> LaObjet
-	func λ(λ: Buffer, σ: Buffer)
+	func μrate(μ: LaObjet) -> LaObjet
+	func σrate(σ: LaObjet) -> LaObjet
+	func λrate(λ: Buffer, σ: Buffer)
+	func gradient(compute: Compute, gradμ: Buffer, gradλ: Buffer, μ: Buffer, λ: Buffer)
 }
 internal protocol Distribution {
 	func cdf(compute: Compute, χ: Buffer, μ: Buffer, λ: Buffer)

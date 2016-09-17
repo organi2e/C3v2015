@@ -23,17 +23,18 @@ extension Bias {
 	}
 	internal func collect() -> (LaObjet, LaObjet, LaObjet) {
 		let distribution: SymmetricStableDistribution = output.distribution
-		return(χ, distribution.μ(μ), distribution.σ(σ))
+		return(χ, distribution.μrate(μ), distribution.σrate(σ))
 	}
 	internal func correct(ignore: Set<Cell>) {
-		let(Δ, gradμ, gradσ) = output.correct(ignore)
+		let(Δμ, Δσ) = output.correct(ignore)
+		let ξ: SymmetricStableDistribution = output.distribution
 		//let λ: LaObjet = output.λ
 		
 		do {
 			let I: LaObjet = LaIdentité(rows)
 			let Δμ: LaObjet = matrix_product((Δ*gradμ).T, I)
 			let Δσ: LaObjet = matrix_product((Δ*gradσ).T, I)
-			update(output.distribution, Δμ: Δμ, Δσ: Δσ)
+			update(Δμ: Δμ, Δσ: Δσ)
 		}
 	}
 	internal func collect_clear(compute: Compute) {

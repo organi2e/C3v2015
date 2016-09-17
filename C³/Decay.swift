@@ -40,6 +40,14 @@ extension Decay {
 		
 	}
 	
+	internal func chain(gradμ gradμ: LaObjet, gradσ: LaObjet) -> (gradμ: LaObjet, gradσ: LaObjet) {
+		let ξ: SymmetricStableDistribution = cell.distribution
+		return (
+			gradμ: ξ.μrate(gradμ),
+			gradσ: ξ.σrate(gradσ)
+		)
+	}
+	
 	//internal func correct(let eps eps: Float, let delta: la_object_t, let value: la_object_t, let dydv: la_object_t, let feedback: la_object_t? = nil) {
 		/*
 		var gradientmean: la_object_t = la_diagonal_matrix_from_vector(value, 0)

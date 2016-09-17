@@ -33,19 +33,20 @@ kernel void gaussPDF(device float4 * const value [[ buffer(0) ]],
 	value [ n ] = exp( - 0.5 * v * v ) * l * M_1_SQRT2PI;
 	
 }
-/*
-kernel void gaussRNG(device float4 * const value [[ buffer(0) ]],
-					 device const float4 * const mu [[ buffer(1) ]],
-					 device const float4 * const sigma [[ buffer(2) ]],
-					 constant uint4 * const seeds [[ buffer(3) ]],
-					 uint const t [[ thread_position_in_grid ]],
-					 uint const T [[ threads_per_grid ]]) {
-	
-	float4 const u = ( float4 ( seeds[ t ] ) + 1 ) / 4294967296.0;
-	value [ t ] = mu [ t ] + sigma [ t ] * float4( fast :: cospi( 2 * u.xy ), fast :: sinpi( 2 * u.xy ) ) * fast :: sqrt( -2 * fast :: log( u.zw ).xyxy );
-	
+kernel void gaussGradient(device float4 * const gradmu [[ buffer(0) ]],
+						   device float4 * const gradsigma [[ buffer(1) ]],
+						   const device float4 * const mu [[ buffer(2) ]],
+						   const device float4 * const sigma [[ buffer(3) ]],
+						   constant const float & M_1_SQRT2PI [[ buffer(4) ]],
+						   uint const n [[ thread_position_in_grid ]],
+						   uint const N [[ threads_per_grid ]]) {
+	float4 const m = mu [ n ];
+	float4 const l = lambda [ n ];
+	float4 const v = m * l;
+	float4 const p = exp( - 0.5 * v * v ) * M_1_SQRT2PI;
+	gradmu[n] = p * l;
+	gradsigma[n] = p * m;
 }
-*/
 kernel void gaussRNG(device float4 * const value [[ buffer(0) ]],
 					 device const float4 * const mu [[ buffer(1) ]],
 					 device const float4 * const sigma [[ buffer(2) ]],

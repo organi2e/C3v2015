@@ -34,6 +34,20 @@ kernel void cauchyPDF(device float4 * const value [[ buffer(0) ]],
 	
 	value [ n ] = M_1_PI * l / ( 1 + v * v );
 }
+kernel void cauchyGradient(device float4 * const gradmu [[ buffer(0) ]],
+						   device float4 * const gradsigma [[ buffer(1) ]],
+						   const device float4 * const mu [[ buffer(2) ]],
+						   const device float4 * const sigma [[ buffer(3) ]],
+						   constant const float & M_1_PI [[ buffer(4) ]],
+						   uint const n [[ thread_position_in_grid ]],
+						   uint const N [[ threads_per_grid ]]) {
+	float4 const m = mu [ n ];
+	float4 const l = lambda [ n ];
+	float4 const v = m * l;
+	float4 const p = M_1_PI / ( 1 + v * v );
+	gradmu[n] = p * l;
+	gradsigma[n] = p * m;
+}
 kernel void cauchyRNG(device float4 * const value [[ buffer(0) ]],
 					  device const float4 * const mu [[ buffer(1) ]],
 					  device const float4 * const sigma [[ buffer(2) ]],

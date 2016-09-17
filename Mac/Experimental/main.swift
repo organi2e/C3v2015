@@ -119,12 +119,16 @@ do {
 }
 */
 do {
-	let x: [Float] = [1,2,3,4]
-	let y: [Float] = [1,1,1,1]
-	let X: la_object_t = la_matrix_from_float_buffer(x, 2, 2, 2, NOHINT, ATTR)
-	let Y: la_object_t = la_normalized_vector(X, la_norm_t(LA_L2_NORM))
-	la_matrix_to_float_buffer(UnsafeMutablePointer<Float>(y), 2, Y)
-	print(y)
+	let M: la_count_t = 4
+	let N: la_count_t = 4
+	let K: la_count_t = 4
+	var x: [Float] = (0..<M*K).map { (_) in Float(arc4random())/Float(UInt32.max) }
+	var y: [Float] = (0..<K*N).map { (_) in Float(arc4random())/Float(UInt32.max) }
+	let z: [Float] = [Float](count: Int(M*N), repeatedValue: 0)
+	let X: la_object_t = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(x), M, K, K, NOHINT, nil, ATTR)
+	let Y: la_object_t = la_matrix_from_float_buffer_nocopy(UnsafeMutablePointer<Float>(y), K, N, N, NOHINT, nil, ATTR)
+	let Z: la_object_t = la_matrix_product(X, Y)
+	let t = tic()
 }
 
 /*j    

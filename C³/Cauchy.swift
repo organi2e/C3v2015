@@ -60,6 +60,8 @@ internal class CauchyDistribution: SymmetricStableDistribution {
 		compute.dispatch(grid: ((count+3)/4, 1, 1), threads: (1, 1, 1))
 		
 	}
+	
+	func gradient(compute: Compute, gradμ: Buffer, gradλ: Buffer, μ: Buffer, λ: Buffer)
 	func rng(compute: Compute, χ: Buffer, μ: Buffer, σ: Buffer) {
 	
 		let length: Int = min(χ.length, μ.length, σ.length)
@@ -82,13 +84,27 @@ internal class CauchyDistribution: SymmetricStableDistribution {
 		compute.dispatch(grid: (block/4, 1, 1), threads: (1, 1, 1))
 		
 	}
-	func μ(μ: LaObjet) -> LaObjet {
+	func μrate(μ: LaObjet) -> LaObjet {
 		return μ
 	}
-	func σ(σ: LaObjet) -> LaObjet {
-		return σ
+	func σrate(σ: LaObjet) -> LaObjet {
+		return LaValuer(0)
 	}
-	
+	func λrate(λ: Buffer, σ: Buffer) {
+		vvrecf(λ.bytes, σ.bytes, [Int32(min(λ.length, σ.length)/sizeof(Float))])
+	}
+	func μxrate(x: LaObjet) -> LaObjet {
+		return LaValuer(1)
+	}
+	func μyrate(y: LaObjet, dy: LaObjet) -> LaObjet {
+		return LaValuer(1)
+	}
+	func σxrate(x: LaObjet) -> LaObjet {
+		return LaValuer(0)
+	}
+	func σyrate(y: LaObjet, dy: LaObjet) -> LaObjet {
+		return dy
+	}
 	func gainχ(χ: LaObjet) -> (μ: LaObjet, σ: LaObjet) {
 		return(χ, χ)
 	}

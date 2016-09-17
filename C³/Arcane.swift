@@ -101,28 +101,28 @@ internal extension Arcane {
 		distribution.rng(compute, χ: value, μ: mu, σ: sigma)
 		
 	}
-	internal func update(distribution: SymmetricStableDistribution, Δμ: LaObjet, Δσ: LaObjet) {
+	internal func update(Δμ Δμ: LaObjet, Δσ: LaObjet) {
 	
 		let count: Int = rows * cols
 		
 		assert(Δμ.count == count)
 		assert(Δσ.count == count)
-		
+		/*
 		distribution.Δμ(
 			Δ: LaMatrice(gradlogmu.bytes, rows: Δμ.rows, cols: Δμ.cols, deallocator: nil) * Δμ,
 			μ: LaMatrice(mu.bytes, rows: Δμ.rows, cols: Δμ.cols, deallocator: nil))
 		.getBytes(gradlogmu.bytes)
-		
+		*/
 		μoptimizer.optimize(
 			Δx: LaMatrice(gradlogmu.bytes, rows: count, cols: 1, deallocator: nil),
 			x: LaMatrice(logmu.bytes, rows: count, cols: 1, deallocator: nil)
 		).getBytes(gradlogmu.bytes)
-		
+		/*
 		distribution.Δσ(
 			Δ: LaMatrice(gradlogsigma.bytes, rows: Δσ.rows, cols: Δσ.cols, deallocator: nil) * Δσ,
 			σ: LaMatrice(logsigma.bytes, rows: Δσ.rows, cols: Δσ.cols, deallocator: nil))
 		.getBytes(gradlogsigma.bytes)
-	
+		*/
 		σoptimizer.optimize(
 			Δx: LaMatrice(gradlogsigma.bytes, rows: count, cols: 1, deallocator: nil),
 			x: LaMatrice(logsigma.bytes, rows: count, cols: 1, deallocator: nil)

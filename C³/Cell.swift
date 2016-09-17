@@ -21,14 +21,18 @@ public class Cell: NSManagedObject {
 		let μ: Buffer
 		let λ: Buffer
 	}
+	private struct Nabla {
+		let μ: Buffer
+		let λ: Buffer
+	}
 	
 	private var ready: Set<Ready> = Set<Ready>()
 	
 	private var state: RingBuffer<Buffer> = RingBuffer<Buffer>(array: [])
 	private var train: RingBuffer<Buffer> = RingBuffer<Buffer>(array: [])
 	private var error: RingBuffer<Buffer> = RingBuffer<Buffer>(array: [])
-	private var nabla: RingBuffer<Buffer> = RingBuffer<Buffer>(array: [])
 	
+	private var nabla: RingBuffer<Nabla> = RingBuffer<Nabla>(array: [])
 	private var level: RingBuffer<Level> = RingBuffer<Level>(array: [])
 	
 	internal var distribution: SymmetricStableDistribution = PulseDistribution()
@@ -97,7 +101,10 @@ extension Cell {
 		state = RingBuffer<Buffer>(array: (0..<count).map {(_) in context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared) })
 		train = RingBuffer<Buffer>(array: (0..<count).map {(_) in context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared) })
 		error = RingBuffer<Buffer>(array: (0..<count).map {(_) in context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared) })
-		nabla = RingBuffer<Buffer>(array: (0..<count).map {(_) in context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared) })
+		nabla = RingBuffer<Nabla>(array: (0..<count).map {(_) in Nabla(
+			μ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared),
+			λ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared))
+		})
 		level = RingBuffer<Level>(array: (0..<count).map {(_) in Level(
 			φ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared),
 			μ: context.newBuffer(length: sizeof(Float)*width, options: .StorageModeShared),
@@ -170,7 +177,7 @@ extension Cell {
 				mix.μ.getBytes(level.new.μ.bytes)
 				mix.σ.getBytes(level.new.λ.bytes)
 				
-				distribution.λ(level.new.λ, σ: level.new.λ)
+				distribution.λrate(level.new.λ, σ: level.new.λ)
 				
 				if let context: Context = managedObjectContext as? Context {
 					
@@ -196,9 +203,9 @@ extension Cell {
 			return χ
 		}
 	}
-	internal func correct(ignore: Set<Cell>=[]) -> (Δ: LaObjet, gradμ: LaObjet, gradσ: LaObjet) {
+	internal func correct(ignore: Set<Cell>=[]) -> (Δμ: LaObjet, Δλ: LaObjet) {
 		if ignore.contains(self) {
-			return (_Δ, _ϝ, -1 * _ϝ * _μ * _λ)
+			return (_Δ * _gradμ, _Δ * _gradλ)
 			
 		} else {
 			if !ready.contains(.delta) {
@@ -213,7 +220,7 @@ extension Cell {
 				
 			}
 			merge()
-			return (Δ, ϝ, -1 * ϝ * μ * λ)
+			return (Δ * gradμ, Δ * gradλ)
 		}
 	}
 	internal func chain(x: LaObjet) -> LaObjet {
@@ -236,12 +243,10 @@ extension Cell {
 	internal var χ: LaObjet { return LaMatrice(state.new.bytes, rows: width, cols: 1, deallocator: nil) }
 	internal var ψ: LaObjet { return LaMatrice(train.new.bytes, rows: width, cols: 1, deallocator: nil) }
 	internal var Δ: LaObjet { return LaMatrice(error.new.bytes, rows: width, cols: 1, deallocator: nil) }
-	internal var ϝ: LaObjet { return LaMatrice(nabla.new.bytes, rows: width, cols: 1, deallocator: nil) }
 	
 	internal var _χ: LaObjet { return LaMatrice(state.old.bytes, rows: width, cols: 1, deallocator: nil) }
 	internal var _ψ: LaObjet { return LaMatrice(train.old.bytes, rows: width, cols: 1, deallocator: nil) }
 	internal var _Δ: LaObjet { return LaMatrice(error.old.bytes, rows: width, cols: 1, deallocator: nil) }
-	internal var _ϝ: LaObjet { return LaMatrice(nabla.old.bytes, rows: width, cols: 1, deallocator: nil) }
 	
 	internal var φ: LaObjet { return LaMatrice(level.new.φ.bytes, rows: width, cols: 1, deallocator: nil) }
 	internal var μ: LaObjet { return LaMatrice(level.new.μ.bytes, rows: width, cols: 1, deallocator: nil) }
@@ -251,6 +256,13 @@ extension Cell {
 	internal var _μ: LaObjet { return LaMatrice(level.old.μ.bytes, rows: width, cols: 1, deallocator: nil) }
 	internal var _λ: LaObjet { return LaMatrice(level.old.λ.bytes, rows: width, cols: 1, deallocator: nil) }
 
+	internal var gradμ: LaObjet { return LaMatrice(nabla.new.μ.bytes, rows: width, cols: 1) }
+	internal var gradλ: LaObjet { return LaMatrice(nabla.new.μ.bytes, rows: width, cols: 1) }
+	
+	internal var _gradμ: LaObjet { return LaMatrice(nabla.old.μ.bytes, rows: width, cols: 1) }
+	internal var _gradλ: LaObjet { return LaMatrice(nabla.old.μ.bytes, rows: width, cols: 1) }
+	
+	
 }
 extension Cell {
 	public var active: [Bool] {

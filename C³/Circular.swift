@@ -25,6 +25,12 @@ extension Circular {
 }
 extension Circular {
 	internal func chain(x: (μ: LaObjet, σ: LaObjet)) -> (μ: LaObjet, σ: LaObjet) {
+		let ξ: GaussianDistribution.Type = GaussianDistribution.self
+		let y: LaObjet = ξ.test1(cell._χ)
+		let dydλ: LaObjet = cell._Δ
+		let μB: LaObjet = μ
+		let σB: LaObjet = ξ.test2(σ)
+		
 		return (
 			μ: matrix_product(μ, x.μ),
 			σ: matrix_product(σ, x.σ)
